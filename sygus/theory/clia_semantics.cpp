@@ -2,7 +2,7 @@
 // Created by pro on 2021/12/6.
 //
 
-#include "basic/basic/config.h"
+#include "basic/config.h"
 #include "clia_semantics.h"
 #include "glog/logging.h"
 #include <map>

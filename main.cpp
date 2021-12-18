@@ -1,8 +1,8 @@
 #include <iostream>
 
 #include "z3++.h"
-#include "basic/basic/config.h"
-#include "basic/parser/sygus/parser.h"
+#include "basic/config.h"
+#include "basic/sygus/parser/parser.h"
 #include "solver/component_based_solver/linear_encoder.h"
 #include "solver/component_based_solver/component_based_solver.h"
 

@@ -5,7 +5,7 @@
 #ifndef ISTOOL_SOLVER_H
 #define ISTOOL_SOLVER_H
 
-#include "basic/basic/specification.h"
+#include "basic/specification.h"
 
 class Solver {
 public:

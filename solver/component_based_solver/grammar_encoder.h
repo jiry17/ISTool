@@ -5,8 +5,8 @@
 #ifndef ISTOOL_GRAMMAR_ENCODER_H
 #define ISTOOL_GRAMMAR_ENCODER_H
 
-#include "basic/basic/grammar.h"
-#include "basic/ext/z3/z3_util.h"
+#include "basic/grammar.h"
+#include "ext/z3/z3_util.h"
 #include <map>
 
 class Z3GrammarEncoder {

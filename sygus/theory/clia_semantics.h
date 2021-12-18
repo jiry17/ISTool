@@ -5,9 +5,9 @@
 #ifndef ISTOOL_CLIA_SEMANTICS_H
 #define ISTOOL_CLIA_SEMANTICS_H
 
-#include "basic/basic/semantics.h"
-#include "basic/basic/type_system.h"
-#include "basic/basic/program.h"
+#include "basic/semantics.h"
+#include "basic/type_system.h"
+#include "basic/program.h"
 
 
 class IntPlusSemantics : public NormalSemantics {

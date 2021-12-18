@@ -19,22 +19,6 @@ public:
 typedef std::shared_ptr<Type> PType;
 typedef std::vector<PType> TypeList;
 
-class Z3Type: public Type {
-public:
-    virtual z3::expr buildVar(const std::string& name, z3::context& ctx) = 0;
-};
-
-#define DefineZ3Type(name) \
-class T ## name: public Z3Type { \
-public: \
-    virtual std::string getName(); \
-    virtual bool equal(Type* type); \
-    virtual z3::expr buildVar(const std::string& name, z3::context& ctx); \
-    virtual ~T ## name() = default; \
-};
-DefineZ3Type(Bool)
-DefineZ3Type(Int)
-
 class TBot: public Type {
 public:
     virtual std::string getName();
@@ -53,9 +37,6 @@ public:
 
 namespace type {
     bool equal(const PType& t1, const PType& t2);
-    PType getTInt();
-    PType getTBool();
-    PType getTVarA();
 }
 
 #endif //ISTOOL_TYPE_H

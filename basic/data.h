@@ -20,6 +20,7 @@ public:
     bool operator == (const Data& d) const;
     bool operator <= (const Data& d) const;
     Value* get() const;
+    Type* getType() const;
 
     ~Data() = default;
 };

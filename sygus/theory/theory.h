@@ -5,7 +5,7 @@
 #ifndef ISTOOL_THEORY_H
 #define ISTOOL_THEORY_H
 
-#include "basic/basic/specification.h"
+#include "basic/specification.h"
 
 enum class TheoryToken {
     CLIA, BV

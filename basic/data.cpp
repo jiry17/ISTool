@@ -4,6 +4,7 @@
 
 #include "data.h"
 #include <cassert>
+#include "glog/logging.h"
 
 Data::Data(): value(new NullValue()) {
 }
@@ -30,6 +31,14 @@ bool Data::operator <= (const Data& d) const {
 
 Value * Data::get() const {
     return value.get();
+}
+
+Type * Data::getType() const {
+    auto* tv = dynamic_cast<TypedValue*>(value.get());
+    if (!tv) {
+        LOG(FATAL) << "Cannot get type for data " << toString();
+    }
+    return tv->type.get();
 }
 
 std::string data::dataList2String(const DataList &data_list) {

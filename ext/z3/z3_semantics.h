@@ -6,7 +6,7 @@
 #define ISTOOL_Z3_SEMANTICS_H
 
 #include "z3++.h"
-#include "basic/basic/semantics.h"
+#include "basic/semantics.h"
 
 class Z3Semantics {
 public:

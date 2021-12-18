@@ -23,7 +23,10 @@ set(THIRDPARTY_LIBS glog gflags ${Jsoncpp_LIBRARY} ${Z3_FILE})
 
 # subdic
 add_subdirectory(basic)
+add_subdirectory(ext)
 add_subdirectory(solver)
 
+set(SRC_LIBS basic_lib ext_lib solver_lib)
+
 add_executable(ISTool main.cpp)
-target_link_libraries(ISTool solver_lib ${BASIC_LIBS} ${THIRDPARTY_LIBS} ${BASIC_LIBS})
+target_link_libraries(ISTool ${SRC_LIBS} ${THIRDPARTY_LIBS} )
