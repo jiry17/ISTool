@@ -33,12 +33,16 @@ Value * Data::get() const {
     return value.get();
 }
 
-Type * Data::getType() const {
+PType Data::getPType() const {
     auto* tv = dynamic_cast<TypedValue*>(value.get());
     if (!tv) {
         LOG(FATAL) << "Cannot get type for data " << toString();
     }
-    return tv->type.get();
+    return tv->type;
+}
+
+Type * Data::getType() const {
+    return getPType().get();
 }
 
 std::string data::dataList2String(const DataList &data_list) {

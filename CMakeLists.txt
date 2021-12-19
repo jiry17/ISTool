@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/)
 add_definitions(-DDEBUG)
 INCLUDE(FindPkgConfig)
-include_directories("${CMAKE_SOURCE_DIR}")
+include_directories(libs)
 
 #Z3
 set(Z3_PATH /home/jiry/2021A/PolyGen/recommend/my-euphony/thirdparty/z3)
@@ -24,9 +24,10 @@ set(THIRDPARTY_LIBS glog gflags ${Jsoncpp_LIBRARY} ${Z3_FILE})
 # subdic
 add_subdirectory(basic)
 add_subdirectory(ext)
+add_subdirectory(sygus)
 add_subdirectory(solver)
 
-set(SRC_LIBS basic_lib ext_lib solver_lib)
+set(SRC_LIBS basic_lib ext_lib ${SyGuS_LIBS} solver_lib)
 
 add_executable(ISTool main.cpp)
 target_link_libraries(ISTool ${SRC_LIBS} ${THIRDPARTY_LIBS} )

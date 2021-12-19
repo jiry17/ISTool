@@ -1,14 +1,9 @@
 //
-// Created by pro on 2021/12/6.
+// Created by pro on 2021/12/19.
 //
 
-#ifndef ISTOOL_CLIA_SEMANTICS_H
-#define ISTOOL_CLIA_SEMANTICS_H
-
-#include "basic/semantics.h"
-#include "basic/type_system.h"
-#include "basic/program.h"
-
+#ifndef ISTOOL_SEMANTICS_H
+#define ISTOOL_SEMANTICS_H
 
 class IntPlusSemantics : public NormalSemantics {
 public:
@@ -112,6 +107,4 @@ public:
     ~IteSemantics() = default;
 };
 
-
-
-#endif //ISTOOL_CLIA_SEMANTICS_H
+#endif //ISTOOL_SEMANTICS_H
