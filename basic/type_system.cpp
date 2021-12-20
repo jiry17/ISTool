@@ -2,7 +2,7 @@
 // Created by pro on 2021/12/4.
 //
 
-#include "type_system.h"
+#include "istool/basic/type_system.h"
 
 PType DummyTypeSystem::getType(const PProgram &program) const {
     return std::make_shared<TBot>();

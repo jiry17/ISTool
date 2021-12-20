@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/)
 add_definitions(-DDEBUG)
 INCLUDE(FindPkgConfig)
-include_directories(libs)
+include_directories(include)
 
 #Z3
 set(Z3_PATH /home/jiry/2021A/PolyGen/recommend/my-euphony/thirdparty/z3)

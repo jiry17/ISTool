@@ -2,7 +2,7 @@
 // Created by pro on 2021/12/18.
 //
 
-#include "z3_extension.h"
+#include "istool/ext/z3/z3_extension.h"
 #include "glog/logging.h"
 
 void Z3Extension::registerZ3Type(Z3Type *util) {
@@ -59,9 +59,9 @@ z3::expr Z3Extension::encodeZ3ExprForProgram(Program *program, const z3::expr_ve
     return encodeZ3ExprForSemantics(program->semantics.get(), inp_list, param_list);
 }
 
-Data Z3Extension::getValueFromModel(const z3::model &model, const z3::expr &expr, Type *type) {
+Data Z3Extension::getValueFromModel(const z3::model &model, const z3::expr &expr, Type *type, bool is_strict) {
     auto* util = getZ3Type(type);
-    return util->getValueFromModel(model, expr, type);
+    return util->getValueFromModel(model, expr, type, is_strict);
 }
 
 Z3Extension::~Z3Extension() {
@@ -71,9 +71,8 @@ Z3Extension::~Z3Extension() {
     }
 }
 
-namespace {
-    const std::string KZ3Name = "Z3";
-}
+
+const std::string KZ3Name = "Z3";
 
 Z3Extension * ext::z3::getZ3Extension(Env *env) {
     auto* res = env->getExtension(KZ3Name);

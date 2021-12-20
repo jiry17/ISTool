@@ -2,7 +2,7 @@
 // Created by pro on 2021/12/5.
 //
 
-#include "verifier.h"
+#include "istool/basic/verifier.h"
 #include "glog/logging.h"
 
 FiniteExampleVerifier::FiniteExampleVerifier(const std::shared_ptr<FiniteExampleSpace> &_example_space):

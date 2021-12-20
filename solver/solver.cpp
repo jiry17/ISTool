@@ -2,7 +2,7 @@
 // Created by pro on 2021/12/9.
 //
 
-#include "solver.h"
+#include "istool/solver/solver.h"
 
 CEGISSolver::CEGISSolver(PBESolver *_pbe_solver): pbe_solver(_pbe_solver) {
 }

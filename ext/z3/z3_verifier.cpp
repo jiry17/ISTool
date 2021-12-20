@@ -2,8 +2,8 @@
 // Created by pro on 2021/12/7.
 //
 
-#include "z3_verifier.h"
-#include "z3_extension.h"
+#include "istool/ext/z3/z3_verifier.h"
+#include "istool/ext/z3/z3_extension.h"
 #include <map>
 #include "glog/logging.h"
 
@@ -35,8 +35,8 @@ PExample Z3IOVerifier::verify(const PProgram& program) const {
     if (res == z3::unsat) return nullptr;
     DataList inp_list;
     auto model = solver.get_model();
-    for (const auto& info: info.inp_infos) {
-        inp_list.push_back(z3_env->getValueFromModel(model, info.expr, info.type.get()));
+    for (const auto& inp_info: info.inp_infos) {
+        inp_list.push_back(z3_env->getValueFromModel(model, inp_info.expr, inp_info.type.get()));
     }
     solver.pop();
     for (int i = 0; i < info.inp_infos.size(); ++i) {

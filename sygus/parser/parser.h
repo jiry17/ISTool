@@ -5,13 +5,13 @@
 #ifndef ISTOOL_PARSER_H
 #define ISTOOL_PARSER_H
 
-#include "../../theory/theory.h"
+#include "istool/sygus/theory/theory.h"
 #include "json/json.h"
 
 namespace parser {
     Json::Value getJsonForSyGuSFile(const std::string& file_name);
-    TheorySpecification* getSyGuSSpecFromJson(const Json::Value& value);
-    TheorySpecification* getSyGuSSpecFromFile(const std::string& file_name);
+    Specification* getSyGuSSpecFromJson(const Json::Value& value);
+    Specification* getSyGuSSpecFromFile(const std::string& file_name);
 }
 
 

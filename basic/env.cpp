@@ -2,11 +2,12 @@
 // Created by pro on 2021/12/18.
 //
 
-#include "env.h"
+#include "istool/basic/env.h"
+#include "glog/logging.h"
 
-Data * Env::getConstRef(const std::string &name) {
+Data * Env::getConstRef(const std::string &name, const Data& default_value) {
     if (const_pool.find(name) == const_pool.end()) {
-        const_pool[name] = new Data();
+        const_pool[name] = new Data(default_value);
     }
     return const_pool[name];
 }
@@ -32,4 +33,14 @@ Extension * Env::getExtension(const std::string &name) const {
 }
 void Env::registerExtension(const std::string &name, Extension *ext) {
     extension_pool[name] = ext;
+}
+
+void Env::setSemantics(const std::string &name, const PSemantics &semantics) {
+    semantics_pool[name] = semantics;
+}
+PSemantics Env::getSemantics(const std::string &name) const {
+    if (semantics_pool.find(name) == semantics_pool.end()) {
+        LOG(FATAL) << "Unknown semantics " << name;
+    }
+    return semantics_pool.find(name)->second;
 }

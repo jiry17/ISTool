@@ -2,11 +2,12 @@
 // Created by pro on 2021/12/8.
 //
 
-#include "parser.h"
-#include "basic/basic/config.h"
-#include "basic/ext/z3/z3_util.h"
-#include "basic/ext/z3/z3_verifier.h"
-#include "../json_util.h"
+#include "istool/sygus/parser/parser.h"
+#include "istool/sygus/parser/json_util.h"
+#include "istool/sygus/theory/sygus_theory.h"
+#include "istool/basic/config.h"
+#include "istool/ext/z3/z3_extension.h"
+#include "istool/ext/z3/z3_verifier.h"
 #include "glog/logging.h"
 
 namespace {
@@ -27,7 +28,7 @@ namespace {
         LOG(FATAL) << "Unknown Theory " << name;
     }
 
-    PSynthInfo parseSynthInfo(const Json::Value& entry) {
+    PSynthInfo parseSynthInfo(const Json::Value& entry, Env* env) {
         if (entry.size() != 6) {
             LOG(FATAL) << "Unsupported format " << entry;
         }
@@ -83,7 +84,7 @@ namespace {
                         symbol->rule_list.push_back(new Rule(std::move(s), {}));
                     } catch (ParseError& e) {
                         TEST_PARSER(rule_node[0].isString())
-                        auto s = semantics::string2Semantics(rule_node[0].asString());
+                        auto s = env->getSemantics(rule_node[0].asString());
                         NTList param_list;
                         for (int i = 1; i < rule_node.size(); ++i) {
                             TEST_PARSER(rule_node[i].isString())
@@ -114,47 +115,39 @@ namespace {
         return std::make_shared<IOExample>(std::move(inp_list), std::move(json::getDataFromJson(oup_node)));
     }
 
-    z3::expr buildZ3Cons(const Json::Value& entry, const std::map<std::string, z3::expr>& var_map,
-            const std::map<std::string, PSynthInfo>& info_map, std::map<std::string, Z3CallInfo>& call_info_map,
-            z3::context& ctx) {
+    PProgram buildConsProgram(const Json::Value& entry, const std::map<std::string, std::pair<int, PType>>& var_info_map,
+            const std::map<std::string, PSynthInfo>& syn_info_map, std::map<std::string, PProgram>& cache, Env* env) {
+        auto feature = entry.toStyledString();
+        if (cache.find(feature) != cache.end()) return cache[feature];
         if (entry.isString()) {
             std::string name = entry.asString();
-            TEST_PARSER(var_map.find(name) != var_map.end());
-            return var_map.find(name)->second;
+            TEST_PARSER(var_info_map.find(name) != var_info_map.end())
+            auto var_info = var_info_map.find(name)->second;
+            return cache[feature] = program::buildParam(var_info.first, var_info.second);
         }
         TEST_PARSER(entry.isArray())
         try {
             auto data = json::getDataFromJson(entry);
-            auto* z3v = dynamic_cast<Z3Value*>(data.get());
-            TEST_PARSER(z3v);
-            return z3v->getZ3Expr(ctx);
+            return cache[feature] = program::buildConst(data);
         } catch (ParseError& e) {
         }
         TEST_PARSER(entry[0].isString())
-        std::string name = entry[0].asString();
-        if (info_map.find(name) != info_map.end()) {
-            auto syn_info = info_map.find(name)->second;
-            std::string feature = entry.toStyledString();
-            if (call_info_map.find(feature) != call_info_map.end()) {
-                return call_info_map.find(feature)->second.oup_symbol;
-            }
-            std::string oup_name = "oup" + std::to_string(call_info_map.size());
-            auto oup_var = ext::buildVar(syn_info->oup_type, oup_name, ctx);
-            z3::expr_vector inp_list(ctx);
-            for (int i = 1; i < entry.size(); ++i) {
-                inp_list.push_back(buildZ3Cons(entry[i], var_map, info_map, call_info_map, ctx));
-            }
-            call_info_map.insert({feature, Z3CallInfo(feature, inp_list, oup_var)});
-            return oup_var;
-        }
-        auto z3s = ext::getZ3Semantics(name);
-        z3::expr_vector inp_list(ctx);
+        ProgramList sub_list;
         for (int i = 1; i < entry.size(); ++i) {
-            inp_list.push_back(buildZ3Cons(entry[i], var_map, info_map, call_info_map, ctx));
+            sub_list.push_back(buildConsProgram(entry[i], var_info_map, syn_info_map, cache, env));
         }
-        return z3s->encodeZ3Expr(inp_list);
+        std::string name = entry[0].asString();
+        PSemantics sem;
+        if (syn_info_map.find(name) != syn_info_map.end()) {
+            auto syn_info = syn_info_map.find(name)->second;
+            PType oup_type = syn_info->oup_type;
+            TypeList inp_type_list = syn_info->inp_type_list;
+            sem = std::make_shared<InvokeSemantics>(syn_info->name, std::move(oup_type), std::move(inp_type_list));
+        } else {
+            sem = env->getSemantics(name);
+        }
+        return cache[feature] = std::make_shared<Program>(std::move(sem), std::move(sub_list));
     }
-
 }
 
 Json::Value parser::getJsonForSyGuSFile(const std::string &file_name) {
@@ -168,67 +161,50 @@ Json::Value parser::getJsonForSyGuSFile(const std::string &file_name) {
     return root;
 }
 
-TheorySpecification * parser::getSyGuSSpecFromFile(const std::string &file_name) {
+Specification * parser::getSyGuSSpecFromFile(const std::string &file_name) {
     auto root = getJsonForSyGuSFile(file_name);
     return getSyGuSSpecFromJson(root);
 }
 
-TheorySpecification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
+Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
+    Env* env = new Env();
+
     auto theory_list = getEntriesViaName(root, "set-logic");
     assert(theory_list.size() == 1);
     auto theory = getTheory(theory_list[0][1].asString());
-    auto assigner = semantics::loadTheory(theory);
-    auto* type_system = new BasicTypeSystem(assigner);
+    ext::sygus::initSyGuSExtension(env, theory);
+    ext::sygus::loadSyGuSTheories(env, theory::loadBasicSemantics);
 
     auto fun_list = getEntriesViaName(root, "synth-fun");
     std::vector<PSynthInfo> info_list;
     for (auto& fun_info: fun_list) {
-        info_list.push_back(parseSynthInfo(fun_info));
+        info_list.push_back(parseSynthInfo(fun_info, env));
+    }
+    std::map<std::string, PSynthInfo> syn_info_map;
+    for (auto& syn_info: info_list) {
+        syn_info_map[syn_info->name] = syn_info;
     }
 
     auto cons_list = getEntriesViaName(root, "constraint");
-
-    // try example based
-    try {
-        TEST_PARSER(fun_list.size() == 1);
-        std::string name = info_list[0]->name;
-        std::vector<PExample> example_list;
-        for (auto& entry: cons_list) {
-            example_list.push_back(parseIOExample(entry, name));
-        }
-        auto example_space = std::make_shared<FiniteExampleSpace>(example_list);
-        auto* verifier = new FiniteExampleVerifier(example_space);
-        return new TheorySpecification(info_list, type_system, verifier, theory);
-    } catch (ParseError& e) {
+    auto declare_var_list = getEntriesViaName(root, "declare_var");
+    if (!declare_var_list.empty()) {
+        ext::sygus::loadSyGuSTheories(env, theory::loadZ3Semantics);
+    }
+    TypeList var_type_list;
+    std::map<std::string, std::pair<int, PType>> var_info_map;
+    for (auto& var_info: declare_var_list) {
+        int id = var_type_list.size();
+        auto name = var_info[1].asString();
+        auto type = json::getTypeFromJson(var_info[2]);
+        var_type_list.push_back(type);
+        var_info_map[name] = {id, type};
     }
 
-    // try z3 based
-    ext::loadZ3Theory(theory);
-    try {
-        auto declare_var_list = getEntriesViaName(root, "declare-var");
-        std::map<std::string, z3::expr> var_map;
-        for (auto& entry: declare_var_list) {
-            std::string name = entry[1].asString();
-            PType type = json::getTypeFromJson(entry[2]);
-            var_map.insert({name, ext::buildVar(type, name, ext::z3_ctx)});
-        }
-        std::map<std::string, PSynthInfo> info_map;
-        for (const auto& info: info_list) {
-            info_map.insert({info->name, info});
-        }
-        std::map<std::string, Z3CallInfo> call_info_map;
-        z3::expr_vector z3_cons_list(ext::z3_ctx);
-        for (const auto& entry: cons_list) {
-            z3_cons_list.push_back(buildZ3Cons(entry[1], var_map, info_map, call_info_map, ext::z3_ctx));
-        }
-        std::vector<Z3CallInfo> call_info_list;
-        for (const auto& info: call_info_map) call_info_list.push_back(info.second);
-        if (call_info_map.size() > 1 || info_map.size() > 1) {
-            LOG(FATAL) << "Do not support specifications with multiple IOs";
-        }
-        auto* verifier = new Z3IOVerifier(z3_cons_list, call_info_list[0]);
-        return new TheorySpecification(info_list, type_system, verifier, theory);
-    } catch (ParseError& e) {
+    ProgramList cons_program_list;
+    std::map<std::string, PProgram> cache;
+    for (auto& entry: cons_list) {
+        cons_program_list.push_back(buildConsProgram(entry[1], var_info_map, syn_info_map, cache, env));
     }
-    LOG(FATAL) << "Unknown specification";
+
+
 }

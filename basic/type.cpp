@@ -2,7 +2,7 @@
 // Created by pro on 2021/12/3.
 //
 
-#include "type.h"
+#include "istool/basic/type.h"
 
 std::string TBot::getName() {
     return "Bot";
@@ -24,4 +24,19 @@ std::string TVar::getName() {
 
 bool type::equal(const PType &t1, const PType &t2) {
     return t1->equal(t2.get());
+}
+
+bool TBool::equal(Type* type) {
+    return dynamic_cast<TBool*>(type);
+}
+std::string TBool::getName() {
+    return "Bool";
+}
+
+PType type::getTBool() {
+    static PType bool_type = nullptr;
+    if (!bool_type) {
+        bool_type = std::make_shared<TBool>();
+    }
+    return bool_type;
 }

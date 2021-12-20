@@ -2,7 +2,8 @@
 // Created by pro on 2021/11/30.
 //
 
-#include "value.h"
+#include "istool/basic/value.h"
+#include "glog/logging.h"
 
 TypedValue::TypedValue(PType &&_type): type(_type) {}
 
@@ -15,4 +16,17 @@ bool NullValue::equal(Value *value) const {
 
 std::string NullValue::toString() const {
     return "null";
+}
+
+BoolValue::BoolValue(bool _w): w(_w), TypedValue(type::getTBool()) {
+}
+bool BoolValue::equal(Value *value) const {
+    auto* bv = dynamic_cast<BoolValue*>(value);
+    if (!bv) {
+        LOG(FATAL) << "Expected BoolValue, but get " << value->toString();
+    }
+    return bv->w == w;
+}
+std::string BoolValue::toString() const {
+    return w ? "true" : "false";
 }

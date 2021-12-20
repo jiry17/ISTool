@@ -2,7 +2,7 @@
 // Created by pro on 2021/12/10.
 //
 
-#include "linear_encoder.h"
+#include "istool/solver/component_based_solver/linear_encoder.h"
 #include "glog/logging.h"
 
 LineEncoder::LineEncoder(Grammar *_grammar, z3::context *_ctx, int _factor, const std::map<std::string, int> &_special_usage):

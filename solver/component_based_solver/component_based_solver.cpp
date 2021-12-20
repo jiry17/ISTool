@@ -2,8 +2,8 @@
 // Created by pro on 2021/12/9.
 //
 
-#include "component_based_solver.h"
-#include "basic/ext/z3/z3_util.h"
+#include "istool/solver/component_based_solver/component_based_solver.h"
+#include "istool/ext/z3/z3_extension.h"
 #include "glog/logging.h"
 
 ComponentBasedSynthesizer::ComponentBasedSynthesizer(Z3GrammarEncoderBuilder *_builder): builder(_builder) {

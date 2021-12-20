@@ -2,7 +2,7 @@
 // Created by pro on 2021/12/4.
 //
 
-#include "program.h"
+#include "istool/basic/program.h"
 #include "glog/logging.h"
 
 Program::Program(PSemantics &&_semantics, const ProgramList &_sub_list):
@@ -33,14 +33,21 @@ PProgram program::buildConst(const Data &w) {
     return std::make_shared<Program>(semantics::buildConstSemantics(w), std::move(sub_list));
 }
 
-PProgram program::buildParam(int id, PType &&type) {
+PProgram program::buildParam(int id, const PType &type) {
     ProgramList sub_list;
-    return std::make_shared<Program>(semantics::buildParamSemantics(id, std::move(type)), std::move(sub_list));
+    return std::make_shared<Program>(semantics::buildParamSemantics(id, type), std::move(sub_list));
 }
 
 Data program::run(const PProgram& program, const DataList &inp) {
-    auto* log = new IOExecuteInfo(inp);
+    auto* log = new ExecuteInfo(inp);
     auto res = program->run(log);
     delete log;
+    return res;
+}
+
+Data program::runWithFunc(const PProgram &program, const DataList &inp, const FunctionContext &ctx) {
+    auto* info = new FunctionContextInfo(inp, ctx);
+    auto res = program->run(info);
+    delete info;
     return res;
 }

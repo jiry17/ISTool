@@ -2,7 +2,7 @@
 // Created by pro on 2021/11/30.
 //
 
-#include "data.h"
+#include "istool/basic/data.h"
 #include <cassert>
 #include "glog/logging.h"
 
@@ -26,7 +26,7 @@ bool Data::operator <= (const Data& d) const {
 #ifdef DEBUG
     if (!cv1 || !cv2) assert(0);
 #endif
-    return cv1->leq(cv2);
+    return cv1->leq(d.value.get());
 }
 
 Value * Data::get() const {

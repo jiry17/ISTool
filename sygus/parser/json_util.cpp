@@ -3,6 +3,7 @@
 //
 
 #include "json_util.h"
+#include "istool/sygus/theory/sygus_theory.h"
 #include <fstream>
 #include <sstream>
 #include "glog/logging.h"
