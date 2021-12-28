@@ -48,6 +48,7 @@ public:
 };
 
 namespace theory {
+    extern const std::string KCLIAINFName;
     void loadCLIASemantics(Env* env);
 }
 

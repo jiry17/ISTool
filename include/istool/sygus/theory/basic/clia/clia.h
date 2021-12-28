@@ -8,4 +8,8 @@
 #include "istool/sygus/theory/basic/clia/clia_type.h"
 #include "istool/sygus/theory/basic/clia/clia_value.h"
 
+namespace theory {
+    extern const std::string KCLIAINFName;
+}
+
 #endif //ISTOOL_CLIA_H

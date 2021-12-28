@@ -23,9 +23,12 @@ public:
     Type* getType() const;
     PType getPType() const;
     bool isTrue() const;
+    bool isNull() const;
 
     ~Data() = default;
 };
+
+#define BuildData(Type, w) Data(std::make_shared<Type ## Value>(w))
 
 typedef std::vector<Data> DataList;
 typedef std::vector<DataList> DataStorage;

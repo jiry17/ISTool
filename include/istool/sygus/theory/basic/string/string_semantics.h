@@ -26,4 +26,9 @@ public:
     ~StrToIntSemantics() = default;
 };
 
+namespace theory {
+    void loadStringSemantics(Env* env);
+}
+
+
 #endif //ISTOOL_STRING_SEMANTICS_H

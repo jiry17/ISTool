@@ -50,6 +50,11 @@ bool Data::isTrue() const {
     return bv->w;
 }
 
+bool Data::isNull() const {
+    auto* nv = dynamic_cast<NullValue*>(value.get());
+    return nv;
+}
+
 std::string data::dataList2String(const DataList &data_list) {
     std::string res;
     for (auto& d: data_list) res += "," + d.toString();
