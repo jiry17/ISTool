@@ -37,10 +37,10 @@ Data Z3BoolType::getValueFromModel(const z3::model &model, const z3::expr &expr,
     return Data(std::make_shared<BoolValue>(true));
 }
 z3::expr Z3BoolType::buildConst(const Data &data, z3::context &ctx) const {
-    return ctx.int_val(theory::clia::getBoolValue(data));
+    return ctx.bool_val(data.isTrue());
 }
 z3::expr Z3BoolType::buildVar(Type *type, const std::string &name, z3::context &ctx) const {
-    return ctx.int_const(name.c_str());
+    return ctx.bool_const(name.c_str());
 }
 
 void theory::clia::loadZ3Type(Env *env) {

@@ -45,6 +45,11 @@ Type * Data::getType() const {
     return getPType().get();
 }
 
+bool Data::isTrue() const {
+    auto* bv = dynamic_cast<BoolValue*>(value.get());
+    return bv->w;
+}
+
 std::string data::dataList2String(const DataList &data_list) {
     std::string res;
     for (auto& d: data_list) res += "," + d.toString();

@@ -7,28 +7,22 @@
 
 #include "program.h"
 #include "example_space.h"
+#include "specification.h"
 
 class Verifier {
 public:
-    virtual PExample verify(const PProgram& program) const = 0;
+    virtual bool verify(const FunctionContext& info, Example* counter_example) const = 0;
     virtual ~Verifier() = default;
 };
 
+typedef std::shared_ptr<Verifier> PVerifier;
+
 class FiniteExampleVerifier: public Verifier {
 public:
-    std::shared_ptr<FiniteExampleSpace> example_space;
-    FiniteExampleVerifier(const std::shared_ptr<FiniteExampleSpace> &_example_space);
-    virtual PExample verify(const PProgram& program) const;
+    FiniteExampleSpace* example_space;
+    FiniteExampleVerifier(FiniteExampleSpace* _space);
+    virtual bool verify(const FunctionContext& info, Example* counter_example) const;
     virtual ~FiniteExampleVerifier() = default;
-};
-
-class OccamVerifier: public Verifier {
-public:
-    int factor;
-    std::shared_ptr<StreamedExampleSpace> example_space;
-    OccamVerifier(const std::shared_ptr<StreamedExampleSpace>& example_space, int _factor = 100);
-    virtual PExample verify(const PProgram& program) const;
-    virtual ~OccamVerifier() = default;
 };
 
 #endif //ISTOOL_VERIFIER_H

@@ -18,6 +18,8 @@ class Env {
     std::unordered_map<std::string, Extension*> extension_pool;
     std::unordered_map<std::string, PSemantics> semantics_pool;
 public:
+    Env();
+
     Data* getConstRef(const std::string& name, const Data& default_value = {});
     void setConst(const std::string& name, const Data& value);
 

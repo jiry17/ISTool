@@ -6,7 +6,6 @@
 #include "istool/sygus/theory/basic/clia/clia_value.h"
 
 using theory::clia::getIntValue;
-using theory::clia::getBoolValue;
 
 namespace {
     PType getVar() {
@@ -17,7 +16,7 @@ namespace {
 }
 
 #define TINT theory::clia::getTInt()
-#define TBOOL theory::clia::getTBool()
+#define TBOOL type::getTBool()
 #define TVARA getVar()
 
 IntPlusSemantics::IntPlusSemantics(Data* _inf): inf(_inf),
@@ -104,33 +103,11 @@ Data EqSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return Data(std::make_shared<BoolValue>(inp_list[0] == inp_list[1]));
 }
 
-NotSemantics::NotSemantics(): NormalSemantics("!", TBOOL, {TBOOL}) {
-}
-Data NotSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
-    return Data(std::make_shared<BoolValue>(!getBoolValue(inp_list[0])));
-}
-
-AndSemantics::AndSemantics(): Semantics("&&"), TypedSemantics(TBOOL, {TBOOL, TBOOL}) {
-}
-Data AndSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
-    auto x = sub_list[0]->run(info);
-    if (!getBoolValue(x)) return x;
-    return sub_list[1]->run(info);
-}
-
-OrSemantics::OrSemantics(): Semantics("||"), TypedSemantics(TBOOL, {TBOOL, TBOOL}) {
-}
-Data OrSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
-    auto x = sub_list[0]->run(info);
-    if (getBoolValue(x)) return x;
-    return sub_list[1]->run(info);
-}
-
 IteSemantics::IteSemantics(): Semantics("ite"), TypedSemantics(TVARA, {TBOOL, TVARA, TVARA}) {
 }
 Data IteSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     auto c = sub_list[0]->run(info);
-    if (getBoolValue(c)) return sub_list[1]->run(info);
+    if (c.isTrue()) return sub_list[1]->run(info);
     return sub_list[2]->run(info);
 }
 
@@ -140,7 +117,6 @@ namespace {
 }
 
 #define LoadINFSemantics(name, sem) env->setSemantics(name, std::make_shared<sem ## Semantics>(inf))
-#define LoadSemantics(name, sem) env->setSemantics(name, std::make_shared<sem ## Semantics>())
 
 void theory::loadCLIASemantics(Env *env) {
     auto* inf = env->getConstRef(KCLIAINFName, Data(std::make_shared<IntValue>(KDefaultINF)));
@@ -151,7 +127,5 @@ void theory::loadCLIASemantics(Env *env) {
     LoadSemantics("mod", IntMod);
     LoadSemantics("<", Lq); LoadSemantics("<=", Leq);
     LoadSemantics(">", Gq); LoadSemantics(">=", Geq);
-    LoadSemantics("=", Eq);
-    LoadSemantics("!", Not); LoadSemantics("&&", And);
-    LoadSemantics("||", Or); LoadSemantics("ite", Ite);
+    LoadSemantics("=", Eq); LoadSemantics("ite", Ite);
 }

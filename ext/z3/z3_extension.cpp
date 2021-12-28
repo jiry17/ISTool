@@ -4,6 +4,21 @@
 
 #include "istool/ext/z3/z3_extension.h"
 #include "glog/logging.h"
+#include <sstream>
+
+Z3EncodeRes::Z3EncodeRes(const z3::expr &_res, const z3::expr_vector &_cons_list): res(_res), cons_list(_cons_list) {
+}
+std::string Z3EncodeRes::toString() const {
+    std::string s = res.to_string() + "@{";
+    for (int i = 0; i < cons_list.size(); ++i) {
+        if (i) s += ","; s += cons_list[i].to_string();
+    }
+    return s + "}";
+}
+
+Z3Extension::Z3Extension() {
+    ext::z3::loadLogicSemantics(this);
+}
 
 void Z3Extension::registerZ3Type(Z3Type *util) {
     util_list.push_front(util);
@@ -38,21 +53,24 @@ Z3Semantics * Z3Extension::getZ3Semantics(Semantics *semantics) const {
     return semantics_pool.find(name)->second;
 }
 
-z3::expr Z3Extension::encodeZ3ExprForSemantics(Semantics *semantics, const z3::expr_vector &inp_list, const z3::expr_vector &param_list) {
+Z3EncodeRes Z3Extension::encodeZ3ExprForSemantics(Semantics *semantics, const std::vector<Z3EncodeRes> &inp_list, const z3::expr_vector &param_list) {
     auto* ps = dynamic_cast<ParamSemantics*>(semantics);
     if (ps) {
-        return param_list[ps->id];
+        return {param_list[ps->id], {ctx}};
     }
     auto* cs = dynamic_cast<ConstSemantics*>(semantics);
     if (cs) {
-        return buildConst(cs->w);
+        return {buildConst(cs->w), {ctx}};
     }
     auto* zs = getZ3Semantics(semantics);
+    //std::cout << semantics->getName() << ": ";
+    //for (auto& inp: inp_list) std::cout << inp.toString() << " "; std::cout << std::endl;
+    //std::cout << zs->encodeZ3Expr(inp_list).toString() << std::endl;
     return zs->encodeZ3Expr(inp_list);
 }
 
-z3::expr Z3Extension::encodeZ3ExprForProgram(Program *program, const z3::expr_vector &param_list) {
-    z3::expr_vector inp_list(ctx);
+Z3EncodeRes Z3Extension::encodeZ3ExprForProgram(Program *program, const z3::expr_vector &param_list) {
+    std::vector<Z3EncodeRes> inp_list;
     for (const auto& sub: program->sub_list) {
         inp_list.push_back(encodeZ3ExprForProgram(sub.get(), param_list));
     }

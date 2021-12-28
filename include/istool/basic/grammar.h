@@ -26,7 +26,7 @@ public:
     PSemantics semantics;
     NTList param_list;
     Rule(PSemantics&& _semantics, NTList&& _param_list);
-    virtual PProgram buildProgram(ProgramList&& sub_list);
+    virtual PProgram buildProgram(const ProgramList& sub_list);
     virtual std::string toString() const;
     ~Rule() = default;
 };

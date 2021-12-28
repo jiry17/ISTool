@@ -16,5 +16,5 @@ Specification::Specification(const std::vector<PSynthInfo> &_info_list, Env *_en
 }
 
 Specification::~Specification() {
-    delete env; delete v;
+    delete env; delete example_space;
 }

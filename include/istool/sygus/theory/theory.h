@@ -21,12 +21,11 @@ public:
     ~SyGuSExtension() = default;
 };
 
-namespace ext {
-    namespace sygus {
-        SyGuSExtension* getSyGuSExtension(Env* env);
-        SyGuSExtension* initSyGuSExtension(Env* env, TheoryToken theory);
-        void loadSyGuSTheories(Env* env, const TheoryLoader& loader);
-    }
+namespace sygus {
+    std::string theoryToken2String(TheoryToken token);
+    SyGuSExtension* getSyGuSExtension(Env* env);
+    SyGuSExtension* initSyGuSExtension(Env* env, TheoryToken theory);
+    void loadSyGuSTheories(Env* env, const TheoryLoader& loader);
 }
 
 #endif //ISTOOL_THEORY_H

@@ -9,9 +9,16 @@ TimeGuard::TimeGuard(double _time_limit): time_limit(_time_limit) {
     gettimeofday(&start_time, NULL);
 }
 
-void TimeGuard::check() const {
+double TimeGuard::getPeriod() const {
     timeval now;
     gettimeofday(&now, NULL);
-    double period = (now.tv_sec - start_time.tv_sec) + (now.tv_usec - start_time.tv_usec) / 1e6;
-    if (period > time_limit) throw TimeOutError();
+    return (now.tv_sec - start_time.tv_sec) + (now.tv_usec - start_time.tv_usec) / 1e6;
+}
+
+double TimeGuard::getRemainTime() const {
+    return time_limit - getPeriod();
+}
+
+void TimeGuard::check() const {
+    if (getRemainTime() < 0) throw TimeOutError();
 }

@@ -6,7 +6,7 @@
 #define ISTOOL_SPECIFICATION_H
 
 #include "grammar.h"
-#include "verifier.h"
+#include "example_space.h"
 #include "env.h"
 
 struct SynthInfo {

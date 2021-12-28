@@ -17,8 +17,12 @@ public:
     double time_limit;
     TimeGuard(double _time_limit);
     void check() const;
+    double getRemainTime() const;
+    double getPeriod() const;
     ~TimeGuard() = default;
 };
+
+#define TimeCheck(g) if (g) g->check();
 
 
 #endif //ISTOOL_TIME_GUARD_H

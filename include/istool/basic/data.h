@@ -22,6 +22,7 @@ public:
     Value* get() const;
     Type* getType() const;
     PType getPType() const;
+    bool isTrue() const;
 
     ~Data() = default;
 };

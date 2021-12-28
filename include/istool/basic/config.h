@@ -9,7 +9,6 @@
 
 namespace config {
     extern const std::string KSourcePath;
-    extern int KIntINF;
 }
 
 

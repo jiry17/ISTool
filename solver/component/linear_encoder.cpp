@@ -2,29 +2,40 @@
 // Created by pro on 2021/12/10.
 //
 
-#include "istool/solver/component_based_solver/linear_encoder.h"
+#include "istool/solver/component/linear_encoder.h"
 #include "glog/logging.h"
 
-LineEncoder::LineEncoder(Grammar *_grammar, z3::context *_ctx, int _factor, const std::map<std::string, int> &_special_usage):
-        Z3GrammarEncoder(_grammar, _ctx), factor(_factor), special_usage(_special_usage) {
+LinearEncoder::LinearEncoder(Grammar *_grammar, Env *_env, int _factor, const std::map<std::string, int> &_special_usage):
+        Z3GrammarEncoder(_grammar, _env), factor(_factor), special_usage(_special_usage) {
 }
-void LineEncoder::enlarge() {
+void LinearEncoder::enlarge() {
     factor += 1;
 }
 
-LineEncoder::Component LineEncoder::buildComponent(NonTerminal *nt, Rule *r, const std::string& prefix) {
+namespace {
+    z3::expr buildIntVar(const std::string& name, z3::context& ctx) {
+        return ctx.int_const(name.c_str());
+    }
+
+    int getIntValue(const z3::expr& expr, const z3::model& model) {
+        auto res = model.eval(expr);
+        if (res.is_int()) return res.get_numeral_int();
+        return 0;
+    }
+}
+
+LinearEncoder::Component LinearEncoder::buildComponent(NonTerminal *nt, Rule *r, const std::string& prefix) {
     std::string name_prefix = prefix + "@" + r->semantics->name + "@";
-    auto int_type = std::make_shared<TInt>();
-    auto oup = ext::buildVar(int_type, name_prefix + "oup_ind", *ctx);
+    auto oup = buildIntVar(name_prefix + "oup_ind", ext->ctx);
     std::vector<z3::expr> inp_list;
     for (int i = 0; i < r->param_list.size(); ++i) {
-        auto inp = ext::buildVar(int_type, name_prefix + "inp_ind@" + std::to_string(i), *ctx);
+        auto inp = buildIntVar(name_prefix + "inp_ind@" + std::to_string(i), ext->ctx);
         inp_list.push_back(inp);
     }
     return {nt, r, oup, inp_list};
 }
 
-z3::expr_vector LineEncoder::encodeStructure(const std::string &prefix) {
+z3::expr_vector LinearEncoder::encodeStructure(const std::string &prefix) {
     component_list.clear();
     base->indexSymbol();
     for (int id = 0; id < base->symbol_list.size(); ++id) {
@@ -43,10 +54,10 @@ z3::expr_vector LineEncoder::encodeStructure(const std::string &prefix) {
         }
     }
 
-    z3::expr_vector cons_list(*ctx);
+    z3::expr_vector cons_list(ext->ctx);
 
     //structure constraint
-    z3::expr_vector oup_list(*ctx);
+    z3::expr_vector oup_list(ext->ctx);
     for (const auto& cx: component_list) {
         int lim = component_list.size();
         if (cx.nt->id) lim -= 1;
@@ -72,35 +83,44 @@ namespace {
         z3::expr_vector inp_value_list;
     };
 
-    ValueComponent buildValueComponent(const LineEncoder::Component& component, const std::string& prefix, z3::context& ctx) {
-        std::string name_prefix = prefix + "@" + component.rule->semantics->name + "@";
+    ValueComponent buildValueComponent(const LinearEncoder::Component& component, const std::string& prefix, Z3Extension* ext) {
+        std::string name_prefix = prefix + component.rule->semantics->name + "@";
         std::string oup_name = name_prefix + "oup_value";
-        auto oup_value = ext::buildVar(component.nt->type, oup_name, ctx);
-        z3::expr_vector inp_value_list(ctx);
+        auto oup_value = ext->buildVar(component.nt->type.get(), oup_name);
+        z3::expr_vector inp_value_list(ext->ctx);
         for (int i = 0; i < component.rule->param_list.size(); ++i) {
             std::string inp_name = name_prefix + "inp_value@" + std::to_string(i);
-            auto inp_value = ext::buildVar(component.rule->param_list[i]->type, inp_name, ctx);
+            auto inp_value = ext->buildVar(component.rule->param_list[i]->type.get(), inp_name);
             inp_value_list.push_back(inp_value);
         }
         return {oup_value, inp_value_list};
     }
 }
 
-std::pair<z3::expr, z3::expr_vector> LineEncoder::encodeExample(const z3::expr_vector &inp_list, const std::string &prefix) const {
+Z3EncodeRes LinearEncoder::encodeExample(const z3::expr_vector &inp_list, const std::string &prefix) const {
     base->indexSymbol();
     // build value component
     std::vector<ValueComponent> value_component_list;
     for (int i = 0; i < component_list.size(); ++i) {
-        value_component_list.push_back(buildValueComponent(component_list[i], prefix, *ctx));
+        value_component_list.push_back(buildValueComponent(component_list[i], prefix, ext));
     }
-    auto res = ext::buildVar(base->start->type, prefix + "@res", *ctx);
+    auto res = ext->buildVar(base->start->type.get(), prefix + "res");
 
-    z3::expr_vector cons_list(*ctx);
+    z3::expr_vector cons_list(ext->ctx);
     // semantics constraint
     for (int i = 0; i < component_list.size(); ++i) {
         const auto& semantics = component_list[i].rule->semantics;
         const auto& vc = value_component_list[i];
-        cons_list.push_back(ext::encodeZ3ExprForSemantics(semantics, vc.inp_value_list, inp_list) == vc.oup_value);
+        std::vector<Z3EncodeRes> sub_list;
+        //std::cout << "Encode component " << i << " " << component_list[i].rule->semantics->getName() << std::endl;
+        //std::cout << vc.inp_value_list << std::endl;
+        for (const auto& expr: vc.inp_value_list) {
+            z3::expr_vector empty_cons_list(ext->ctx);
+            sub_list.emplace_back(expr, empty_cons_list);
+        }
+        auto encode_res = ext->encodeZ3ExprForSemantics(semantics.get(), sub_list, inp_list);
+        cons_list.push_back(encode_res.res == vc.oup_value);
+        for (const auto& cons: encode_res.cons_list) cons_list.push_back(cons);
     }
 
     // structure constraint
@@ -124,42 +144,25 @@ std::pair<z3::expr, z3::expr_vector> LineEncoder::encodeExample(const z3::expr_v
     return {res, cons_list};
 }
 
-namespace {
-    int getInd(const Data& d) {
-        auto* iv = dynamic_cast<IntValue*>(d.get());
-        if (!iv) return -1;
-        return iv->w;
-    }
-}
-
-PProgram LineEncoder::programBuilder(int id, const z3::model &model) const {
+PProgram LinearEncoder::programBuilder(int id, const z3::model &model) const {
     int pos = -1;
     for (int i = 0; i < component_list.size(); ++i) {
-        auto oup_data = ext::getValueFromModel(component_list[i].oup, model, true);
-        if (getInd(oup_data) == id) {
-            assert(pos == -1);
-            pos = i;
+        int oup_data = getIntValue(component_list[i].oup, model);
+        if (oup_data == id) {
+            assert(pos == -1); pos = i;
         }
     }
     assert(pos != -1);
     auto& c = component_list[pos];
     ProgramList sub_list;
     for (auto& inp_var: c.inp_list) {
-        auto inp_data = ext::getValueFromModel(inp_var, model, true);
-        int inp_id = getInd(inp_data);
+        int inp_id = getIntValue(inp_var, model);
         assert(inp_id != -1);
         sub_list.push_back(programBuilder(inp_id, model));
     }
     return c.rule->buildProgram(std::move(sub_list));
 }
 
-PProgram LineEncoder::programBuilder(const z3::model &model) const {
+PProgram LinearEncoder::programBuilder(const z3::model &model) const {
     return programBuilder(component_list.size(), model);
-}
-
-LineEncoderBuilder::LineEncoderBuilder(int _factor, const std::map<std::string, int> &_special_usage):
-        factor(_factor), special_usage(_special_usage) {
-}
-Z3GrammarEncoder * LineEncoderBuilder::buildEncoder(Grammar *grammar, z3::context *ctx) const {
-    return new LineEncoder(grammar, ctx, factor, special_usage);
 }

@@ -6,26 +6,32 @@
 #define ISTOOL_SOLVER_H
 
 #include "istool/basic/specification.h"
+#include "istool/basic/verifier.h"
+#include "istool/basic/time_guard.h"
 
 class Solver {
 public:
-    virtual PProgram synthesis(Specification* spec) = 0;
+    Specification* spec;
+    virtual FunctionContext synthesis(TimeGuard* guard = nullptr) = 0;
+    Solver(Specification* _spec);
     virtual ~Solver() = default;
 };
 
 class PBESolver {
 public:
-    virtual PProgram synthesis(Specification* spec, const std::vector<PExample>& example_list) = 0;
+    Specification* spec;
+    PBESolver(Specification* _spec);
+    virtual FunctionContext synthesis(const std::vector<Example>& example_list, TimeGuard* guard = nullptr) = 0;
     virtual ~PBESolver() = default;
 };
 
 class CEGISSolver: public Solver {
 public:
     PBESolver* pbe_solver;
-    CEGISSolver(PBESolver* _pbe_solver);
-    virtual PProgram synthesis(Specification* spec);
+    Verifier* v;
+    CEGISSolver(PBESolver* _pbe_solver, Verifier* _v);
+    virtual FunctionContext synthesis(TimeGuard* guard = nullptr);
     virtual ~CEGISSolver();
 };
-
 
 #endif //ISTOOL_SOLVER_H

@@ -41,7 +41,10 @@ public:
     virtual bool equal(Type* type);
 };
 
+typedef std::pair<TypeList, PType> Signature;
+
 namespace type {
+    std::string typeList2String(const TypeList& type_list);
     bool equal(const PType& t1, const PType& t2);
     PType getTBool();
 }

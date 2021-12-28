@@ -10,23 +10,27 @@
 class Program;
 typedef std::shared_ptr<Program> PProgram;
 typedef std::vector<PProgram> ProgramList;
+typedef std::vector<ProgramList> ProgramStorage;
 
 class Program {
 public:
     PSemantics semantics;
     ProgramList sub_list;
-    Program(PSemantics&& _semantics, const ProgramList& _sub_list);
+    Program(const PSemantics& _semantics, const ProgramList& _sub_list);
     int size() const;
     Data run(ExecuteInfo* info) const;
     std::string toString() const;
     virtual ~Program() = default;
 };
 
+typedef std::function<PProgram(const PSemantics&, const ProgramList&)> ProgramConstructor;
+
 namespace program {
     PProgram buildParam(int id, const PType& type = nullptr);
     PProgram buildConst(const Data& w);
-    Data run(const PProgram& program, const DataList& inp);
-    Data runWithFunc(const PProgram& program, const DataList& inp, const FunctionContext& ctx);
+    PProgram programMap(Program* p, const ProgramConstructor& c);
+    Data run(Program* program, const DataList& inp);
+    Data runWithFunc(Program* program, const DataList& inp, const FunctionContext& ctx);
 }
 
 #endif //ISTOOL_PROGRAM_H

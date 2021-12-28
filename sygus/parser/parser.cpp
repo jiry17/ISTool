@@ -8,6 +8,7 @@
 #include "istool/basic/config.h"
 #include "istool/ext/z3/z3_extension.h"
 #include "istool/ext/z3/z3_verifier.h"
+#include "istool/ext/z3/z3_example_space.h"
 #include "glog/logging.h"
 
 namespace {
@@ -101,20 +102,6 @@ namespace {
         return std::make_shared<SynthInfo>(name, inp_type_list, oup_type, grammar);
     }
 
-    PExample parseIOExample(const Json::Value& value, const std::string& name) {
-        TEST_PARSER(value.isArray() && value.size() == 2)
-        auto example_node = value[0];
-        TEST_PARSER(example_node.isArray() && example_node.size() == 3)
-        auto op_node = example_node[0], fun_call_node = example_node[1], oup_node = example_node[2];
-        TEST_PARSER(op_node.isString() && op_node.asString() == "=")
-        TEST_PARSER(fun_call_node.isArray() && fun_call_node[0].isString() && fun_call_node[0].asString() == name)
-        DataList inp_list;
-        for (int i = 1; i < fun_call_node.size(); ++i) {
-            inp_list.push_back(json::getDataFromJson(value));
-        }
-        return std::make_shared<IOExample>(std::move(inp_list), std::move(json::getDataFromJson(oup_node)));
-    }
-
     PProgram buildConsProgram(const Json::Value& entry, const std::map<std::string, std::pair<int, PType>>& var_info_map,
             const std::map<std::string, PSynthInfo>& syn_info_map, std::map<std::string, PProgram>& cache, Env* env) {
         auto feature = entry.toStyledString();
@@ -148,11 +135,24 @@ namespace {
         }
         return cache[feature] = std::make_shared<Program>(std::move(sem), std::move(sub_list));
     }
+
+    IOExample parseIOExample(const Json::Value& node, const PSynthInfo& info) {
+        auto main = node[1];
+        auto op = main[0].asString(); auto l = main[2]; auto r = main[3];
+        if (!l.isArray() || !l[0].isString() || l[0].asString() != info->name) std::swap(l, r);
+        TEST_PARSER(op == "=" && l.isArray() && l[0].isString() && l[0].asString() == info->name)
+        auto oup = json::getDataFromJson(r);
+        DataList inp_list;
+        for (int i = 1; i < l.size(); ++i) {
+            inp_list.push_back(json::getDataFromJson(l[i]));
+        }
+        return {inp_list, oup};
+    }
 }
 
 Json::Value parser::getJsonForSyGuSFile(const std::string &file_name) {
     std::string oup_file = "/tmp/" + std::to_string(rand()) + ".json";
-    std::string python_path = config::KSourcePath + "basic/parser/sygus/python";
+    std::string python_path = config::KSourcePath + "/sygus/parser/python";
     std::string command = "cd " + python_path + "; python3 main.py " + file_name + " " + oup_file;
     system(command.c_str());
     Json::Value root = json::loadJsonFromFile(oup_file);
@@ -172,8 +172,8 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     auto theory_list = getEntriesViaName(root, "set-logic");
     assert(theory_list.size() == 1);
     auto theory = getTheory(theory_list[0][1].asString());
-    ext::sygus::initSyGuSExtension(env, theory);
-    ext::sygus::loadSyGuSTheories(env, theory::loadBasicSemantics);
+    sygus::initSyGuSExtension(env, theory);
+    sygus::loadSyGuSTheories(env, theory::loadBasicSemantics);
 
     auto fun_list = getEntriesViaName(root, "synth-fun");
     std::vector<PSynthInfo> info_list;
@@ -186,10 +186,26 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     }
 
     auto cons_list = getEntriesViaName(root, "constraint");
-    auto declare_var_list = getEntriesViaName(root, "declare_var");
-    if (!declare_var_list.empty()) {
-        ext::sygus::loadSyGuSTheories(env, theory::loadZ3Semantics);
+    auto declare_var_list = getEntriesViaName(root, "declare-var");
+
+    if (declare_var_list.empty()) {
+        // try build PBE spec
+        try {
+            IOExampleList example_list;
+            TEST_PARSER(info_list.size() == 1)
+            auto syn_info = info_list[0];
+            std::string name = syn_info->name;
+            for (auto& cons: cons_list) {
+                example_list.push_back(parseIOExample(cons, syn_info));
+            }
+            auto* example_space = example::buildFiniteIOExampleSpace(example_list, name, env);
+            return new Specification(info_list, env, example_space);
+        } catch (ParseError& e) {
+        }
     }
+
+    sygus::loadSyGuSTheories(env, theory::loadZ3Semantics);
+
     TypeList var_type_list;
     std::map<std::string, std::pair<int, PType>> var_info_map;
     for (auto& var_info: declare_var_list) {
@@ -199,12 +215,25 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
         var_type_list.push_back(type);
         var_info_map[name] = {id, type};
     }
-
     ProgramList cons_program_list;
     std::map<std::string, PProgram> cache;
     for (auto& entry: cons_list) {
         cons_program_list.push_back(buildConsProgram(entry[1], var_info_map, syn_info_map, cache, env));
     }
+    if (cons_program_list.empty()) {
+        LOG(FATAL) << "Constraint should not be empty";
+    }
+    auto merged_program = cons_program_list[0];
+    for (int i = 1; i < cons_program_list.size(); ++i) {
+        ProgramList sub_list = {merged_program, cons_program_list[i]};
+        merged_program = std::make_shared<Program>(env->getSemantics("&&"), sub_list);
+    }
 
+    std::unordered_map<std::string, Signature> sig_map;
+    for (auto& info: info_list) {
+        sig_map[info->name] = {info->inp_type_list, info->oup_type};
+    }
 
+    auto* example_space = example::buildZ3ExampleSpace(merged_program, env, var_type_list, sig_map);
+    return new Specification(info_list, env, example_space);
 }

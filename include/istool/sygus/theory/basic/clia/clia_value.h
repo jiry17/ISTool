@@ -20,7 +20,6 @@ public:
 namespace theory {
     namespace clia {
         int getIntValue(const Data& data);
-        int getBoolValue(const Data& data);
     }
 }
 

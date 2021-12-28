@@ -16,7 +16,6 @@ public:
 namespace theory {
     namespace clia {
         PType getTInt();
-        PType getTBool();
     }
 }
 

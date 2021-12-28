@@ -23,7 +23,7 @@ bool IntValue::leq(Value *value) const {
     if (!iv) {
         LOG(FATAL) << "Expect IntValue, but get " << value->toString();
     }
-    return w < iv->w;
+    return w <= iv->w;
 }
 
 int theory::clia::getIntValue(const Data &data) {
@@ -32,11 +32,4 @@ int theory::clia::getIntValue(const Data &data) {
         LOG(FATAL) << "Expected IntValue, but get " << data.toString();
     }
     return iv->w;
-}
-int theory::clia::getBoolValue(const Data& data) {
-    auto* bv = dynamic_cast<BoolValue*>(data.get());
-    if (!bv) {
-        LOG(FATAL) << "Expected BoolValue, but get " << data.toString();
-    }
-    return bv->w;
 }

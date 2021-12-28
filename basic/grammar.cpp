@@ -25,9 +25,8 @@ std::string Rule::toString() const {
     }
     return res + ")";
 }
-PProgram Rule::buildProgram(ProgramList &&sub_list) {
-    auto sem = semantics;
-    return std::make_shared<Program>(std::move(sem), sub_list);
+PProgram Rule::buildProgram(const ProgramList &sub_list) {
+    return std::make_shared<Program>(semantics, sub_list);
 }
 
 Grammar::Grammar(NonTerminal *_start, const NTList &_symbol_list): start(_start), symbol_list(_symbol_list) {

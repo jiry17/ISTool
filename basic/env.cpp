@@ -5,6 +5,10 @@
 #include "istool/basic/env.h"
 #include "glog/logging.h"
 
+Env::Env() {
+    semantics::loadLogicSemantics(this);
+}
+
 Data * Env::getConstRef(const std::string &name, const Data& default_value) {
     if (const_pool.find(name) == const_pool.end()) {
         const_pool[name] = new Data(default_value);

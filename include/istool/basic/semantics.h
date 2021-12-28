@@ -38,7 +38,7 @@ class TypedSemantics {
 public:
     PType oup_type;
     TypeList inp_type_list;
-    TypedSemantics(PType&& _oup_type, TypeList&& _inp_list): oup_type(_oup_type), inp_type_list(_inp_list) {}
+    TypedSemantics(const PType& _oup_type, const TypeList& _inp_list): oup_type(_oup_type), inp_type_list(_inp_list) {}
 };
 
 class FullExecutedSemantics: public Semantics {
@@ -50,7 +50,7 @@ public:
 
 class NormalSemantics: public FullExecutedSemantics, public TypedSemantics {
 public:
-    NormalSemantics(const std::string& name, PType&& _oup_type, TypeList&& _inp_list);
+    NormalSemantics(const std::string& name, const PType& _oup_type, const TypeList& _inp_list);
 };
 
 class ParamSemantics: public NormalSemantics {
@@ -69,7 +69,10 @@ public:
     ~ConstSemantics() = default;
 };
 
-typedef std::unordered_map<std::string, std::shared_ptr<Program>> FunctionContext;
+class FunctionContext: public std::unordered_map<std::string, std::shared_ptr<Program>> {
+public:
+    std::string toString() const;
+};
 
 class FunctionContextInfo: public ExecuteInfo {
 public:
@@ -81,12 +84,47 @@ public:
 
 class InvokeSemantics: public NormalSemantics {
 public:
-    InvokeSemantics(const std::string& _func_name, PType&& oup_type, TypeList&& inp_list);
+    InvokeSemantics(const std::string& _func_name, const PType& oup_type, const TypeList& inp_list);
     virtual Data run(DataList&&, ExecuteInfo* info);
     virtual ~InvokeSemantics() = default;
 };
 
+#define DefineNormalSemantics(name) \
+class name ## Semantics : public NormalSemantics { \
+public: \
+    name ## Semantics(); \
+    virtual Data run(DataList &&inp_list, ExecuteInfo *info); \
+    ~name ## Semantics() = default; \
+};
+
+// basic logic semantics
+DefineNormalSemantics(Not)
+
+class AndSemantics : public Semantics, public TypedSemantics {
+public:
+    AndSemantics();
+    virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo *info);
+    ~AndSemantics() = default;
+};
+
+class OrSemantics : public Semantics, public TypedSemantics {
+public:
+    OrSemantics();
+    virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo *info);
+    ~OrSemantics() = default;
+};
+
+class ImplySemantics: public Semantics, public TypedSemantics {
+public:
+    ImplySemantics();
+    virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo* info);
+};
+
+class Env;
+#define LoadSemantics(name, sem) env->setSemantics(name, std::make_shared<sem ## Semantics>())
+
 namespace semantics {
+    void loadLogicSemantics(Env* env);
     PSemantics buildParamSemantics(int id, const PType& type = nullptr);
     PSemantics buildConstSemantics(const Data& w);
 }

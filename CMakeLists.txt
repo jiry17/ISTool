@@ -26,8 +26,8 @@ add_subdirectory(basic)
 add_subdirectory(ext)
 add_subdirectory(sygus)
 add_subdirectory(solver)
-
+ 
 set(SRC_LIBS basic_lib ext_lib ${SyGuS_LIBS} solver_lib)
 
 add_executable(ISTool main.cpp)
-target_link_libraries(ISTool ${SRC_LIBS} ${THIRDPARTY_LIBS} )
+target_link_libraries(ISTool ${SRC_LIBS} ${THIRDPARTY_LIBS} ${SRC_LIBS})

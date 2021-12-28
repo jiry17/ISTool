@@ -4,8 +4,12 @@
 
 #include "istool/basic/semantics.h"
 #include "istool/basic/program.h"
+#include "istool/basic/env.h"
 #include <map>
 #include "glog/logging.h"
+
+ExecuteInfo::ExecuteInfo(const DataList &_param_value): param_value(_param_value) {
+}
 
 Semantics::Semantics(const std::string &_name): name(_name) {
 }
@@ -20,7 +24,7 @@ Data FullExecutedSemantics::run(const std::vector<std::shared_ptr<Program>> &sub
     return run(std::move(res), info);
 }
 
-NormalSemantics::NormalSemantics(const std::string& name, PType &&_oup_type, TypeList &&_inp_list):
+NormalSemantics::NormalSemantics(const std::string& name, const PType &_oup_type, const TypeList &_inp_list):
     TypedSemantics(std::move(_oup_type), std::move(_inp_list)), FullExecutedSemantics(name) {
 }
 
@@ -50,6 +54,16 @@ PSemantics semantics::buildParamSemantics(int id, const PType &type) {
     return std::make_shared<ParamSemantics>(std::move(tmp), id);
 }
 
+std::string FunctionContext::toString() const {
+    if (empty()) return "{}";
+    std::string res = "{";
+    for (const auto& info: *this) {
+        res += info.first + ":" + info.second->toString() + ";";
+    }
+    res[res.length() - 1] = '}';
+    return res;
+}
+
 FunctionContextInfo::FunctionContextInfo(const DataList &_param, const FunctionContext &_context):
     ExecuteInfo(_param), context(_context) {
 }
@@ -60,7 +74,7 @@ std::shared_ptr<Program> FunctionContextInfo::getFunction(const std::string &nam
     return context.find(name)->second;
 }
 
-InvokeSemantics::InvokeSemantics(const std::string &_func_name, PType &&oup_type, TypeList &&inp_list):
+InvokeSemantics::InvokeSemantics(const std::string &_func_name, const PType &oup_type, const TypeList &inp_list):
     NormalSemantics(_func_name, std::move(oup_type), std::move(inp_list)) {
 }
 
@@ -68,5 +82,44 @@ Data InvokeSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto* f_info = dynamic_cast<FunctionContextInfo*>(info);
     auto p = f_info->getFunction(name);
     if (!p) throw SemanticsError();
-    return program::run(p, inp_list);
+    return program::run(p.get(), inp_list);
+}
+
+#define TBOOL type::getTBool()
+
+NotSemantics::NotSemantics(): NormalSemantics("!", TBOOL, {TBOOL}) {
+}
+Data NotSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    return Data(std::make_shared<BoolValue>(!inp_list[0].isTrue()));
+}
+
+AndSemantics::AndSemantics(): Semantics("&&"), TypedSemantics(TBOOL, {TBOOL, TBOOL}) {
+}
+Data AndSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
+    auto x = sub_list[0]->run(info);
+    if (!x.isTrue()) return x;
+    return sub_list[1]->run(info);
+}
+
+OrSemantics::OrSemantics(): Semantics("||"), TypedSemantics(TBOOL, {TBOOL, TBOOL}) {
+}
+Data OrSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
+    auto x = sub_list[0]->run(info);
+    if (x.isTrue()) return x;
+    return sub_list[1]->run(info);
+}
+
+ImplySemantics::ImplySemantics(): Semantics("=>"), TypedSemantics(TBOOL, {TBOOL, TBOOL}) {
+}
+Data ImplySemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
+    auto x = sub_list[0]->run(info);
+    if (!x.isTrue()) return Data(std::make_shared<BoolValue>(true));
+    return sub_list[1]->run(info);
+}
+
+void semantics::loadLogicSemantics(Env* env) {
+    LoadSemantics("=>", Imply); LoadSemantics("!", Not);
+    LoadSemantics("&&", And); LoadSemantics("||", Or);
+    LoadSemantics("and", And); LoadSemantics("or", Or);
+    LoadSemantics("not", Not);
 }

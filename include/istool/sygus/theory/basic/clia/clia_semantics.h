@@ -32,79 +32,13 @@ public:
     ~IntTimesSemantics() = default;
 };
 
-class IntDivSemantics : public NormalSemantics {
-public:
-    IntDivSemantics();
-    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
-    ~IntDivSemantics() = default;
-};
-
-class IntModSemantics : public NormalSemantics {
-public:
-    IntModSemantics();
-    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
-    ~IntModSemantics() = default;
-};
-
-class LqSemantics : public NormalSemantics {
-public:
-    LqSemantics();
-    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
-    ~LqSemantics() = default;
-};
-
-class GqSemantics : public NormalSemantics {
-public:
-    GqSemantics();
-    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
-    ~GqSemantics() = default;
-};
-
-class LeqSemantics : public NormalSemantics {
-public:
-    LeqSemantics();
-    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
-    ~LeqSemantics() = default;
-};
-
-class GeqSemantics : public NormalSemantics {
-public:
-    GeqSemantics();
-    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
-};
-
-class EqSemantics: public NormalSemantics {
-public:
-    EqSemantics();
-    virtual Data run(DataList &&inp_list, ExecuteInfo* info);
-};
-
-class NotSemantics : public NormalSemantics {
-public:
-    NotSemantics();
-    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
-    ~NotSemantics() = default;
-};
-
-class AndSemantics : public Semantics, public TypedSemantics {
-public:
-    AndSemantics();
-    virtual Data run(const ProgramList &sub_list, ExecuteInfo *info);
-    ~AndSemantics() = default;
-};
-
-class OrSemantics : public Semantics, public TypedSemantics {
-public:
-    OrSemantics();
-    virtual Data run(const ProgramList &sub_list, ExecuteInfo *info);
-    ~OrSemantics() = default;
-};
-
-class ImplySemantics: public Semantics, public TypedSemantics {
-public:
-    ImplySemantics();
-    virtual Data run(const ProgramList& sub_list, ExecuteInfo* info);
-};
+DefineNormalSemantics(IntDiv)
+DefineNormalSemantics(IntMod)
+DefineNormalSemantics(Lq)
+DefineNormalSemantics(Gq)
+DefineNormalSemantics(Leq)
+DefineNormalSemantics(Geq)
+DefineNormalSemantics(Eq)
 
 class IteSemantics : public Semantics, public TypedSemantics {
 public:

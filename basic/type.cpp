@@ -40,3 +40,12 @@ PType type::getTBool() {
     }
     return bool_type;
 }
+
+std::string type::typeList2String(const TypeList &type_list) {
+    std::string res = "[";
+    for (int i = 0; i < type_list.size(); ++i) {
+        if (i) res += ",";
+        res += type_list[i]->getName();
+    }
+    return res + "]";
+}

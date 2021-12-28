@@ -18,7 +18,3 @@ PType theory::clia::getTInt() {
     }
     return int_type;
 }
-
-PType theory::clia::getTBool() {
-    return type::getTBool();
-}
