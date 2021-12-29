@@ -74,7 +74,7 @@ Z3EncodeRes Z3IteSemantics::encodeZ3Expr(const std::vector<Z3EncodeRes> &inp_lis
 }
 
 void theory::clia::loadZ3Semantics(Env *env) {
-    auto* z3_env = ext::z3::getZ3Extension(env);
+    auto* z3_env = ext::z3::getExtension(env);
     LoadZ3Semantics(z3_env, "+", IntPlus); LoadZ3Semantics(z3_env, "-", IntMinus);
     LoadZ3Semantics(z3_env, "*", IntTimes); LoadZ3Semantics(z3_env, "div", IntDiv);
     LoadZ3Semantics(z3_env, "mod", IntMod); LoadZ3Semantics(z3_env, "<", Lq);

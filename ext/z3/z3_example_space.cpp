@@ -6,7 +6,7 @@
 #include "glog/logging.h"
 
 Z3ExampleSpace::Z3ExampleSpace(const PProgram &_cons_prog, Env *_env, const TypeList& _type_list, const std::unordered_map<std::string, Signature> &_sig_map):
-    ExampleSpace(_cons_prog), ext(ext::z3::getZ3Extension(_env)), type_list(_type_list), sig_map(_sig_map) {
+        ExampleSpace(_cons_prog), ext(ext::z3::getExtension(_env)), type_list(_type_list), sig_map(_sig_map) {
 }
 Z3IOExampleSpace::Z3IOExampleSpace(const PProgram &_cons_prog, Env *_env, const TypeList& _type_list, const std::unordered_map<std::string, Signature> &sig_map,
         const std::string& _name, const ProgramList &_inp_list, const PProgram &_oup_cons):

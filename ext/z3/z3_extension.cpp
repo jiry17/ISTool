@@ -63,9 +63,6 @@ Z3EncodeRes Z3Extension::encodeZ3ExprForSemantics(Semantics *semantics, const st
         return {buildConst(cs->w), {ctx}};
     }
     auto* zs = getZ3Semantics(semantics);
-    //std::cout << semantics->getName() << ": ";
-    //for (auto& inp: inp_list) std::cout << inp.toString() << " "; std::cout << std::endl;
-    //std::cout << zs->encodeZ3Expr(inp_list).toString() << std::endl;
     return zs->encodeZ3Expr(inp_list);
 }
 
@@ -92,7 +89,7 @@ Z3Extension::~Z3Extension() {
 
 const std::string KZ3Name = "Z3";
 
-Z3Extension * ext::z3::getZ3Extension(Env *env) {
+Z3Extension * ext::z3::getExtension(Env *env) {
     auto* res = env->getExtension(KZ3Name);
     if (res) {
         auto* z3_ext = dynamic_cast<Z3Extension*>(res);

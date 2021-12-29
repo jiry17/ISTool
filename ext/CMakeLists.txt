@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(ISToolExt)
 
-file(GLOB z3_files "z3/*.cpp" "z3/*.h" "z3/semantics/*.cpp" "z3/semantics/*.h")
-add_library(ext_lib STATIC ${z3_files})
+aux_source_directory(z3 Z3_SOURCE)
+aux_source_directory(vsa VSA_SOURCE)
+add_library(ext_lib STATIC ${Z3_SOURCE} ${VSA_SOURCE})
 

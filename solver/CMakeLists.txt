@@ -3,4 +3,5 @@ project(ISToolSolver)
 
 aux_source_directory(component CB_SRC)
 aux_source_directory(enum ENUM_SRC)
-add_library(solver_lib STATIC solver.cpp ${CB_SRC} ${ENUM_SRC})
+aux_source_directory(vsa VSA_SRC)
+add_library(solver_lib STATIC solver.cpp ${CB_SRC} ${ENUM_SRC} ${VSA_SRC})

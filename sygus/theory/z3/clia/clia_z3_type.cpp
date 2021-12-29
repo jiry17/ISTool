@@ -44,7 +44,7 @@ z3::expr Z3BoolType::buildVar(Type *type, const std::string &name, z3::context &
 }
 
 void theory::clia::loadZ3Type(Env *env) {
-    auto* ext = ext::z3::getZ3Extension(env);
+    auto* ext = ext::z3::getExtension(env);
     ext->registerZ3Type(new Z3IntType());
     ext->registerZ3Type(new Z3BoolType());
 }

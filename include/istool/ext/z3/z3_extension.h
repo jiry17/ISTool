@@ -33,7 +33,7 @@ public:
 
 namespace ext {
     namespace z3 {
-        Z3Extension* getZ3Extension(Env* env);
+        Z3Extension* getExtension(Env* env);
     }
 }
 

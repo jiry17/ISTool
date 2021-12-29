@@ -22,7 +22,7 @@ public:
     ~TimeGuard() = default;
 };
 
-#define TimeCheck(g) if (g) g->check();
+#define TimeCheck(g) if (g) g->check()
 
 
 #endif //ISTOOL_TIME_GUARD_H

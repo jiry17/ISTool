@@ -86,7 +86,7 @@ std::vector<FunctionContext> solver::enumerate(const std::vector<PSynthInfo> &in
                     for (auto* sub_symbol: rule->param_list) sub_id_list.push_back(sub_symbol->id);
                     ProgramStorage tmp = merge(sub_id_list, size, storage_list);
                     for (const auto& sub_list: tmp) {
-                        TimeCheck(c.guard)
+                        TimeCheck(c.guard);
                         auto p = rule->buildProgram(sub_list);
                         if (o->isDuplicated(info->name, symbol, p))
                             continue;
