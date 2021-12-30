@@ -106,3 +106,129 @@ void ext::vsa::cleanUpVSA(const PVSANode& root) {
         node->edge_list.resize(now);
     }
 }
+
+namespace {
+    bool _isAcyclic(VSANode* node, std::vector<bool>& in_stack, std::vector<bool>& visited) {
+        if (visited[node->id]) return !in_stack[node->id];
+        visited[node->id] = true; in_stack[node->id] = true;
+        for (const auto& edge: node->edge_list) {
+            for (const auto& sub_node: edge->node_list) {
+                if (!_isAcyclic(sub_node.get(), in_stack, visited)) {
+                    return false;
+                }
+            }
+        }
+        in_stack[node->id] = false;
+        return true;
+    }
+}
+
+bool ext::vsa::isAcyclic(VSANode *root, int n) {
+    if (n == -1) n = indexVSANode(root);
+    std::vector<bool> in_stack(n);
+    std::vector<bool> visited(n);
+    for (int i = 0; i < n; ++i) in_stack[i] = false, visited[i] = false;
+    return _isAcyclic(root, in_stack, visited);
+}
+
+namespace {
+    const int KSizeInf = 1e9;
+    int _getSizeForAcyclicVSA(VSANode* node, std::vector<int>& min_size) {
+        if (min_size[node->id] != KSizeInf) return min_size[node->id];
+        int size = KSizeInf;
+        for (const auto& edge: node->edge_list) {
+            int edge_size = 1;
+            for (const auto& sub_node: edge->node_list) {
+                edge_size = std::min(KSizeInf, edge_size + _getSizeForAcyclicVSA(sub_node.get(), min_size));
+            }
+            size = std::min(size, edge_size);
+        }
+        return min_size[node->id] = size;
+    }
+
+    struct NodeSizeInfo {
+        int id, size;
+    };
+    int operator > (const NodeSizeInfo& x, const NodeSizeInfo& y) {
+        return x.size > y.size;
+    }
+
+    int _getSizeForCyclicVSA(const PVSANode& root, int n, std::vector<int>& min_size) {
+        VSANodeList node_list(n); _collectAllNodes(root, node_list);
+        std::vector<bool> in_queue(n);
+        std::priority_queue<NodeSizeInfo, std::vector<NodeSizeInfo>, std::greater<>>Q;
+        for (const auto& node: node_list) {
+            for (const auto& edge: node->edge_list) {
+                if (edge->node_list.empty()) {
+                    min_size[node->id] = 1;
+                    Q.push({node->id, 1});
+                }
+            }
+        }
+
+        std::vector<std::vector<std::pair<int, int>>> rev_edge_list(n);
+        for (const auto& node: node_list) {
+            for (int i = 0; i < node->edge_list.size(); ++i) {
+                for (const auto& sub_node: node->edge_list[i]->node_list) {
+                    rev_edge_list[sub_node->id].emplace_back(node->id, i);
+                }
+            }
+        }
+
+        while (!Q.empty()) {
+            auto info = Q.top(); Q.pop();
+            if (min_size[info.id] != info.size) continue;
+            for (const auto& rev_edge: rev_edge_list[info.id]) {
+                auto* pre_node = node_list[rev_edge.first].get();
+                auto* pre_edge = pre_node->edge_list[rev_edge.second].get();
+                int edge_size = 1;
+                for (const auto& sub_node: pre_edge->node_list) {
+                    edge_size = std::min(KSizeInf, edge_size + min_size[sub_node->id]);
+                }
+                if (edge_size < min_size[pre_node->id]) {
+                    min_size[pre_node->id] = edge_size;
+                    Q.push({pre_node->id, edge_size});
+                }
+            }
+        }
+    }
+
+    PProgram constructMinProgram(VSANode* node, std::vector<int>& min_size, ProgramList& cache) {
+        if (cache[node->id]) return cache[node->id];
+        for (const auto& edge: node->edge_list) {
+            int edge_size = 1;
+            for (const auto& sub_node: edge->node_list) {
+                edge_size = std::min(KSizeInf, edge_size + min_size[sub_node->id]);
+            }
+            if (edge_size == min_size[node->id]) {
+                ProgramList sub_list;
+                for (const auto& sub_node: edge->node_list) {
+                    sub_list.push_back(constructMinProgram(sub_node.get(), min_size, cache));
+                }
+                return cache[node->id] = std::make_shared<Program>(edge->semantics, sub_list);
+            }
+        }
+        assert(0);
+    }
+
+}
+
+PProgram ext::vsa::getMinimalProgram(const PVSANode& root) {
+    int n = indexVSANode(root.get());
+
+    // get min size for all nodes
+    std::vector<int> min_size(n);
+    for (int i = 0; i < n; ++i) min_size[i] = KSizeInf;
+    if (isAcyclic(root.get(), n)) {
+        _getSizeForAcyclicVSA(root.get(), min_size);
+    } else {
+        _getSizeForCyclicVSA(root, n, min_size);
+    }
+
+    if (min_size[0] == KSizeInf) {
+        LOG(FATAL) << "The given VSA is empty";
+    }
+    ProgramList cache(n);
+    return constructMinProgram(root.get(), min_size, cache);
+
+}

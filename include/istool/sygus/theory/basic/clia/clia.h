@@ -9,7 +9,9 @@
 #include "istool/sygus/theory/basic/clia/clia_value.h"
 
 namespace theory {
-    extern const std::string KCLIAINFName;
+    namespace clia {
+        extern const std::string KINFName;
+    }
 }
 
 #endif //ISTOOL_CLIA_H

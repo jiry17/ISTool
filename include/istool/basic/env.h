@@ -15,6 +15,7 @@ public:
 
 class Env {
     std::unordered_map<std::string, Data*> const_pool;
+    std::unordered_map<std::string, DataList*> const_list_pool;
     std::unordered_map<std::string, Extension*> extension_pool;
     std::unordered_map<std::string, PSemantics> semantics_pool;
 public:
@@ -22,6 +23,9 @@ public:
 
     Data* getConstRef(const std::string& name, const Data& default_value = {});
     void setConst(const std::string& name, const Data& value);
+
+    DataList* getConstListRef(const std::string& name);
+    void setConst(const std::string& name, const DataList& value);
 
     void registerExtension(const std::string& name, Extension* ext);
     Extension* getExtension(const std::string& name) const;

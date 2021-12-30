@@ -50,6 +50,10 @@ namespace ext {
     namespace vsa {
         void cleanUpVSA(const PVSANode& root);
         int indexVSANode(VSANode* root);
+        bool isAcyclic(VSANode* root, int n = -1);
+
+        // TODO: support weighted size
+        PProgram getMinimalProgram(const PVSANode& root);
     }
 }
 

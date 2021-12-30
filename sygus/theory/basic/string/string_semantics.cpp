@@ -103,7 +103,7 @@ Data StrToIntSemantics::run(DataList &&inp_list, ExecuteInfo* info) {
 }
 
 void theory::loadStringSemantics(Env *env) {
-    auto* inf = env->getConstRef(theory::KCLIAINFName);
+    auto* inf = env->getConstRef(theory::clia::KINFName);
     LoadSemantics("str.++", StringCat); LoadSemantics("str.len", StringLen);
     LoadSemantics("std.at", StringAt); LoadSemantics("str.substr", StringSubStr);
     LoadSemantics("str.prefixof", StringPrefixOf); LoadSemantics("str.suffixof", StringSuffixOf);
