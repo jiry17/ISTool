@@ -7,15 +7,19 @@
 #include "istool/basic/bitset.h"
 #include "glog/logging.h"
 #include <unordered_set>
+#include <cmath>
 
 EuTermSolver::EuTermSolver(const PSynthInfo &_tg, ExampleSpace *_example_space): tg(_tg), example_space(_example_space) {
 }
-EuUnifier::EuUnifier(const PSynthInfo &_cg, ExampleSpace *_example_space): cg(_cg), example_space(_example_space) {
+EuUnifier::EuUnifier(const PSynthInfo &_cg, ExampleSpace *_example_space, const PSemantics& _ite): cg(_cg), example_space(_example_space), ite(_ite) {
     auto* io_space = dynamic_cast<IOExampleSpace*>(_example_space);
     if (!io_space) LOG(FATAL) << "EuUnifier supports only IOExampleSpace";
 }
 EuSolver::EuSolver(Specification *_spec, const PSynthInfo &tg, const PSynthInfo &cg):
-    STUNSolver(_spec, new EuTermSolver(tg, _spec->example_space), new EuUnifier(cg, _spec->example_space)) {
+    STUNSolver(_spec, new EuTermSolver(tg, _spec->example_space), new EuUnifier(cg, _spec->example_space, _spec->env->getSemantics("ite"))) {
+    if (spec->info_list[0]->name != tg->name || spec->info_list[0]->name != cg->name) {
+        LOG(INFO) << "The names of terms and conditions should be equal to the target name";
+    }
 }
 
 namespace {
@@ -46,7 +50,7 @@ namespace {
             if (feature_set.find(feature) == feature_set.end()) {
                 term_list.push_back(info.begin()->second);
             }
-            if (is_finished) return true;
+            return is_finished;
         }
     };
 }
@@ -67,9 +71,9 @@ ProgramList EuTermSolver::synthesisTerms(const ExampleList &example_list, TimeGu
 
 namespace {
     struct UnifyInfo {
-        PProgram predicate;
+        PProgram prog;
         Bitset info;
-        UnifyInfo(const PProgram& _pred, const Bitset& _info): predicate(_pred), info(_info) {
+        UnifyInfo(const PProgram& _prog, const Bitset& _info): prog(_prog), info(_info) {
         }
     };
 
@@ -92,38 +96,136 @@ namespace {
             auto feature = info.toString();
             if (feature_set.find(feature) == feature_set.end()) {
                 info_list.emplace_back(prog, info);
+                feature_set.insert(feature);
+                return true;
             }
+            return false;
         }
     };
+
+    const double KDoubleINF = 1e100;
+    const double KDoubleEps = 1e-8;
 
     class DTLearner {
     public:
         std::vector<UnifyInfo> pred_info_list, term_info_list;
         int n;
-        DTLearner(const std::vector<UnifyInfo>& _info_list, const std::vector<UnifyInfo>& _term_list):
-            pred_info_list(_info_list), term_info_list(_term_list), n(term_info_list[0].info.size()) {
+        PSemantics ite;
+        DTLearner(const std::vector<UnifyInfo>& _info_list, const std::vector<UnifyInfo>& _term_list, const PSemantics& _ite):
+            pred_info_list(_info_list), term_info_list(_term_list), n(_term_list[0].info.size()), ite(_ite) {
         }
+
+        std::pair<std::vector<int>, std::vector<int>> dividePtsByPredicate(const std::vector<int>& pts, int id) {
+            std::vector<int> true_pts, false_pts;
+            for (int pts_id: pts) {
+                if (pred_info_list[id].info[pts_id]) {
+                    true_pts.push_back(pts_id);
+                } else false_pts.push_back(pts_id);
+            }
+            return {true_pts, false_pts};
+        }
+
+        double calcEntropy(const std::vector<int>& pts, const std::vector<int>& terms) {
+            double ans = 0;
+            std::unordered_map<int, int> total_cnt;
+            std::vector<std::vector<int>> covered_list;
+            for (int tid: terms) {
+                std::vector<int> covered;
+                for (int pid: pts) if (term_info_list[tid].info[pid]) {
+                    covered.push_back(pid);
+                }
+                for (int pid: covered) total_cnt[pid] += int(covered.size());
+                covered_list.push_back(covered);
+            }
+            for (int i = 0; i < terms.size(); ++i) {
+                auto& covered = covered_list[i];
+                double prob = 0, top = covered.size();
+                for (auto pid: covered) prob += top / double(total_cnt[pid]);
+                if (prob > KDoubleEps) {
+                    prob /= double(pts.size());
+                    ans += -prob * std::log(prob);
+                }
+            }
+            return ans;
+        }
+
+        int selectPredicate(const std::vector<int>& pts, const std::vector<int>& preds) {
+            double best_info_gain = KDoubleINF; int res = preds[0];
+            std::vector<int> related_terms;
+            for (int i = 0; i < term_info_list.size(); ++i) {
+                bool is_related = false;
+                for (int id: pts) {
+                    if (term_info_list[i].info[id]) {
+                        is_related = true; break;
+                    }
+                }
+                if (is_related) related_terms.push_back(i);
+            }
+
+            for (auto pid: preds) {
+                auto divide_res = dividePtsByPredicate(pts, pid);
+                double entropy_true = calcEntropy(divide_res.first, related_terms);
+                double entropy_false = calcEntropy(divide_res.second, related_terms);
+                auto info_gain = (entropy_true * divide_res.first.size() + entropy_false * divide_res.second.size()) / pts.size();
+                if (info_gain < best_info_gain) {
+                    best_info_gain = info_gain; res = pid;
+                }
+            }
+            return res;
+        }
+
+        PProgram learn(const std::vector<int>& pts, const std::vector<int>& preds) {
+            Bitset need_cov(n, false);
+            for (auto id: pts) need_cov.set(id, true);
+            for (const auto& term_info: term_info_list) {
+                if (term_info.info.checkCover(need_cov)) return term_info.prog;
+            }
+            if (preds.empty()) return nullptr;
+            int pred_id = selectPredicate(pts, preds);
+            if (pred_id == -1) return nullptr;
+            auto divide_res = dividePtsByPredicate(pts, pred_id);
+            std::vector<int> remain_preds;
+            for (int id: preds) if (pred_id != id) remain_preds.push_back(id);
+            auto true_branch = learn(divide_res.first, remain_preds);
+            if (!true_branch) return nullptr;
+            auto false_branch = learn(divide_res.second, remain_preds);
+            if (!false_branch) return nullptr;
+            ProgramList sub_list = {pred_info_list[pred_id].prog, true_branch, false_branch};
+            return std::make_shared<Program>(ite, sub_list);
+        }
+
         PProgram learn() {
             std::vector<int> pts;
             for (int i = 0; i < n; ++i) pts.push_back(i);
             std::vector<int> preds;
-            for (int i = 0; i < info_list.size(); ++i) preds.push_back(i);
-
+            for (int i = 0; i < pred_info_list.size(); ++i) preds.push_back(i);
+            return learn(pts, preds);
         }
         ~DTLearner() = default;
     };
 }
 
 PProgram EuUnifier::unify(const ProgramList &term_list, const ExampleList &example_list, TimeGuard *guard) {
-    if (term_list.size() == 1) return term_list[1];
+    if (term_list.size() == 1) return term_list[0];
     auto* verifier = new PredicateVerifier(example_list);
     auto* optimizer = new TrivialOptimizer();
     EnumConfig c(verifier, optimizer, guard);
-
-    while (1) {
-        auto enum_res = solver::enumerate({cg}, c);
-        if (enum_res.empty()) LOG(FATAL) << "EuUnifier: synthesis failed";
-
+    std::vector<UnifyInfo> term_info_list;
+    for (const auto& term: term_list) {
+        Bitset info; FunctionContext ctx;
+        ctx[cg->name] = term;
+        for (const auto& example: example_list) {
+            info.append(example_space->satisfyExample(ctx, example));
+        }
+        term_info_list.emplace_back(ctx.begin()->second, info);
     }
 
+    while (1) {
+        TimeCheck(guard);
+        auto enum_res = solver::enumerate({cg}, c);
+        if (enum_res.empty()) LOG(FATAL) << "EuUnifier: synthesis failed";
+        DTLearner learner(verifier->info_list, term_info_list, ite);
+        auto res = learner.learn();
+        if (res) return res;
+    }
 }

@@ -25,7 +25,7 @@ class Rule {
 public:
     PSemantics semantics;
     NTList param_list;
-    Rule(PSemantics&& _semantics, NTList&& _param_list);
+    Rule(const PSemantics& _semantics, NTList&& _param_list);
     virtual PProgram buildProgram(const ProgramList& sub_list);
     virtual std::string toString() const;
     ~Rule() = default;
@@ -37,7 +37,8 @@ public:
     NTList symbol_list;
     Grammar(NonTerminal* _start, const NTList& _symbol_list);
     void removeUseless();
-    void indexSymbol();
+    void indexSymbol() const;
+    void print() const;
     ~Grammar();
 };
 

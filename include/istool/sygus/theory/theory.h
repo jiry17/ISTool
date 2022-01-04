@@ -23,7 +23,7 @@ public:
 
 namespace sygus {
     std::string theoryToken2String(TheoryToken token);
-    SyGuSExtension* getSyGuSExtension(Env* env);
+    TheoryToken getSyGuSTheory(Env* env);
     SyGuSExtension* initSyGuSExtension(Env* env, TheoryToken theory);
     void loadSyGuSTheories(Env* env, const TheoryLoader& loader);
 }

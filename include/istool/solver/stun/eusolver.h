@@ -20,7 +20,8 @@ class EuUnifier: public Unifier {
 public:
     PSynthInfo cg;
     ExampleSpace* example_space;
-    EuUnifier(const PSynthInfo& _cg, ExampleSpace* _example_space);
+    PSemantics ite;
+    EuUnifier(const PSynthInfo& _cg, ExampleSpace* _example_space, const PSemantics& _ite);
     virtual PProgram unify(const ProgramList& term_list, const ExampleList& example_list, TimeGuard* guard = nullptr);
     virtual ~EuUnifier() = default;
 };
@@ -28,6 +29,7 @@ public:
 class EuSolver: public STUNSolver {
 public:
     EuSolver(Specification* _spec, const PSynthInfo& tg, const PSynthInfo& cg);
+    virtual ~EuSolver() = default;
 };
 
 #endif //ISTOOL_EUSOLVER_H

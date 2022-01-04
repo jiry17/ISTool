@@ -8,6 +8,7 @@
 #include "istool/solver/component/linear_encoder.h"
 #include "istool/solver/enum/enum_solver.h"
 #include "istool/solver/vsa/vsa_solver.h"
+#include "istool/solver/stun/eusolver.h"
 #include "istool/sygus/theory/witness/string/string_witness.h"
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
@@ -45,6 +46,15 @@ FunctionContext OBEInvoker(Specification* spec, TimeGuard* guard) {
 
     auto res = solver->synthesis(guard);
     return res;
+}
+
+FunctionContext EuSolverInvoker(Specification* spec, TimeGuard* guard) {
+    auto* v = sygus::getVerifier(spec);
+    auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env);
+    auto* solver = new EuSolver(spec, stun_info.first, stun_info.second);
+    auto* cegis = new CEGISSolver(solver, v);
+
+    return cegis->synthesis(guard);
 }
 
 FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
@@ -104,11 +114,11 @@ FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
 }
 
 int main() {
-    // std::string file = config::KSourcePath + "/max2.sl";
-    std::string file = config::KSourcePath + "/phone-1.sl";
+    std::string file = config::KSourcePath + "/tests/array_search_4.sl";
+    // std::string file = config::KSourcePath + "/tests/phone-1.sl";
     auto* spec = parser::getSyGuSSpecFromFile(file);
-    auto* guard = new TimeGuard(1);
-    auto res = BasicVSAInvoker(spec, guard);
+    auto* guard = new TimeGuard(100);
+    auto res = EuSolverInvoker(spec, guard);
     std::cout << res.toString() << std::endl;
     std::cout << "Time Cost: " << guard->getPeriod() << " seconds";
     return 0;

@@ -29,4 +29,14 @@ public:
     virtual ~STUNSolver();
 };
 
+
+namespace solver {
+    // Make a trivial split. Do not gaurantee the result is equivalent to the original grammar.
+    // Return {nullptr, nullptr} if failed;
+    std::pair<PSynthInfo, PSynthInfo> divideSpecForSTUN(const PSynthInfo& info);
+    // Add a special treatment for the BV track, where if0 is used instead of ite.
+    std::pair<PSynthInfo, PSynthInfo> divideSyGuSSpecForSTUN(const PSynthInfo& info, Env* env);
+}
+
+
 #endif //ISTOOL_STUN_H

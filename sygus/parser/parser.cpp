@@ -30,7 +30,7 @@ namespace {
     }
 
     PSynthInfo parseSynthInfo(const Json::Value& entry, Env* env) {
-        if (entry.size() != 5) {
+        if (entry.size() != 5 && entry.size() != 6) {
             LOG(FATAL) << "Unsupported format " << entry;
         }
         TEST_PARSER(entry[1].isString() && entry[2].isArray() && entry[4].isArray())
@@ -66,7 +66,8 @@ namespace {
         }
 
         // grammar
-        for (auto& nt_node: entry[4]) {
+        int grammar_pos = entry.size() - 1;
+        for (auto& nt_node: entry[grammar_pos]) {
             TEST_PARSER(nt_node.isArray() && nt_node.size() >= 3 && nt_node[2].isArray() && nt_node[0].isString());
             auto* symbol = nt_map[nt_node[0].asString()];
             for (auto& rule_node: nt_node[2]) {

@@ -26,14 +26,14 @@ std::string sygus::theoryToken2String(TheoryToken token) {
     }
 }
 
-SyGuSExtension * sygus::getSyGuSExtension(Env *env) {
+TheoryToken sygus::getSyGuSTheory(Env *env) {
     auto* ext = env->getExtension(KSyGuSName);
     if (ext) {
         auto* sygus_ext = dynamic_cast<SyGuSExtension*>(ext);
         if (!sygus_ext) {
             LOG(FATAL) << "Unmatched extension " << KSyGuSName;
         }
-        return sygus_ext;
+        return sygus_ext->theory;
     }
     LOG(FATAL) << "Uninitialized extension " << KSyGuSName;
 }
@@ -53,8 +53,8 @@ namespace {
 }
 
 void sygus::loadSyGuSTheories(Env *env, const TheoryLoader &loader) {
-    auto* ext = getSyGuSExtension(env);
-    for (auto dep: theory_dependency.find(ext->theory)->second) {
+    auto theory = sygus::getSyGuSTheory(env);
+    for (auto dep: theory_dependency.find(theory)->second) {
         loader(env, dep);
     }
 }

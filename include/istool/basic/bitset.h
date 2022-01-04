@@ -12,13 +12,14 @@ class Bitset {
     std::vector<unsigned int> A;
     unsigned int n;
 public:
-    std::string toString();
+    std::string toString() const;
     Bitset(std::vector<unsigned int>&& _A, unsigned int _n): A(std::move(_A)), n(_n) {}
     Bitset(): n(0) {}
     Bitset(unsigned int n, bool c);
     int count() const;
     int size() const {return int(n);}
     void append(unsigned int k);
+    void set(unsigned int pos, unsigned int w);
     Bitset operator | (const Bitset& x) const;
     Bitset operator & (const Bitset& x) const;
     Bitset operator ~ () const;

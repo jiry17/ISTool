@@ -16,6 +16,14 @@ void Bitset::append(unsigned int k) {
     ++n;
 }
 
+void Bitset::set(unsigned int pos, unsigned int w) {
+#ifdef DEBUG
+    assert(w == 0 || w == 1);
+#endif
+    if (((A[pos >> 5u] >> (pos & 31u)) & 1u) != w)
+        A[pos >> 5u] ^= (1u << (pos & 31u));
+}
+
 int Bitset::count() const {
     int ans = 0;
     for (auto& w: A) ans += __builtin_popcount(w);
@@ -66,7 +74,7 @@ bool Bitset::checkCover(const Bitset &x) const {
     return true;
 }
 
-std::string Bitset::toString() {
+std::string Bitset::toString() const {
     std::string result = "";
     for (int i = 0; i < n; ++i) result += std::to_string((*this)[i]);
     return result;
@@ -83,7 +91,7 @@ Bitset::Bitset(unsigned int _n, bool c): n(_n) {
         A[i] = c ? -1 : 0;
     }
     if (n & 31u) {
-        A.push_back((1u << (n & 31u)) - 1);
+        if (c) A.push_back((1u << (n & 31u)) - 1); else A.push_back(0);
     }
 }
 
