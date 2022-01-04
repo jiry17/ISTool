@@ -11,7 +11,7 @@
 
 class Verifier {
 public:
-    virtual bool verify(const FunctionContext& info, Example* counter_example) const = 0;
+    virtual bool verify(const FunctionContext& info, Example* counter_example) = 0;
     virtual ~Verifier() = default;
 };
 
@@ -21,7 +21,7 @@ class FiniteExampleVerifier: public Verifier {
 public:
     FiniteExampleSpace* example_space;
     FiniteExampleVerifier(FiniteExampleSpace* _space);
-    virtual bool verify(const FunctionContext& info, Example* counter_example) const;
+    virtual bool verify(const FunctionContext& info, Example* counter_example);
     virtual ~FiniteExampleVerifier() = default;
 };
 

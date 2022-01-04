@@ -9,28 +9,54 @@
 bool TrivialPruner::isPrune(VSANode *node) {return false;}
 void TrivialPruner::clear() {}
 
-SizeLimitPruner::SizeLimitPruner(int _size_limit): size_limit(_size_limit), remain(size_limit) {
+SizeLimitPruner::SizeLimitPruner(int _size_limit, const VSANodeChecker& _checker): size_limit(_size_limit), remain(size_limit), checker(_checker) {
 }
 void SizeLimitPruner::clear() {remain = size_limit;}
 bool SizeLimitPruner::isPrune(VSANode *node) {
+    if (checker(node)) return true;
     if (remain) {
         --remain; return false;
     }
     return true;
 }
 
-VSABuilder::VSABuilder(Grammar *_g, Pruner *_pruner): g(_g), pruner(_pruner) {
+VSABuilder::VSABuilder(Grammar *_g, VSAPruner *_pruner, Env* env): g(_g), pruner(_pruner), ext(ext::vsa::getExtension(env)) {
 }
 VSABuilder::~VSABuilder() {
     delete pruner;
 }
 
-PVSANode DFSVSABuilder::buildVSA(NonTerminal *nt, const WitnessData &oup, const DataList &inp_list, TimeGuard *guard, std::unordered_map<std::string, PVSANode> &cache) {
+VSANode* VSABuilder::buildFullVSA() {
+    g->indexSymbol();
+    VSANodeList node_list;
+    auto total = std::make_shared<TotalWitnessValue>();
+    for (auto* symbol: g->symbol_list) {
+        node_list.push_back(new SingleVSANode(symbol, total));
+    }
+    for (auto* symbol: g->symbol_list) {
+        for (auto* rule: symbol->rule_list) {
+            VSANodeList sub_list;
+            for (auto* sub_symbol: rule->param_list) {
+                sub_list.push_back(node_list[sub_symbol->id]);
+            }
+            node_list[symbol->id]->edge_list.emplace_back(rule->semantics, sub_list);
+        }
+    }
+    ext::vsa::cleanUpVSA(node_list[0]);
+    return node_list[0];
+}
+
+DFSVSABuilder::DFSVSABuilder(Grammar *_g, VSAPruner *pruner, Env* env): VSABuilder(_g, pruner, env) {
+}
+BFSVSABuilder::BFSVSABuilder(Grammar *_g, VSAPruner *pruner, Env* env): VSABuilder(_g, pruner, env) {
+}
+
+VSANode* DFSVSABuilder::buildVSA(NonTerminal *nt, const WitnessData &oup, const DataList &inp_list, TimeGuard *guard, std::unordered_map<std::string, VSANode*> &cache) {
     std::string feature = nt->name + "@" + oup->toString();
     if (cache.find(feature) != cache.end()) return cache[feature];
-    PVSANode node = std::make_shared<SingleVSANode>(nt, oup);
+    VSANode* node = new SingleVSANode(nt, oup);
     cache[feature] = node;
-    if (pruner->isPrune(node.get())) return node;
+    if (pruner->isPrune(node)) return node;
     TimeCheck(guard);
     for (auto* rule: nt->rule_list) {
         auto witness = ext->getWitness(rule->semantics.get(), oup, inp_list);
@@ -43,15 +69,15 @@ PVSANode DFSVSABuilder::buildVSA(NonTerminal *nt, const WitnessData &oup, const 
                 auto sub_node = buildVSA(rule->param_list[i], wl[i], inp_list, guard, cache);
                 node_list.push_back(sub_node);
             }
-            node->edge_list.push_back(std::make_shared<VSAEdge>(rule->semantics, node_list));
+            node->edge_list.emplace_back(rule->semantics, node_list);
         }
     }
     return node;
 }
 
-PVSANode DFSVSABuilder::buildVSA(const Data &oup, const DataList &inp_list, TimeGuard *guard) {
+VSANode* DFSVSABuilder::buildVSA(const Data &oup, const DataList &inp_list, TimeGuard *guard) {
     pruner->clear();
-    std::unordered_map<std::string, PVSANode> cache;
+    std::unordered_map<std::string, VSANode*> cache;
     auto wit_oup = std::make_shared<DirectWitnessValue>(oup);
     auto root = buildVSA(g->start, wit_oup, inp_list, guard, cache);
     ext::vsa::cleanUpVSA(root);
@@ -67,16 +93,16 @@ namespace {
         std::vector<EdgeMatchStatus> res;
         int l_pos = 0, r_pos = 0;
         while (l_pos < l_list.size() && r_pos < r_list.size()) {
-            auto l_name = l_list[l_pos]->semantics->getName();
-            auto r_name = r_list[r_pos]->semantics->getName();
+            auto l_name = l_list[l_pos].semantics->getName();
+            auto r_name = r_list[r_pos].semantics->getName();
             if (l_name != r_name) {
                 if (l_name < r_name) ++l_pos; else ++r_pos;
                 continue;
             }
             int l_ne = l_pos + 1;
-            while (l_ne < l_list.size() && l_list[l_ne]->semantics->getName() == l_name) ++l_ne;
+            while (l_ne < l_list.size() && l_list[l_ne].semantics->getName() == l_name) ++l_ne;
             int r_ne = r_pos + 1;
-            while (r_ne < r_list.size() && r_list[r_ne]->semantics->getName() == r_name) ++r_ne;
+            while (r_ne < r_list.size() && r_list[r_ne].semantics->getName() == r_name) ++r_ne;
             res.push_back({l_pos, l_ne, r_pos, r_ne});
             l_pos = l_ne; r_pos = r_ne;
         }
@@ -84,77 +110,81 @@ namespace {
     }
 }
 
-PVSANode DFSVSABuilder::mergeVSA(const PVSANode &l, const PVSANode &r, TimeGuard *guard, std::unordered_map<std::string, PVSANode> &cache) {
+VSANode* DFSVSABuilder::mergeVSA(VSANode* l, VSANode* r, TimeGuard *guard, std::unordered_map<std::string, VSANode*> &cache) {
     std::string feature = std::to_string(l->id) + "@" + std::to_string(r->id);
     if (cache.find(feature) != cache.end()) return cache[feature];
-    PVSANode node = std::make_shared<MultiExampleVSANode>(l, r);
+    auto node = new MultiExampleVSANode(l, r);
     cache[feature] = node;
-    if (pruner->isPrune(node.get())) return node;
+    if (pruner->isPrune(node)) return node;
     for (const auto& status: matchVSAEdgeList(l->edge_list, r->edge_list)) {
         for (int i = status.ll; i < status.lr; ++i)
             for (int j = status.rl; j < status.rr; ++j) {
                 auto& le = l->edge_list[i], &re = r->edge_list[j];
 #ifdef DEBUG
-                assert(le->semantics->getName() == re->semantics->getName() && le->node_list.size() == re->node_list.size());
+                assert(le.semantics->getName() == re.semantics->getName() && le.node_list.size() == re.node_list.size());
 #endif
                 VSANodeList node_list;
-                for (int k = 0; k < le->node_list.size(); ++k) {
-                    node_list.push_back(mergeVSA(le->node_list[k], re->node_list[k], guard, cache));
+                for (int k = 0; k < le.node_list.size(); ++k) {
+                    node_list.push_back(mergeVSA(le.node_list[k], re.node_list[k], guard, cache));
                 }
-                node->edge_list.push_back(std::make_shared<VSAEdge>(le->semantics, node_list));
+                node->edge_list.emplace_back(le.semantics, node_list);
             }
     }
     return node;
 }
 
 namespace {
-    void orderEdgeList(const PVSANode& node, std::vector<bool>& cache) {
+    void orderEdgeList(VSANode* node, std::vector<bool>& cache) {
         if (cache[node->id]) return;
-        cache[node->id] = true;
-        std::sort(node->edge_list.begin(), node->edge_list.end(),
-                [](const PVSAEdge& x, const PVSAEdge& y) {return x->semantics->getName() < y->semantics->getName();});
+        cache[node->id] = true; int n = node->edge_list.size();
+        std::vector<std::pair<std::string, int>> id_list(n);
+        for (int i = 0; i < n; ++i) id_list[i] = {node->edge_list[i].semantics->getName(), i};
+        std::sort(id_list.begin(), id_list.end());
+        auto copy = node->edge_list;
+        for (int i = 0; i < id_list.size(); ++i) {
+            node->edge_list[i] = copy[id_list[i].second];
+        }
         for (const auto& e: node->edge_list) {
-            for (auto& sub_node: e->node_list) {
+            for (auto* sub_node: e.node_list) {
                 orderEdgeList(sub_node, cache);
             }
         }
     }
 
-    void orderEdgeList(const PVSANode& node) {
-        int n = ext::vsa::indexVSANode(node.get());
+    void orderEdgeList(VSANode* node) {
+        int n = ext::vsa::indexVSANode(node);
         std::vector<bool> cache(n);
         for (int i = 0; i < n; ++i) cache[i] = false;
         orderEdgeList(node, cache);
     }
 }
 
-PVSANode DFSVSABuilder::mergeVSA(const PVSANode &l, const PVSANode &r, TimeGuard *guard) {
+VSANode* DFSVSABuilder::mergeVSA(VSANode* l, VSANode* r, TimeGuard *guard) {
     pruner->clear();
     orderEdgeList(l); orderEdgeList(r);
-    std::unordered_map<std::string, PVSANode> cache;
+    std::unordered_map<std::string, VSANode*> cache;
     auto root = mergeVSA(l, r, guard, cache);
     ext::vsa::cleanUpVSA(root);
     return root;
 }
 
-PVSANode BFSBSABuilder::buildVSA(const Data &oup, const DataList &inp_list, TimeGuard *guard) {
-    std::unordered_map<std::string, PVSANode> cache;
-    std::queue<PVSANode> Q; pruner->clear();
+VSANode* BFSVSABuilder::buildVSA(const Data &oup, const DataList &inp_list, TimeGuard *guard) {
+    std::unordered_map<std::string, VSANode*> cache;
+    std::queue<VSANode*> Q; pruner->clear();
     auto insert = [&](NonTerminal* nt, const WitnessData& d) {
         std::string feature = nt->name + "@" + d->toString();
         if (cache.find(feature) != cache.end()) return cache[feature];
-        auto node = std::make_shared<SingleVSANode>(nt, d);
-        if (!pruner->isPrune(node.get())) Q.push(node);
+        auto *node = new SingleVSANode(nt, d);
+        if (!pruner->isPrune(node)) Q.push(node);
         return cache[feature] = node;
     };
 
     auto init_d = std::make_shared<DirectWitnessValue>(oup);
     auto root = insert(g->start, init_d);
-
     while (!Q.empty()) {
         TimeCheck(guard);
         auto node = Q.front(); Q.pop();
-        auto* sn = dynamic_cast<SingleVSANode*>(node.get());
+        auto* sn = dynamic_cast<SingleVSANode*>(node);
         for (auto* rule: node->symbol->rule_list) {
             auto witness = ext->getWitness(rule->semantics.get(), sn->oup, inp_list);
             for (auto& wl: witness) {
@@ -165,26 +195,26 @@ PVSANode BFSBSABuilder::buildVSA(const Data &oup, const DataList &inp_list, Time
                 for (int i = 0; i < wl.size(); ++i) {
                     node_list.push_back(insert(rule->param_list[i], wl[i]));
                 }
-                node->edge_list.push_back(std::make_shared<VSAEdge>(rule->semantics, node_list));
+                VSAEdge edge(rule->semantics, node_list);
+                node->edge_list.push_back(edge);
             }
         }
     }
-
     ext::vsa::cleanUpVSA(root);
     return root;
 }
 
-PVSANode BFSBSABuilder::mergeVSA(const PVSANode &l, const PVSANode &r, TimeGuard *guard) {
+VSANode* BFSVSABuilder::mergeVSA(VSANode* l, VSANode* r, TimeGuard *guard) {
     pruner->clear();
     orderEdgeList(l); orderEdgeList(r);
-    std::unordered_map<std::string, PVSANode> cache;
-    std::queue<PVSANode> Q;
+    std::unordered_map<std::string, VSANode*> cache;
+    std::queue<VSANode*> Q;
 
-    auto insert = [&](const PVSANode& l, const PVSANode& r) {
+    auto insert = [&](VSANode* l, VSANode* r) {
         std::string feature = std::to_string(l->id) + "@" + std::to_string(r->id);
         if (cache.find(feature) != cache.end()) return cache[feature];
-        auto node = std::make_shared<MultiExampleVSANode>(l, r);
-        if (!pruner->isPrune(node.get())) Q.push(node);
+        auto *node = new MultiExampleVSANode(l, r);
+        if (!pruner->isPrune(node)) Q.push(node);
         return cache[feature] = node;
     };
 
@@ -192,20 +222,21 @@ PVSANode BFSBSABuilder::mergeVSA(const PVSANode &l, const PVSANode &r, TimeGuard
     while (!Q.empty()) {
         TimeCheck(guard);
         auto node = Q.front(); Q.pop();
-        auto* mn = dynamic_cast<MultiExampleVSANode*>(node.get());
+        auto* mn = dynamic_cast<MultiExampleVSANode*>(node);
         auto l_node = mn->l, r_node = mn->r;
         for (auto status: matchVSAEdgeList(l_node->edge_list, r_node->edge_list)) {
             for (int i = status.ll; i < status.lr; ++i)
                 for (int j = status.rl; j < status.rr; ++j) {
                     auto& le = l_node->edge_list[i], &re = r_node->edge_list[j];
 #ifdef DEBUG
-                    assert(le->semantics->getName() == re->semantics->getName() && le->node_list.size() == re->node_list.size());
+                    assert(le.semantics->getName() == re.semantics->getName() && le.node_list.size() == re.node_list.size());
 #endif
                     VSANodeList node_list;
-                    for (int k = 0; k < le->node_list.size(); ++k) {
-                        node_list.push_back(insert(le->node_list[k], re->node_list[k]));
+                    for (int k = 0; k < le.node_list.size(); ++k) {
+                        node_list.push_back(insert(le.node_list[k], re.node_list[k]));
                     }
-                    node->edge_list.push_back(std::make_shared<VSAEdge>(le->semantics, node_list));
+                    VSAEdge edge(le.semantics, node_list);
+                    node->edge_list.push_back(edge);
                 }
         }
     }

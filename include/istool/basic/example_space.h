@@ -52,6 +52,7 @@ public:
 namespace example {
     FiniteIOExampleSpace* buildFiniteIOExampleSpace(const IOExampleList& examples, const std::string& name, Env* env);
     bool satisfyIOExample(Program* program, const IOExample& example);
+    std::string ioExample2String(const IOExample& example);
 }
 
 

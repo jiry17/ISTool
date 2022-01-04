@@ -3,7 +3,8 @@
 //
 
 #include "json_util.h"
-#include "istool/sygus/theory/sygus_theory.h"
+#include "istool/sygus/theory/basic/clia/clia.h"
+#include "istool/sygus/theory/basic/string/str.h"
 #include <fstream>
 #include <sstream>
 #include "glog/logging.h"
@@ -24,9 +25,7 @@ PType json::getTypeFromJson(const Json::Value &value) {
         std::string name = value.asString();
         if (name == "Int") return std::make_shared<TInt>();
         if (name == "Bool") return std::make_shared<TBool>();
-        if (name == "String") {
-            LOG(FATAL) << "Unfinished type: String";
-        }
+        if (name == "String") return std::make_shared<TString>();
         TEST_PARSER(false)
     }
     TEST_PARSER(value.isArray());
@@ -42,12 +41,13 @@ Data json::getDataFromJson(const Json::Value &value) {
     std::string type = value[0].asString();
     if (type == "Int") {
         TEST_PARSER(value.size() == 2 && value[1].isInt())
-        return Data(std::make_shared<IntValue>(value[1].asInt()));
+        return BuildData(Int, value[1].asInt());
     } else if (type == "Bool") {
-        TEST_PARSER(value.size() == 2 && value[1].isString());
-        return Data(std::make_shared<BoolValue>(value[1].asString() == "true"));
+        TEST_PARSER(value.size() == 2 && value[1].isString())
+        return BuildData(Bool, value[1].asString() == "true");
     } else if (type == "String") {
-        LOG(FATAL) << "Unfinished type: String";
+        TEST_PARSER(value.size() == 2 && value[1].isString());
+        return BuildData(String, value[1].asString());
     } else if (type == "BitVec") {
         LOG(FATAL) << "Unfinished type: BitVec";
     }

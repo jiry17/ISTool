@@ -36,7 +36,7 @@ Data StringAtSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return BuildData(String, t);
 }
 
-StringSubStrSemantics::StringSubStrSemantics(): NormalSemantics("str.int", TSTRING, {TSTRING, TINT, TINT}) {}
+StringSubStrSemantics::StringSubStrSemantics(): NormalSemantics("str.substr", TSTRING, {TSTRING, TINT, TINT}) {}
 Data StringSubStrSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto s = getStringValue(inp_list[0]); int pos = getIntValue(inp_list[1]), len = getIntValue(inp_list[2]);
     if (len < 0 || pos < 0 || pos >= s.length()) return BuildData(String, "");
@@ -83,13 +83,14 @@ Data StringLenSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
 IntToStrSemantics::IntToStrSemantics(): NormalSemantics("int.to.str", TSTRING, {TINT}) {}
 Data IntToStrSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto i = getIntValue(inp_list[0]);
-    if (i < 0) throw SemanticsError();
+    if (i < 0) return BuildData(String, "");
     return BuildData(String, std::to_string(i));
 }
 
 StrToIntSemantics::StrToIntSemantics(Data *_inf): inf(_inf), NormalSemantics("str.to.int", TINT, {TSTRING}) {}
 Data StrToIntSemantics::run(DataList &&inp_list, ExecuteInfo* info) {
-    auto s = getStringValue(inp_list[1]);
+    auto s = getStringValue(inp_list[0]);
+    if (s.empty()) return BuildData(Int, -1);
     for (char c: s) {
         if (c > '9' || c < '0') return BuildData(Int, -1);
     }
@@ -105,7 +106,7 @@ Data StrToIntSemantics::run(DataList &&inp_list, ExecuteInfo* info) {
 void theory::loadStringSemantics(Env *env) {
     auto* inf = env->getConstRef(theory::clia::KINFName);
     LoadSemantics("str.++", StringCat); LoadSemantics("str.len", StringLen);
-    LoadSemantics("std.at", StringAt); LoadSemantics("str.substr", StringSubStr);
+    LoadSemantics("str.at", StringAt); LoadSemantics("str.substr", StringSubStr);
     LoadSemantics("str.prefixof", StringPrefixOf); LoadSemantics("str.suffixof", StringSuffixOf);
     LoadSemantics("str.contains", StringContains); LoadSemantics("str.indexof", StringIndexOf);
     LoadSemantics("str.replace", StringReplace); LoadSemantics("int.to.str", IntToStr);

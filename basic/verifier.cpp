@@ -7,7 +7,7 @@
 
 FiniteExampleVerifier::FiniteExampleVerifier(FiniteExampleSpace *_space): example_space(_space) {
 }
-bool FiniteExampleVerifier::verify(const FunctionContext &info, Example *counter_example) const {
+bool FiniteExampleVerifier::verify(const FunctionContext &info, Example *counter_example) {
     for (auto& example: example_space->example_space) {
         if (!example_space->satisfyExample(info, example)) {
             if (counter_example) *counter_example = example;

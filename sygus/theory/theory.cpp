@@ -54,5 +54,7 @@ namespace {
 
 void sygus::loadSyGuSTheories(Env *env, const TheoryLoader &loader) {
     auto* ext = getSyGuSExtension(env);
-    return loader(env, ext->theory);
+    for (auto dep: theory_dependency.find(ext->theory)->second) {
+        loader(env, dep);
+    }
 }

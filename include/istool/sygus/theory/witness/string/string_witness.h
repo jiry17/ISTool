@@ -6,6 +6,7 @@
 #define ISTOOL_STRING_WITNESS_H
 
 #include "istool/ext/vsa/witness.h"
+#include "istool/basic/env.h"
 
 #define DefineStringWitnessFunction(name) \
 class name ## WitnessFunction: public WitnessFunction { \
@@ -21,8 +22,8 @@ DefineStringWitnessFunction(StringAt)
 
 class IntToStrWitnessFunction: public WitnessFunction {
 public:
-    Data* inf;
-    IntToStrWitnessFunction(Data* _inf): inf(_inf) {}
+    Data *int_min, *int_max;
+    IntToStrWitnessFunction(Data* _int_min, Data* _int_max): int_min(_int_min), int_max(_int_max) {}
     virtual WitnessList witness(const WitnessData& oup);
 };
 
@@ -35,7 +36,15 @@ public:
 };
 
 DefineStringWitnessFunction(StringLen)
-DefineStringWitnessFunction(StringIndexOf)
+
+class StringIndexOfWitnessFunction: public WitnessFunction {
+public:
+    DataList* const_list;
+    Data* int_min, *int_max;
+    StringIndexOfWitnessFunction(DataList* _const_list, Data* _int_min, Data* _int_max);
+    virtual WitnessList witness(const WitnessData& oup);
+};
+
 DefineStringWitnessFunction(StringPrefixOf)
 DefineStringWitnessFunction(StringSuffixOf)
 DefineStringWitnessFunction(StringContains)
@@ -43,7 +52,8 @@ DefineStringWitnessFunction(StrToInt)
 
 namespace theory {
     namespace string {
-        extern const std::string KStringConstList = "String@Consts";
+        extern const std::string KStringConstList;
+        void loadWitnessFunction(Env *env);
     }
 }
 

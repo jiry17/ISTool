@@ -7,17 +7,19 @@
 
 #include "vsa_builder.h"
 #include "istool/solver/solver.h"
+#include "istool/ext/vsa/top_down_model.h"
 
 typedef std::function<void(Specification*, const IOExample&)> VSAEnvPreparation;
 
 class BasicVSASolver: public PBESolver {
-    PVSANode buildVSA(const ExampleList& example_list, TimeGuard* guard);
+    VSANode* buildVSA(const ExampleList& example_list, TimeGuard* guard);
 public:
     VSABuilder* builder;
     IOExampleSpace* io_space;
+    TopDownModel* model;
     VSAEnvPreparation prepare;
-    std::unordered_map<std::string, PVSANode> cache;
-    BasicVSASolver(Specification* spec, VSABuilder* _builder, const VSAEnvPreparation& _p);
+    std::unordered_map<std::string, VSANode*> cache;
+    BasicVSASolver(Specification* spec, VSABuilder* _builder, const VSAEnvPreparation& _p, TopDownModel* _model);
     virtual FunctionContext synthesis(const ExampleList& example_list, TimeGuard* guard);
     virtual ~BasicVSASolver();
 };

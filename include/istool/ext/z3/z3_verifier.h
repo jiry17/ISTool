@@ -16,7 +16,7 @@ public:
     Z3ExampleSpace* example_space;
     Z3Extension* ext;
     Z3Verifier(Z3ExampleSpace* _example_space);
-    virtual bool verify(const FunctionContext& info, Example* counter_example) const;
+    virtual bool verify(const FunctionContext& info, Example* counter_example);
     ~Z3Verifier() = default;
 };
 

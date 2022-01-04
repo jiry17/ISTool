@@ -16,8 +16,12 @@ namespace {
 ExampleSpace::ExampleSpace(const PProgram &_cons_program): cons_program(_cons_program) {
 }
 bool ExampleSpace::satisfyExample(const FunctionContext &info, const Example &example) {
-    auto res = program::runWithFunc(cons_program.get(), example, info);
-    return getBool(res);
+    try {
+        auto res = program::runWithFunc(cons_program.get(), example, info);
+        return getBool(res);
+    } catch (SemanticsError& e) {
+        return false;
+    }
 }
 
 IOExampleSpace::IOExampleSpace(const std::string &_func_name): func_name(_func_name) {
@@ -77,4 +81,8 @@ FiniteIOExampleSpace * example::buildFiniteIOExampleSpace(const IOExampleList &e
     }
 
     return new FiniteIOExampleSpace(cons_program, example_list, name, l_subs, r);
+}
+
+std::string example::ioExample2String(const IOExample &example) {
+    return data::dataList2String(example.first) + "=>" + example.second.toString();
 }

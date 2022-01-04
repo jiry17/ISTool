@@ -10,24 +10,27 @@
 #include "istool/basic/specification.h"
 #include "istool/basic/time_guard.h"
 
-class Pruner {
+class VSAPruner {
 public:
     virtual bool isPrune(VSANode* node) = 0;
     virtual void clear() = 0;
-    virtual ~Pruner() = default;
+    virtual ~VSAPruner() = default;
 };
 
-class TrivialPruner {
+class TrivialPruner: public VSAPruner {
 public:
     virtual bool isPrune(VSANode* node);
     virtual void clear();
     virtual ~TrivialPruner() = default;
 };
 
-class SizeLimitPruner {
+typedef std::function<bool(VSANode*)> VSANodeChecker;
+
+class SizeLimitPruner: public VSAPruner {
 public:
     int size_limit, remain;
-    SizeLimitPruner(int _size_limit);
+    VSANodeChecker checker;
+    SizeLimitPruner(int _size_limit, const VSANodeChecker& checker);
     virtual bool isPrune(VSANode* node);
     virtual void clear();
     virtual ~SizeLimitPruner() = default;
@@ -36,26 +39,29 @@ public:
 class VSABuilder {
 public:
     Grammar* g;
-    Pruner* pruner;
+    VSAPruner* pruner;
     VSAExtension* ext;
-    VSABuilder(Grammar* _g, Pruner* _pruner);
-    virtual PVSANode buildVSA(const Data& oup, const DataList& inp_list) = 0;
-    virtual PVSANode mergeVSA(const PVSANode& l, const PVSANode& r) = 0;
+    VSABuilder(Grammar* _g, VSAPruner* _pruner, Env* _env);
+    virtual VSANode* buildVSA(const Data& oup, const DataList& inp_list, TimeGuard* guard) = 0;
+    virtual VSANode* mergeVSA(VSANode* l, VSANode* r, TimeGuard* guard) = 0;
+    VSANode* buildFullVSA();
     ~VSABuilder();
 };
 
 class DFSVSABuilder: public VSABuilder {
-    PVSANode buildVSA(NonTerminal* nt, const WitnessData& oup, const DataList& inp_list, TimeGuard* guard, std::unordered_map<std::string, PVSANode>& cache);
-    PVSANode mergeVSA(const PVSANode& l, const PVSANode& r, TimeGuard* guard, std::unordered_map<std::string, PVSANode>& cache);
+    VSANode* buildVSA(NonTerminal* nt, const WitnessData& oup, const DataList& inp_list, TimeGuard* guard, std::unordered_map<std::string, VSANode*>& cache);
+    VSANode* mergeVSA(VSANode* l, VSANode* r, TimeGuard* guard, std::unordered_map<std::string, VSANode*>& cache);
 public:
-    virtual PVSANode buildVSA(const Data& oup, const DataList& inp_list, TimeGuard* guard);
-    virtual PVSANode mergeVSA(const PVSANode& l, const PVSANode& r, TimeGuard* guard);
+    DFSVSABuilder(Grammar* _g, VSAPruner* pruner, Env* env);
+    virtual VSANode* buildVSA(const Data& oup, const DataList& inp_list, TimeGuard* guard);
+    virtual VSANode* mergeVSA(VSANode* l, VSANode* r, TimeGuard* guard);
 };
 
-class BFSBSABuilder: public VSABuilder {
+class BFSVSABuilder: public VSABuilder {
 public:
-    virtual PVSANode buildVSA(const Data& oup, const DataList& inp_list, TimeGuard* guard);
-    virtual PVSANode mergeVSA(const PVSANode& l, const PVSANode& r, TimeGuard* guard);
+    BFSVSABuilder(Grammar* _g, VSAPruner* pruner, Env* env);
+    virtual VSANode* buildVSA(const Data& oup, const DataList& inp_list, TimeGuard* guard);
+    virtual VSANode* mergeVSA(VSANode* l, VSANode* r, TimeGuard* guard);
 };
 
 #endif //ISTOOL_VSA_BUILDER_H

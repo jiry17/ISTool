@@ -45,7 +45,7 @@ Z3EncodeRes Z3Verifier::encodeConsProgram(const PProgram &program, const Functio
     return encodeConsProgram(program, info, param_list, cache);
 }
 
-bool Z3Verifier::verify(const FunctionContext &info, Example *counter_example) const {
+bool Z3Verifier::verify(const FunctionContext &info, Example *counter_example) {
     z3::solver s(ext->ctx);
     z3::expr_vector param_list(ext->ctx);
     for (int i = 0; i < example_space->type_list.size(); ++i) {

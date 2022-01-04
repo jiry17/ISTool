@@ -4,10 +4,9 @@
 
 #include "istool/sygus/parser/parser.h"
 #include "istool/sygus/parser/json_util.h"
-#include "istool/sygus/theory/sygus_theory.h"
+#include "istool/sygus/theory/basic/theory_semantics.h"
+#include "istool/sygus/theory/z3/theory_z3_semantics.h"
 #include "istool/basic/config.h"
-#include "istool/ext/z3/z3_extension.h"
-#include "istool/ext/z3/z3_verifier.h"
 #include "istool/ext/z3/z3_example_space.h"
 #include "glog/logging.h"
 
@@ -26,14 +25,15 @@ namespace {
 
     TheoryToken getTheory(const std::string& name) {
         if (name == "LIA") return TheoryToken::CLIA;
+        if (name == "SLIA") return TheoryToken::STRING;
         LOG(FATAL) << "Unknown Theory " << name;
     }
 
     PSynthInfo parseSynthInfo(const Json::Value& entry, Env* env) {
-        if (entry.size() != 6) {
+        if (entry.size() != 5) {
             LOG(FATAL) << "Unsupported format " << entry;
         }
-        TEST_PARSER(entry[1].isString() && entry[2].isArray() && entry[4].isArray() && entry[5].isArray())
+        TEST_PARSER(entry[1].isString() && entry[2].isArray() && entry[4].isArray())
         std::string name = entry[1].asString();
 
         // inp types
@@ -66,7 +66,7 @@ namespace {
         }
 
         // grammar
-        for (auto& nt_node: entry[5]) {
+        for (auto& nt_node: entry[4]) {
             TEST_PARSER(nt_node.isArray() && nt_node.size() >= 3 && nt_node[2].isArray() && nt_node[0].isString());
             auto* symbol = nt_map[nt_node[0].asString()];
             for (auto& rule_node: nt_node[2]) {
@@ -138,7 +138,7 @@ namespace {
 
     IOExample parseIOExample(const Json::Value& node, const PSynthInfo& info) {
         auto main = node[1];
-        auto op = main[0].asString(); auto l = main[2]; auto r = main[3];
+        auto op = main[0].asString(); auto l = main[1]; auto r = main[2];
         if (!l.isArray() || !l[0].isString() || l[0].asString() != info->name) std::swap(l, r);
         TEST_PARSER(op == "=" && l.isArray() && l[0].isString() && l[0].asString() == info->name)
         auto oup = json::getDataFromJson(r);
@@ -196,6 +196,7 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
             auto syn_info = info_list[0];
             std::string name = syn_info->name;
             for (auto& cons: cons_list) {
+                // LOG(INFO) << "Parse example " << cons;
                 example_list.push_back(parseIOExample(cons, syn_info));
             }
             auto* example_space = example::buildFiniteIOExampleSpace(example_list, name, env);

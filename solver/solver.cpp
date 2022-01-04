@@ -19,10 +19,12 @@ FunctionContext CEGISSolver::synthesis(TimeGuard* guard) {
     std::vector<Example> example_list;
     while (1) {
         auto res = pbe_solver->synthesis(example_list, guard);
+        LOG(INFO) << "Find " << res.toString();
         Example counter_example;
         if (v->verify(res, &counter_example)) {
             return res;
         }
+        LOG(INFO) << "Counter example " << data::dataList2String(counter_example);
         example_list.push_back(counter_example);
     }
 }

@@ -5,6 +5,11 @@
 #include "istool/solver/enum/enum.h"
 #include <unordered_set>
 
+void TrivialOptimizer::clear() {}
+bool TrivialOptimizer::isDuplicated(const std::string& name, NonTerminal *nt, const PProgram &p) {
+    return false;
+}
+
 namespace {
     int indexAllNT(const std::vector<PSynthInfo>& info_list) {
         int id = 0;

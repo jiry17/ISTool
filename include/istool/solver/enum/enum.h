@@ -14,6 +14,12 @@ public:
     virtual void clear() = 0;
 };
 
+class TrivialOptimizer: public Optimizer {
+public:
+    virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p);
+    virtual void clear();
+};
+
 struct EnumConfig {
     int res_num_limit = 1;
     TimeGuard* guard;

@@ -9,12 +9,6 @@
 #include "istool/solver/enum/enum.h"
 #include <unordered_set>
 
-class TrivialOptimizer: public Optimizer {
-public:
-    virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p);
-    virtual void clear();
-};
-
 class BasicEnumSolver: public Solver {
 public:
     Verifier* v;

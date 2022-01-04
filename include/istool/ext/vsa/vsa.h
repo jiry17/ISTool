@@ -9,8 +9,7 @@
 #include "istool/ext/vsa/witness_value.h"
 
 class VSANode;
-typedef std::shared_ptr<VSANode> PVSANode;
-typedef std::vector<PVSANode> VSANodeList;
+typedef std::vector<VSANode*> VSANodeList;
 
 class VSAEdge {
 public:
@@ -20,8 +19,7 @@ public:
     virtual ~VSAEdge() = default;
 };
 
-typedef std::shared_ptr<VSAEdge> PVSAEdge;
-typedef std::vector<PVSAEdge> VSAEdgeList;
+typedef std::vector<VSAEdge> VSAEdgeList;
 
 class VSANode {
 public:
@@ -31,6 +29,7 @@ public:
     VSAEdgeList edge_list;
     VSANode(NonTerminal* _symbol, int _example_num);
     virtual ~VSANode() = default;
+    virtual std::string toString() = 0;
 };
 
 class SingleVSANode: public VSANode {
@@ -38,22 +37,23 @@ public:
     WitnessData oup;
     SingleVSANode(NonTerminal* _symbol, const WitnessData& _oup);
     virtual ~SingleVSANode() = default;
+    virtual std::string toString();
 };
 
 class MultiExampleVSANode: public VSANode {
 public:
-    PVSANode l, r;
-    MultiExampleVSANode(const PVSANode& l, const PVSANode& r);
+    VSANode *l, *r;
+    MultiExampleVSANode(VSANode* l, VSANode* r);
+    virtual std::string toString();
 };
 
 namespace ext {
     namespace vsa {
-        void cleanUpVSA(const PVSANode& root);
+        void cleanUpVSA(VSANode* root);
         int indexVSANode(VSANode* root);
         bool isAcyclic(VSANode* root, int n = -1);
-
-        // TODO: support weighted size
-        PProgram getMinimalProgram(const PVSANode& root);
+        void printVSA(VSANode* root);
+        void deleteVSA(VSANode* root);
     }
 }
 

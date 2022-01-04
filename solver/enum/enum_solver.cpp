@@ -6,11 +6,6 @@
 #include "istool/solver/enum/enum_solver.h"
 #include "glog/logging.h"
 
-void TrivialOptimizer::clear() {}
-bool TrivialOptimizer::isDuplicated(const std::string& name, NonTerminal *nt, const PProgram &p) {
-    return false;
-}
-
 BasicEnumSolver::BasicEnumSolver(Specification *_spec, Verifier *_v): Solver(_spec), v(_v) {
 }
 BasicEnumSolver::~BasicEnumSolver() {
@@ -35,7 +30,11 @@ bool OBEOptimizer::isDuplicated(const std::string& name, NonTerminal *nt, const 
     auto& example_list = example_pool[name];
     DataList res;
     for (auto& example: example_list) {
-        res.push_back(program::run(p.get(), example));
+        try {
+            res.push_back(program::run(p.get(), example));
+        } catch (SemanticsError& e) {
+            return true;
+        }
     }
     std::string feature = std::to_string(nt->id) + "@" + data::dataList2String(res);
     if (visited_set.find(feature) != visited_set.end()) return true;
