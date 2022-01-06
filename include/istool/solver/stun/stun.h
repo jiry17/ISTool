@@ -9,22 +9,32 @@
 
 class TermSolver {
 public:
+    Specification* spec;
+    PSynthInfo term_info;
+    TermSolver(Specification* _spec, const PSynthInfo& info);
     virtual ProgramList synthesisTerms(const ExampleList& example_list, TimeGuard* guard = nullptr) = 0;
     virtual ~TermSolver() = default;
 };
+typedef std::function<TermSolver*(Specification*, const PSynthInfo& info)> TermSolverBuilder;
 
 class Unifier {
 public:
+    Specification* spec;
+    PSynthInfo unify_info;
+    Unifier(Specification* _spec, const PSynthInfo& info);
     virtual PProgram unify(const ProgramList& term_list, const ExampleList& example_list, TimeGuard* guard = nullptr) = 0;
     virtual ~Unifier() = default;
 };
+typedef std::function<Unifier*(Specification*, const PSynthInfo& info)> UnifierBuilder;
+#define DefaultSTUNBuilder(name, spec, info) ([](Specification* spec, const PSynthInfo& info){return new name(spec, info);})
 
 class STUNSolver: public PBESolver {
 public:
     TermSolver* term_solver;
     Unifier* unifier;
     std::string func_name;
-    STUNSolver(Specification* spec, TermSolver* _term_solver, Unifier* _unifier);
+    STUNSolver(Specification* spec, const PSynthInfo& term_info, const PSynthInfo& unify_info,
+            const TermSolverBuilder& term_builder, const UnifierBuilder& unifier_builder);
     virtual FunctionContext synthesis(const std::vector<Example>& example_list, TimeGuard* guard = nullptr);
     virtual ~STUNSolver();
 };

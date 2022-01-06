@@ -56,6 +56,7 @@ bool Data::isNull() const {
 }
 
 std::string data::dataList2String(const DataList &data_list) {
+    if (data_list.empty()) return "[]";
     std::string res;
     for (auto& d: data_list) res += "," + d.toString();
     res[0] = '['; res += ']';

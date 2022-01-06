@@ -9,6 +9,8 @@
 #include "istool/solver/enum/enum_solver.h"
 #include "istool/solver/vsa/vsa_solver.h"
 #include "istool/solver/stun/eusolver.h"
+#include "istool/solver/polygen/lia_solver.h"
+#include "istool/solver/polygen/polygen_term_solver.h"
 #include "istool/sygus/theory/witness/string/string_witness.h"
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
@@ -21,7 +23,7 @@ FunctionContext CBSInvoker(Specification* spec, TimeGuard* guard) {
 
     std::unordered_map<std::string, Z3GrammarEncoder*> encoder_map;
     for (const auto& info: spec->info_list) {
-        encoder_map[info->name] = new LinearEncoder(info->grammar, spec->env);
+        encoder_map[info->name] = new LinearEncoder(info->grammar, spec->env.get());
     }
     auto* cbs = new ComponentBasedSynthesizer(spec, encoder_map);
     auto* solver = new CEGISSolver(cbs, v);
@@ -49,12 +51,57 @@ FunctionContext OBEInvoker(Specification* spec, TimeGuard* guard) {
 }
 
 FunctionContext EuSolverInvoker(Specification* spec, TimeGuard* guard) {
-    auto* v = sygus::getVerifier(spec);
-    auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env);
-    auto* solver = new EuSolver(spec, stun_info.first, stun_info.second);
-    auto* cegis = new CEGISSolver(solver, v);
+    auto *v = sygus::getVerifier(spec);
+    auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
+    auto *solver = new EuSolver(spec, stun_info.first, stun_info.second);
+    auto *cegis = new CEGISSolver(solver, v);
 
     return cegis->synthesis(guard);
+}
+
+namespace {
+    Example _buildExample(const std::vector<int>& x) {
+        Example e;
+        for (int w: x) e.push_back(BuildData(Int, w));
+        return e;
+    }
+
+    IOExample _buildIOExample(const std::vector<int>& x, int y) {
+        Example inp = _buildExample(x);
+        auto oup = BuildData(Int, y);
+        return {inp, oup};
+    }
+}
+
+FunctionContext LIASolverInvoker(Specification* spec, TimeGuard* guard) {
+    IOExampleList example_list;
+    example_list.push_back(_buildIOExample({0, 4}, 1));
+    example_list.push_back(_buildIOExample({4, 0}, 17));
+    auto example_space = example::buildFiniteIOExampleSpace(example_list, "f", spec->env.get());
+    spec->example_space = example_space;
+    LIASolver* solver = solver::lia::liaSolverBuilder(spec);
+    solver = dynamic_cast<LIASolver*>(solver::relaxSolver(solver));
+
+    ExampleList inp_list;
+    for (auto& example: example_list) {
+        auto now = example.first; now.push_back(example.second);
+        inp_list.push_back(now);
+    }
+    return solver->synthesis(inp_list, guard);
+}
+
+void PolyGenTermSolverInvoker(Specification* spec, TimeGuard* guard) {
+    ExampleList example_list;
+    example_list.push_back(_buildExample({10, 9}));
+    example_list.push_back(_buildExample({9, 10}));
+
+    auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
+    auto* term_solver = new PolyGenTermSolver(spec, stun_info.first, solver::lia::liaSolverBuilder);
+    auto res = term_solver->synthesisTerms(example_list, guard);
+    for (const auto& p: res) {
+        LOG(INFO) << p->toString() << std::endl;
+    }
+    exit(0);
 }
 
 FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
@@ -73,13 +120,13 @@ FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
         }
         return false;
     });
-    auto* builder = new BFSVSABuilder(info->grammar, pruner, spec->env);
+    auto* builder = new BFSVSABuilder(info->grammar, pruner, spec->env.get());
     // auto* builder = new DFSVSABuilder(info->grammar, pruner, spec->env);
 
-    sygus::loadSyGuSTheories(spec->env, theory::loadWitnessFunction);
+    sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
 
     auto prepare = [](Specification* spec, const IOExample& io_example) {
-        auto* env = spec->env; auto* g = spec->info_list[0]->grammar;
+        auto* env = spec->env.get(); auto* g = spec->info_list[0]->grammar;
         std::vector<std::string> string_const_list;
         auto add_const = [&](const Data& d) {
             auto* sv = dynamic_cast<StringValue*>(d.get());
@@ -114,12 +161,13 @@ FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
 }
 
 int main() {
-    std::string file = config::KSourcePath + "/tests/array_search_4.sl";
+    std::string file = config::KSourcePath + "/tests/max2.sl";
     // std::string file = config::KSourcePath + "/tests/phone-1.sl";
     auto* spec = parser::getSyGuSSpecFromFile(file);
     auto* guard = new TimeGuard(100);
-    auto res = EuSolverInvoker(spec, guard);
-    std::cout << res.toString() << std::endl;
-    std::cout << "Time Cost: " << guard->getPeriod() << " seconds";
+    PolyGenTermSolverInvoker(spec, guard);
+    //auto res = LIASolverInvoker(spec, guard);
+    // std::cout << res.toString() << std::endl;
+    // std::cout << "Time Cost: " << guard->getPeriod() << " seconds";
     return 0;
 }

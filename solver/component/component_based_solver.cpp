@@ -8,7 +8,7 @@
 #include "glog/logging.h"
 
 ComponentBasedSynthesizer::ComponentBasedSynthesizer(Specification *_spec, const std::unordered_map<std::string, Z3GrammarEncoder *> &_map):
-    encoder_map(_map), PBESolver(_spec), ext(ext::z3::getExtension(_spec->env)) {
+    encoder_map(_map), PBESolver(_spec), ext(ext::z3::getExtension(_spec->env.get())) {
     for (const auto& info_list: spec->info_list) {
         if (encoder_map.find(info_list->name) == encoder_map.end()) {
             LOG(FATAL) << "Cannot find encoder for " << info_list->name;
@@ -63,7 +63,7 @@ Z3EncodeRes ComponentBasedSynthesizer::encodeExample(Program *program, const Exa
 }
 
 FunctionContext ComponentBasedSynthesizer::synthesis(const ExampleList& example_list, TimeGuard* guard) {
-    auto* space = dynamic_cast<Z3ExampleSpace*>(spec->example_space);
+    auto* space = dynamic_cast<Z3ExampleSpace*>(spec->example_space.get());
     while (1) {
         TimeCheck(guard);
         z3::solver solver(ext->ctx);

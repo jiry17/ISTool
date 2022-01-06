@@ -127,6 +127,7 @@ namespace semantics {
     void loadLogicSemantics(Env* env);
     PSemantics buildParamSemantics(int id, const PType& type = nullptr);
     PSemantics buildConstSemantics(const Data& w);
+    FunctionContext buildSingleContext(const std::string& name, const std::shared_ptr<Program>& program);
 }
 
 

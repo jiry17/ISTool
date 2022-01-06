@@ -123,3 +123,8 @@ void semantics::loadLogicSemantics(Env* env) {
     LoadSemantics("and", And); LoadSemantics("or", Or);
     LoadSemantics("not", Not);
 }
+
+FunctionContext semantics::buildSingleContext(const std::string &name, const std::shared_ptr<Program> &program) {
+    FunctionContext res; res[name] = program;
+    return res;
+}

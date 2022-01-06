@@ -65,3 +65,16 @@ PProgram program::programMap(Program *p, const ProgramConstructor &c) {
     std::unordered_map<Program*, PProgram> cache;
     return _programMap(p, c, cache);
 }
+
+PProgram program::rewriteParam(const PProgram &p, const ProgramList &param_list) {
+    auto* ps = dynamic_cast<ParamSemantics*>(p->semantics.get());
+    if (ps) {
+        if (param_list[ps->id]) return param_list[ps->id];
+        return p;
+    }
+    ProgramList sub_list;
+    for (const auto& sub: p->sub_list) {
+        sub_list.push_back(rewriteParam(sub, param_list));
+    }
+    return std::make_shared<Program>(p->semantics, sub_list);
+}

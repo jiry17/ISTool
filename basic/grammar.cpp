@@ -40,6 +40,7 @@ Grammar::Grammar(NonTerminal *_start, const NTList &_symbol_list): start(_start)
         LOG(FATAL) << "Start symbol (" << start->name << ") not found";
     }
     std::swap(symbol_list[0], symbol_list[pos]);
+    removeUseless();
 }
 Grammar::~Grammar() {
     for (auto* symbol: symbol_list) delete symbol;
@@ -117,4 +118,38 @@ void Grammar::print() const {
             std::cout << "  " << rule->toString() << std::endl;
         }
     }
+}
+
+Grammar * grammar::copyGrammar(Grammar *grammar) {
+    int n = grammar->symbol_list.size();
+    NTList symbols(n); grammar->indexSymbol();
+    for (auto* symbol: grammar->symbol_list) {
+        auto* new_symbol = new NonTerminal(symbol->name, symbol->type);
+        symbols[symbol->id] = new_symbol;
+    }
+    for (auto* symbol: grammar->symbol_list) {
+        for (auto* rule: symbol->rule_list) {
+            NTList param_list;
+            for (auto* sub_node: rule->param_list) {
+                param_list.push_back(symbols[sub_node->id]);
+            }
+            symbols[symbol->id]->rule_list.push_back(new Rule(rule->semantics, std::move(param_list)));
+        }
+    }
+    return new Grammar(symbols[grammar->start->id], symbols);
+}
+
+namespace {
+    bool _isUsedName(Grammar* g, const std::string& name) {
+        for (auto* symbol: g->symbol_list) {
+            if (symbol->name == name) return true;
+        }
+        return false;
+    }
+}
+
+std::string grammar::getFreeName(Grammar *grammar) {
+    int id = 0;
+    while (_isUsedName(grammar, "tmp@" + std::to_string(id))) ++id;
+    return "tmp@" + std::to_string(id);
 }

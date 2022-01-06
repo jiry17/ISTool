@@ -29,6 +29,7 @@ namespace program {
     PProgram buildParam(int id, const PType& type = nullptr);
     PProgram buildConst(const Data& w);
     PProgram programMap(Program* p, const ProgramConstructor& c);
+    PProgram rewriteParam(const PProgram& p, const ProgramList& param_list);
     Data run(Program* program, const DataList& inp);
     Data runWithFunc(Program* program, const DataList& inp, const FunctionContext& ctx);
 }

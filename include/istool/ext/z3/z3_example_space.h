@@ -19,17 +19,18 @@ public:
 };
 
 class Z3IOExampleSpace: public Z3ExampleSpace, public IOExampleSpace {
+    std::unordered_map<std::string, IOExample> cache;
 public:
     ProgramList inp_list;
     PProgram oup_cons;
     Z3IOExampleSpace(const PProgram& _cons_prog, Env* _env, const TypeList& _type_list, const std::unordered_map<std::string, Signature>& sig_map,
             const std::string& name, const ProgramList& _inp_list, const PProgram& _oup_cons);
-    virtual IOExample getIOExample(const Example& example) const;
+    virtual IOExample getIOExample(const Example& example);
     virtual bool satisfyExample(const FunctionContext& info, const Example& example);
 };
 
 namespace example {
-    Z3ExampleSpace* buildZ3ExampleSpace(const PProgram& cons, Env* env, const TypeList& type_list, const std::unordered_map<std::string, Signature>& sig_map);
+    PExampleSpace buildZ3ExampleSpace(const PProgram& cons, Env* env, const TypeList& type_list, const std::unordered_map<std::string, Signature>& sig_map);
 }
 
 #endif //ISTOOL_Z3_EXAMPLE_SPACE_H

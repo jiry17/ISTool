@@ -11,7 +11,7 @@ BasicVSASolver::~BasicVSASolver() {
 }
 BasicVSASolver::BasicVSASolver(Specification *spec, VSABuilder *_builder, const VSAEnvPreparation& p, TopDownModel* _model):
     PBESolver(spec), builder(_builder), prepare(p), model(_model) {
-    io_space = dynamic_cast<IOExampleSpace*>(spec->example_space);
+    io_space = dynamic_cast<IOExampleSpace*>(spec->example_space.get());
     if (!io_space) {
         LOG(FATAL) << "VSA solver supports only IO examples";
     }

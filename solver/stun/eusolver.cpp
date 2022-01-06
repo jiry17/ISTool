@@ -9,14 +9,12 @@
 #include <unordered_set>
 #include <cmath>
 
-EuTermSolver::EuTermSolver(const PSynthInfo &_tg, ExampleSpace *_example_space): tg(_tg), example_space(_example_space) {
-}
-EuUnifier::EuUnifier(const PSynthInfo &_cg, ExampleSpace *_example_space, const PSemantics& _ite): cg(_cg), example_space(_example_space), ite(_ite) {
-    auto* io_space = dynamic_cast<IOExampleSpace*>(_example_space);
+EuTermSolver::EuTermSolver(Specification *spec, const PSynthInfo& info): TermSolver(spec, info) {}
+EuUnifier::EuUnifier(Specification *spec, const PSynthInfo& info): Unifier(spec, info), io_space(dynamic_cast<IOExampleSpace*>(spec->example_space.get())) {
     if (!io_space) LOG(FATAL) << "EuUnifier supports only IOExampleSpace";
 }
 EuSolver::EuSolver(Specification *_spec, const PSynthInfo &tg, const PSynthInfo &cg):
-    STUNSolver(_spec, new EuTermSolver(tg, _spec->example_space), new EuUnifier(cg, _spec->example_space, _spec->env->getSemantics("ite"))) {
+    STUNSolver(_spec, tg, cg, DefaultSTUNBuilder(EuTermSolver, _spec, tg), DefaultSTUNBuilder(EuUnifier, _spec, cg)) {
     if (spec->info_list[0]->name != tg->name || spec->info_list[0]->name != cg->name) {
         LOG(INFO) << "The names of terms and conditions should be equal to the target name";
     }
@@ -56,11 +54,11 @@ namespace {
 }
 
 ProgramList EuTermSolver::synthesisTerms(const ExampleList &example_list, TimeGuard *guard) {
-    auto* verifier = new EuVerifier(example_list, example_space);
+    auto* verifier = new EuVerifier(example_list, spec->example_space.get());
     auto* optimizer = new TrivialOptimizer();
 
     EnumConfig c(verifier, optimizer, guard);
-    auto enum_res = solver::enumerate({tg}, c);
+    auto enum_res = solver::enumerate({term_info}, c);
     if (enum_res.empty()) {
         LOG(FATAL) << "EuTermSolver: Synthesis Failed";
     }
@@ -211,20 +209,20 @@ PProgram EuUnifier::unify(const ProgramList &term_list, const ExampleList &examp
     auto* optimizer = new TrivialOptimizer();
     EnumConfig c(verifier, optimizer, guard);
     std::vector<UnifyInfo> term_info_list;
+    auto func_name = spec->info_list[0]->name;
     for (const auto& term: term_list) {
-        Bitset info; FunctionContext ctx;
-        ctx[cg->name] = term;
+        Bitset info;
         for (const auto& example: example_list) {
-            info.append(example_space->satisfyExample(ctx, example));
+            info.append(spec->example_space->satisfyExample(semantics::buildSingleContext(func_name, term), example));
         }
-        term_info_list.emplace_back(ctx.begin()->second, info);
+        term_info_list.emplace_back(term, info);
     }
 
     while (1) {
         TimeCheck(guard);
-        auto enum_res = solver::enumerate({cg}, c);
+        auto enum_res = solver::enumerate({unify_info}, c);
         if (enum_res.empty()) LOG(FATAL) << "EuUnifier: synthesis failed";
-        DTLearner learner(verifier->info_list, term_info_list, ite);
+        DTLearner learner(verifier->info_list, term_info_list, spec->env->getSemantics("ite"));
         auto res = learner.learn();
         if (res) return res;
     }

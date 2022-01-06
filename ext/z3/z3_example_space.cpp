@@ -27,7 +27,9 @@ bool Z3IOExampleSpace::satisfyExample(const FunctionContext &info, const Example
      return bv->w;
 }
 
-IOExample Z3IOExampleSpace::getIOExample(const Example &example) const {
+IOExample Z3IOExampleSpace::getIOExample(const Example &example) {
+    auto feature = data::dataList2String(example);
+    if (cache.find(feature) != cache.end()) return cache[feature];
     z3::expr_vector z3_inp_list(ext->ctx);
     for (const auto& inp: inp_list) {
         auto val = program::run(inp.get(), example);
@@ -45,7 +47,7 @@ IOExample Z3IOExampleSpace::getIOExample(const Example &example) const {
     }
     auto model = s.get_model();
     auto oup_val = ext->getValueFromModel(model, oup_var, oup_type.get());
-    return {example, oup_val};
+    return cache[feature] = {example, oup_val};
 }
 
 namespace {
@@ -60,7 +62,7 @@ namespace {
     }
 }
 
-Z3ExampleSpace * example::buildZ3ExampleSpace(const PProgram &cons, Env *env, const TypeList& type_list, const std::unordered_map<std::string, Signature> &sig_map) {
+PExampleSpace example::buildZ3ExampleSpace(const PProgram &cons, Env *env, const TypeList& type_list, const std::unordered_map<std::string, Signature> &sig_map) {
     std::unordered_map<std::string, ProgramList> invoke_map;
     collectAllInvokes(cons, invoke_map);
     if (invoke_map.size() != 1) return buildZ3ExampleSpace(cons, env, type_list, sig_map);
@@ -87,5 +89,5 @@ Z3ExampleSpace * example::buildZ3ExampleSpace(const PProgram &cons, Env *env, co
     };
     auto oup_cons = program::programMap(cons.get(), rewrite);
 
-    return new Z3IOExampleSpace(cons, env, type_list, sig_map, name, inp_list, oup_cons);
+    return std::make_shared<Z3IOExampleSpace>(cons, env, type_list, sig_map, name, inp_list, oup_cons);
 }

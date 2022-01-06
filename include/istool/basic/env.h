@@ -35,5 +35,7 @@ public:
     ~Env();
 };
 
+typedef std::shared_ptr<Env> PEnv;
+
 
 #endif //ISTOOL_ENV_H

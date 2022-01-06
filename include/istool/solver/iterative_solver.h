@@ -10,11 +10,12 @@
 // An interface for a solver in a complex system to iterative enlarge its scope.
 class IterativeSolver {
 public:
-    virtual bool relax() = 0;
+    virtual void* relax(TimeGuard *guard) = 0;
 };
 
 namespace solver {
-    template<class T> bool relaxSolver(T* solver);
+    Solver* relaxSolver(Solver* solver, TimeGuard* guard = nullptr);
+    PBESolver* relaxSolver(PBESolver* solver, TimeGuard* guard = nullptr);
 }
 
 #endif //ISTOOL_RELAXABLE_SOLVER_H

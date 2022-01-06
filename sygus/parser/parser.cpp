@@ -168,18 +168,18 @@ Specification * parser::getSyGuSSpecFromFile(const std::string &file_name) {
 }
 
 Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
-    Env* env = new Env();
+    auto env = std::make_shared<Env>();
 
     auto theory_list = getEntriesViaName(root, "set-logic");
     assert(theory_list.size() == 1);
     auto theory = getTheory(theory_list[0][1].asString());
-    sygus::initSyGuSExtension(env, theory);
-    sygus::loadSyGuSTheories(env, theory::loadBasicSemantics);
+    sygus::initSyGuSExtension(env.get(), theory);
+    sygus::loadSyGuSTheories(env.get(), theory::loadBasicSemantics);
 
     auto fun_list = getEntriesViaName(root, "synth-fun");
     std::vector<PSynthInfo> info_list;
     for (auto& fun_info: fun_list) {
-        info_list.push_back(parseSynthInfo(fun_info, env));
+        info_list.push_back(parseSynthInfo(fun_info, env.get()));
     }
     std::map<std::string, PSynthInfo> syn_info_map;
     for (auto& syn_info: info_list) {
@@ -200,13 +200,13 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
                 // LOG(INFO) << "Parse example " << cons;
                 example_list.push_back(parseIOExample(cons, syn_info));
             }
-            auto* example_space = example::buildFiniteIOExampleSpace(example_list, name, env);
+            auto example_space = example::buildFiniteIOExampleSpace(example_list, name, env.get());
             return new Specification(info_list, env, example_space);
         } catch (ParseError& e) {
         }
     }
 
-    sygus::loadSyGuSTheories(env, theory::loadZ3Semantics);
+    sygus::loadSyGuSTheories(env.get(), theory::loadZ3Semantics);
 
     TypeList var_type_list;
     std::map<std::string, std::pair<int, PType>> var_info_map;
@@ -220,7 +220,7 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     ProgramList cons_program_list;
     std::map<std::string, PProgram> cache;
     for (auto& entry: cons_list) {
-        cons_program_list.push_back(buildConsProgram(entry[1], var_info_map, syn_info_map, cache, env));
+        cons_program_list.push_back(buildConsProgram(entry[1], var_info_map, syn_info_map, cache, env.get()));
     }
     if (cons_program_list.empty()) {
         LOG(FATAL) << "Constraint should not be empty";
@@ -236,6 +236,6 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
         sig_map[info->name] = {info->inp_type_list, info->oup_type};
     }
 
-    auto* example_space = example::buildZ3ExampleSpace(merged_program, env, var_type_list, sig_map);
+    auto example_space = example::buildZ3ExampleSpace(merged_program, env.get(), var_type_list, sig_map);
     return new Specification(info_list, env, example_space);
 }

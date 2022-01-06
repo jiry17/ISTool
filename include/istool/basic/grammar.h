@@ -42,7 +42,10 @@ public:
     ~Grammar();
 };
 
-typedef std::shared_ptr<Grammar> PGrammar;
+namespace grammar {
+    Grammar* copyGrammar(Grammar* grammar);
+    std::string getFreeName(Grammar* grammar);
+}
 
 
 #endif //ISTOOL_GRAMMAR_H

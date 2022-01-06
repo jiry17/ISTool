@@ -23,10 +23,10 @@ typedef std::shared_ptr<SynthInfo> PSynthInfo;
 class Specification {
 public:
     std::vector<PSynthInfo> info_list;
-    Env* env;
-    ExampleSpace* example_space;
-    Specification(const std::vector<PSynthInfo>& _info_list, Env* _env, ExampleSpace* _example_space);
-    virtual ~Specification();
+    PEnv env;
+    PExampleSpace example_space;
+    Specification(const std::vector<PSynthInfo>& _info_list, const PEnv& _env, const PExampleSpace& _example_space);
+    virtual ~Specification() = default;
 };
 
 

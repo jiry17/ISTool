@@ -4,8 +4,14 @@
 
 #include "istool/solver/iterative_solver.h"
 
-template<class T> bool solver::relaxSolver(T *solver) {
-    auto* it = dynamic_cast<IterativeSolver*>(solver);
-    if (it) return it->relax();
-    return false;
+Solver * solver::relaxSolver(Solver *solver, TimeGuard *guard) {
+    auto* is = dynamic_cast<IterativeSolver*>(solver);
+    if (is) return (Solver*)(is->relax(guard));
+    return nullptr;
+}
+
+PBESolver * solver::relaxSolver(PBESolver *solver, TimeGuard *guard) {
+    auto* is = dynamic_cast<IterativeSolver*>(solver);
+    if (is) return (PBESolver*)(is->relax(guard));
+    return nullptr;
 }

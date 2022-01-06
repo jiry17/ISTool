@@ -34,4 +34,9 @@ public:
     virtual ~CEGISSolver();
 };
 
+typedef std::function<Solver*(Specification* spec)> SolverBuilder;
+typedef std::function<PBESolver*(Specification* spec)> PBESolverBuilder;
+
+#define DefaultSolverBuilder(name) ([](Specification* spec){return new name(spec);})
+
 #endif //ISTOOL_SOLVER_H

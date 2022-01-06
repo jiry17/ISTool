@@ -11,10 +11,6 @@ SynthInfo::~SynthInfo() {
     delete grammar;
 }
 
-Specification::Specification(const std::vector<PSynthInfo> &_info_list, Env *_env, ExampleSpace *_example_space):
+Specification::Specification(const std::vector<PSynthInfo> &_info_list, const PEnv& _env, const PExampleSpace& _example_space):
     info_list(_info_list), env(_env), example_space(_example_space) {
-}
-
-Specification::~Specification() {
-    delete env; delete example_space;
 }

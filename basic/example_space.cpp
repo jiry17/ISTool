@@ -34,7 +34,7 @@ FiniteIOExampleSpace::FiniteIOExampleSpace(const PProgram &_cons_program, const 
         const std::string &_name, const ProgramList &_inp_list, const PProgram &_oup):
         FiniteExampleSpace(_cons_program, _example_space), IOExampleSpace(_name), inp_list(_inp_list), oup(_oup) {
 }
-IOExample FiniteIOExampleSpace::getIOExample(const Example &example) const {
+IOExample FiniteIOExampleSpace::getIOExample(const Example &example) {
     DataList inp_vals;
     for (const auto& p: inp_list) {
         inp_vals.push_back(program::run(p.get(), example));
@@ -54,7 +54,7 @@ bool example::satisfyIOExample(Program *program, const IOExample &example) {
     return program::run(program, example.first) == example.second;
 }
 
-FiniteIOExampleSpace * example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env) {
+PExampleSpace example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env) {
     if (examples.empty()) {
         LOG(FATAL) << "Example space should not be empty";
     }
@@ -79,8 +79,7 @@ FiniteIOExampleSpace * example::buildFiniteIOExampleSpace(const IOExampleList &e
         example.push_back(io_example.second);
         example_list.push_back(example);
     }
-
-    return new FiniteIOExampleSpace(cons_program, example_list, name, l_subs, r);
+    return std::make_shared<FiniteIOExampleSpace>(cons_program, example_list, name, l_subs, r);
 }
 
 std::string example::ioExample2String(const IOExample &example) {

@@ -8,12 +8,25 @@
 #include <queue>
 #include <unordered_set>
 
-STUNSolver::STUNSolver(Specification* spec, TermSolver *_term_solver, Unifier *_unifier):
-    term_solver(_term_solver), unifier(_unifier), PBESolver(spec) {
+TermSolver::TermSolver(Specification *_spec, const PSynthInfo& info): spec(_spec), term_info(info) {
+    if (spec->info_list.size() != 1) {
+        LOG(FATAL) << "TermSolver can only synthesize a single program";
+    }
+}
+Unifier::Unifier(Specification* _spec, const PSynthInfo& info): spec(_spec), unify_info(info) {
+    if (spec->info_list.size() != 1) {
+        LOG(FATAL) << "Unifier can only synthesize a single program";
+    }
+}
+
+STUNSolver::STUNSolver(Specification *spec, const PSynthInfo &term_info, const PSynthInfo &unifier_info,
+        const TermSolverBuilder &term_builder, const UnifierBuilder &unifier_builder): PBESolver(spec) {
     if (spec->info_list.size() != 1) {
         LOG(FATAL) << "STUNSolver can only synthesize a single program";
     }
     func_name = spec->info_list[0]->name;
+    term_solver = term_builder(spec, term_info);
+    unifier = unifier_builder(spec, unifier_info);
 }
 STUNSolver::~STUNSolver() {
     delete term_solver; delete unifier;

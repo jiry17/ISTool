@@ -23,11 +23,13 @@ public:
     virtual ~ExampleSpace() = default;
 };
 
+typedef std::shared_ptr<ExampleSpace> PExampleSpace;
+
 class IOExampleSpace {
 public:
     std::string func_name;
     IOExampleSpace(const std::string& _func_name);
-    virtual IOExample getIOExample(const Example& example) const = 0;
+    virtual IOExample getIOExample(const Example& example) = 0;
     virtual ~IOExampleSpace() = default;
 };
 
@@ -45,12 +47,12 @@ public:
     FiniteIOExampleSpace(const PProgram& _cons_program, const ExampleList& _example_space, const std::string& _name,
             const ProgramList& _inp_list, const PProgram& _oup);
     virtual bool satisfyExample(const FunctionContext& info, const Example& example);
-    virtual IOExample getIOExample(const Example& example) const;
+    virtual IOExample getIOExample(const Example& example);
     virtual ~FiniteIOExampleSpace() = default;
 };
 
 namespace example {
-    FiniteIOExampleSpace* buildFiniteIOExampleSpace(const IOExampleList& examples, const std::string& name, Env* env);
+    PExampleSpace buildFiniteIOExampleSpace(const IOExampleList& examples, const std::string& name, Env* env);
     bool satisfyIOExample(Program* program, const IOExample& example);
     std::string ioExample2String(const IOExample& example);
 }
