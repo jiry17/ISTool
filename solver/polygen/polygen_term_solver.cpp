@@ -21,7 +21,7 @@ namespace {
     }
 
     int _getMaxExampleNum(const PSynthInfo& info) {
-        if (info->inp_type_list.size() > 8) return 3; else return KDefaultExampleNum;
+        if (info->inp_type_list.size() > 5) return 2; else return KDefaultExampleNum;
     }
 }
 
@@ -140,7 +140,7 @@ void PolyGenTermSolver::performSample(polygen::SampleInfo *sample) {
 namespace {
     int _calculateRandomTime(int branch_num, int example_num) {
         int ti = 5;
-        for (int i = 1; i <= example_num; ++i) example_num *= branch_num;
+        for (int i = 1; i <= example_num; ++i) ti *= branch_num;
         return ti;
     }
 }
@@ -331,11 +331,11 @@ ProgramList PolyGenTermSolver::getTerms() {
                     domain_solver_list.push_back(relaxed_solver);
                     cache.push_back(new TermSolverCache());
                     progress.push_back(0);
-                }
+                } else continue;
             }
             progress[si] += 1;
             int n_limit = std::min(KMaxExampleNum, progress[si]);
-            int k_limit = std::min(KMaxTermNum, std::max(1, progress[si] / 2));
+            int k_limit = std::min(KMaxTermNum, int(example_list.size()));
             for (int n = 1; n <= n_limit; ++n) {
                 for (int k = 1; k <= k_limit; ++k) {
                     TimeCheck(guard);
@@ -363,7 +363,8 @@ namespace {
     }
 }
 
-ProgramList PolyGenTermSolver::synthesisTerms(const ExampleList &new_example_list, TimeGuard *guard) {
+ProgramList PolyGenTermSolver::synthesisTerms(const ExampleList &new_example_list, TimeGuard *_guard) {
+    guard = _guard;
     if (!_checkContinue(example_list, new_example_list)) {
         for (int i = 0; i < cache.size(); ++i) {
             delete cache[i]; cache[i] = new TermSolverCache();

@@ -59,6 +59,9 @@ bool Z3Verifier::verify(const FunctionContext &info, Example *counter_example) {
         LOG(FATAL) << "Z3 failed with " << res;
     }
     auto model = s.get_model();
+    if (s.check() == z3::sat) {
+        model = s.get_model();
+    }
     if (counter_example) {
         counter_example->clear();
         for (int i = 0; i < param_list.size(); ++i) {

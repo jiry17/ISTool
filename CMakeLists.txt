@@ -18,8 +18,13 @@ include_directories(${Z3_PATH}/src/api)
 find_package(Jsoncpp)
 include_directories(${Jsoncpp_INCLUDE_DIR})
 
+#gurobi
+include_directories(/home/jiry/2021A/PolyGen/gurobi912/linux64/include)
+link_directories(/home/jiry/2021A/PolyGen/gurobi912/linux64/lib)
+set(GUROBI_FILE libgurobi_g++5.2.a libgurobi91.so)
+ 
 # libs
-set(THIRDPARTY_LIBS glog gflags ${Jsoncpp_LIBRARY} ${Z3_FILE})
+set(THIRDPARTY_LIBS glog gflags ${Jsoncpp_LIBRARY} ${Z3_FILE} ${GUROBI_FILE})
 
 # subdic
 add_subdirectory(basic)

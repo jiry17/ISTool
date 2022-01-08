@@ -5,9 +5,11 @@
 #include "istool/solver/polygen/lia_solver.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/solver/enum/enum.h"
+#include "gurobi_c++.h"
 #include "glog/logging.h"
 #include <unordered_set>
 #include <algorithm>
+#include <cassert>
 
 const std::string solver::lia::KConstIntMaxName = "LIA@ConstIntMax";
 const std::string solver::lia::KTermIntMaxName = "LIA@TermIntMax";
@@ -52,9 +54,9 @@ namespace {
     }
 }
 
-LIASolver::LIASolver(Specification *_spec, const ProgramList &_program_list, int _KTermIntMax, int _KConstIntMax, double _KRelaxTimeLimit):
-    PBESolver(_spec), ext(ext::z3::getExtension(_spec->env.get())), KTermIntMax(_KTermIntMax), program_list(_program_list),
-    KConstIntMax(_KConstIntMax), KRelaxTimeLimit(_KRelaxTimeLimit) {
+LIASolver::LIASolver(Specification *_spec, const ProgramList &_program_list):
+    PBESolver(_spec), ext(ext::z3::getExtension(_spec->env.get())),  program_list(_program_list),
+    env(true) {
     if (spec->info_list.size() > 1) {
         LOG(FATAL) << "LIA Solver can only synthesize a single program";
     }
@@ -71,7 +73,23 @@ LIASolver::LIASolver(Specification *_spec, const ProgramList &_program_list, int
     if (!dynamic_cast<TInt*>(term_info->oup_type.get())) {
         LOG(FATAL) << "LIA solver supports only integers";
     }
+
+    auto* c_max_data = spec->env->getConstRef(solver::lia::KConstIntMaxName);
+    if (c_max_data->isNull()) {
+        spec->env->setConst(solver::lia::KConstIntMaxName,
+                BuildData(Int, _getDefaultConstMax(spec->info_list[0]->grammar)));
+    }
+    KConstIntMax = theory::clia::getIntValue(*c_max_data);
+    auto* t_max_data = spec->env->getConstRef(solver::lia::KTermIntMaxName);
+    if (t_max_data->isNull()) {
+        spec->env->setConst(solver::lia::KTermIntMaxName, BuildData(Int, KDefaultValue));
+    }
+    KTermIntMax = theory::clia::getIntValue(*t_max_data);
+    KRelaxTimeLimit = 0.1;
+
     info = _buildLIAInfo(term_info);
+    env.set("LogFile", "gurobi.log");
+    env.start();
 }
 
 namespace {
@@ -130,61 +148,104 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
         }
     }
 
-    auto solve_res = solver::lia::solveLIA(wrapped_example_list, ext, KConstIntMax, KTermIntMax, guard);
+    auto solve_res = solver::lia::solveLIA(env, wrapped_example_list, ext, KTermIntMax, KConstIntMax, guard);
     if (!solve_res.status) return {};
 
     PProgram res = _buildProgram(solve_res, considered_program_list, spec->env.get());
     return semantics::buildSingleContext(io_example_space->func_name, res);
 }
 
-LIAResult solver::lia::solveLIA(const std::vector<IOExample> &example_list, Z3Extension *ext, int c_max, int t_max, TimeGuard *guard) {
+namespace {
+    int _getIntValue(const GRBVar& var) {
+        double val = var.get(GRB_DoubleAttr_X);
+        int w = int(val);
+        while (w < val - 0.5) ++w;
+        while (w > val + 0.5) --w;
+        return w;
+    }
+}
+
+Data LIAResult::run(const Example &example) const {
+    int res = c_val;
+    for (int i = 0; i < example.size(); ++i) {
+        res += param_list[i] * theory::clia::getIntValue(example[i]);
+    }
+    return BuildData(Int, res);
+}
+
+std::string LIAResult::toString() const {
+    std::string res;
+    for (int i = 0; i < param_list.size(); ++i) {
+        if (!param_list[i]) continue;
+        std::string cur = std::to_string(param_list[i]) + "*x" + std::to_string(i);
+        if (res.length()) {
+            if (param_list[i] > 0) res += "+";
+            res += cur;
+        } else res = cur;
+    }
+    if (c_val == 0) {
+        if (res.empty()) res = "0";
+    } else {
+        if (res.length() && c_val > 0) res += "+";
+        res += std::to_string(c_val);
+    }
+    return res;
+}
+
+LIAResult solver::lia::solveLIA(GRBEnv& env, const std::vector<IOExample> &example_list, Z3Extension *ext, int t_max, int c_max, TimeGuard *guard) {
     int n = example_list[0].first.size();
-    z3::optimize o(ext->ctx);
-    std::vector<z3::expr> param_list;
-    for (int i = 0; i < n; ++i) {
-        std::string var_name = "x" + std::to_string(i);
-        auto var = ext->ctx.int_const(var_name.c_str());
-        o.add(var >= -t_max && var <= t_max);
-        param_list.push_back(var);
-    }
-    auto const_var = ext->ctx.int_const("c");
-    o.add(const_var >= -c_max && const_var <= c_max);
-
-    for (auto& example: example_list) {
-        z3::expr res = const_var;
-        for (int i = 0; i < n; ++i) {
-            res = res + theory::clia::getIntValue(example.first[i]) * param_list[i];
+    GRBModel model = GRBModel(env);
+    model.set(GRB_IntParam_OutputFlag, 0);
+    std::vector<GRBVar> var_list;
+    std::vector<GRBVar> bound_list;
+    for (int i = 0; i <= n; ++i) {
+        std::string name_var = "var" + std::to_string(i);
+        std::string name_bound = "bound" + std::to_string(i);
+        int bound = i < n ? t_max : c_max;
+        var_list.push_back(model.addVar(-bound, bound, 0.0, GRB_INTEGER, name_var));
+        if (i == n) {
+            bound_list.push_back(model.addVar(0, 1, 0.0, GRB_INTEGER, name_bound));
+            model.addConstr(var_list[i] <= bound * bound_list[i], "rbound" + std::to_string(i));
+            model.addConstr(var_list[i] >= -bound * bound_list[i], "lbound" + std::to_string(i));
+        } else {
+            bound_list.push_back(model.addVar(0, bound, 0.0, GRB_INTEGER, name_bound));
+            model.addConstr(var_list[i] <= bound_list[i], "rbound" + std::to_string(i));
+            model.addConstr(var_list[i] >= -bound_list[i], "lbound" + std::to_string(i));
         }
-        o.add(res == theory::clia::getIntValue(example.second));
     }
-
-    z3::expr weight = z3::ite(const_var == 0, ext->ctx.int_val(0), ext->ctx.int_val(1));
-    for (const auto& var: param_list) weight = weight + z3::abs(var);
-    auto h = o.minimize(weight);
-
-    TimeCheck(guard);
-    if (guard) {
-        double remain_time = std::max(guard->getRemainTime() * 1e3, 1.0);
-        z3::params p(ext->ctx);
-        p.set(":timeout", int(remain_time) + 1u);
-        o.set(p);
+    int id = 0;
+    for (auto& example: example_list) {
+        GRBLinExpr expr = var_list[n];
+        for (int i = 0; i < n; ++i) expr += theory::clia::getIntValue(example.first[i]) * var_list[i];
+        model.addConstr(expr == theory::clia::getIntValue(example.second), "cons" + std::to_string(id++));
     }
-
-    auto status = o.check();
-    if (status == z3::unsat) return {};
-    o.lower(h); auto model = o.get_model();
-
-    auto type = theory::clia::getTInt();
-    auto const_val = ext->getValueFromModel(model, const_var, type.get());
-    auto const_w = theory::clia::getIntValue(const_val);
-
-    std::vector<int> param_val_list;
+    GRBLinExpr target = 0;
+    for (auto bound_var: bound_list) {
+        target += bound_var;
+    }
+    model.setObjective(target, GRB_MINIMIZE);
+    model.optimize();
+    int status = model.get(GRB_IntAttr_Status);
+    if (status == GRB_INFEASIBLE) return {};
+    int c_val = _getIntValue(var_list[n]);
+    std::vector<int> t_val_list;
     for (int i = 0; i < n; ++i) {
-        auto val = ext->getValueFromModel(model, param_list[i], type.get());
-        param_val_list.push_back(theory::clia::getIntValue(val));
+        t_val_list.push_back(_getIntValue(var_list[i]));
     }
-
-    return {param_val_list, const_w};
+    LIAResult res(t_val_list, c_val);
+#ifdef DEBUG
+    for (const auto& example: example_list) {
+        auto res_output = res.run(example.first);
+        if (!(res_output == example.second)) {
+            LOG(INFO) << res.toString() << " " << res_output.toString() << " " << example.second.toString() << std::endl;
+            for (const auto& e: example_list) {
+                std::cout << "  " << example::ioExample2String(e) << std::endl;
+            }
+            assert(0);
+        }
+    }
+#endif
+    return {t_val_list, c_val};
 }
 
 namespace {
@@ -249,26 +310,18 @@ void* LIASolver::relax(TimeGuard* guard) {
     double next_time_limit = KRelaxTimeLimit;
 
     auto next_program_list = _getConsideredTerms(info, next_num, time_out);
-    if (next_program_list.size() < next_num) next_time_limit *= 2;
+    if (next_program_list.size() == program_list.size()) {
+        next_time_limit *= 2;
+        return nullptr;
+    }
 
-    return new LIASolver(spec, next_program_list, KTermIntMax, KConstIntMax * 2, next_time_limit);
+    return new LIASolver(spec, next_program_list);
 }
 
 LIASolver * solver::lia::liaSolverBuilder(Specification *spec) {
     auto* env = spec->env.get();
-
-    auto* c_max_data = env->getConstRef(solver::lia::KConstIntMaxName);
-    if (c_max_data->isNull()) {
-        env->setConst(solver::lia::KConstIntMaxName, BuildData(Int, _getDefaultConstMax(spec->info_list[0]->grammar)));
-    }
-    int KConstIntMax = theory::clia::getIntValue(*c_max_data);
-    auto* t_max_data = spec->env->getConstRef(solver::lia::KTermIntMaxName);
-    if (t_max_data->isNull()) {
-        spec->env->setConst(solver::lia::KTermIntMaxName, BuildData(Int, KDefaultValue));
-    }
-    int KTermIntMax = theory::clia::getIntValue(*t_max_data);
     double KRelaxTimeLimit = 0.1;
     auto info = spec->info_list[0];
     ProgramList program_list = _getConsideredTerms(info, info->inp_type_list.size(), KRelaxTimeLimit);
-    return new LIASolver(spec, program_list, KTermIntMax, KConstIntMax, KRelaxTimeLimit);
+    return new LIASolver(spec, program_list);
 }

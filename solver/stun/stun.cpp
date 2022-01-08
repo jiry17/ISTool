@@ -33,8 +33,14 @@ STUNSolver::~STUNSolver() {
 }
 
 FunctionContext STUNSolver::synthesis(const std::vector<Example> &example_list, TimeGuard *guard) {
-    auto term_list = term_solver->synthesisTerms(example_list, guard);
     FunctionContext res;
+    if (example_list.empty()) {
+        res[func_name] = grammar::getMinimalProgram(spec->info_list[0]->grammar);
+        return res;
+    }
+    auto term_list = term_solver->synthesisTerms(example_list, guard);
+    LOG(INFO) << "Term list";
+    for (const auto& p: term_list) std::cout << "  " << p->toString() << std::endl;
     res[func_name] = unifier->unify(term_list, example_list, guard);
     return res;
 }

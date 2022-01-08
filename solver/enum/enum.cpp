@@ -10,6 +10,10 @@ bool TrivialOptimizer::isDuplicated(const std::string& name, NonTerminal *nt, co
     return false;
 }
 
+bool TrivialVerifier::verify(const FunctionContext &info, Example *counter_example) {
+    return true;
+}
+
 namespace {
     int indexAllNT(const std::vector<PSynthInfo>& info_list) {
         int id = 0;

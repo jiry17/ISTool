@@ -45,6 +45,7 @@ public:
 namespace grammar {
     Grammar* copyGrammar(Grammar* grammar);
     std::string getFreeName(Grammar* grammar);
+    PProgram getMinimalProgram(Grammar* grammar);
 }
 
 

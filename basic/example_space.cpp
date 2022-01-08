@@ -85,3 +85,8 @@ PExampleSpace example::buildFiniteIOExampleSpace(const IOExampleList &examples, 
 std::string example::ioExample2String(const IOExample &example) {
     return data::dataList2String(example.first) + "=>" + example.second.toString();
 }
+
+Example example::ioExample2Example(const IOExample &example) {
+    Example res = example.first; res.push_back(example.second);
+    return res;
+}

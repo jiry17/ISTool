@@ -20,6 +20,12 @@ public:
     virtual void clear();
 };
 
+class TrivialVerifier: public Verifier {
+public:
+    virtual bool verify(const FunctionContext& info, Example* counter_example);
+    virtual ~TrivialVerifier() = default;
+};
+
 struct EnumConfig {
     int res_num_limit = 1;
     TimeGuard* guard;

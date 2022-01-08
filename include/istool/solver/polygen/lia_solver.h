@@ -7,14 +7,16 @@
 
 #include "istool/solver/iterative_solver.h"
 #include "istool/ext/z3/z3_extension.h"
+#include "gurobi_c++.h"
 
 class LIASolver: public PBESolver, public IterativeSolver {
 public:
-    LIASolver(Specification* _spec, const ProgramList& _program_list, int _KTermIntMax, int _KConstIntMax, double _KRelaxTimeLimit);
+    LIASolver(Specification* _spec, const ProgramList& _program_list);
     Z3Extension* ext;
     IOExampleSpace* io_example_space;
     ProgramList program_list;
     PSynthInfo info;
+    GRBEnv env;
     virtual FunctionContext synthesis(const std::vector<Example>& example_list, TimeGuard* guard = nullptr);
     virtual void* relax(TimeGuard* guard);
 
@@ -30,13 +32,15 @@ public:
     std::vector<int> param_list;
     LIAResult();
     LIAResult(const std::vector<int>& _param_list, int _c_val);
+    Data run(const Example& example) const;
+    std::string toString() const;
 };
 
 namespace solver {
     namespace lia {
         extern const std::string KTermIntMaxName;
         extern const std::string KConstIntMaxName;
-        LIAResult solveLIA(const std::vector<IOExample>& example_list, Z3Extension* ext, int c_max, int p_max, TimeGuard* guard = nullptr);
+        LIAResult solveLIA(GRBEnv& env, const std::vector<IOExample>& example_list, Z3Extension* ext, int t_max, int c_max, TimeGuard* guard = nullptr);
         LIASolver* liaSolverBuilder(Specification* spec);
     }
 }

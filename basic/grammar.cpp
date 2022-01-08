@@ -153,3 +153,15 @@ std::string grammar::getFreeName(Grammar *grammar) {
     while (_isUsedName(grammar, "tmp@" + std::to_string(id))) ++id;
     return "tmp@" + std::to_string(id);
 }
+
+PProgram grammar::getMinimalProgram(Grammar *grammar) {
+    // todo: complete this function
+    grammar->print();
+    for (auto* rule: grammar->start->rule_list) {
+        if (rule->param_list.empty()) {
+            ProgramList sub_list;
+            return std::make_shared<Program>(rule->semantics, sub_list);
+        }
+    }
+    LOG(FATAL) << "There is no program with size 1";
+}

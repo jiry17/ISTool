@@ -18,6 +18,7 @@ CEGISSolver::~CEGISSolver() {
 FunctionContext CEGISSolver::synthesis(TimeGuard* guard) {
     std::vector<Example> example_list;
     while (1) {
+        std::cout << "start " << std::endl;
         auto res = pbe_solver->synthesis(example_list, guard);
         LOG(INFO) << "Find " << res.toString();
         Example counter_example;

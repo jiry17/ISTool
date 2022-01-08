@@ -10,7 +10,10 @@
 #include "istool/solver/vsa/vsa_solver.h"
 #include "istool/solver/stun/eusolver.h"
 #include "istool/solver/polygen/lia_solver.h"
+#include "istool/solver/polygen/polygen.h"
 #include "istool/solver/polygen/polygen_term_solver.h"
+#include "istool/solver/polygen/dnf_learner.h"
+#include "istool/solver/polygen/polygen_cegis.h"
 #include "istool/sygus/theory/witness/string/string_witness.h"
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
@@ -58,7 +61,6 @@ FunctionContext EuSolverInvoker(Specification* spec, TimeGuard* guard) {
 
     return cegis->synthesis(guard);
 }
-
 namespace {
     Example _buildExample(const std::vector<int>& x) {
         Example e;
@@ -89,6 +91,34 @@ FunctionContext LIASolverInvoker(Specification* spec, TimeGuard* guard) {
     }
     return solver->synthesis(inp_list, guard);
 }
+
+FunctionContext PolyGenInvoker(Specification* spec, TimeGuard* guard) {
+    auto *v = sygus::getVerifier(spec);
+    auto domain_builder = solver::lia::liaSolverBuilder;
+    auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
+
+    /*IOExampleList io_example_list;
+    ExampleList example_list;
+    int n = 15;
+    for (int i = 0; i < 300; ++i) {
+        std::vector<int> inp; int oup = 0;
+        for (int j = 0; j < n; ++j) {
+            int num = std::rand() % 40;
+            inp.push_back(num); oup = std::max(oup, num);
+        }
+        auto io_example = _buildIOExample(inp, oup);
+        auto example = io_example.first; example.push_back(io_example.second);
+        io_example_list.push_back(io_example);
+        example_list.push_back(example);
+    }
+    spec->example_space = example::buildFiniteIOExampleSpace(io_example_list, spec->info_list[0]->name, spec->env.get());
+    */
+    auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
+    auto* solver = new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
+
+    return solver->synthesis(guard);
+}
+
 
 void PolyGenTermSolverInvoker(Specification* spec, TimeGuard* guard) {
     ExampleList example_list;
@@ -161,13 +191,13 @@ FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
 }
 
 int main() {
-    std::string file = config::KSourcePath + "/tests/max2.sl";
+    std::string file = config::KSourcePath + "/tests/max10.sl";
     // std::string file = config::KSourcePath + "/tests/phone-1.sl";
     auto* spec = parser::getSyGuSSpecFromFile(file);
-    auto* guard = new TimeGuard(100);
-    PolyGenTermSolverInvoker(spec, guard);
+    auto* guard = new TimeGuard(500);
+    auto res = PolyGenInvoker(spec, guard);
     //auto res = LIASolverInvoker(spec, guard);
-    // std::cout << res.toString() << std::endl;
-    // std::cout << "Time Cost: " << guard->getPeriod() << " seconds";
+    std::cout << res.toString() << std::endl;
+    std::cout << "Time Cost: " << guard->getPeriod() << " seconds";
     return 0;
 }
