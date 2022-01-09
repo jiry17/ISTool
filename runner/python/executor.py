@@ -84,6 +84,7 @@ def execute(config: RunnerConfig, benchmark_list: list, cache_path: str, thread_
             continue
         output_file = _get_tmp_output_file(output_folder)
         command = config.build_command(benchmark_file, output_file)
+        print(command)
         _run_command(thread_pool, command, benchmark_name, output_file, cache[config.name])
 
         step_num += 1
@@ -94,6 +95,11 @@ def execute(config: RunnerConfig, benchmark_list: list, cache_path: str, thread_
     save_cache(cache_path, cache, True)
     return cache
 
+
 def get_all_benchmark(path: str, valid = lambda f: ".sl" in f):
     path_list = os.listdir(path)
-    print(path)
+    benchmark_list = []
+    for file in path_list:
+        if valid(file):
+            benchmark_list.append(os.path.join(path, file))
+    return benchmark_list

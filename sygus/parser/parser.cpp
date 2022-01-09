@@ -9,6 +9,7 @@
 #include "istool/basic/config.h"
 #include "istool/ext/z3/z3_example_space.h"
 #include "glog/logging.h"
+#include <unordered_set>
 
 namespace {
     std::vector<Json::Value> getEntriesViaName(const Json::Value& root, const std::string& name) {
@@ -65,11 +66,61 @@ namespace {
             symbol_list.push_back(symbol);
         }
 
-        // grammar
         int grammar_pos = entry.size() - 1;
+        // The following is a special treatment for rule Start -> (Symbol).
+        // At this time, Symbol can be regarded as the start symbol and Start can be removed.
+        // TODO: make this part more general
+        std::string start_name = symbol_list[0]->name;
+        bool is_used_start = false, is_start_dummy = false;
+        std::string replace_name;
+        for (auto& nt_node: entry[grammar_pos]) {
+            auto nt_name = nt_node[0].asString();
+            for (auto& rule_node: nt_node[2]) {
+                if (rule_node.isString()) {
+                    if (rule_node.asString() == start_name) {
+                        is_used_start = true;
+                    }
+                } else if (rule_node.isArray()) {
+                    for (auto& sub_node: rule_node)
+                        if (sub_node.isString() && sub_node.asString() == start_name) {
+                            is_used_start = true;
+                        }
+                }
+            }
+            if (nt_name == start_name) {
+                if (nt_node[2].size() != 1) continue;
+                auto rule_node = nt_node[2][0];
+                if (!rule_node.isString()) continue;
+                replace_name = rule_node.asString();
+                TEST_PARSER(nt_map.find(replace_name) != nt_map.end())
+                is_start_dummy = true;
+            }
+        }
+
+        if (is_start_dummy) {
+            TEST_PARSER(!is_used_start);
+            int pos = -1;
+            for (int i = 1; i < symbol_list.size(); ++i) {
+                if (symbol_list[i]->name == replace_name) {
+                    pos = i; break;
+                }
+            }
+            TEST_PARSER(pos != -1);
+            std::swap(symbol_list[0], symbol_list[pos]);
+            for (int i = pos; i + 1 < symbol_list.size(); ++i) {
+                symbol_list[i] = symbol_list[i + 1];
+            }
+            symbol_list.resize(symbol_list.size() - 1);
+        }
+
+        // grammar
         for (auto& nt_node: entry[grammar_pos]) {
             TEST_PARSER(nt_node.isArray() && nt_node.size() >= 3 && nt_node[2].isArray() && nt_node[0].isString());
-            auto* symbol = nt_map[nt_node[0].asString()];
+            auto symbol_name = nt_node[0].asString();
+            if (is_start_dummy && symbol_name == start_name) {
+                continue;
+            }
+            auto* symbol = nt_map[symbol_name];
             for (auto& rule_node: nt_node[2]) {
                 // try inp
                 if (rule_node.isString()) {
@@ -167,6 +218,39 @@ Specification * parser::getSyGuSSpecFromFile(const std::string &file_name) {
     return getSyGuSSpecFromJson(root);
 }
 
+namespace {
+    void _collectAllNames(const Json::Value& cons, std::unordered_set<std::string>& name_set) {
+        if (cons.isString()) {
+            name_set.insert(cons.asString()); return;
+        }
+        try {
+            json::getDataFromJson(cons);
+            return;
+        } catch (ParseError& e) {}
+        if (cons.isArray()) {
+            for (const auto& sub_node: cons) {
+                _collectAllNames(sub_node, name_set);
+            }
+        }
+    }
+
+    std::vector<Json::Value> _removeUselessVars(const std::vector<Json::Value>& var_list,
+            const std::vector<Json::Value>& cons_list) {
+        std::unordered_set<std::string> name_map;
+        for (const auto& cons_node: cons_list) {
+            _collectAllNames(cons_node[1], name_map);
+        }
+        std::vector<Json::Value> result;
+        for (const auto& var_node: var_list) {
+            std::string var_name = var_node[1].asString();
+            if (name_map.find(var_name) != name_map.end()) {
+                result.push_back(var_node);
+            }
+        }
+        return result;
+    }
+}
+
 Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     auto env = std::make_shared<Env>();
 
@@ -188,6 +272,7 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
 
     auto cons_list = getEntriesViaName(root, "constraint");
     auto declare_var_list = getEntriesViaName(root, "declare-var");
+    declare_var_list = _removeUselessVars(declare_var_list, cons_list);
 
     if (declare_var_list.empty()) {
         // try build PBE spec

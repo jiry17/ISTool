@@ -233,8 +233,15 @@ WitnessList StringIndexOfWitnessFunction::witness(const WitnessData &oup) {
                 }
             }
         }
-        return res;
     }
+    /*if (l == 4 && r == 4) {
+        LOG(INFO) << "Witness for indexof " << oup->toString() << std::endl;
+        for (auto &term_list: res) {
+            for (auto &data: term_list) std::cout << " " << data->toString();
+            std::cout << std::endl;
+        }
+    }*/
+    return res;
 }
 
 namespace {
