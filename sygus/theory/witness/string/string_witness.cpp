@@ -153,6 +153,15 @@ void _collectAllValidSubstr(const std::string& s, const std::string& t, WitnessL
     }
 }
 
+namespace {
+    void _printWitnessList(const WitnessList& res) {
+        for (auto& item: res) {
+            for (auto& d: item) std::cout << " " << d->toString();
+            std::cout << std::endl;
+        }
+    }
+}
+
 WitnessList StringSubStrWitnessFunction::witness(const WitnessData &oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup, oup}};
     auto s_list = _getStringConstList(const_list);
@@ -234,13 +243,6 @@ WitnessList StringIndexOfWitnessFunction::witness(const WitnessData &oup) {
             }
         }
     }
-    /*if (l == 4 && r == 4) {
-        LOG(INFO) << "Witness for indexof " << oup->toString() << std::endl;
-        for (auto &term_list: res) {
-            for (auto &data: term_list) std::cout << " " << data->toString();
-            std::cout << std::endl;
-        }
-    }*/
     return res;
 }
 

@@ -12,11 +12,12 @@ bool Z3IntType::matchType(Type *type) const {
 }
 Data Z3IntType::getValueFromModel(const z3::model &model, const z3::expr &expr, Type *type, bool is_strict) const {
     auto value = model.eval(expr);
-    if (value.is_int()) {
+    try {
         return Data(std::make_shared<IntValue>(value.get_numeral_int()));
+    } catch (z3::exception& e) {
+        if (is_strict) return Data();
+        return Data(std::make_shared<IntValue>(0));
     }
-    if (is_strict) return Data();
-    return Data(std::make_shared<IntValue>(0));
 }
 z3::expr Z3IntType::buildConst(const Data &data, z3::context &ctx) const {
     return ctx.int_val(theory::clia::getIntValue(data));

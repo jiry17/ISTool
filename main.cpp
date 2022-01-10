@@ -191,7 +191,7 @@ FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
 }
 
 int main() {
-    std::string file = config::KSourcePath + "/tests/max10.sl";
+    std::string file = config::KSourcePath + "/tests/polygen/secondmin.sl";
     // std::string file = config::KSourcePath + "/tests/phone-1.sl";
     auto* spec = parser::getSyGuSSpecFromFile(file);
     auto* guard = new TimeGuard(500);

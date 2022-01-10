@@ -24,4 +24,4 @@ def save_cache(cache_path: str, cache, is_cover: bool):
     if os.path.exists(cache_path) and not is_cover:
         backup_cache(cache_path)
     with open(cache_path, "w") as oup:
-        json.dump(cache, oup)
+        json.dump(cache, oup, indent=4)

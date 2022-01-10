@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <queue>
 #include "istool/solver/vsa/vsa_builder.h"
+#include "debug_tool/vsa.h"
 
 bool TrivialPruner::isPrune(VSANode *node) {return false;}
 void TrivialPruner::clear() {}
@@ -178,7 +179,6 @@ VSANode* BFSVSABuilder::buildVSA(const Data &oup, const DataList &inp_list, Time
         if (!pruner->isPrune(node)) Q.push(node);
         return cache[feature] = node;
     };
-
     auto init_d = std::make_shared<DirectWitnessValue>(oup);
     auto root = insert(g->start, init_d);
     while (!Q.empty()) {
@@ -209,7 +209,6 @@ VSANode* BFSVSABuilder::mergeVSA(VSANode* l, VSANode* r, TimeGuard *guard) {
     orderEdgeList(l); orderEdgeList(r);
     std::unordered_map<std::string, VSANode*> cache;
     std::queue<VSANode*> Q;
-
     auto insert = [&](VSANode* l, VSANode* r) {
         std::string feature = std::to_string(l->id) + "@" + std::to_string(r->id);
         if (cache.find(feature) != cache.end()) return cache[feature];
@@ -219,8 +218,9 @@ VSANode* BFSVSABuilder::mergeVSA(VSANode* l, VSANode* r, TimeGuard *guard) {
     };
 
     auto root = insert(l, r);
+    int num = 0;
     while (!Q.empty()) {
-        TimeCheck(guard);
+        TimeCheck(guard); ++num;
         auto node = Q.front(); Q.pop();
         auto* mn = dynamic_cast<MultiExampleVSANode*>(node);
         auto l_node = mn->l, r_node = mn->r;

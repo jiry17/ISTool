@@ -16,9 +16,9 @@ class RunnerConfig:
         self.name = name
 
     def build_command(self, task_file: str, result_file: str):
-        command = ['ulimit -v ' + str(self.memory_limit) + ';',
-                   "timeout " + str(self.time_limit) + " ./" + self.bin_file,
-                   task_file, result_file]
+        command = ['ulimit -v ' + str(self.memory_limit * 1024 * 1024) + ';',
+                   "timeout " + str(self.time_limit), self.bin_file,
+                   task_file, result_file, ">/dev/null", "2>/dev/null"]
         command = command + self.flags
         return " ".join(command)
     

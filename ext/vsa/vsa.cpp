@@ -9,6 +9,14 @@
 
 VSAEdge::VSAEdge(const PSemantics &_semantics, const VSANodeList &_node_list): semantics(_semantics), node_list(_node_list) {
 }
+std::string VSAEdge::toString() const {
+    std::string res = semantics->getName() + "(";
+    for (int i = 0; i < node_list.size(); ++i) {
+        if (i) res += ",";
+        res += node_list[i]->toString();
+    }
+    return res + ")";
+}
 VSANode::VSANode(NonTerminal *_symbol, int _example_num): symbol(_symbol), example_num(_example_num), id(0) {
 }
 

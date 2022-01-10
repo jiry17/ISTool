@@ -118,9 +118,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             }
 
             if (!is_valid) {
-                LOG(INFO) << "get new condition";
                 condition = cond_solver->getCondition(term_list, positive_list, negative_list, guard);
-                LOG(INFO) << "finished";
             }
             condition_list[i] = condition;
             rem_example = negative_list;
@@ -132,6 +130,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
         }
 
         result = semantics::buildSingleContext(info->name, _mergeIte(term_list, condition_list, spec->env.get()));
+        LOG(INFO) << result.toString() << std::endl;
         if (v->verify(result, &counter_example)) {
             return result;
         }

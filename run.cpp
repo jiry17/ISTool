@@ -3,12 +3,27 @@
 //
 
 #include <istool/sygus/sygus.h>
+#include <istool/solver/polygen/lia_solver.h>
+#include <istool/solver/polygen/dnf_learner.h>
+#include <istool/solver/stun/stun.h>
+#include <istool/solver/polygen/polygen_cegis.h>
 #include "istool/solver/vsa/vsa_solver.h"
 #include "istool/sygus/theory/basic/string/str.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/sygus/theory/witness/theory_witness.h"
 #include "istool/sygus/theory/witness/string/string_witness.h"
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
+
+FunctionContext invokeBasicPolyGen(Specification* spec) {
+    auto *v = sygus::getVerifier(spec);
+    auto domain_builder = solver::lia::liaSolverBuilder;
+    auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
+    auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
+    stun_info.second->grammar->print();
+    auto* solver = new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
+
+    return solver->synthesis(nullptr);
+}
 
 FunctionContext invokeVSA(Specification* spec) {
     auto info = spec->info_list[0];
@@ -18,7 +33,7 @@ FunctionContext invokeVSA(Specification* spec) {
             auto* oup = dynamic_cast<DirectWitnessValue*>(sn->oup.get());
             if (oup) {
                 auto* w = dynamic_cast<StringValue*>(oup->d.get());
-                if (w) return w->s.length() >= 15;
+                if (w) return w->s.length() >= 20;
             }
         }
         return false;
@@ -71,15 +86,17 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        benchmark_name = "/tmp/tmp.hABJQGVQ89/tests/string/phone-5_short.sl";
+        benchmark_name = "/tmp/tmp.hABJQGVQ89/tests/polygen/zerostar1star.sl";
         output_name = "/tmp/629453237.out";
-        solver_name = "vsa";
+        solver_name = "polygen";
     }
     auto* spec = parser::getSyGuSSpecFromFile(benchmark_name);
     FunctionContext result;
     auto* guard = new TimeGuard(1e9);
     if (solver_name == "vsa") {
         result = invokeVSA(spec);
+    } else if (solver_name == "polygen") {
+        result = invokeBasicPolyGen(spec);
     } else assert(0);
     std::cout << result.toString() << std::endl;
     FILE* f = fopen(output_name.c_str(), "w");

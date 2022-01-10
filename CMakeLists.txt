@@ -36,8 +36,8 @@ add_library(debug_lib ${DEBUG_TOOL_SRC})
  
 set(SRC_LIBS basic_lib ext_lib ${SyGuS_LIBS} solver_lib debug_lib)
 
-add_executable(ISTool main.cpp)
-target_link_libraries(ISTool ${SRC_LIBS} ${SRC_LIBS} ${THIRDPARTY_LIBS})
+#add_executable(ISTool main.cpp)
+#target_link_libraries(ISTool ${SRC_LIBS} ${SRC_LIBS} ${THIRDPARTY_LIBS})
 
 add_executable(run run.cpp)
 target_link_libraries(run ${SRC_LIBS} ${SRC_LIBS} ${THIRDPARTY_LIBS})

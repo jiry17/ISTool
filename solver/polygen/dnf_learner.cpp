@@ -12,7 +12,16 @@ using namespace polygen;
 
 CmpInfo::CmpInfo(const PProgram& _cmp, const Bitset &_P, const Bitset &_N): cmp(_cmp), P(_P), N(_N) {
 }
-CmpPlan::CmpPlan(const std::vector<PCmpInfo> _cmp_list, const Bitset &_rem): cmp_list(_cmp_list), rem_example(_rem) {
+std::string CmpInfo::toString() const {
+    return cmp->toString() + " P:" + P.toString() + " N:" + N.toString();
+}
+CmpPlan::CmpPlan(const std::vector<PCmpInfo>& _cmp_list, const Bitset &_rem): cmp_list(_cmp_list), rem_example(_rem) {
+}
+void CmpPlan::print() const {
+    std::cout << "plan with example:" << rem_example.toString() << std::endl;
+    for (const auto& info: cmp_list) {
+        std::cout << "  " << info->toString() << std::endl;
+    }
 }
 
 namespace {
@@ -34,7 +43,7 @@ namespace {
         return std::make_shared<SynthInfo>(info->name, info->inp_type_list, info->oup_type, g);
     }
 
-    int KDefaultMaxClauseNum = 5;
+    int KDefaultMaxClauseNum = 4;
 }
 
 DNFLearner::DNFLearner(Specification *spec): PBESolver(spec) {
@@ -51,7 +60,8 @@ DNFLearner::DNFLearner(Specification *spec): PBESolver(spec) {
         LOG(FATAL) << "DNFLeaner supports only IOExamples";
     }
     pred_info = _buildPredInfo(spec->info_list[0]);
-    cared_num = pred_info->inp_type_list.size();
+    int inp_size = pred_info->inp_type_list.size();
+    cared_num = inp_size;
 
     auto* val = spec->env->getConstRef(solver::polygen::KMaxClauseNumName);
     if (val->isNull()) KMaxClauseNum = KDefaultMaxClauseNum;
@@ -106,9 +116,14 @@ std::vector<PCmpInfo> DNFLearner::getNextInfoList() {
     std::vector<bool> is_duplicated;
     int n = pred_pool[pred_pos].size();
     for (const auto& res: pred_pool[pred_pos]) {
-        pred_list.push_back(buildInfo(res));
+        auto info = buildInfo(res);
+        pred_list.push_back(info);
         is_duplicated.push_back(false);
     }
+    /*LOG(INFO) << "Get next info";
+    for (int i = 0; i < 10 && i < pred_list.size(); ++i) {
+        std::cout << "  " << pred_list[i]->toString() << std::endl;
+    }*/
     for (int i = n - 1; i >= 0; --i) {
         for (int j = 0; j < n; ++j) {
             if (i != j && !is_duplicated[j] && pred_list[j]->P.checkCover(pred_list[i]->P) &&
@@ -209,7 +224,7 @@ namespace {
 }
 
 std::vector<polygen::ClausePlan> DNFLearner::getAllClause(int l, int r, const std::vector<polygen::PCmpInfo> &info_list,
-        const Bitset &rem_example, int lim, TimeGuard* guard) {
+        const Bitset &rem_example, int lim) {
     std::vector<polygen::ClausePlan> result;
     TimeCheck(guard);
     if (l == r) {
@@ -222,15 +237,15 @@ std::vector<polygen::ClausePlan> DNFLearner::getAllClause(int l, int r, const st
         return _reduceClause(result);
     }
     int mid = l + r >> 1;
-    auto l_result = getAllClause(l, mid, info_list, rem_example, lim, guard);
-    auto r_result = getAllClause(mid + 1, r, info_list, rem_example, lim, guard);
+    auto l_result = getAllClause(l, mid, info_list, rem_example, lim);
+    auto r_result = getAllClause(mid + 1, r, info_list, rem_example, lim);
     for (const auto& l_plan: l_result) {
         for (const auto& r_plan: r_result) {
             TimeCheck(guard);
             auto rem_P = l_plan.P & r_plan.P;
             if (rem_P.count() >= lim) {
                 auto rem_N = l_plan.N & r_plan.N;
-                if (l == 0 && r == info_list.size() && rem_N.count()) continue;
+                if (l == 0 && r + 1 == info_list.size() && rem_N.count()) continue;
                 result.push_back(_mergePlan(l_plan, r_plan, rem_P, rem_N));
             }
         }
@@ -280,7 +295,7 @@ namespace {
     }
 }
 
-PProgram DNFLearner::searchForCondition(const polygen::CmpPlan &plan, const std::vector<PCmpInfo> &info_list, int rem_num, TimeGuard *guard) {
+PProgram DNFLearner::searchForCondition(const polygen::CmpPlan &plan, const std::vector<PCmpInfo> &info_list, int rem_num) {
     if (visited_plan.find(plan) != visited_plan.end()) return nullptr;
     TimeCheck(guard); visited_plan.insert(plan);
     if (rem_num == 0 || plan.rem_example.count() == 0) {
@@ -288,27 +303,28 @@ PProgram DNFLearner::searchForCondition(const polygen::CmpPlan &plan, const std:
         for (const auto& info: plan.cmp_list) clause_list.push_back(info->cmp);
         return _buildDNF(clause_list, spec->env.get());
     }
-    int rem_example_num = plan.rem_example.size();
+    int rem_example_num = plan.rem_example.count();
     int limit = (rem_example_num - 1) / rem_num + 1;
     std::vector<PCmpInfo> clause_list;
-    for (const ClausePlan& info: getAllClause(0, int(info_list.size()) - 1, info_list, plan.rem_example, limit, guard)) {
+    // plan.print();
+    for (const ClausePlan& info: getAllClause(0, int(info_list.size()) - 1, info_list, plan.rem_example, limit)) {
         if (info.N.count()) continue;
         auto result = buildSimplifiedInfo(info, info_list);
         clause_list.push_back(result);
     }
     for (const auto& cmp: clause_list) {
         auto cmp_list = _insertNewCmp(plan, cmp);
-        auto res = searchForCondition({cmp_list, plan.rem_example & (~cmp->P)}, info_list, rem_num - 1, guard);
+        auto res = searchForCondition({cmp_list, plan.rem_example & (~cmp->P)}, info_list, rem_num - 1);
         if (res) return res;
     }
     return nullptr;
 }
 
-PProgram DNFLearner::searchForCondition(const std::vector<PCmpInfo> &cmp_info, int rem_num, TimeGuard *guard) {
+PProgram DNFLearner::searchForCondition(const std::vector<PCmpInfo> &cmp_info, int rem_num) {
     int p_n = cmp_info[0]->P.size(); Bitset full_positive(p_n, true);
     CmpPlan empty_plan({}, full_positive);
     visited_plan.clear();
-    return searchForCondition(empty_plan, cmp_info, rem_num, guard);
+    return searchForCondition(empty_plan, cmp_info, rem_num);
 }
 
 FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, TimeGuard *_guard) {
@@ -325,14 +341,26 @@ FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, 
         auto info_list = getNextInfoList();
         if (!info_list.empty()) {
             info_storage.push_back(info_list);
+            /*LOG(INFO) << "P examples";
+            for (const auto& example: positive_list) {
+                std::cout << data::dataList2String(example) << std::endl;
+            }
+            LOG(INFO) << "N examples";
+            for (const auto& example: negative_list) {
+                std::cout << data::dataList2String(example) << std::endl;
+            }
+            std::cout << "Size " << info_storage.size() - 1 << std::endl;
+            for (const auto& info: info_list) {
+                std::cout << " " << info->toString() << std::endl;
+            }
+            int kk; std::cin >> kk;*/
         }
         for (int clause_num = 1; clause_num <= or_limit; ++clause_num) {
             for (int si = 0; si < info_storage.size(); ++si) {
                 if (visited_set.find({clause_num, si}) != visited_set.end()) continue;
-                std::cout << clause_num << " " << si << std::endl;
                 TimeCheck(guard);
                 visited_set.insert({clause_num, si});
-                auto condition = searchForCondition(info_storage[si], clause_num, guard);
+                auto condition = searchForCondition(info_storage[si], clause_num);
                 if (condition) return semantics::buildSingleContext(io_space->func_name, condition);
             }
         }

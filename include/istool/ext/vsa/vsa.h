@@ -16,6 +16,7 @@ public:
     PSemantics semantics;
     VSANodeList node_list;
     VSAEdge(const PSemantics& _semantics, const VSANodeList& _node_list);
+    std::string toString() const;
     virtual ~VSAEdge() = default;
 };
 

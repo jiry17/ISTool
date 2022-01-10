@@ -4,6 +4,7 @@ import sys
 import time
 from config import RunnerConfig
 from cache import *
+from tqdm import tqdm
 import random
 
 
@@ -70,6 +71,10 @@ def _join_all(thread_pool, cache):
         if is_clear: return
 
 
+def _get_benchmark_name(path: str):
+    return os.path.splitext(os.path.basename(path))[0]
+
+
 def execute(config: RunnerConfig, benchmark_list: list, cache_path: str, thread_num=4,
             output_folder="/tmp/", save_step=5):
     thread_pool = [None for _ in range(thread_num)]
@@ -78,13 +83,13 @@ def execute(config: RunnerConfig, benchmark_list: list, cache_path: str, thread_
     if config.name not in cache:
         cache[config.name] = {}
     step_num = 0
-    for benchmark_file in benchmark_list:
-        benchmark_name = os.path.splitext(os.path.basename(benchmark_file))[0]
-        if benchmark_name in cache[config.name]:
-            continue
+
+    benchmark_list = list(filter(lambda path: _get_benchmark_name(path) not in cache[config.name], benchmark_list))
+
+    for benchmark_file in tqdm(benchmark_list):
+        benchmark_name = _get_benchmark_name(benchmark_file)
         output_file = _get_tmp_output_file(output_folder)
         command = config.build_command(benchmark_file, output_file)
-        print(command)
         _run_command(thread_pool, command, benchmark_name, output_file, cache[config.name])
 
         step_num += 1

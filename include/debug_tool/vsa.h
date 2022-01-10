@@ -12,6 +12,8 @@ namespace debug {
     PProgram getRandomProgram(VSANode* root);
     void testVSA(VSANode* root, const ExampleList& example_list);
     void testVSAEdge(VSANode* node, const VSAEdge& edge);
+    bool containProgram(VSANode* root, Program* program);
+    void viewVSA(VSANode* node);
 }
 
 

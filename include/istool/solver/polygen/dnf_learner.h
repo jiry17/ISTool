@@ -15,6 +15,7 @@ namespace polygen {
         PProgram cmp;
         Bitset P, N;
         CmpInfo(const PProgram& _cmp, const Bitset &_P, const Bitset& _N);
+        std::string toString() const;
     };
 
     typedef std::shared_ptr<CmpInfo> PCmpInfo;
@@ -22,9 +23,10 @@ namespace polygen {
     struct CmpPlan {
         std::vector<PCmpInfo> cmp_list;
         Bitset rem_example;
-        CmpPlan(const std::vector<PCmpInfo> _cmp_list, const Bitset& _rem);
+        CmpPlan(const std::vector<PCmpInfo>& _cmp_list, const Bitset& _rem);
         CmpPlan() = default;
         int operator < (const CmpPlan& plan) const;
+        void print() const;
     };
 
     struct ClausePlan {
@@ -60,9 +62,9 @@ class DNFLearner: public PBESolver {
     std::set<polygen::CmpPlan> visited_plan;
     polygen::PCmpInfo buildSimplifiedInfo(const polygen::ClausePlan& plan, const std::vector<polygen::PCmpInfo> &info_list);
     std::vector<polygen::ClausePlan> getAllClause(int l, int r, const std::vector<polygen::PCmpInfo>& info_list,
-            const Bitset& rem_list, int lim, TimeGuard* guard);
-    PProgram searchForCondition(const polygen::CmpPlan& plan, const std::vector<polygen::PCmpInfo>& info_list, int rem_num, TimeGuard* guard);
-    PProgram searchForCondition(const std::vector<polygen::PCmpInfo>& info_list, int rem_num, TimeGuard* guard);
+            const Bitset& rem_list, int lim);
+    PProgram searchForCondition(const polygen::CmpPlan& plan, const std::vector<polygen::PCmpInfo>& info_list, int rem_num);
+    PProgram searchForCondition(const std::vector<polygen::PCmpInfo>& info_list, int rem_num);
 public:
     PSynthInfo pred_info;
     DNFLearner(Specification* spec);

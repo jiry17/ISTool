@@ -70,3 +70,34 @@ void debug::testVSAEdge(VSANode *node, const VSAEdge& edge) {
         }
     }
 }
+
+bool debug::containProgram(VSANode *root, Program* program) {
+    int n = program->sub_list.size();
+    for (const auto& edge: root->edge_list) {
+        if (edge.semantics->getName() == program->semantics->getName()) {
+            bool is_contain = true;
+            assert(program->sub_list.size() == edge.node_list.size());
+            for (int i = 0; i < n; ++i) {
+                if (!containProgram(edge.node_list[i], program->sub_list[i].get())) {
+                    is_contain = false; break;
+                }
+            }
+            if (is_contain) return true;
+        }
+    }
+    return false;
+}
+
+void debug::viewVSA(VSANode *node) {
+    std::cout << "node: " << node->toString() << std::endl;
+    for (int i = 0; i < node->edge_list.size(); ++i) {
+        std::cout << "#" << i << " " << node->edge_list[i].toString() << std::endl;
+    }
+    std::string s;
+    std::cin >> s;
+    if (s == "e") return;
+    if (s == "v") {
+        int k1, k2; std::cin >> k1 >> k2;
+        viewVSA(node->edge_list[k1].node_list[k2]);
+    }
+}
