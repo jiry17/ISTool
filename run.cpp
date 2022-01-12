@@ -13,13 +13,13 @@
 #include "istool/sygus/theory/witness/theory_witness.h"
 #include "istool/sygus/theory/witness/string/string_witness.h"
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
+#include "istool/selector/baseline/clia_random_selector.h"
 
-FunctionContext invokeBasicPolyGen(Specification* spec) {
-    auto *v = sygus::getVerifier(spec);
+FunctionContext invokeBasicPolyGen(Specification* spec, bool is_random=false) {
+    auto *v = is_random ? new CLIARandomSelector(spec->env.get(), dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get())) : sygus::getVerifier(spec);
     auto domain_builder = solver::lia::liaSolverBuilder;
     auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
     auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
-    stun_info.second->grammar->print();
     auto* solver = new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
 
     return solver->synthesis(nullptr);
@@ -86,17 +86,19 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        benchmark_name = "/tmp/tmp.hABJQGVQ89/tests/polygen/zerostar1star.sl";
+        benchmark_name = "/tmp/tmp.hABJQGVQ89/tests/polygen/qm_neg_eq_5.sl";
         output_name = "/tmp/629453237.out";
-        solver_name = "polygen";
+        solver_name = "polygen_random";
     }
-    auto* spec = parser::getSyGuSSpecFromFile(benchmark_name);
+    auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
     FunctionContext result;
-    auto* guard = new TimeGuard(1e9);
+    auto *guard = new TimeGuard(1e9);
     if (solver_name == "vsa") {
         result = invokeVSA(spec);
     } else if (solver_name == "polygen") {
         result = invokeBasicPolyGen(spec);
+    } else if (solver_name == "polygen_random") {
+        result = invokeBasicPolyGen(spec, true);
     } else assert(0);
     std::cout << result.toString() << std::endl;
     FILE* f = fopen(output_name.c_str(), "w");

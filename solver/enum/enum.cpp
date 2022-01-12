@@ -5,15 +5,6 @@
 #include "istool/solver/enum/enum.h"
 #include <unordered_set>
 
-void TrivialOptimizer::clear() {}
-bool TrivialOptimizer::isDuplicated(const std::string& name, NonTerminal *nt, const PProgram &p) {
-    return false;
-}
-
-bool TrivialVerifier::verify(const FunctionContext &info, Example *counter_example) {
-    return true;
-}
-
 namespace {
     int indexAllNT(const std::vector<PSynthInfo>& info_list) {
         int id = 0;
@@ -80,13 +71,14 @@ namespace {
     }
 }
 
-std::vector<FunctionContext> solver::enumerate(const std::vector<PSynthInfo> &info_list, const EnumConfig &c) {
+FunctionContext solver::enumerate(const std::vector<PSynthInfo> &info_list, const EnumConfig &c) {
     auto* v = c.v; auto* o = c.o; o->clear();
     int n = indexAllNT(info_list);
     std::vector<ProgramStorage> storage_list(n);
     for (auto& ps: storage_list) ps.emplace_back();
     std::vector<FunctionContext> res;
     for (int size = 1;; ++size) {
+        TimeCheck(c.guard);
         for (const auto& info: info_list) {
             for (auto* symbol: info->grammar->symbol_list) {
                 int id = symbol->id; storage_list[id].emplace_back();
@@ -95,9 +87,7 @@ std::vector<FunctionContext> solver::enumerate(const std::vector<PSynthInfo> &in
                     for (auto* sub_symbol: rule->param_list) sub_id_list.push_back(sub_symbol->id);
                     ProgramStorage tmp = merge(sub_id_list, size, storage_list);
                     for (const auto& sub_list: tmp) {
-                        if (c.guard && c.guard->getRemainTime() < 0) {
-                            return res;
-                        }
+                        TimeCheck(c.guard);
                         auto p = rule->buildProgram(sub_list);
                         if (o->isDuplicated(info->name, symbol, p))
                             continue;
@@ -114,17 +104,12 @@ std::vector<FunctionContext> solver::enumerate(const std::vector<PSynthInfo> &in
         }
         ProgramStorage tmp = merge(sub_id_list, merge_size, storage_list);
         for (const auto& sub_list: tmp) {
-            if (c.guard && c.guard->getRemainTime() < 0) {
-                return res;
-            }
+            TimeCheck(c.guard);
             FunctionContext info;
             for (int i = 0; i < info_list.size(); ++i) {
                 info[info_list[i]->name] = sub_list[i];
             }
-            if (v->verify(info, nullptr)) {
-                res.push_back(info);
-                if (res.size() >= c.res_num_limit) return res;
-            }
+            if (v->verify(info, nullptr)) return info;
         }
     }
 }

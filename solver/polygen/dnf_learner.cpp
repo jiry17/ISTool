@@ -3,7 +3,7 @@
 //
 
 #include "istool/solver/polygen/dnf_learner.h"
-#include "istool/solver/enum/enum.h"
+#include "istool/solver/enum/enum_util.h"
 #include "istool/sygus/theory/basic/clia/clia_value.h"
 #include "glog/logging.h"
 #include <algorithm>
@@ -43,7 +43,12 @@ namespace {
         return std::make_shared<SynthInfo>(info->name, info->inp_type_list, info->oup_type, g);
     }
 
-    int KDefaultMaxClauseNum = 4;
+    int KDefaultMaxClauseNum = 5;
+
+    int _getDefaultClauseNum(const PSynthInfo& info) {
+        if (info->inp_type_list.size() >= 10) return 2;
+        return KDefaultMaxClauseNum;
+    }
 }
 
 DNFLearner::DNFLearner(Specification *spec): PBESolver(spec) {
@@ -60,11 +65,9 @@ DNFLearner::DNFLearner(Specification *spec): PBESolver(spec) {
         LOG(FATAL) << "DNFLeaner supports only IOExamples";
     }
     pred_info = _buildPredInfo(spec->info_list[0]);
-    int inp_size = pred_info->inp_type_list.size();
-    cared_num = inp_size;
 
     auto* val = spec->env->getConstRef(solver::polygen::KMaxClauseNumName);
-    if (val->isNull()) KMaxClauseNum = KDefaultMaxClauseNum;
+    if (val->isNull()) KMaxClauseNum = _getDefaultClauseNum(spec->info_list[0]);
     else KMaxClauseNum = theory::clia::getIntValue(*val);
     KRelaxTimeLimit = 0.1;
 }
@@ -77,20 +80,17 @@ PCmpInfo DNFLearner::buildInfo(const PProgram& program) {
 }
 
 void DNFLearner::relax() {
-    auto* optimizer = new TrivialOptimizer();
-    auto* verifier = new TrivialVerifier();
+    size_limit += 1;
+    std::vector<FunctionContext> result;
     double time_limit = KRelaxTimeLimit;
     if (guard) time_limit = std::min(time_limit, guard->getRemainTime());
     auto* tmp_guard = new TimeGuard(time_limit);
-    EnumConfig c(verifier, optimizer, tmp_guard);
-    c.res_num_limit = cared_num;
-    auto res_list = solver::enumerate({pred_info}, c);
-
-    if (res_list.size() < cared_num) KRelaxTimeLimit *= 2;
-    cared_num = std::max(cared_num, int(res_list.size()) * 2);
+    auto is_timeout = solver::collectAccordingSize({pred_info}, size_limit, result, EnumConfig(nullptr, nullptr, tmp_guard));
+    if (is_timeout) KRelaxTimeLimit *= 2;
+    delete tmp_guard;
 
     ProgramList pred_list;
-    for (const auto& res: res_list) pred_list.push_back(res.begin()->second);
+    for (const auto& res: result) pred_list.push_back(res.begin()->second);
     pred_pool.push_back(pred_list);
 }
 
@@ -223,6 +223,7 @@ namespace {
     }
 }
 
+// TODO: replace this part by foldl
 std::vector<polygen::ClausePlan> DNFLearner::getAllClause(int l, int r, const std::vector<polygen::PCmpInfo> &info_list,
         const Bitset &rem_example, int lim) {
     std::vector<polygen::ClausePlan> result;
@@ -341,19 +342,6 @@ FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, 
         auto info_list = getNextInfoList();
         if (!info_list.empty()) {
             info_storage.push_back(info_list);
-            /*LOG(INFO) << "P examples";
-            for (const auto& example: positive_list) {
-                std::cout << data::dataList2String(example) << std::endl;
-            }
-            LOG(INFO) << "N examples";
-            for (const auto& example: negative_list) {
-                std::cout << data::dataList2String(example) << std::endl;
-            }
-            std::cout << "Size " << info_storage.size() - 1 << std::endl;
-            for (const auto& info: info_list) {
-                std::cout << " " << info->toString() << std::endl;
-            }
-            int kk; std::cin >> kk;*/
         }
         for (int clause_num = 1; clause_num <= or_limit; ++clause_num) {
             for (int si = 0; si < info_storage.size(); ++si) {
@@ -361,7 +349,9 @@ FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, 
                 TimeCheck(guard);
                 visited_set.insert({clause_num, si});
                 auto condition = searchForCondition(info_storage[si], clause_num);
-                if (condition) return semantics::buildSingleContext(io_space->func_name, condition);
+                if (condition) {
+                    return semantics::buildSingleContext(io_space->func_name, condition);
+                }
             }
         }
         or_limit = std::min(or_limit + 1, KMaxClauseNum);

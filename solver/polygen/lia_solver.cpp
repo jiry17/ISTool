@@ -4,7 +4,7 @@
 
 #include "istool/solver/polygen/lia_solver.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
-#include "istool/solver/enum/enum.h"
+#include "istool/solver/enum/enum_util.h"
 #include "gurobi_c++.h"
 #include "glog/logging.h"
 #include <unordered_set>
@@ -15,11 +15,12 @@ const std::string solver::lia::KConstIntMaxName = "LIA@ConstIntMax";
 const std::string solver::lia::KTermIntMaxName = "LIA@TermIntMax";
 
 namespace {
-    const int KDefaultValue = 2;
+    const int KDefaultConstValue = 3;
+    const int KDefaultTermValue = 2;
 
-    int _getDefaultConstMax(Grammar* g) {
-        int c_max = KDefaultValue;
-        for (auto* symbol: g->symbol_list) {
+    int _getDefaultConstMax(const PSynthInfo& info) {
+        int c_max = KDefaultConstValue;
+        for (auto* symbol: info->grammar->symbol_list) {
             for (auto* rule: symbol->rule_list) {
                 auto* cs = dynamic_cast<ConstSemantics*>(rule->semantics.get());
                 if (!cs) continue;
@@ -28,6 +29,10 @@ namespace {
             }
         }
         return c_max;
+    }
+
+    int _getDefaultTermMax(const PSynthInfo& info) {
+        if (info->inp_type_list.size() < 8) return KDefaultTermValue; else return 1;
     }
 }
 
@@ -77,12 +82,13 @@ LIASolver::LIASolver(Specification *_spec, const ProgramList &_program_list):
     auto* c_max_data = spec->env->getConstRef(solver::lia::KConstIntMaxName);
     if (c_max_data->isNull()) {
         spec->env->setConst(solver::lia::KConstIntMaxName,
-                BuildData(Int, _getDefaultConstMax(spec->info_list[0]->grammar)));
+                BuildData(Int, _getDefaultConstMax(spec->info_list[0])));
     }
     KConstIntMax = theory::clia::getIntValue(*c_max_data);
     auto* t_max_data = spec->env->getConstRef(solver::lia::KTermIntMaxName);
     if (t_max_data->isNull()) {
-        spec->env->setConst(solver::lia::KTermIntMaxName, BuildData(Int, KDefaultValue));
+        spec->env->setConst(solver::lia::KTermIntMaxName,
+                BuildData(Int, _getDefaultTermMax(spec->info_list[0])));
     }
     KTermIntMax = theory::clia::getIntValue(*t_max_data);
     KRelaxTimeLimit = 0.1;
@@ -288,12 +294,11 @@ namespace {
 
     ProgramList _getConsideredTerms(const PSynthInfo& info, int num, double time_out) {
         auto* verifier = new LIARelaxVerifier();
-        auto* optimizer = new TrivialOptimizer();
         auto* tmp_guard = new TimeGuard(time_out);
-        EnumConfig c(verifier, optimizer, tmp_guard);
-        c.res_num_limit = num;
-        auto res_list = solver::enumerate({info}, c);
-        delete verifier; delete optimizer; delete tmp_guard;
+        EnumConfig c(verifier, nullptr, tmp_guard);
+        std::vector<FunctionContext> res_list;
+        solver::collectAccordingNum({info}, num, res_list, c);
+        delete verifier; delete tmp_guard;
 
         ProgramList next_program_list;
         for (auto& res: res_list) {

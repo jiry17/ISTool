@@ -14,36 +14,7 @@ BasicEnumSolver::~BasicEnumSolver() {
 FunctionContext BasicEnumSolver::synthesis(TimeGuard* guard) {
     auto* o = new TrivialOptimizer();
     EnumConfig c(v, o, guard);
-    auto res = solver::enumerate(spec->info_list, c);
-    if (res.empty()) {
-        LOG(FATAL) << "Synthesis failed";
-    }
-    return res[0];
-}
-
-OBEOptimizer::OBEOptimizer(const ProgramChecker &_is_runnable, const std::unordered_map<std::string, ExampleList> &_pool):
-    is_runnable(_is_runnable), example_pool(_pool) {
-}
-
-bool OBEOptimizer::isDuplicated(const std::string& name, NonTerminal *nt, const PProgram &p) {
-    if (!is_runnable(p.get()) || example_pool.find(name) == example_pool.end()) return false;
-    auto& example_list = example_pool[name];
-    DataList res;
-    for (auto& example: example_list) {
-        try {
-            res.push_back(program::run(p.get(), example));
-        } catch (SemanticsError& e) {
-            return true;
-        }
-    }
-    std::string feature = std::to_string(nt->id) + "@" + data::dataList2String(res);
-    if (visited_set.find(feature) != visited_set.end()) return true;
-    visited_set.insert(feature);
-    return false;
-}
-
-void OBEOptimizer::clear() {
-    visited_set.clear();
+    return solver::enumerate(spec->info_list, c);
 }
 
 namespace {
@@ -120,12 +91,9 @@ FunctionContext OBESolver::synthesis(const std::vector<Example> &example_list, T
     EnumConfig c(finite_verifier, obe_optimizer, guard);
 
     auto res = solver::enumerate(spec->info_list, c);
-    if (res.empty()) {
-        LOG(FATAL) << "Synthesis failed";
-    }
 
     delete obe_optimizer;
     delete finite_example_space;
     delete finite_verifier;
-    return res[0];
+    return res;
 }

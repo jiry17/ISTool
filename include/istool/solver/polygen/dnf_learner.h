@@ -41,7 +41,7 @@ namespace polygen {
 class DNFLearner: public PBESolver {
     // Parameters for enumerating possible predicates
     double KRelaxTimeLimit;
-    int cared_num;
+    int size_limit = 0;
     ProgramStorage pred_pool;
 
     // Parameters for generating exmaple-related predicates.

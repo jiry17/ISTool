@@ -98,12 +98,22 @@ def compare(name1, name2, cared_val_list, result):
                [_calculate_cmp(v, result[name1], result[name2]) for v in cared_val_list]]
     _print_result(row_names, col_names, summary)
 
+
 def _set_axis(draw_type: DrawType):
     if draw_type == DrawType.LINEAR:
         return
     if draw_type == DrawType.LOG:
         plt.xscale('log')
         return
+
+
+def lis_tasks(result_map, prop=lambda x: not x["status"]):
+    num = 0
+    for name, res in result_map.items():
+        if prop(res):
+            print(name)
+            num += 1
+    print(num)
 
 def draw_trend(result_map, val: CaredValue, fig_path, x_size=4, y_size=3, is_x_name=True,
          is_y_name=True, title=None, is_complete_x=True):

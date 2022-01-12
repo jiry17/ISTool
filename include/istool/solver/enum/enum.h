@@ -14,20 +14,7 @@ public:
     virtual void clear() = 0;
 };
 
-class TrivialOptimizer: public Optimizer {
-public:
-    virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p);
-    virtual void clear();
-};
-
-class TrivialVerifier: public Verifier {
-public:
-    virtual bool verify(const FunctionContext& info, Example* counter_example);
-    virtual ~TrivialVerifier() = default;
-};
-
 struct EnumConfig {
-    int res_num_limit = 1;
     TimeGuard* guard;
     Verifier* v;
     Optimizer* o;
@@ -35,7 +22,7 @@ struct EnumConfig {
 };
 
 namespace solver {
-    std::vector<FunctionContext> enumerate(const std::vector<PSynthInfo>& info_list, const EnumConfig& c);
+    FunctionContext enumerate(const std::vector<PSynthInfo>& info_list, const EnumConfig& c);
 }
 
 #endif //ISTOOL_ENUM_H

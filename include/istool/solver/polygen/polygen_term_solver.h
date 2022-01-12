@@ -44,7 +44,7 @@ namespace polygen {
     };
 
     struct TermPlanCmp {
-        bool operator ()(TermPlan* p1, TermPlan* p2);
+        bool operator ()(TermPlan* p1, TermPlan* p2) const;
     };
 
     struct TermSolverCache {

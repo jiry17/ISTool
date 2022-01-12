@@ -156,7 +156,6 @@ std::string grammar::getFreeName(Grammar *grammar) {
 
 PProgram grammar::getMinimalProgram(Grammar *grammar) {
     // todo: complete this function
-    grammar->print();
     for (auto* rule: grammar->start->rule_list) {
         if (rule->param_list.empty()) {
             ProgramList sub_list;

@@ -6,7 +6,7 @@
 #define ISTOOL_ENUM_SOLVER_H
 
 #include "istool/solver/solver.h"
-#include "istool/solver/enum/enum.h"
+#include "istool/solver/enum/enum_util.h"
 #include <unordered_set>
 
 class BasicEnumSolver: public Solver {
@@ -15,19 +15,6 @@ public:
     BasicEnumSolver(Specification* _spec, Verifier* _v);
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr);
     virtual ~BasicEnumSolver();
-};
-
-typedef std::function<bool(Program*)> ProgramChecker;
-
-class OBEOptimizer: public Optimizer {
-public:
-    ProgramChecker is_runnable;
-    std::unordered_map<std::string, ExampleList> example_pool;
-    std::unordered_set<std::string> visited_set;
-    OBEOptimizer(const ProgramChecker & _is_runnable, const std::unordered_map<std::string, ExampleList>& _pool);
-    virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p);
-    virtual void clear();
-    virtual ~OBEOptimizer() = default;
 };
 
 class OBESolver: public PBESolver {

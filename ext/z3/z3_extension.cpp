@@ -86,6 +86,13 @@ Z3Extension::~Z3Extension() {
     }
 }
 
+void Z3Extension::setTimeOut(z3::solver &solver, TimeGuard *guard) {
+    if (!guard) return;
+    double remain_time = std::max(guard->getRemainTime() * 1e3, 1.0);
+    z3::params p(ctx);
+    p.set(":timeout", int(remain_time) + 1u);
+    solver.set(p);
+}
 
 const std::string KZ3Name = "Z3";
 

@@ -3,7 +3,7 @@
 //
 
 #include "istool/solver/stun/eusolver.h"
-#include "istool/solver/enum/enum.h"
+#include "istool/solver/enum/enum_util.h"
 #include "istool/basic/bitset.h"
 #include "glog/logging.h"
 #include <unordered_set>

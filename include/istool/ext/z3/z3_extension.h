@@ -7,6 +7,7 @@
 
 #include "istool/basic/env.h"
 #include "istool/basic/program.h"
+#include "istool/basic/time_guard.h"
 #include "z3_type.h"
 #include "z3_semantics.h"
 
@@ -28,6 +29,7 @@ public:
     Z3EncodeRes encodeZ3ExprForSemantics(Semantics* semantics, const std::vector<Z3EncodeRes>& inp_list, const z3::expr_vector& param_list);
     Z3EncodeRes encodeZ3ExprForProgram(Program* program, const z3::expr_vector& param_list);
     Data getValueFromModel(const z3::model& model, const z3::expr& expr, Type* type, bool is_strict = false);
+    void setTimeOut(z3::solver& solver, TimeGuard* guard);
     virtual ~Z3Extension();
 };
 

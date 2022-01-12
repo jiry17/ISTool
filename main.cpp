@@ -19,6 +19,7 @@
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/sygus/theory/basic/string/str.h"
 #include "istool/sygus/theory/witness/theory_witness.h"
+#include "istool/selector/split/split_selector.h"
 #include "glog/logging.h"
 
 FunctionContext CBSInvoker(Specification* spec, TimeGuard* guard) {
@@ -96,27 +97,21 @@ FunctionContext PolyGenInvoker(Specification* spec, TimeGuard* guard) {
     auto *v = sygus::getVerifier(spec);
     auto domain_builder = solver::lia::liaSolverBuilder;
     auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
-
-    /*IOExampleList io_example_list;
-    ExampleList example_list;
-    int n = 15;
-    for (int i = 0; i < 300; ++i) {
-        std::vector<int> inp; int oup = 0;
-        for (int j = 0; j < n; ++j) {
-            int num = std::rand() % 40;
-            inp.push_back(num); oup = std::max(oup, num);
-        }
-        auto io_example = _buildIOExample(inp, oup);
-        auto example = io_example.first; example.push_back(io_example.second);
-        io_example_list.push_back(io_example);
-        example_list.push_back(example);
-    }
-    spec->example_space = example::buildFiniteIOExampleSpace(io_example_list, spec->info_list[0]->name, spec->env.get());
-    */
     auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
     auto* solver = new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
 
     return solver->synthesis(guard);
+}
+
+FunctionContext PolyGenSelectorInvoker(Specification* spec, TimeGuard* guard) {
+    auto* v = new Z3SplitSelector(spec, 50);
+    auto domain_builder = solver::lia::liaSolverBuilder;
+    auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
+    auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
+    auto* solver = new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
+    auto res = solver->synthesis(guard);
+    std::cout << v->example_num << std::endl;
+    return res;
 }
 
 
@@ -195,7 +190,7 @@ int main() {
     // std::string file = config::KSourcePath + "/tests/phone-1.sl";
     auto* spec = parser::getSyGuSSpecFromFile(file);
     auto* guard = new TimeGuard(500);
-    auto res = PolyGenInvoker(spec, guard);
+    auto res = PolyGenSelectorInvoker(spec, guard);
     //auto res = LIASolverInvoker(spec, guard);
     std::cout << res.toString() << std::endl;
     std::cout << "Time Cost: " << guard->getPeriod() << " seconds";

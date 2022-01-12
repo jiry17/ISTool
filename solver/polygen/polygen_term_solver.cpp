@@ -13,7 +13,7 @@
 using namespace polygen;
 
 namespace {
-    const int KDefaultMaxTermNum = 2;
+    const int KDefaultMaxTermNum = 3;
     const int KDefaultExampleNum = 5;
 
     int _getMaxTermNum(const PSynthInfo& info) {
@@ -218,7 +218,7 @@ namespace {
     }
 }
 
-bool polygen::TermPlanCmp::operator()(TermPlan *p1, TermPlan *p2) {
+bool polygen::TermPlanCmp::operator()(TermPlan *p1, TermPlan *p2) const {
     if (p1->n < p2->n) return true; if (p1->n > p2->n) return false;
     if (p1->term_list.size() < p2->term_list.size()) return true;
     if (p1->term_list.size() > p2->term_list.size()) return false;
@@ -319,6 +319,24 @@ ProgramList PolyGenTermSolver::getTerms(int n, int k) {
     return result;
 }
 
+namespace {
+    ProgramList _reorderTerms(const ProgramList& program_list, const std::string& name, const ExampleList& example_list, ExampleSpace* example_space) {
+        std::vector<std::pair<int, PProgram>> info_list;
+        for (const auto& program: program_list) {
+            int num = 0;
+            auto ctx = semantics::buildSingleContext(name, program);
+            for (const auto& example: example_list) {
+                if (example_space->satisfyExample(ctx, example)) ++num;
+            }
+            info_list.emplace_back(num, program);
+        }
+        std::sort(info_list.begin(), info_list.end());
+        ProgramList result;
+        for (const auto& info: info_list) result.push_back(info.second);
+        return result;
+    }
+}
+
 ProgramList PolyGenTermSolver::getTerms() {
     std::set<std::vector<int>> calculated_set;
     std::vector<int> progress(1, 0);
@@ -343,7 +361,7 @@ ProgramList PolyGenTermSolver::getTerms() {
                     calculated_set.insert({si, n, k});
                     solver_id = si;
                     auto result = getTerms(n, k);
-                    if (!result.empty()) return result;
+                    if (!result.empty()) return _reorderTerms(result, spec->info_list[0]->name, example_list, spec->example_space.get());
                 }
             }
         }

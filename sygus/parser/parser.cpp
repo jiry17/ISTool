@@ -125,6 +125,7 @@ namespace {
                 // try inp
                 if (rule_node.isString()) {
                     int inp_id = get_inp_id(rule_node.asString());
+                    if (inp_id == -1) LOG(FATAL) << "Cannot find " << rule_node << std::endl;
                     TEST_PARSER(inp_id >= 0)
                     PType inp_type = inp_type_list[inp_id];
                     auto s = semantics::buildParamSemantics(inp_id, std::move(inp_type));

@@ -67,12 +67,7 @@ FunctionContext ComponentBasedSynthesizer::synthesis(const ExampleList& example_
     while (1) {
         TimeCheck(guard);
         z3::solver solver(ext->ctx);
-        if (guard) {
-            double remain_time = std::max(guard->getRemainTime() * 1e3, 1.0);
-            z3::params p(ext->ctx);
-            p.set(":timeout", int(remain_time) + 1u);
-            solver.set(p);
-        }
+        ext->setTimeOut(solver, guard);
         for (const auto& info: spec->info_list) {
             auto* encoder = encoder_map[info->name];
             solver.add(z3::mk_and(encoder->encodeStructure(info->name + "@structure")));

@@ -11,6 +11,7 @@
 class TopDownContext {
 public:
     virtual std::string toString() const = 0;
+    virtual ~TopDownContext() = default;
 };
 
 typedef std::shared_ptr<TopDownContext> PTopDownContext;
