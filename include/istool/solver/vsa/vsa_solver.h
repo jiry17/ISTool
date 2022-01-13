@@ -9,8 +9,6 @@
 #include "istool/solver/solver.h"
 #include "istool/ext/vsa/top_down_model.h"
 
-typedef std::function<void(Specification*, const IOExample&)> VSAEnvPreparation;
-
 class BasicVSASolver: public PBESolver {
     VSANode* buildVSA(const ExampleList& example_list, TimeGuard* guard);
 public:

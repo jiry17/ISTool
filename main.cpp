@@ -14,6 +14,8 @@
 #include "istool/solver/polygen/polygen_term_solver.h"
 #include "istool/solver/polygen/dnf_learner.h"
 #include "istool/solver/polygen/polygen_cegis.h"
+#include "istool/solver/maxflash/topdown_context_graph.h"
+#include "istool/solver/maxflash/maxflash.h"
 #include "istool/sygus/theory/witness/string/string_witness.h"
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
@@ -129,6 +131,33 @@ void PolyGenTermSolverInvoker(Specification* spec, TimeGuard* guard) {
     exit(0);
 }
 
+auto prepare = [](Specification* spec, const IOExample& io_example) {
+    auto* env = spec->env.get(); auto* g = spec->info_list[0]->grammar;
+    std::vector<std::string> string_const_list;
+    auto add_const = [&](const Data& d) {
+        auto* sv = dynamic_cast<StringValue*>(d.get());
+        if (sv) string_const_list.push_back(sv->s);
+    };
+    for (auto* symbol: g->symbol_list) {
+        for (auto* rule: symbol->rule_list) {
+            auto* sem = dynamic_cast<ConstSemantics*>(rule->semantics.get());
+            if (sem) add_const(sem->w);
+        }
+    }
+    for (const auto& inp: io_example.first) add_const(inp);
+    add_const(io_example.second);
+
+    DataList const_list; int int_max = 1;
+    for (const auto& s: string_const_list) {
+        const_list.push_back(BuildData(String, s));
+        int_max = std::max(int_max, int(s.length()));
+    }
+
+    env->setConst(theory::clia::KWitnessIntMinName, BuildData(Int, -1));
+    env->setConst(theory::string::KStringConstList, const_list);
+    env->setConst(theory::clia::KWitnessIntMaxName, BuildData(Int, int_max));
+};
+
 FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
     if (spec->info_list.size() > 1) {
         LOG(FATAL) << "VSASolver can only synthesize a single program";
@@ -150,33 +179,6 @@ FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
 
     sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
 
-    auto prepare = [](Specification* spec, const IOExample& io_example) {
-        auto* env = spec->env.get(); auto* g = spec->info_list[0]->grammar;
-        std::vector<std::string> string_const_list;
-        auto add_const = [&](const Data& d) {
-            auto* sv = dynamic_cast<StringValue*>(d.get());
-            if (sv) string_const_list.push_back(sv->s);
-        };
-        for (auto* symbol: g->symbol_list) {
-            for (auto* rule: symbol->rule_list) {
-                auto* sem = dynamic_cast<ConstSemantics*>(rule->semantics.get());
-                if (sem) add_const(sem->w);
-            }
-        }
-        for (const auto& inp: io_example.first) add_const(inp);
-        add_const(io_example.second);
-
-        DataList const_list; int int_max = 1;
-        for (const auto& s: string_const_list) {
-            const_list.push_back(BuildData(String, s));
-            int_max = std::max(int_max, int(s.length()));
-        }
-
-        env->setConst(theory::clia::KWitnessIntMinName, BuildData(Int, -1));
-        env->setConst(theory::string::KStringConstList, const_list);
-        env->setConst(theory::clia::KWitnessIntMaxName, BuildData(Int, int_max));
-    };
-
     auto* solver = new BasicVSASolver(spec, builder, prepare, ext::vsa::getSizeModel());
     auto* verifier = sygus::getVerifier(spec);
     auto* cegis = new CEGISSolver(solver, verifier);
@@ -185,12 +187,22 @@ FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
     return res;
 }
 
+FunctionContext MaxFlashInvoker(Specification* spec, TimeGuard* guard) {
+    auto* v = sygus::getVerifier(spec);
+
+    sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+
+    auto* model = ext::vsa::getSizeModel();
+    auto* solver = new MaxFlash(spec, v, model, prepare);
+    return solver->synthesis(guard);
+}
+
 int main() {
-    std::string file = config::KSourcePath + "/tests/polygen/secondmin.sl";
-    // std::string file = config::KSourcePath + "/tests/phone-1.sl";
+    // std::string file = config::KSourcePath + "/tests/polygen/secondmin.sl";
+    std::string file = config::KSourcePath + "/tests/string/phone-10_short.sl";
     auto* spec = parser::getSyGuSSpecFromFile(file);
     auto* guard = new TimeGuard(500);
-    auto res = PolyGenSelectorInvoker(spec, guard);
+    auto res = MaxFlashInvoker(spec, guard);
     //auto res = LIASolverInvoker(spec, guard);
     std::cout << res.toString() << std::endl;
     std::cout << "Time Cost: " << guard->getPeriod() << " seconds";

@@ -31,6 +31,7 @@ public:
 
     TopDownContextGraph(Grammar* g, TopDownModel* model);
     ~TopDownContextGraph() = default;
+    void print() const;
 };
 
 

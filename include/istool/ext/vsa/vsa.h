@@ -6,6 +6,7 @@
 #define ISTOOL_VSA_H
 
 #include "istool/basic/grammar.h"
+#include "istool/basic/specification.h"
 #include "istool/ext/vsa/witness_value.h"
 
 class VSANode;
@@ -57,5 +58,7 @@ namespace ext {
         void deleteVSA(VSANode* root);
     }
 }
+
+typedef std::function<void(Specification*, const IOExample&)> VSAEnvPreparation;
 
 #endif //ISTOOL_VSA_H

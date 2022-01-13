@@ -62,7 +62,13 @@ TopDownContextGraph::TopDownContextGraph(Grammar *g, TopDownModel *model) {
         node_list[id].lower_bound = new_lower_bound;
         Q.push({id, new_lower_bound});
     };
-    update(0, 0.0);
+    for (int i = 0; i < node_list.size(); ++i) {
+        double lower_bound = KDoubleINF;
+        for (auto& edge: node_list[i].edge_list) {
+            if (edge.v_list.empty()) lower_bound = std::min(lower_bound, edge.weight);
+        }
+        if (lower_bound < KDoubleINF) update(i, lower_bound);
+    }
     auto update_edge = [&](int u, int e_id) -> void {
         auto& edge = node_list[u].edge_list[e_id];
         double sum = edge.weight;
@@ -81,3 +87,16 @@ TopDownContextGraph::TopDownContextGraph(Grammar *g, TopDownModel *model) {
     }
 }
 
+void TopDownContextGraph::print() const {
+    for (int i = 0; i < node_list.size(); ++i) {
+        std::cout << "node #" << i << " " << node_list[i].toString() << " >= " << node_list[i].lower_bound << std::endl;
+        for (const auto& edge: node_list[i].edge_list) {
+            std::cout << "  " << edge.weight << ": " << edge.semantics->getName() << "(";
+            for (int j = 0; j < edge.v_list.size(); ++j) {
+                if (j) std::cout << ",";
+                std::cout << j;
+            }
+            std::cout << ")" << std::endl;
+        }
+    }
+}
