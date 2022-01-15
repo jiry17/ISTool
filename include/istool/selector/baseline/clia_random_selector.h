@@ -6,8 +6,9 @@
 #define ISTOOL_CLIA_RANDOM_SELECTOR_H
 
 #include "istool/ext/z3/z3_verifier.h"
+#include "istool/selector/selector.h"
 
-class CLIARandomSelector: public Z3Verifier {
+class CLIARandomSelector: public Z3Verifier, public Selector {
 public:
     int KRandomRange;
     Z3IOExampleSpace* io_space;

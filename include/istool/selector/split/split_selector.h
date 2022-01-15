@@ -1,21 +1,18 @@
 //
-// Created by pro on 2022/1/12.
+// Created by pro on 2022/1/13.
 //
 
 #ifndef ISTOOL_SPLIT_SELECTOR_H
 #define ISTOOL_SPLIT_SELECTOR_H
 
-#include "istool/ext/z3/z3_verifier.h"
+#include "istool/selector/selector.h"
 
-class Z3SplitSelector: public Z3Verifier {
+class SplitSelector: public Selector {
 public:
-    Z3IOExampleSpace* io_space;
     ProgramList seed_list;
-    Data* time_out;
-    PSynthInfo info;
-    int example_num = 0;
-    Z3SplitSelector(Specification* spec, int n);
-    virtual bool verify(const FunctionContext& res, Example* counter_example);
+    SplitSelector(const PSynthInfo& info, int n);
+    virtual ~SplitSelector() = default;
 };
+
 
 #endif //ISTOOL_SPLIT_SELECTOR_H

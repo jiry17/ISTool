@@ -27,6 +27,7 @@ namespace {
 }
 
 bool CLIARandomSelector::verify(const FunctionContext &info, Example *counter_example) {
+    if (counter_example) addExampleCount();
     if (!counter_example) return Z3Verifier::verify(info, counter_example);
     z3::solver s(ext->ctx);
     prepareZ3Solver(s, info);

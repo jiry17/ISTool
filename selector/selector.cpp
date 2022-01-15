@@ -7,6 +7,17 @@
 
 extern const std::string selector::KSelectorTimeLimitName = "Selector@TimeOut";
 
+void Selector::addExampleCount() {
+    example_count += 1;
+}
+
+bool DirectSelector::verify(const FunctionContext &info, Example *counter_example) {
+    if (counter_example) addExampleCount();
+    return v->verify(info, counter_example);
+}
+DirectSelector::DirectSelector(Verifier *_v): v(_v) {}
+DirectSelector::~DirectSelector() {delete v;}
+
 namespace {
     const int KDefaultTimeLimit = 1000;
 }

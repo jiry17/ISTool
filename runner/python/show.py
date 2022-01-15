@@ -145,8 +145,6 @@ def draw_trend(result_map, val: CaredValue, fig_path, x_size=4, y_size=3, is_x_n
         data = list(_calculate_all(val, result).values())
         x_list = sorted(data) + [x_limit]
         y_list = list(range(1, len(x_list))) + [len(x_list) - 1]
-        print(x_list)
-        print(y_list)
         if draw_id < len(lc):
             plt.plot(x_list, y_list, ls=ls_list[draw_id], color=lc[draw_id])
             draw_id += 1

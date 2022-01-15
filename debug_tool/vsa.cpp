@@ -3,6 +3,8 @@
 //
 
 #include "debug_tool/vsa.h"
+#include "istool/sygus/theory/witness/clia/clia_wit_value.h"
+#include "istool/sygus/theory/basic/clia/clia_value.h"
 #include "glog/logging.h"
 
 PProgram debug::getRandomProgram(VSANode *root) {
@@ -99,5 +101,43 @@ void debug::viewVSA(VSANode *node) {
     if (s == "v") {
         int k1, k2; std::cin >> k1 >> k2;
         viewVSA(node->edge_list[k1].node_list[k2]);
+    }
+}
+
+namespace {
+
+    DataList _getAllContent(const WitnessData& data) {
+        auto* dv = dynamic_cast<DirectWitnessValue*>(data.get());
+        if (dv) return {dv->d};
+        auto* rv = dynamic_cast<RangeWitnessValue*>(data.get());
+        assert(rv);
+        DataList res;
+        for (int i = rv->l; i <= rv->r; ++i) res.push_back(BuildData(Int, i));
+        return res;
+    }
+
+
+    void _testWitness(Semantics *semantics, const WitnessData &oup, const WitnessTerm &res) {
+        for (auto& inp: res) if (dynamic_cast<TotalWitnessValue*>(inp.get())) return;
+        auto* fs = dynamic_cast<FullExecutedSemantics*>(semantics);
+        if (!fs) return;
+        if (dynamic_cast<ParamSemantics*>(semantics)) return;
+        DataStorage inp_list;
+        for (auto& inp: res) inp_list.push_back(_getAllContent(inp));
+        inp_list = data::cartesianProduct(inp_list);
+        for (const auto& inp: inp_list) {
+            auto now = inp;
+            auto current_oup = fs->run(std::move(now), nullptr);
+            if (!oup->isInclude(current_oup)) {
+                LOG(FATAL) << "Invalid " << semantics->getName() << " " << data::dataList2String(inp) << "->" << current_oup.toString() << " " << oup->toString() << std::endl;
+            }
+        }
+    }
+
+}
+
+void debug::testWitness(Semantics *semantics, const WitnessData &oup, const WitnessList &res) {
+    for (auto& term: res) {
+        _testWitness(semantics, oup, term);
     }
 }

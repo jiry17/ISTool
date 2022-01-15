@@ -43,9 +43,12 @@ public:
 
 namespace ext {
     namespace vsa {
+        extern const SemanticsAbstracter KDefaultAbstracter;
         NGramModel *getSizeModel();
         void learn(NGramModel *model, const ProgramList &program_list);
         PProgram getBestProgram(VSANode* root, TopDownModel* model, TimeGuard* guard = nullptr);
+        NGramModel* loadDefaultNGramModel(const std::string& model_file_path);
+        void saveNGramModel(NGramModel* model, const std::string& model_file_path);
     }
 }
 

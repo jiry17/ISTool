@@ -3,6 +3,7 @@
 //
 
 #include "istool/ext/vsa/top_down_model.h"
+#include "istool/sygus/parser/json_util.h"
 #include "glog/logging.h"
 #include <unordered_set>
 #include <cmath>
@@ -283,4 +284,40 @@ PProgram ext::vsa::getBestProgram(VSANode* root, TopDownModel *model, TimeGuard 
     auto res = _constructProgram(c_root, min_weight_list);
     _deleteCVSA(c_root);
     return res;
+}
+
+const SemanticsAbstracter ext::vsa::KDefaultAbstracter = [](Semantics* s) -> std::string {
+    auto* cs = dynamic_cast<ConstSemantics*>(s);
+    if (cs) return "Const";
+    auto* ps = dynamic_cast<ParamSemantics*>(s);
+    if (ps) return "Param";
+    return s->getName();
+};
+
+NGramModel * ext::vsa::loadDefaultNGramModel(const std::string &model_file_path) {
+    auto root = json::loadJsonFromFile(model_file_path);
+    int depth = root["depth"].asInt();
+    double default_value = root["default"].asDouble();
+    auto* model = new NGramModel(depth, KDefaultAbstracter, default_value);
+    std::vector<std::pair<std::string, double>> weight_list;
+    for (const auto& sub_node: root["weight"]) {
+        std::string name = sub_node["name"].asString();
+        double weight = sub_node["weight"].asDouble();
+        weight_list.emplace_back(name, weight);
+    }
+    model->set(weight_list);
+    return model;
+}
+
+void ext::vsa::saveNGramModel(NGramModel *model, const std::string &model_file_path) {
+    Json::Value root;
+    root["depth"] = model->depth; root["default"] = model->default_weight;
+    Json::Value weight_node;
+    for (const auto& info: model->weight_map) {
+        Json::Value info_node;
+        info_node["name"] = info.first; info_node["weight"] = info.second;
+        weight_node.append(info_node);
+    }
+    root["weight"] = weight_node;
+    json::saveJsonToFile(root, model_file_path);
 }

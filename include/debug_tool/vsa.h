@@ -14,6 +14,7 @@ namespace debug {
     void testVSAEdge(VSANode* node, const VSAEdge& edge);
     bool containProgram(VSANode* root, Program* program);
     void viewVSA(VSANode* node);
+    void testWitness(Semantics* semantics, const WitnessData& oup, const WitnessList& res);
 }
 
 

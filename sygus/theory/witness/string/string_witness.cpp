@@ -21,6 +21,15 @@ namespace {
         if (!sv) WitnessError(d);
         return sv->s;
     }
+
+    void _printResult(const std::string& sem_name, const WitnessData& oup, const WitnessList& res) {
+        std::cout << "witness for " << sem_name << " " << oup->toString() << std::endl;
+        for (const auto& term: res) {
+            for (const auto& d: term) std::cout << " " << d->toString();
+            std::cout << std::endl;
+        }
+        int kk; std::cin >> kk;
+    }
 }
 
 WitnessList StringCatWitnessFunction::witness(const WitnessData &oup) {
@@ -59,18 +68,36 @@ namespace {
         }
         return res;
     }
+
+    bool _isSubsequenceOf(const std::string &s, const std::string &t) {
+        int now = 0;
+        for (int i = 0; i < t.length(); ++i) {
+            if (s[now] == t[i]) ++now;
+            if (now == s.length()) return true;
+        }
+        return false;
+    }
+
+    bool _isValidInsertion(const std::string& s, const std::vector<std::string>& inp_list) {
+        for (const auto& inp: inp_list) {
+            if (_isSubsequenceOf(s, inp)) return true;
+        }
+        return false;
+    }
 }
 
 WitnessList StringReplaceWitnessFunction::witness(const WitnessData &oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup, oup}};
     std::vector<std::string> s_list = _getStringConstList(const_list);
+    std::vector<std::string> inp_list = _getStringConstList(input_list);
     auto oup_s = _getString(oup);
     WitnessList res;
 
     // both s and t are not empty
     for (const auto& s: s_list) {
+        if (s.empty()) continue;
         for (const auto& t: s_list) {
-            if (s == t) continue;
+            if (s == t || t.empty()) continue;
             _collectAllValidReplace(s, t, oup_s, res);
         }
     }
@@ -80,7 +107,7 @@ WitnessList StringReplaceWitnessFunction::witness(const WitnessData &oup) {
     for (const auto& t: s_list) {
         for (int i = 0; i < oup_s.length(); ++i) {
             auto inp = oup_s.substr(0, i) + t + oup_s.substr(i, n);
-            if (_isValidReplace(inp, "", t, oup_s)) {
+            if (_isValidReplace(inp, "", t, oup_s) && _isValidInsertion(inp, inp_list)) {
                 res.push_back({BuildDirectWData(String, inp), BuildDirectWData(String, ""), BuildDirectWData(String, t)});
             }
         }
@@ -88,11 +115,21 @@ WitnessList StringReplaceWitnessFunction::witness(const WitnessData &oup) {
     return res;
 }
 
+namespace {
+    std::vector<std::string> _catStringVector(const std::vector<std::string>& x, const std::vector<std::string>& y) {
+        std::vector<std::string> res = x;
+        for (const auto& s: y) res.push_back(s);
+        return res;
+    }
+}
+
+#define getFullStringList() (_catStringVector(_getStringConstList(const_list), _getStringConstList(input_list)))
+
 WitnessList StringAtWitnessFunction::witness(const WitnessData &oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup}};
     auto oup_s = _getString(oup);
     if (oup_s.length() > 0) return {};
-    auto s_list = _getStringConstList(const_list);
+    auto s_list = getFullStringList();
     WitnessList res;
     for (auto& inp: s_list) {
         for (int i = 0; i < inp.length(); ++i) {
@@ -124,8 +161,8 @@ WitnessList IntToStrWitnessFunction::witness(const WitnessData &oup) {
     return {{BuildDirectWData(Int, res)}};
 }
 
-StringSubStrWitnessFunction::StringSubStrWitnessFunction(DataList *_const_list, Data *_int_min, Data *_int_max):
-    const_list(_const_list), int_min(_int_min), int_max(_int_max) {
+StringSubStrWitnessFunction::StringSubStrWitnessFunction(DataList *_const_list, DataList* _input_list, Data *_int_min, Data *_int_max):
+    const_list(_const_list), int_min(_int_min), int_max(_int_max), input_list(_input_list) {
 }
 
 void _collectAllValidSubstr(const std::string& s, const std::string& t, WitnessList& res, int l, int r) {
@@ -164,7 +201,7 @@ namespace {
 
 WitnessList StringSubStrWitnessFunction::witness(const WitnessData &oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup, oup}};
-    auto s_list = _getStringConstList(const_list);
+    auto s_list = getFullStringList();
     auto oup_s = _getString(oup);
     auto l = getIntValue(*int_min), r = getIntValue(*int_max);
     WitnessList res;
@@ -182,7 +219,7 @@ namespace {
 
 WitnessList StringLenWitnessFunction::witness(const WitnessData &oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup}};
-    auto s_list = _getStringConstList(const_list);
+    auto s_list = _getStringConstList(input_list);
     WitnessList res;
     auto range = theory::clia::extractRange(oup);
     if (_insideRange(range, 0)) res.push_back({BuildDirectWData(String, "")});
@@ -205,8 +242,8 @@ namespace {
     }
 }
 
-StringIndexOfWitnessFunction::StringIndexOfWitnessFunction(DataList *_const_list, Data *_int_min, Data *_int_max):
-    const_list(_const_list), int_min(_int_min), int_max(_int_max) {
+StringIndexOfWitnessFunction::StringIndexOfWitnessFunction(DataList* _const_list, DataList* _input_list, Data* _int_min, Data* _int_max):
+    const_list(_const_list), input_list(_input_list), int_min(_int_min), int_max(_int_max) {
 }
 WitnessList StringIndexOfWitnessFunction::witness(const WitnessData &oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup, oup}};
@@ -214,10 +251,12 @@ WitnessList StringIndexOfWitnessFunction::witness(const WitnessData &oup) {
     int l = std::max(-1, range.first), r = range.second;
     int lim_l = getIntValue(*int_min), lim_r = getIntValue(*int_max);
     if (l > r) return {};
-    WitnessList res; auto s_list = _getStringConstList(const_list);
+    WitnessList res;
+    auto s_list = _getStringConstList(input_list);
+    auto t_list = _getStringConstList(const_list);
     for (const auto& s: s_list) {
         if (l == -1) {
-            for (const auto &t: s_list) {
+            for (const auto &t: t_list) {
                 int pos = _getLastOccur(s, t, int(s.length()) + 1);
                 if (pos == -1) {
                     res.push_back({BuildDirectWData(String, s), BuildDirectWData(String, t),
@@ -235,7 +274,7 @@ WitnessList StringIndexOfWitnessFunction::witness(const WitnessData &oup) {
             for (int i = pos; i < s.length(); ++i) {
                 now += s[i];
                 auto last_occur = _getLastOccur(s, now, pos);
-                last_occur = last_occur == -1 ? lim_l : last_occur + 1;
+                last_occur = last_occur == -1 ? 0 : last_occur + 1;
                 if (last_occur <= pos) {
                     res.push_back({BuildDirectWData(String, s), BuildDirectWData(String, now),
                                    theory::clia::buildRange(last_occur, pos)});
@@ -258,7 +297,7 @@ namespace {
 
 WitnessList StringPrefixOfWitnessFunction::witness(const WitnessData &oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup}};
-    auto s_list = _getStringConstList(const_list);
+    auto s_list = getFullStringList();
     bool target = _getBool(oup);
     WitnessList res;
     for (const auto& s: s_list) {
@@ -273,7 +312,7 @@ WitnessList StringPrefixOfWitnessFunction::witness(const WitnessData &oup) {
 
 WitnessList StringSuffixOfWitnessFunction::witness(const WitnessData &oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup}};
-    auto s_list = _getStringConstList(const_list);
+    auto s_list = getFullStringList();
     bool target = _getBool(oup);
     WitnessList res;
     for (const auto& s: s_list) {
@@ -290,12 +329,12 @@ WitnessList StringSuffixOfWitnessFunction::witness(const WitnessData &oup) {
 
 WitnessList StringContainsWitnessFunction::witness(const WitnessData& oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup}};
-    auto s_list = _getStringConstList(const_list);
+    auto s_list = getFullStringList();
     auto target = _getBool(oup);
     WitnessList res;
     for (const auto& s: s_list) {
         for (const auto& t: s_list) {
-            if (target == (s.length() <= t.length() && t.find(s) != std::string::npos)) {
+            if (target == (t.length() <= s.length() && s.find(t) != std::string::npos)) {
                 res.push_back({BuildDirectWData(String, s), BuildDirectWData(String, t)});
             }
         }
@@ -317,7 +356,7 @@ WitnessList StrToIntWitnessFunction::witness(const WitnessData &oup) {
     int l = std::max(-1, range.first), r = range.second;
     WitnessList res;
     if (l == -1) {
-        auto s_list = _getStringConstList(const_list);
+        auto s_list = _getStringConstList(input_list);
         for (const auto& s: s_list) {
             if (!isPositiveInteger(s)) res.push_back({BuildDirectWData(String, s)});
         }
@@ -328,23 +367,25 @@ WitnessList StrToIntWitnessFunction::witness(const WitnessData &oup) {
 }
 
 const std::string theory::string::KStringConstList = "String@Consts";
+const std::string theory::string::KStringInputList = "String@Inputs";
 
-#define LoadStringWitness(ext, name, sem) ext->registerWitnessFunction(name, new sem ## WitnessFunction(const_list))
+#define LoadStringWitness(ext, name, sem) ext->registerWitnessFunction(name, new sem ## WitnessFunction(const_list, input_list))
 
 void theory::string::loadWitnessFunction(Env *env) {
     auto* int_min = env->getConstRef(theory::clia::KWitnessIntMinName);
     auto* int_max = env->getConstRef(theory::clia::KWitnessIntMaxName);
     auto* const_list = env->getConstListRef(theory::string::KStringConstList);
+    auto* input_list = env->getConstListRef(theory::string::KStringInputList);
     auto* ext = ext::vsa::getExtension(env);
 
     LoadWitness(ext, "str.++", StringCat);
     LoadStringWitness(ext, "str.len", StringLen);
     LoadStringWitness(ext, "str.at", StringAt);
-    ext->registerWitnessFunction("str.substr", new StringSubStrWitnessFunction(const_list, int_min, int_max));
+    ext->registerWitnessFunction("str.substr", new StringSubStrWitnessFunction(const_list, input_list, int_min, int_max));
     LoadStringWitness(ext, "str.prefixof", StringPrefixOf);
     LoadStringWitness(ext, "str.suffixof", StringSuffixOf);
     LoadStringWitness(ext, "str.contains", StringContains);
-    ext->registerWitnessFunction("str.indexof", new StringIndexOfWitnessFunction(const_list, int_min, int_max));
+    ext->registerWitnessFunction("str.indexof", new StringIndexOfWitnessFunction(const_list, input_list, int_min, int_max));
     LoadStringWitness(ext, "str.replace", StringReplace);
     LoadStringWitness(ext, "str.to.int", StrToInt);
     ext->registerWitnessFunction("int.to.str", new IntToStrWitnessFunction(int_min, int_max));

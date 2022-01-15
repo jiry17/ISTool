@@ -52,13 +52,13 @@ Data StringContainsSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
 
 StringPrefixOfSemantics::StringPrefixOfSemantics(): NormalSemantics("str.prefixof", TBOOL, {TSTRING, TSTRING}) {}
 Data StringPrefixOfSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
-    auto s = getStringValue(inp_list[0]), t = getStringValue(inp_list[1]);
+    auto s = getStringValue(inp_list[1]), t = getStringValue(inp_list[0]);
     return BuildData(Bool, s.substr(0, t.length()) == t);
 }
 
 StringSuffixOfSemantics::StringSuffixOfSemantics(): NormalSemantics("str.suffixof", TBOOL, {TSTRING, TSTRING}) {}
 Data StringSuffixOfSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
-    auto s = getStringValue(inp_list[0]), t = getStringValue(inp_list[1]);
+    auto s = getStringValue(inp_list[1]), t = getStringValue(inp_list[0]);
     if (t.length() > s.length()) return BuildData(Bool, false);
     auto pos = s.length() - t.length();
     return BuildData(Bool, s.substr(pos, t.length()) == t);

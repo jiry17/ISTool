@@ -1,0 +1,2450 @@
+{
+    "polygen": {
+        "mpg_guard1": {
+            "status": true,
+            "result": [
+                "7 {eq1:ite(<(+(Param0,Param1),1),-(Param0,Param1),+(Param0,Param1))}"
+            ],
+            "time": 0.343356
+        },
+        "mpg_ite1": {
+            "status": true,
+            "result": [
+                "30 {eq1:ite(&&(<(Param0,-(1,Param2)),<(0,+(Param0,Param1))),+(1,Param1),ite(<(0,+(Param0,Param1)),+(1,Param0),+(1,Param2)))}"
+            ],
+            "time": 4.923034
+        },
+        "LinExpr_inv1_ex": {
+            "status": true,
+            "result": [
+                "11 {inv:ite(||(||(||(&&(<(1,Param0),<(1,Param1)),&&(<(Param0,1),<(1,Param1))),&&(<(Param0,1),<(Param1,1))),&&(<(Param1,1),<(1,Param0))),1,3)}"
+            ],
+            "time": 0.353863
+        },
+        "qm_neg_2": {
+            "status": true,
+            "result": [
+                "8 {qm-foo:ite(||(<=(0,Param0),<=(0,Param1)),0,1)}"
+            ],
+            "time": 0.254091
+        },
+        "array_search_5": {
+            "status": true,
+            "result": [
+                "15 {findIdx:ite(<(Param5,Param0),0,ite(<(Param4,Param5),5,ite(<(Param3,Param5),4,ite(<(Param2,Param5),3,ite(<(Param1,Param5),2,1)))))}"
+            ],
+            "time": 2.581034
+        },
+        "count1s": {
+            "status": true,
+            "result": [
+                "28 {combine:ite(<(Param4,Param3),+(Param0,Param1),-(+(Param0,Param1),Param3))}"
+            ],
+            "time": 11.174311
+        },
+        "secondmin": {
+            "status": true,
+            "result": [
+                "51 {combine:ite(&&(&&(<(Param2,Param1),<(Param3,Param2)),<=(Param3,Param0)),Param2,ite(||(&&(<(Param1,Param2),<=(Param3,Param0)),&&(<(Param3,Param2),<=(Param3,Param0))),Param1,ite(&&(<(Param3,Param0),<(Param2,Param0)),Param3,Param0)))}"
+            ],
+            "time": 3.416283
+        },
+        "array_search_11": {
+            "status": true,
+            "result": [
+                "41 {findIdx:ite(&&(<(Param11,Param5),<(Param4,Param11)),5,ite(&&(<(Param7,Param11),<(Param11,Param8)),8,ite(&&(<(Param7,Param11),<(Param11,Param9)),9,ite(<(Param11,Param0),0,ite(<(Param11,Param1),1,ite(&&(<(Param7,Param11),<(Param11,Param10)),10,ite(&&(<(Param11,Param4),<(Param3,Param11)),4,ite(<(Param10,Param11),11,ite(<(Param6,Param11),7,ite(&&(<(Param2,Param11),<(Param11,Param3)),3,ite(<(Param2,Param11),6,2)))))))))))}"
+            ],
+            "time": 25.196346
+        },
+        "array_search_9": {
+            "status": true,
+            "result": [
+                "32 {findIdx:ite(&&(<(Param7,Param9),<(Param9,Param8)),8,ite(<(Param9,Param0),0,ite(<(Param9,Param1),1,ite(&&(<(Param4,Param9),<(Param9,Param5)),5,ite(&&(<(Param9,Param3),<(Param2,Param9)),3,ite(&&(<(Param6,Param9),<(Param9,Param7)),7,ite(&&(<(Param4,Param9),<(Param9,Param6)),6,ite(<(Param9,Param2),2,ite(<(Param4,Param9),9,4)))))))))}"
+            ],
+            "time": 9.885844
+        },
+        "qm_neg_4": {
+            "status": true,
+            "result": [
+                "12 {qm-foo:ite(||(||(||(<=(0,Param0),<=(0,Param1)),<=(0,Param2)),<=(0,Param3)),0,1)}"
+            ],
+            "time": 0.457256
+        },
+        "array_sum_8_5": {
+            "status": false
+        },
+        "balanced": {
+            "status": true,
+            "result": [
+                "21 {combine:ite(&&(&&(<=(0,+(Param2,Param5)),<=(Param2,-(Param4,Param3))),=(Param2,-(0,Param3))),1,0)}"
+            ],
+            "time": 6.247935
+        },
+        "qm_max3": {
+            "status": true,
+            "result": [
+                "18 {qm-foo:ite(&&(<(Param0,Param2),<(Param1,Param2)),Param2,ite(<(Param1,Param0),Param0,Param1))}"
+            ],
+            "time": 0.826551
+        },
+        "max8": {
+            "status": false
+        },
+        "array_sum_3_5": {
+            "status": true,
+            "result": [
+                "16 {findSum:ite(&&(<=(+(Param1,Param2),5),<=(+(Param0,Param1),5)),0,ite(<(5,+(Param0,Param1)),+(Param0,Param1),+(Param1,Param2)))}"
+            ],
+            "time": 1.016248
+        },
+        "max4": {
+            "status": true,
+            "result": [
+                "23 {max4:ite(&&(&&(<=(Param2,Param1),<=(Param0,Param1)),<=(Param3,Param1)),Param1,ite(&&(<=(Param2,Param0),<=(Param3,Param0)),Param0,ite(<=(Param2,Param3),Param3,Param2)))}"
+            ],
+            "time": 1.703969
+        },
+        "qm_choose_01": {
+            "status": true,
+            "result": [
+                "3 {qm-choose:ite(<(0,Param0),0,1)}"
+            ],
+            "time": 0.078709
+        },
+        "mpg_example3": {
+            "status": false
+        },
+        "zeroafter1": {
+            "status": true,
+            "result": [
+                "18 {combine:ite(&&(&&(<(0,Param1),<(0,Param0)),<=(Param4,Param3)),2,ite(||(&&(<(Param0,Param4),=(Param1,-(Param4,Param3))),&&(<(Param1,-(Param0,Param3)),<(Param1,Param4))),0,ite(&&(<(Param0,1),<(Param1,1)),*(-1,Param4),1)))}"
+            ],
+            "time": 4.953616
+        },
+        "array_sum_5_15": {
+            "status": true,
+            "result": [
+                "91 {findSum:ite(&&(<(15,+(Param1,Param2)),<=(+(Param0,Param1),15)),+(Param1,Param2),ite(&&(&&(<=(+(Param3,Param4),15),<=(+(Param0,Param1),15)),<=(+(Param2,Param3),15)),0,ite(||(&&(<(15,+(Param2,Param3)),<=(+(Param0,Param1),15)),&&(<(+(Param3,Param4),0),<=(+(Param0,Param1),15))),+(Param2,Param3),ite(||(&&(<=(+(Param0,Param1),15),<(15,+(Param3,Param4))),&&(<=(+(Param0,Param1),15),<(Param3,0))),+(Param3,Param4),+(Param0,Param1)))))}"
+            ],
+            "time": 23.028965
+        },
+        "qm_choose_yz": {
+            "status": true,
+            "result": [
+                "9 {qm-choose:ite(<(Param0,1),Param1,Param2)}"
+            ],
+            "time": 0.279911
+        },
+        "max_11": {
+            "status": false
+        },
+        "LspPage9_2": {
+            "status": true,
+            "result": [
+                "11 {combine:ite(<=(Param2,-(10,Param3)),1,0)}"
+            ],
+            "time": 0.885105
+        },
+        "mpg_plane1": {
+            "status": true,
+            "result": [
+                "10 {eq1:+(Param0,Param1)}"
+            ],
+            "time": 1.04425
+        },
+        "array_search_3": {
+            "status": true,
+            "result": [
+                "12 {findIdx:ite(&&(<(Param3,Param1),<(Param0,Param3)),1,ite(<(Param3,Param0),0,ite(<(Param2,Param3),3,2)))}"
+            ],
+            "time": 1.952043
+        },
+        "array_sum_2_15": {
+            "status": true,
+            "result": [
+                "6 {findSum:ite(<=(+(Param0,Param1),15),0,+(Param0,Param1))}"
+            ],
+            "time": 0.232734
+        },
+        "qm_max2": {
+            "status": true,
+            "result": [
+                "8 {qm-foo:ite(<(Param0,Param1),Param1,Param0)}"
+            ],
+            "time": 0.275486
+        },
+        "array_sum_6_5": {
+            "status": true,
+            "result": [
+                "74 {findSum:ite(&&(&&(&&(&&(<=(+(Param4,Param5),5),<=(+(Param0,Param1),5)),<=(+(Param3,Param4),5)),<=(+(Param1,Param2),5)),<=(+(Param2,Param3),5)),0,ite(&&(&&(&&(&&(<=(+(Param2,Param3),5),<(+(Param1,Param2),+(Param4,Param5))),<=(+(Param0,Param1),5)),<=(+(Param1,Param2),5)),<=(+(Param3,Param4),5)),+(Param4,Param5),ite(&&(&&(&&(<(+(Param0,Param1),+(Param2,Param3)),<(5,+(Param2,Param3))),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),+(Param2,Param3),ite(&&(<=(+(Param0,Param1),5),<(5,+(Param1,Param2))),+(Param1,Param2),ite(<=(+(Param0,Param1),5),+(Param3,Param4),+(Param0,Param1))))))}"
+            ],
+            "time": 24.466215
+        },
+        "array_search_2": {
+            "status": true,
+            "result": [
+                "6 {findIdx:ite(<(Param1,Param2),2,ite(<(Param2,Param0),0,1))}"
+            ],
+            "time": 0.476166
+        },
+        "dropwhile": {
+            "status": true,
+            "result": [
+                "31 {combine:ite(<(Param2,1),Param0,ite(<(Param3,Param2),Param1,+(Param4,Param5)))}"
+            ],
+            "time": 5.836321
+        },
+        "array_search_13": {
+            "status": true,
+            "result": [
+                "45 {findIdx:ite(&&(<(Param13,Param6),<(Param5,Param13)),6,ite(&&(<(Param13,Param5),<(Param4,Param13)),5,ite(&&(<(Param13,Param3),<(Param2,Param13)),3,ite(&&(<(Param13,Param2),<(Param1,Param13)),2,ite(&&(<(Param13,Param1),<(Param0,Param13)),1,ite(<(Param13,Param0),0,ite(&&(<(Param10,Param13),<(Param13,Param11)),11,ite(&&(<(Param10,Param13),<(Param13,Param12)),12,ite(<(Param10,Param13),13,ite(&&(<(Param8,Param13),<(Param13,Param9)),9,ite(&&(<(Param13,Param7),<(Param4,Param13)),7,ite(<(Param8,Param13),10,ite(&&(<(Param13,Param8),<(Param7,Param13)),8,4)))))))))))))}"
+            ],
+            "time": 57.026378
+        },
+        "qm_max5": {
+            "status": true,
+            "result": [
+                "54 {qm-foo:ite(&&(&&(&&(<(Param4,Param3),<(Param1,Param3)),<(Param2,Param3)),<(Param0,Param3)),Param3,ite(&&(&&(<(Param2,Param1),<(Param0,Param1)),<(Param4,Param1)),Param1,ite(&&(<(Param0,Param2),<(Param4,Param2)),Param2,ite(<(Param0,Param4),Param4,Param0))))}"
+            ],
+            "time": 5.743161
+        },
+        "array_sum_9_15": {
+            "status": false
+        },
+        "max15": {
+            "status": false
+        },
+        "qm_neg_eq_2": {
+            "status": true,
+            "result": [
+                "5 {qm-foo:ite(||(<(0,Param0),<(0,Param1)),0,1)}"
+            ],
+            "time": 0.187108
+        },
+        "max5": {
+            "status": true,
+            "result": [
+                "48 {max5:ite(&&(&&(&&(<=(Param0,Param4),<=(Param3,Param4)),<=(Param1,Param4)),<=(Param2,Param4)),Param4,ite(&&(&&(<=(Param1,Param3),<=(Param0,Param3)),<=(Param2,Param3)),Param3,ite(&&(<=(Param1,Param0),<=(Param2,Param0)),Param0,ite(<=(Param2,Param1),Param1,Param2))))}"
+            ],
+            "time": 7.133759
+        },
+        "linesight": {
+            "status": true,
+            "result": [
+                "9 {combine:ite(&&(<(0,Param1),<=(Param2,Param3)),1,0)}"
+            ],
+            "time": 0.540481
+        },
+        "array_search_6": {
+            "status": true,
+            "result": [
+                "17 {findIdx:ite(&&(<(Param4,Param6),<(Param6,Param5)),5,ite(<(Param6,Param0),0,ite(<(Param6,Param1),1,ite(<(Param4,Param6),6,ite(<(Param3,Param6),4,ite(<(Param6,Param2),2,3))))))}"
+            ],
+            "time": 3.700144
+        },
+        "max12": {
+            "status": false
+        },
+        "array_sum_4_5": {
+            "status": true,
+            "result": [
+                "21 {findSum:ite(&&(<(5,+(Param1,Param2)),<=(+(Param0,Param1),5)),+(Param1,Param2),ite(<(5,+(Param0,Param1)),+(Param0,Param1),ite(<=(+(Param2,Param3),5),0,+(Param2,Param3))))}"
+            ],
+            "time": 2.107827
+        },
+        "qm_loop_2": {
+            "status": true,
+            "result": [
+                "7 {qm-multi-loop:ite(&&(<(Param0,1),<(Param1,1)),3,ite(<(Param1,1),+(-1,Param0),Param0))}"
+            ],
+            "time": 0.229736
+        },
+        "max7": {
+            "status": true,
+            "result": [
+                "53 {max7:ite(&&(&&(&&(&&(&&(<=(Param0,Param5),<=(Param2,Param5)),<=(Param4,Param5)),<=(Param1,Param5)),<=(Param3,Param5)),<=(Param6,Param5)),Param5,ite(&&(&&(&&(&&(<=(Param0,Param6),<=(Param4,Param6)),<=(Param3,Param6)),<=(Param2,Param6)),<=(Param1,Param6)),Param6,ite(&&(&&(&&(<=(Param0,Param3),<=(Param1,Param3)),<=(Param2,Param3)),<=(Param4,Param3)),Param3,ite(&&(&&(<=(Param0,Param4),<=(Param2,Param4)),<=(Param1,Param4)),Param4,ite(&&(<=(Param0,Param1),<=(Param2,Param1)),Param1,ite(<=(Param2,Param0),Param0,Param2))))))}"
+            ],
+            "time": 11.079141
+        },
+        "LspPage9_1": {
+            "status": true,
+            "result": [
+                "12 {combine:ite(&&(&&(<(0,Param0),<(0,Param1)),<=(Param4,Param3)),1,0)}"
+            ],
+            "time": 0.669742
+        },
+        "mpg_example2": {
+            "status": false
+        },
+        "array_sum_9_5": {
+            "status": false
+        },
+        "max1s": {
+            "status": true,
+            "result": [
+                "37 {combine:ite(&&(<(Param0,Param1),<(+(Param3,Param4),Param1)),Param1,ite(<(+(Param3,Param4),Param0),Param0,+(Param3,Param4)))}"
+            ],
+            "time": 11.626292
+        },
+        "max1spos_reduce": {
+            "status": false
+        },
+        "mps": {
+            "status": true,
+            "result": [
+                "13 {combine:ite(<(+(Param1,Param2),Param0),Param0,+(Param1,Param2))}"
+            ],
+            "time": 1.55262
+        },
+        "mpg_plane3": {
+            "status": false
+        },
+        "thirdmin": {
+            "status": true,
+            "result": [
+                "82 {combine:ite(&&(&&(<(Param2,Param1),<(Param5,Param4)),<(Param3,Param0)),Param4,ite(&&(&&(<(Param2,Param1),<(Param3,Param0)),<=(Param4,Param5)),Param5,ite(||(&&(<(Param3,Param0),<(Param0,Param4)),&&(<(Param3,Param0),<=(Param1,Param2))),Param1,Param0)))}"
+            ],
+            "time": 15.660869
+        },
+        "qm_loop_3": {
+            "status": true,
+            "result": [
+                "13 {qm-multi-loop:ite(&&(&&(<(Param0,1),<(Param1,1)),<(Param2,1)),3,ite(&&(=(Param1,Param2),<(Param1,1)),+(-1,Param0),Param0))}"
+            ],
+            "time": 0.86654
+        },
+        "qm_max4": {
+            "status": true,
+            "result": [
+                "35 {qm-foo:ite(&&(&&(<(Param3,Param2),<(Param0,Param2)),<(Param1,Param2)),Param2,ite(&&(<(Param3,Param1),<(Param0,Param1)),Param1,ite(<(Param0,Param3),Param3,Param0)))}"
+            ],
+            "time": 3.936629
+        },
+        "issorted": {
+            "status": true,
+            "result": [
+                "12 {combine:ite(&&(&&(<(0,Param0),<(0,Param1)),<=(Param4,Param3)),1,0)}"
+            ],
+            "time": 0.944794
+        },
+        "max10": {
+            "status": false
+        },
+        "max1spos": {
+            "status": true,
+            "result": [
+                "73 {combine:ite(&&(<(Param2,+(Param5,Param6)),<=(Param3,+(Param5,Param6))),+(*(-1,Param6),Param8),ite(<(Param2,Param3),+(Param1,Param8),Param0))}"
+            ],
+            "time": 97.874633
+        },
+        "array_sum_7_15": {
+            "status": false
+        },
+        "array_sum_2_5": {
+            "status": true,
+            "result": [
+                "9 {findSum:ite(<=(+(Param0,Param1),5),0,+(Param0,Param1))}"
+            ],
+            "time": 0.51983
+        },
+        "sum": {
+            "status": true,
+            "result": [
+                "7 {combine:+(Param0,Param1)}"
+            ],
+            "time": 0.384995
+        },
+        "max6": {
+            "status": true,
+            "result": [
+                "65 {max6:ite(&&(&&(&&(&&(<=(Param4,Param0),<=(Param5,Param0)),<=(Param1,Param0)),<=(Param2,Param0)),<=(Param3,Param0)),Param0,ite(&&(&&(&&(<=(Param4,Param1),<=(Param3,Param1)),<=(Param2,Param1)),<=(Param5,Param1)),Param1,ite(&&(&&(<=(Param4,Param2),<=(Param3,Param2)),<=(Param5,Param2)),Param2,ite(&&(<=(Param4,Param5),<=(Param3,Param5)),Param5,ite(&&(&&(<=(Param4,Param3),<=(Param2,Param3)),<=(Param5,Param3)),Param3,Param4)))))}"
+            ],
+            "time": 43.155735
+        },
+        "qm_neg_eq_1": {
+            "status": true,
+            "result": [
+                "3 {qm-foo:ite(<(Param0,1),1,0)}"
+            ],
+            "time": 0.121247
+        },
+        "mpg_example5": {
+            "status": false
+        },
+        "array_search_12": {
+            "status": true,
+            "result": [
+                "30 {findIdx:ite(&&(<(Param12,Param1),<(Param0,Param12)),1,ite(<(Param11,Param12),12,ite(<(Param12,Param0),0,ite(&&(<(Param12,Param4),<(Param3,Param12)),4,ite(<(Param10,Param12),11,ite(<(Param12,Param2),2,ite(&&(<(Param6,Param12),<(Param12,Param7)),7,ite(&&(<(Param8,Param12),<(Param12,Param9)),9,ite(&&(<(Param6,Param12),<(Param12,Param8)),8,ite(&&(<(Param5,Param12),<(Param12,Param6)),6,ite(&&(<(Param3,Param12),<(Param12,Param5)),5,ite(<(Param9,Param12),10,3))))))))))))}"
+            ],
+            "time": 22.99818
+        },
+        "array_search_14": {
+            "status": false
+        },
+        "qm_neg_5": {
+            "status": true,
+            "result": [
+                "17 {qm-foo:ite(||(||(||(||(<=(0,Param0),<=(0,Param1)),<=(0,Param2)),<=(0,Param3)),<=(0,Param4)),0,1)}"
+            ],
+            "time": 1.321899
+        },
+        "array_sum_5_5": {
+            "status": true,
+            "result": [
+                "44 {findSum:ite(&&(&&(<(5,+(Param2,Param3)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),+(Param2,Param3),ite(<(5,+(Param0,Param1)),+(Param0,Param1),ite(&&(<(5,+(Param3,Param4)),<=(+(Param1,Param2),5)),+(Param3,Param4),ite(<=(+(Param1,Param2),5),0,+(Param1,Param2)))))}"
+            ],
+            "time": 8.851784
+        },
+        "array_search_10": {
+            "status": true,
+            "result": [
+                "34 {findIdx:ite(&&(<(Param8,Param10),<(Param10,Param9)),9,ite(<(Param8,Param10),10,ite(&&(<(Param10,Param3),<(Param2,Param10)),3,ite(&&(<(Param10,Param2),<(Param1,Param10)),2,ite(&&(<(Param6,Param10),<(Param10,Param7)),7,ite(<(Param7,Param10),8,ite(&&(<(Param10,Param4),<(Param2,Param10)),4,ite(<(Param10,Param0),0,ite(&&(<(Param10,Param1),<(Param0,Param10)),1,ite(<(Param5,Param10),6,5))))))))))}"
+            ],
+            "time": 18.665801
+        },
+        "max3": {
+            "status": true,
+            "result": [
+                "13 {max3:ite(&&(<=(Param0,Param1),<=(Param2,Param1)),Param1,ite(<=(Param0,Param2),Param2,Param0))}"
+            ],
+            "time": 0.902322
+        },
+        "qm_neg_3": {
+            "status": true,
+            "result": [
+                "13 {qm-foo:ite(||(||(<=(0,Param0),<=(0,Param1)),<=(0,Param2)),0,1)}"
+            ],
+            "time": 0.626895
+        },
+        "qm_loop_1": {
+            "status": true,
+            "result": [
+                "6 {qm-loop:ite(<(+(-1,Param0),0),3,+(-1,Param0))}"
+            ],
+            "time": 0.13009
+        },
+        "s2": {
+            "status": true,
+            "result": [
+                "2 {f:-1}"
+            ],
+            "time": 0.060889
+        },
+        "mss": {
+            "status": true,
+            "result": [
+                "78 {combine:ite(&&(<(+(Param3,Param4),Param0),<(Param1,Param0)),Param0,ite(<(+(Param3,Param4),Param1),Param1,+(Param3,Param4)))}"
+            ],
+            "time": 63.198317
+        },
+        "qm_neg_eq_5": {
+            "status": true,
+            "result": [
+                "15 {qm-foo:ite(&&(&&(&&(&&(<(Param2,1),<(Param4,1)),<(Param3,1)),<(Param1,1)),<(Param0,1)),1,0)}"
+            ],
+            "time": 0.867836
+        },
+        "zerostar1star": {
+            "status": true,
+            "result": [
+                "11 {combine:ite(||(||(&&(<=(Param3,0),<=(Param0,Param4)),<=(Param0,0)),<=(Param1,0)),0,1)}"
+            ],
+            "time": 0.819272
+        },
+        "mpg_guard3": {
+            "status": true,
+            "result": [
+                "23 {eq1:ite(<(Param1,+(Param2,+(+(Param0,Param1),+(Param0,Param1)))),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 20.133229
+        },
+        "array_search_15": {
+            "status": false
+        },
+        "array_sum_8_15": {
+            "status": true,
+            "result": [
+                "109 {findSum:ite(&&(<(15,+(Param1,Param2)),<=(+(Param0,Param1),15)),+(Param1,Param2),ite(&&(<(15,+(Param2,Param3)),<=(+(Param0,Param1),15)),+(Param2,Param3),ite(&&(&&(&&(&&(<=(+(Param6,Param7),15),<=(+(Param4,Param5),15)),<=(+(Param5,Param6),15)),<=(+(Param3,Param4),15)),<=(+(Param0,Param1),15)),0,ite(&&(&&(&&(<(15,+(Param5,Param6)),<=(+(Param4,Param5),15)),<=(+(Param3,Param4),15)),<=(+(Param0,Param1),15)),+(Param5,Param6),ite(&&(&&(<(15,+(Param4,Param5)),<=(+(Param3,Param4),15)),<=(+(Param0,Param1),15)),+(Param4,Param5),ite(&&(<=(+(Param3,Param4),15),<=(+(Param0,Param1),15)),+(Param6,Param7),ite(&&(<=(+(Param0,Param1),15),<(15,+(Param3,Param4))),+(Param3,Param4),+(Param0,Param1))))))))}"
+            ],
+            "time": 85.92869
+        },
+        "max13": {
+            "status": false
+        },
+        "mts": {
+            "status": true,
+            "result": [
+                "23 {combine:ite(<(+(Param0,Param3),Param1),Param1,+(Param0,Param3))}"
+            ],
+            "time": 2.274666
+        },
+        "qm_neg_eq_3": {
+            "status": true,
+            "result": [
+                "7 {qm-foo:ite(&&(&&(<(Param0,1),<(Param1,1)),<(Param2,1)),1,0)}"
+            ],
+            "time": 0.358286
+        },
+        "array_search_7": {
+            "status": true,
+            "result": [
+                "21 {findIdx:ite(<(Param6,Param7),7,ite(<(Param5,Param7),6,ite(<(Param7,Param0),0,ite(&&(<(Param7,Param3),<(Param2,Param7)),3,ite(&&(<(Param7,Param2),<(Param1,Param7)),2,ite(<(Param7,Param1),1,ite(&&(<(Param2,Param7),<(Param7,Param4)),4,5)))))))}"
+            ],
+            "time": 4.997513
+        },
+        "array_sum_10_5": {
+            "status": false
+        },
+        "mpg_guard4": {
+            "status": true,
+            "result": [
+                "25 {eq1:ite(<(0,+(Param2,+(+(Param0,Param1),+(Param0,Param1)))),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 8.393205
+        },
+        "qm_neg_eq_4": {
+            "status": true,
+            "result": [
+                "10 {qm-foo:ite(||(||(||(<(0,Param0),<(0,Param1)),<(0,Param2)),<(0,Param3)),0,1)}"
+            ],
+            "time": 0.641061
+        },
+        "array_sum_3_15": {
+            "status": true,
+            "result": [
+                "21 {findSum:ite(&&(<=(+(Param1,Param2),15),<=(+(Param0,Param1),15)),0,ite(<=(+(Param0,Param1),15),+(Param1,Param2),+(Param0,Param1)))}"
+            ],
+            "time": 1.753087
+        },
+        "array_sum_10_15": {
+            "status": false
+        },
+        "array_sum_6_15": {
+            "status": true,
+            "result": [
+                "90 {findSum:ite(&&(&&(<(15,+(Param2,Param3)),<=(+(Param1,Param2),15)),<=(+(Param0,Param1),15)),+(Param2,Param3),ite(&&(&&(&&(<=(+(Param4,Param5),15),<=(+(Param3,Param4),15)),<=(+(Param0,Param1),15)),<=(+(Param1,Param2),15)),0,ite(&&(&&(&&(<(15,+(Param4,Param5)),<=(+(Param1,Param2),15)),<=(+(Param0,Param1),15)),<=(+(Param3,Param4),15)),+(Param4,Param5),ite(<(15,+(Param0,Param1)),+(Param0,Param1),ite(&&(<=(+(Param1,Param2),15),<(5,+(Param3,Param4))),+(Param3,Param4),+(Param1,Param2))))))}"
+            ],
+            "time": 43.023522
+        },
+        "array_search_8": {
+            "status": true,
+            "result": [
+                "15 {findIdx:ite(&&(<(Param6,Param8),<(Param8,Param7)),7,ite(<(Param6,Param8),8,ite(<(Param5,Param8),6,ite(&&(<(Param8,Param3),<(Param2,Param8)),3,ite(<(Param8,Param0),0,ite(<(Param4,Param8),5,ite(<(Param8,Param1),1,ite(&&(<(Param8,Param2),<(Param1,Param8)),2,4))))))))}"
+            ],
+            "time": 3.503126
+        },
+        "mpg_example4": {
+            "status": false
+        },
+        "mpg_guard2": {
+            "status": true,
+            "result": [
+                "21 {eq1:ite(<(0,+(Param2,+(Param0,Param1))),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 1.543473
+        },
+        "qm_neg_1": {
+            "status": true,
+            "result": [
+                "5 {qm-foo:ite(<=(0,Param0),0,1)}"
+            ],
+            "time": 0.190779
+        },
+        "array_sum_4_15": {
+            "status": true,
+            "result": [
+                "35 {findSum:ite(&&(&&(<=(+(Param2,Param3),15),<=(+(Param1,Param2),15)),<=(+(Param0,Param1),15)),0,ite(<(15,+(Param0,Param1)),+(Param0,Param1),ite(&&(<=(+(Param1,Param2),15),<(Param1,Param3)),+(Param2,Param3),+(Param1,Param2))))}"
+            ],
+            "time": 4.397154
+        },
+        "qm_in_range": {
+            "status": true,
+            "result": [
+                "11 {qm-choose:ite(||(<=(Param0,Param1),<=(Param2,Param0)),0,1)}"
+            ],
+            "time": 0.544203
+        },
+        "mpg_ite2": {
+            "status": true,
+            "result": [
+                "38 {eq1:ite(&&(<(0,+(Param0,Param1)),<(0,+(Param0,Param2))),+(1,Param0),ite(&&(<(0,+(Param1,Param2)),<(Param0,-(1,Param1))),+(1,Param2),+(1,Param1)))}"
+            ],
+            "time": 18.259775
+        },
+        "array_search_4": {
+            "status": true,
+            "result": [
+                "8 {findIdx:ite(&&(<(Param4,Param1),<(Param0,Param4)),1,ite(<(Param3,Param4),4,ite(<(Param4,Param0),0,ite(<(Param2,Param4),3,2))))}"
+            ],
+            "time": 1.291254
+        },
+        "max14": {
+            "status": false
+        },
+        "s3": {
+            "status": true,
+            "result": [
+                "2 {f:-1}"
+            ],
+            "time": 0.085354
+        },
+        "array_sum_7_5": {
+            "status": true,
+            "result": [
+                "146 {findSum:ite(&&(&&(&&(&&(&&(<=(+(Param5,Param6),5),<=(+(Param0,Param1),5)),<=(+(Param4,Param5),5)),<=(+(Param3,Param4),5)),<=(+(Param2,Param3),5)),<=(+(Param1,Param2),5)),0,ite(&&(&&(<(5,+(Param2,Param3)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),+(Param2,Param3),ite(&&(&&(&&(&&(<(+(Param0,Param1),+(Param5,Param6)),<=(+(Param3,Param4),5)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),<=(+(Param4,Param5),5)),+(Param5,Param6),ite(&&(<(5,+(Param1,Param2)),<=(+(Param0,Param1),5)),+(Param1,Param2),ite(&&(&&(<=(+(Param0,Param1),5),<=(+(Param3,Param4),5)),<(5,+(Param4,Param5))),+(Param4,Param5),ite(||(<(5,+(Param0,Param1)),<=(Param4,Param2)),+(Param0,Param1),+(Param3,Param4)))))))}"
+            ],
+            "time": 96.989179
+        },
+        "max9": {
+            "status": true,
+            "result": [
+                "104 {max9:ite(&&(&&(&&(&&(&&(&&(&&(<=(Param6,Param7),<=(Param5,Param7)),<=(Param1,Param7)),<=(Param4,Param7)),<=(Param0,Param7)),<=(Param3,Param7)),<=(Param2,Param7)),<=(Param8,Param7)),Param7,ite(&&(&&(&&(&&(&&(&&(<=(Param2,Param4),<=(Param1,Param4)),<=(Param6,Param4)),<=(Param0,Param4)),<=(Param8,Param4)),<=(Param5,Param4)),<=(Param3,Param4)),Param4,ite(&&(&&(&&(&&(&&(<=(Param6,Param5),<=(Param0,Param5)),<=(Param1,Param5)),<=(Param2,Param5)),<=(Param3,Param5)),<=(Param8,Param5)),Param5,ite(&&(&&(&&(&&(<=(Param1,Param8),<=(Param6,Param8)),<=(Param0,Param8)),<=(Param2,Param8)),<=(Param3,Param8)),Param8,ite(&&(&&(&&(<=(Param0,Param2),<=(Param6,Param2)),<=(Param1,Param2)),<=(Param3,Param2)),Param2,ite(&&(&&(<=(Param3,Param1),<=(Param6,Param1)),<=(Param0,Param1)),Param1,ite(&&(<=(Param3,Param0),<=(Param6,Param0)),Param0,ite(<=(Param6,Param3),Param3,Param6))))))))}"
+            ],
+            "time": 59.403086
+        },
+        "mpg_plane2": {
+            "status": false
+        },
+        "mpg_example1": {
+            "status": false
+        }
+    },
+    "prand": {
+        "mpg_guard1": {
+            "status": true,
+            "result": [
+                "8 {eq1:ite(<(0,+(Param0,Param1)),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 0.327229
+        },
+        "count1s": {
+            "status": true,
+            "result": [
+                "13 {combine:ite(<(Param4,Param3),+(Param0,Param1),-(+(Param0,Param1),Param3))}"
+            ],
+            "time": 0.655772
+        },
+        "LinExpr_inv1_ex": {
+            "status": true,
+            "result": [
+                "7 {inv:ite(||(=(Param0,1),=(Param1,1)),3,1)}"
+            ],
+            "time": 0.158454
+        },
+        "qm_neg_2": {
+            "status": true,
+            "result": [
+                "6 {qm-foo:ite(||(<=(0,Param0),<=(0,Param1)),0,1)}"
+            ],
+            "time": 0.123067
+        },
+        "mpg_ite1": {
+            "status": true,
+            "result": [
+                "18 {eq1:ite(&&(<(0,+(Param0,Param1)),<(Param0,-(1,Param2))),+(1,Param1),ite(<(0,+(Param0,Param1)),+(1,Param0),+(1,Param2)))}"
+            ],
+            "time": 1.419478
+        },
+        "array_search_5": {
+            "status": true,
+            "result": [
+                "19 {findIdx:ite(<(Param4,Param5),5,ite(&&(<(Param2,Param5),<(Param5,Param3)),3,ite(&&(<(Param1,Param5),<(Param5,Param2)),2,ite(&&(<(Param0,Param5),<(Param5,Param1)),1,ite(<(Param1,Param5),4,0)))))}"
+            ],
+            "time": 3.378517
+        },
+        "secondmin": {
+            "status": true,
+            "result": [
+                "14 {combine:ite(&&(<(Param1,Param2),<=(Param3,Param0)),Param1,ite(&&(&&(<(Param3,Param1),<(Param3,Param2)),<=(Param3,Param0)),Param2,ite(<(Param3,Param0),Param3,Param0)))}"
+            ],
+            "time": 0.749132
+        },
+        "array_search_11": {
+            "status": true,
+            "result": [
+                "24 {findIdx:ite(<(Param10,Param11),11,ite(&&(<(Param8,Param11),<(Param11,Param9)),9,ite(&&(<(Param11,Param1),<(Param0,Param11)),1,ite(&&(<(Param7,Param11),<(Param11,Param8)),8,ite(&&(<(Param5,Param11),<(Param11,Param6)),6,ite(&&(<(Param11,Param3),<(Param2,Param11)),3,ite(<(Param11,Param0),0,ite(&&(<(Param11,Param2),<(Param1,Param11)),2,ite(<(Param8,Param11),10,ite(&&(<(Param4,Param11),<(Param11,Param5)),5,ite(<(Param4,Param11),7,4)))))))))))}"
+            ],
+            "time": 9.711488
+        },
+        "max8": {
+            "status": true,
+            "result": [
+                "74 {max8:ite(&&(&&(&&(&&(&&(&&(<=(Param4,Param2),<=(Param5,Param2)),<=(Param7,Param2)),<=(Param6,Param2)),<=(Param0,Param2)),<=(Param1,Param2)),<=(Param3,Param2)),Param2,ite(&&(&&(&&(&&(&&(<=(Param5,Param4),<=(Param7,Param4)),<=(Param1,Param4)),<=(Param3,Param4)),<=(Param0,Param4)),<=(Param6,Param4)),Param4,ite(&&(&&(&&(&&(<=(Param0,Param1),<=(Param5,Param1)),<=(Param3,Param1)),<=(Param6,Param1)),<=(Param7,Param1)),Param1,ite(&&(&&(&&(<=(Param0,Param3),<=(Param5,Param3)),<=(Param7,Param3)),<=(Param6,Param3)),Param3,ite(&&(&&(<=(Param7,Param5),<=(Param0,Param5)),<=(Param6,Param5)),Param5,ite(&&(<=(Param7,Param0),<=(Param6,Param0)),Param0,ite(<=(Param7,Param6),Param6,Param7)))))))}"
+            ],
+            "time": 20.30101
+        },
+        "array_search_9": {
+            "status": true,
+            "result": [
+                "31 {findIdx:ite(&&(<(Param5,Param9),<(Param9,Param6)),6,ite(&&(<(Param5,Param9),<(Param9,Param7)),7,ite(&&(<(Param3,Param9),<(Param9,Param4)),4,ite(&&(<(Param2,Param9),<(Param9,Param3)),3,ite(&&(<(Param1,Param9),<(Param9,Param2)),2,ite(&&(<(Param5,Param9),<(Param9,Param8)),8,ite(&&(<(Param1,Param9),<(Param9,Param5)),5,ite(<(Param5,Param9),9,ite(<(Param0,Param9),1,0)))))))))}"
+            ],
+            "time": 12.610219
+        },
+        "qm_neg_4": {
+            "status": true,
+            "result": [
+                "21 {qm-foo:ite(&&(&&(&&(<(Param0,0),<(Param2,0)),<(Param3,0)),<(Param1,0)),1,0)}"
+            ],
+            "time": 0.836826
+        },
+        "balanced": {
+            "status": true,
+            "result": [
+                "23 {combine:ite(&&(&&(=(Param2,-(0,Param3)),<=(Param3,Param5)),<=(0,Param4)),1,0)}"
+            ],
+            "time": 10.126242
+        },
+        "qm_max3": {
+            "status": true,
+            "result": [
+                "8 {qm-foo:ite(&&(<(Param1,Param0),<(Param2,Param0)),Param0,ite(<(Param2,Param1),Param1,Param2))}"
+            ],
+            "time": 0.266615
+        },
+        "array_sum_3_5": {
+            "status": true,
+            "result": [
+                "12 {findSum:ite(&&(<=(+(Param0,Param1),5),<=(+(Param1,Param2),5)),0,ite(<(5,+(Param0,Param1)),+(Param0,Param1),+(Param1,Param2)))}"
+            ],
+            "time": 0.564058
+        },
+        "array_sum_8_5": {
+            "status": true,
+            "result": [
+                "95 {findSum:ite(&&(&&(<(5,+(Param2,Param3)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),+(Param2,Param3),ite(&&(&&(&&(&&(&&(<=(+(Param4,Param5),5),<=(+(Param6,Param7),5)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),<=(+(Param5,Param6),5)),<=(+(Param3,Param4),5)),0,ite(&&(&&(&&(<(5,+(Param3,Param4)),<=(+(Param2,Param3),5)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),+(Param3,Param4),ite(&&(&&(&&(<(5,+(Param4,Param5)),<=(+(Param3,Param4),5)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),+(Param4,Param5),ite(&&(&&(&&(<(+(Param4,Param5),+(Param6,Param7)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),<=(+(Param5,Param6),5)),+(Param6,Param7),ite(&&(&&(<(+(Param3,Param4),+(Param5,Param6)),<=(+(Param0,Param1),5)),<=(+(Param1,Param2),5)),+(Param5,Param6),ite(&&(<(5,+(Param1,Param2)),<=(+(Param0,Param1),5)),+(Param1,Param2),+(Param0,Param1))))))))}"
+            ],
+            "time": 52.466558
+        },
+        "max4": {
+            "status": true,
+            "result": [
+                "15 {max4:ite(&&(&&(<=(Param2,Param1),<=(Param3,Param1)),<=(Param0,Param1)),Param1,ite(&&(<=(Param2,Param0),<=(Param3,Param0)),Param0,ite(<=(Param3,Param2),Param2,Param3)))}"
+            ],
+            "time": 0.851471
+        },
+        "qm_choose_01": {
+            "status": true,
+            "result": [
+                "3 {qm-choose:ite(<(Param0,1),1,0)}"
+            ],
+            "time": 0.100663
+        },
+        "array_sum_5_15": {
+            "status": true,
+            "result": [
+                "47 {findSum:ite(&&(&&(<(15,+(Param2,Param3)),<=(+(Param0,Param1),15)),<=(+(Param1,Param2),15)),+(Param2,Param3),ite(&&(&&(<(15,+(Param3,Param4)),<=(+(Param0,Param1),15)),<=(+(Param1,Param2),15)),+(Param3,Param4),ite(&&(<(15,+(Param1,Param2)),<=(+(Param0,Param1),15)),+(Param1,Param2),ite(<(15,+(Param0,Param1)),+(Param0,Param1),0))))}"
+            ],
+            "time": 9.700464
+        },
+        "zeroafter1": {
+            "status": true,
+            "result": [
+                "22 {combine:ite(&&(&&(<(Param0,Param4),<(Param1,Param4)),<(Param3,Param4)),*(-1,Param4),ite(&&(&&(<(0,Param1),<(0,Param0)),<=(Param4,Param3)),2,ite(&&(&&(<=(Param0,-(Param4,Param1)),<(Param0,-(2,Param3))),<(Param1,-(2,Param3))),0,1)))}"
+            ],
+            "time": 3.689542
+        },
+        "array_sum_6_5": {
+            "status": true,
+            "result": [
+                "48 {findSum:ite(&&(&&(<(5,+(Param2,Param3)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),+(Param2,Param3),ite(&&(&&(&&(<=(+(Param4,Param5),5),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),<=(+(Param3,Param4),5)),0,ite(&&(&&(<(5,+(Param3,Param4)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),+(Param3,Param4),ite(&&(<=(+(Param0,Param1),5),<=(+(Param1,Param2),5)),+(Param4,Param5),ite(<(5,+(Param0,Param1)),+(Param0,Param1),+(Param1,Param2))))))}"
+            ],
+            "time": 12.531507
+        },
+        "qm_choose_yz": {
+            "status": true,
+            "result": [
+                "5 {qm-choose:ite(<(0,Param0),Param2,Param1)}"
+            ],
+            "time": 0.187289
+        },
+        "LspPage9_2": {
+            "status": true,
+            "result": [
+                "24 {combine:ite(<(10,+(Param2,Param3)),0,1)}"
+            ],
+            "time": 1.642122
+        },
+        "max_11": {
+            "status": true,
+            "result": [
+                "123 {max11:ite(&&(&&(&&(&&(&&(&&(&&(&&(&&(<=(Param9,Param0),<=(Param10,Param0)),<=(Param4,Param0)),<=(Param8,Param0)),<=(Param6,Param0)),<=(Param7,Param0)),<=(Param1,Param0)),<=(Param3,Param0)),<=(Param5,Param0)),<=(Param2,Param0)),Param0,ite(&&(&&(&&(&&(&&(&&(&&(&&(<=(Param7,Param10),<=(Param6,Param10)),<=(Param2,Param10)),<=(Param3,Param10)),<=(Param8,Param10)),<=(Param4,Param10)),<=(Param5,Param10)),<=(Param1,Param10)),<=(Param9,Param10)),Param10,ite(&&(&&(&&(&&(&&(&&(&&(&&(<=(Param8,Param2),<=(Param4,Param2)),<=(Param5,Param2)),<=(Param6,Param2)),<=(Param0,Param2)),<=(Param1,Param2)),<=(Param3,Param2)),<=(Param7,Param2)),<=(Param9,Param2)),Param2,ite(&&(&&(&&(&&(&&(&&(<=(Param6,Param9),<=(Param5,Param9)),<=(Param8,Param9)),<=(Param4,Param9)),<=(Param7,Param9)),<=(Param1,Param9)),<=(Param3,Param9)),Param9,ite(&&(&&(&&(&&(&&(<=(Param6,Param3),<=(Param5,Param3)),<=(Param1,Param3)),<=(Param8,Param3)),<=(Param7,Param3)),<=(Param4,Param3)),Param3,ite(&&(&&(&&(&&(<=(Param6,Param1),<=(Param7,Param1)),<=(Param8,Param1)),<=(Param4,Param1)),<=(Param5,Param1)),Param1,ite(&&(&&(&&(<=(Param6,Param8),<=(Param5,Param8)),<=(Param7,Param8)),<=(Param4,Param8)),Param8,ite(&&(&&(<=(Param6,Param5),<=(Param4,Param5)),<=(Param7,Param5)),Param5,ite(&&(<=(Param4,Param6),<=(Param7,Param6)),Param6,ite(&&(<=(Param7,Param4),<=(Param3,Param4)),Param4,Param7))))))))))}"
+            ],
+            "time": 77.352068
+        },
+        "mpg_plane1": {
+            "status": true,
+            "result": [
+                "7 {eq1:+(Param0,Param1)}"
+            ],
+            "time": 0.174001
+        },
+        "array_search_3": {
+            "status": true,
+            "result": [
+                "7 {findIdx:ite(<(Param3,Param0),0,ite(&&(<(Param1,Param3),<(Param3,Param2)),2,ite(<(Param1,Param3),3,1)))}"
+            ],
+            "time": 1.134296
+        },
+        "array_sum_2_15": {
+            "status": true,
+            "result": [
+                "6 {findSum:ite(<=(+(Param0,Param1),15),0,+(Param0,Param1))}"
+            ],
+            "time": 0.25985
+        },
+        "qm_max2": {
+            "status": true,
+            "result": [
+                "3 {qm-foo:ite(<(Param1,Param0),Param0,Param1)}"
+            ],
+            "time": 0.058923
+        },
+        "mpg_example3": {
+            "status": false
+        },
+        "array_search_2": {
+            "status": true,
+            "result": [
+                "6 {findIdx:ite(<(Param2,Param0),0,ite(<(Param1,Param2),2,1))}"
+            ],
+            "time": 0.458907
+        },
+        "dropwhile": {
+            "status": true,
+            "result": [
+                "10 {combine:ite(<(Param2,1),Param0,ite(<(Param3,Param2),Param1,+(Param4,Param5)))}"
+            ],
+            "time": 0.567232
+        },
+        "array_sum_9_15": {
+            "status": false
+        },
+        "qm_max5": {
+            "status": true,
+            "result": [
+                "22 {qm-foo:ite(&&(&&(&&(<(Param3,Param1),<(Param2,Param1)),<(Param4,Param1)),<(Param0,Param1)),Param1,ite(&&(&&(<(Param3,Param2),<(Param4,Param2)),<(Param0,Param2)),Param2,ite(&&(<(Param4,Param3),<(Param0,Param3)),Param3,ite(<(Param0,Param4),Param4,Param0))))}"
+            ],
+            "time": 1.639275
+        },
+        "array_search_13": {
+            "status": true,
+            "result": [
+                "35 {findIdx:ite(&&(<(Param5,Param13),<(Param13,Param6)),6,ite(<(Param12,Param13),13,ite(&&(<(Param8,Param13),<(Param13,Param9)),9,ite(&&(<(Param13,Param3),<(Param2,Param13)),3,ite(<(Param13,Param0),0,ite(&&(<(Param10,Param13),<(Param13,Param11)),11,ite(&&(<(Param5,Param13),<(Param13,Param7)),7,ite(&&(<(Param8,Param13),<(Param13,Param10)),10,ite(<(Param13,Param1),1,ite(<(Param8,Param13),12,ite(&&(<(Param4,Param13),<(Param13,Param5)),5,ite(&&(<(Param7,Param13),<(Param13,Param8)),8,ite(<(Param13,Param2),2,4)))))))))))))}"
+            ],
+            "time": 43.721137
+        },
+        "max15": {
+            "status": false
+        },
+        "qm_neg_eq_2": {
+            "status": true,
+            "result": [
+                "7 {qm-foo:ite(&&(<(Param0,1),<(Param1,1)),1,0)}"
+            ],
+            "time": 0.178853
+        },
+        "max5": {
+            "status": true,
+            "result": [
+                "34 {max5:ite(&&(&&(&&(<=(Param2,Param0),<=(Param3,Param0)),<=(Param4,Param0)),<=(Param1,Param0)),Param0,ite(&&(&&(<=(Param2,Param1),<=(Param3,Param1)),<=(Param4,Param1)),Param1,ite(&&(<=(Param4,Param3),<=(Param2,Param3)),Param3,ite(<=(Param4,Param2),Param2,Param4))))}"
+            ],
+            "time": 3.126609
+        },
+        "linesight": {
+            "status": true,
+            "result": [
+                "7 {combine:ite(&&(<(0,Param1),<=(Param2,Param3)),1,0)}"
+            ],
+            "time": 0.231796
+        },
+        "array_search_6": {
+            "status": true,
+            "result": [
+                "17 {findIdx:ite(&&(<(Param3,Param6),<(Param6,Param4)),4,ite(<(Param6,Param0),0,ite(&&(<(Param6,Param2),<(Param1,Param6)),2,ite(<(Param6,Param1),1,ite(<(Param6,Param3),3,ite(<(Param5,Param6),6,5))))))}"
+            ],
+            "time": 2.973849
+        },
+        "max7": {
+            "status": true,
+            "result": [
+                "49 {max7:ite(&&(&&(&&(&&(&&(<=(Param0,Param2),<=(Param1,Param2)),<=(Param4,Param2)),<=(Param3,Param2)),<=(Param6,Param2)),<=(Param5,Param2)),Param2,ite(&&(&&(&&(&&(<=(Param5,Param0),<=(Param6,Param0)),<=(Param1,Param0)),<=(Param3,Param0)),<=(Param4,Param0)),Param0,ite(&&(&&(&&(<=(Param5,Param3),<=(Param6,Param3)),<=(Param4,Param3)),<=(Param1,Param3)),Param3,ite(&&(&&(<=(Param1,Param6),<=(Param5,Param6)),<=(Param4,Param6)),Param6,ite(&&(&&(&&(&&(<=(Param2,Param4),<=(Param0,Param4)),<=(Param1,Param4)),<=(Param3,Param4)),<=(Param5,Param4)),Param4,ite(<=(Param1,Param5),Param5,Param1))))))}"
+            ],
+            "time": 10.479104
+        },
+        "array_sum_4_5": {
+            "status": true,
+            "result": [
+                "25 {findSum:ite(&&(&&(&&(<(+(Param0,Param1),+(Param2,Param3)),<=(+(Param1,Param2),5)),<(5,+(Param2,Param3))),<=(+(Param0,Param1),5)),+(Param2,Param3),ite(&&(<=(+(Param1,Param2),5),<=(+(Param0,Param1),5)),0,ite(<(5,+(Param0,Param1)),+(Param0,Param1),+(Param1,Param2))))}"
+            ],
+            "time": 2.509461
+        },
+        "qm_loop_2": {
+            "status": true,
+            "result": [
+                "9 {qm-multi-loop:ite(&&(<(Param0,1),<(Param1,1)),-(3,*(2,Param0)),ite(<(0,Param1),Param0,+(-1,Param0)))}"
+            ],
+            "time": 0.344466
+        },
+        "max12": {
+            "status": false
+        },
+        "LspPage9_1": {
+            "status": true,
+            "result": [
+                "14 {combine:ite(&&(&&(<(0,Param0),<=(Param4,Param3)),<(0,Param1)),1,0)}"
+            ],
+            "time": 0.736184
+        },
+        "max1spos_reduce": {
+            "status": true,
+            "result": [
+                "43 {combine:ite(false,+(-1,Param0),ite(&&(<=(Param3,+(Param4,Param5)),<(Param2,+(Param4,Param5))),+(*(-1,Param5),Param6),ite(<(Param2,Param3),+(Param1,Param6),Param0)))}"
+            ],
+            "time": 11.207162
+        },
+        "mpg_example2": {
+            "status": false
+        },
+        "max1s": {
+            "status": true,
+            "result": [
+                "13 {combine:ite(&&(<(+(Param3,Param4),Param0),<(Param1,Param0)),Param0,ite(<(Param1,+(Param3,Param4)),+(Param3,Param4),Param1))}"
+            ],
+            "time": 0.689511
+        },
+        "array_sum_9_5": {
+            "status": false
+        },
+        "mps": {
+            "status": true,
+            "result": [
+                "8 {combine:ite(<(+(Param1,Param2),Param0),Param0,+(Param1,Param2))}"
+            ],
+            "time": 0.367396
+        },
+        "thirdmin": {
+            "status": true,
+            "result": [
+                "23 {combine:ite(&&(<=(Param1,Param2),<(Param3,Param0)),Param1,ite(&&(<(Param3,Param0),<(Param4,Param5)),Param5,ite(<(Param3,Param0),Param4,Param0)))}"
+            ],
+            "time": 1.999182
+        },
+        "max10": {
+            "status": true,
+            "result": [
+                "110 {max10:ite(&&(&&(&&(&&(&&(&&(&&(&&(<=(Param9,Param6),<=(Param0,Param6)),<=(Param3,Param6)),<=(Param5,Param6)),<=(Param1,Param6)),<=(Param8,Param6)),<=(Param4,Param6)),<=(Param2,Param6)),<=(Param7,Param6)),Param6,ite(&&(&&(&&(&&(&&(&&(&&(<=(Param7,Param0),<=(Param9,Param0)),<=(Param3,Param0)),<=(Param5,Param0)),<=(Param2,Param0)),<=(Param8,Param0)),<=(Param1,Param0)),<=(Param4,Param0)),Param0,ite(&&(&&(&&(&&(&&(&&(&&(<=(Param2,Param9),<=(Param1,Param9)),<=(Param7,Param9)),<=(Param0,Param9)),<=(Param5,Param9)),<=(Param8,Param9)),<=(Param3,Param9)),<=(Param4,Param9)),Param9,ite(&&(&&(&&(&&(&&(<=(Param1,Param7),<=(Param4,Param7)),<=(Param2,Param7)),<=(Param5,Param7)),<=(Param3,Param7)),<=(Param8,Param7)),Param7,ite(&&(&&(&&(&&(&&(<=(Param5,Param1),<=(Param6,Param1)),<=(Param8,Param1)),<=(Param2,Param1)),<=(Param3,Param1)),<=(Param4,Param1)),Param1,ite(&&(&&(&&(<=(Param4,Param2),<=(Param3,Param2)),<=(Param5,Param2)),<=(Param8,Param2)),Param2,ite(&&(&&(<=(Param8,Param3),<=(Param4,Param3)),<=(Param5,Param3)),Param3,ite(&&(<=(Param8,Param4),<=(Param5,Param4)),Param4,ite(<=(Param5,Param8),Param8,Param5)))))))))}"
+            ],
+            "time": 55.577194
+        },
+        "qm_loop_3": {
+            "status": true,
+            "result": [
+                "14 {qm-multi-loop:ite(&&(&&(<(Param0,1),<(Param1,1)),<(Param2,1)),3,ite(&&(<(Param1,1),<(Param2,1)),+(-1,Param0),Param0))}"
+            ],
+            "time": 0.46368
+        },
+        "qm_max4": {
+            "status": true,
+            "result": [
+                "12 {qm-foo:ite(&&(&&(<(Param1,Param2),<(Param3,Param2)),<(Param0,Param2)),Param2,ite(&&(<(Param3,Param1),<(Param0,Param1)),Param1,ite(<(Param0,Param3),Param3,Param0)))}"
+            ],
+            "time": 0.639936
+        },
+        "issorted": {
+            "status": true,
+            "result": [
+                "14 {combine:ite(&&(&&(<(0,Param0),<=(Param4,Param3)),<(0,Param1)),1,0)}"
+            ],
+            "time": 0.697989
+        },
+        "array_sum_7_15": {
+            "status": true,
+            "result": [
+                "66 {findSum:ite(&&(&&(&&(&&(&&(<(15,+(Param5,Param6)),<=(+(Param1,Param2),15)),<=(+(Param4,Param5),15)),<=(+(Param2,Param3),15)),<=(+(Param3,Param4),15)),<=(+(Param0,Param1),15)),+(Param5,Param6),ite(&&(&&(&&(<(15,+(Param3,Param4)),<=(+(Param2,Param3),15)),<=(+(Param1,Param2),15)),<=(+(Param0,Param1),15)),+(Param3,Param4),ite(&&(<(15,+(Param1,Param2)),<=(+(Param0,Param1),15)),+(Param1,Param2),ite(&&(&&(<=(+(Param0,Param1),15),<=(+(Param2,Param3),15)),<=(+(Param4,Param5),15)),0,ite(&&(<(15,+(Param2,Param3)),<=(+(Param0,Param1),15)),+(Param2,Param3),ite(&&(<=(+(Param0,Param1),15),<(+(Param1,Param2),+(Param4,Param5))),+(Param4,Param5),+(Param0,Param1)))))))}"
+            ],
+            "time": 27.642872
+        },
+        "max1spos": {
+            "status": true,
+            "result": [
+                "57 {combine:ite(false,Param5,ite(&&(<(Param5,-(Param3,Param6)),<(Param2,Param3)),+(Param1,Param8),ite(<(Param2,+(Param5,Param6)),+(*(-1,Param6),Param8),Param0)))}"
+            ],
+            "time": 55.35134
+        },
+        "max6": {
+            "status": true,
+            "result": [
+                "40 {max6:ite(&&(&&(&&(&&(<=(Param2,Param0),<=(Param1,Param0)),<=(Param3,Param0)),<=(Param4,Param0)),<=(Param5,Param0)),Param0,ite(&&(&&(&&(<=(Param5,Param2),<=(Param3,Param2)),<=(Param4,Param2)),<=(Param1,Param2)),Param2,ite(&&(&&(<=(Param3,Param5),<=(Param1,Param5)),<=(Param4,Param5)),Param5,ite(&&(<=(Param1,Param4),<=(Param3,Param4)),Param4,ite(<=(Param1,Param3),Param3,Param1)))))}"
+            ],
+            "time": 6.144433
+        },
+        "array_sum_2_5": {
+            "status": true,
+            "result": [
+                "5 {findSum:ite(<(5,+(Param0,Param1)),+(Param0,Param1),0)}"
+            ],
+            "time": 0.183092
+        },
+        "sum": {
+            "status": true,
+            "result": [
+                "5 {combine:+(Param0,Param1)}"
+            ],
+            "time": 0.147532
+        },
+        "mss": {
+            "status": true,
+            "result": [
+                "14 {combine:ite(&&(<(+(Param3,Param4),Param1),<(Param0,Param1)),Param1,ite(<(+(Param3,Param4),Param0),Param0,+(Param3,Param4)))}"
+            ],
+            "time": 1.050408
+        },
+        "qm_neg_eq_1": {
+            "status": true,
+            "result": [
+                "3 {qm-foo:ite(<(Param0,1),1,0)}"
+            ],
+            "time": 0.070319
+        },
+        "mpg_plane3": {
+            "status": false
+        },
+        "array_search_12": {
+            "status": true,
+            "result": [
+                "30 {findIdx:ite(<(Param11,Param12),12,ite(<(Param12,Param0),0,ite(&&(<(Param12,Param3),<(Param2,Param12)),3,ite(&&(<(Param12,Param4),<(Param2,Param12)),4,ite(&&(<(Param9,Param12),<(Param12,Param10)),10,ite(&&(<(Param12,Param6),<(Param5,Param12)),6,ite(&&(<(Param12,Param2),<(Param1,Param12)),2,ite(&&(<(Param12,Param5),<(Param1,Param12)),5,ite(<(Param10,Param12),11,ite(<(Param8,Param12),9,ite(&&(<(Param12,Param7),<(Param5,Param12)),7,ite(<(Param12,Param1),1,8))))))))))))}"
+            ],
+            "time": 17.067161
+        },
+        "mpg_example5": {
+            "status": false
+        },
+        "array_search_14": {
+            "status": false
+        },
+        "qm_neg_5": {
+            "status": true,
+            "result": [
+                "37 {qm-foo:ite(&&(&&(&&(&&(<(Param2,0),<(Param4,0)),<(Param1,0)),<(Param3,0)),<(Param0,0)),1,0)}"
+            ],
+            "time": 1.886353
+        },
+        "array_search_10": {
+            "status": true,
+            "result": [
+                "49 {findIdx:ite(&&(<(Param10,Param2),<(Param1,Param10)),2,ite(&&(<(Param6,Param10),<(Param10,Param7)),7,ite(&&(<(Param8,Param10),<(Param10,Param9)),9,ite(&&(<(Param3,Param10),<(Param10,Param4)),4,ite(&&(<(Param5,Param10),<(Param10,Param6)),6,ite(<(8,+(-(10,Param9),Param10)),10,ite(&&(<(Param3,Param10),<(Param10,Param5)),5,ite(&&(<(Param1,Param10),<(Param10,Param3)),3,ite(&&(&&(<(0,+(-(-1,Param0),Param1)),<(Param10,Param1)),<(Param0,Param10)),1,ite(<(Param0,Param10),8,0))))))))))}"
+            ],
+            "time": 61.763211
+        },
+        "max3": {
+            "status": true,
+            "result": [
+                "9 {max3:ite(&&(<=(Param0,Param1),<=(Param2,Param1)),Param1,ite(<=(Param2,Param0),Param0,Param2))}"
+            ],
+            "time": 0.298679
+        },
+        "array_sum_5_5": {
+            "status": true,
+            "result": [
+                "52 {findSum:ite(&&(&&(&&(<=(+(Param3,Param4),5),<=(+(Param1,Param2),5)),<=(+(Param2,Param3),5)),<=(+(Param0,Param1),5)),0,ite(&&(&&(&&(<(5,+(Param3,Param4)),<=(+(Param2,Param3),5)),<=(+(Param0,Param1),5)),<=(+(Param1,Param2),5)),+(Param3,Param4),ite(||(&&(<(5,+(Param1,Param2)),<=(+(Param0,Param1),5)),&&(<(+(Param2,Param3),0),<(+(Param0,Param1),2))),+(Param1,Param2),ite(||(&&(<=(+(Param0,Param1),5),<(0,Param2)),&&(<=(+(Param0,Param1),5),<(5,+(Param2,Param3)))),+(Param2,Param3),+(Param0,Param1)))))}"
+            ],
+            "time": 11.736621
+        },
+        "qm_neg_3": {
+            "status": true,
+            "result": [
+                "14 {qm-foo:ite(&&(&&(<(Param0,0),<(Param1,0)),<(Param2,0)),1,0)}"
+            ],
+            "time": 0.515581
+        },
+        "qm_loop_1": {
+            "status": true,
+            "result": [
+                "4 {qm-loop:ite(<(+(-1,Param0),0),3,+(-1,Param0))}"
+            ],
+            "time": 0.086457
+        },
+        "s2": {
+            "status": true,
+            "result": [
+                "2 {f:-1}"
+            ],
+            "time": 0.04768
+        },
+        "qm_neg_eq_5": {
+            "status": true,
+            "result": [
+                "41 {qm-foo:ite(||(||(||(||(<(0,Param0),<(0,Param1)),<(0,Param2)),<(0,Param3)),<(0,Param4)),0,1)}"
+            ],
+            "time": 8.950631
+        },
+        "zerostar1star": {
+            "status": true,
+            "result": [
+                "8 {combine:ite(||(||(&&(<=(Param3,0),<=(Param0,Param4)),<=(Param0,0)),<=(Param1,0)),0,1)}"
+            ],
+            "time": 0.629333
+        },
+        "array_search_15": {
+            "status": false
+        },
+        "mpg_guard3": {
+            "status": true,
+            "result": [
+                "29 {eq1:ite(<(Param1,+(Param2,+(+(Param0,Param1),+(Param0,Param1)))),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 25.071501
+        },
+        "array_sum_8_15": {
+            "status": false
+        },
+        "max13": {
+            "status": false
+        },
+        "mts": {
+            "status": true,
+            "result": [
+                "8 {combine:ite(<(+(Param0,Param3),Param1),Param1,+(Param0,Param3))}"
+            ],
+            "time": 0.267391
+        },
+        "qm_neg_eq_3": {
+            "status": true,
+            "result": [
+                "11 {qm-foo:ite(||(||(<(0,Param0),<(0,Param1)),<(0,Param2)),0,1)}"
+            ],
+            "time": 0.320261
+        },
+        "array_sum_10_5": {
+            "status": false
+        },
+        "array_sum_10_15": {
+            "status": false
+        },
+        "array_search_7": {
+            "status": true,
+            "result": [
+                "22 {findIdx:ite(<(Param6,Param7),7,ite(&&(<(Param4,Param7),<(Param7,Param5)),5,ite(<(Param4,Param7),6,ite(<(Param3,Param7),4,ite(<(Param2,Param7),3,ite(&&(<(Param7,Param1),<(Param0,Param7)),1,ite(<(Param7,Param0),0,2)))))))}"
+            ],
+            "time": 6.514672
+        },
+        "qm_neg_eq_4": {
+            "status": true,
+            "result": [
+                "17 {qm-foo:ite(&&(&&(&&(<(Param2,1),<(Param3,1)),<(Param0,1)),<(Param1,1)),1,0)}"
+            ],
+            "time": 0.747991
+        },
+        "array_sum_3_15": {
+            "status": true,
+            "result": [
+                "19 {findSum:ite(&&(<=(+(Param1,Param2),15),<=(+(Param0,Param1),15)),0,ite(<(15,+(Param0,Param1)),+(Param0,Param1),+(Param1,Param2)))}"
+            ],
+            "time": 1.085131
+        },
+        "mpg_guard4": {
+            "status": true,
+            "result": [
+                "26 {eq1:ite(<(0,+(Param2,+(+(Param0,Param1),+(Param0,Param1)))),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 14.88195
+        },
+        "array_sum_6_15": {
+            "status": true,
+            "result": [
+                "41 {findSum:ite(&&(&&(<(15,+(Param2,Param3)),<=(+(Param1,Param2),15)),<=(+(Param0,Param1),15)),+(Param2,Param3),ite(<(15,+(Param0,Param1)),+(Param0,Param1),ite(&&(&&(<(15,+(Param4,Param5)),<=(+(Param1,Param2),15)),<=(+(Param3,Param4),15)),+(Param4,Param5),ite(&&(<=(+(Param1,Param2),15),<=(+(Param3,Param4),15)),0,ite(<(15,+(Param1,Param2)),+(Param1,Param2),+(Param3,Param4))))))}"
+            ],
+            "time": 13.333467
+        },
+        "array_search_8": {
+            "status": true,
+            "result": [
+                "27 {findIdx:ite(&&(<(Param5,Param8),<(Param8,Param6)),6,ite(<(Param8,Param0),0,ite(&&(<(Param8,Param4),<(Param3,Param8)),4,ite(&&(<(Param8,Param3),<(Param2,Param8)),3,ite(&&(<(Param4,Param8),<(Param8,Param5)),5,ite(&&(<(Param8,Param2),<(Param1,Param8)),2,ite(&&(<(Param1,Param8),<(Param8,Param7)),7,ite(<(Param1,Param8),8,1))))))))}"
+            ],
+            "time": 9.001371
+        },
+        "mpg_guard2": {
+            "status": true,
+            "result": [
+                "6 {eq1:ite(<(0,+(Param2,+(Param0,Param1))),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 0.426273
+        },
+        "array_sum_7_5": {
+            "status": true,
+            "result": [
+                "79 {findSum:ite(&&(&&(&&(&&(<(5,+(Param4,Param5)),<=(+(Param3,Param4),5)),<=(+(Param2,Param3),5)),<=(+(Param0,Param1),5)),<=(+(Param1,Param2),5)),+(Param4,Param5),ite(&&(&&(&&(&&(&&(<(5,+(Param5,Param6)),<=(+(Param4,Param5),5)),<=(+(Param1,Param2),5)),<=(+(Param3,Param4),5)),<=(+(Param2,Param3),5)),<=(+(Param0,Param1),5)),+(Param5,Param6),ite(&&(&&(&&(<=(+(Param2,Param3),5),<=(+(Param3,Param4),5)),<=(+(Param0,Param1),5)),<=(+(Param1,Param2),5)),0,ite(&&(<(5,+(Param1,Param2)),<=(+(Param0,Param1),5)),+(Param1,Param2),ite(&&(&&(<(5,+(Param3,Param4)),<=(+(Param2,Param3),5)),<=(+(Param0,Param1),5)),+(Param3,Param4),ite(<=(+(Param0,Param1),5),+(Param2,Param3),+(Param0,Param1)))))))}"
+            ],
+            "time": 31.846869
+        },
+        "qm_neg_1": {
+            "status": true,
+            "result": [
+                "3 {qm-foo:ite(<(Param0,0),1,0)}"
+            ],
+            "time": 0.069422
+        },
+        "mpg_ite2": {
+            "status": true,
+            "result": [
+                "27 {eq1:ite(&&(<(0,+(Param1,Param2)),<(Param0,-(1,Param1))),+(1,Param2),ite(||(<(Param0,-(1,Param1)),<(Param0,-(1,Param2))),+(1,Param1),+(1,Param0)))}"
+            ],
+            "time": 2.314547
+        },
+        "qm_in_range": {
+            "status": true,
+            "result": [
+                "7 {qm-choose:ite(||(<=(Param0,Param1),<=(Param2,Param0)),0,1)}"
+            ],
+            "time": 0.309748
+        },
+        "array_sum_4_15": {
+            "status": true,
+            "result": [
+                "29 {findSum:ite(&&(&&(<=(+(Param2,Param3),15),<=(+(Param0,Param1),15)),<=(+(Param1,Param2),15)),0,ite(&&(<(15,+(Param1,Param2)),<=(+(Param0,Param1),15)),+(Param1,Param2),ite(<(15,+(Param0,Param1)),+(Param0,Param1),+(Param2,Param3))))}"
+            ],
+            "time": 2.795016
+        },
+        "array_search_4": {
+            "status": true,
+            "result": [
+                "13 {findIdx:ite(&&(<(Param2,Param4),<(Param4,Param3)),3,ite(<(Param2,Param4),4,ite(&&(<(Param0,Param4),<(Param4,Param1)),1,ite(<(Param4,Param0),0,2))))}"
+            ],
+            "time": 1.68387
+        },
+        "max9": {
+            "status": true,
+            "result": [
+                "78 {max9:ite(&&(&&(&&(&&(&&(&&(&&(<=(Param7,Param0),<=(Param6,Param0)),<=(Param8,Param0)),<=(Param5,Param0)),<=(Param2,Param0)),<=(Param4,Param0)),<=(Param1,Param0)),<=(Param3,Param0)),Param0,ite(&&(&&(&&(&&(&&(&&(&&(<=(Param1,Param7),<=(Param0,Param7)),<=(Param2,Param7)),<=(Param5,Param7)),<=(Param8,Param7)),<=(Param3,Param7)),<=(Param4,Param7)),<=(Param6,Param7)),Param7,ite(&&(&&(&&(&&(&&(<=(Param1,Param8),<=(Param2,Param8)),<=(Param5,Param8)),<=(Param6,Param8)),<=(Param3,Param8)),<=(Param4,Param8)),Param8,ite(&&(&&(&&(&&(<=(Param6,Param2),<=(Param1,Param2)),<=(Param5,Param2)),<=(Param4,Param2)),<=(Param3,Param2)),Param2,ite(&&(&&(&&(<=(Param5,Param6),<=(Param4,Param6)),<=(Param3,Param6)),<=(Param1,Param6)),Param6,ite(&&(&&(<=(Param1,Param3),<=(Param5,Param3)),<=(Param4,Param3)),Param3,ite(&&(<=(Param5,Param4),<=(Param1,Param4)),Param4,ite(&&(<=(Param1,Param5),<=(Param3,Param5)),Param5,Param1))))))))}"
+            ],
+            "time": 27.366838
+        },
+        "s3": {
+            "status": true,
+            "result": [
+                "2 {f:-1}"
+            ],
+            "time": 0.05577
+        },
+        "mpg_example4": {
+            "status": false
+        },
+        "max14": {
+            "status": false
+        },
+        "mpg_plane2": {
+            "status": false
+        },
+        "mpg_example1": {
+            "status": false
+        }
+    },
+    "pselect": {
+        "mpg_guard1": {
+            "status": true,
+            "result": [
+                "7 {eq1:ite(<(+(Param0,Param1),1),-(Param0,Param1),+(Param0,Param1))}"
+            ],
+            "time": 4.725698
+        },
+        "mpg_ite1": {
+            "status": true,
+            "result": [
+                "11 {eq1:ite(&&(<(0,+(Param0,Param1)),<(0,+(Param0,Param2))),+(1,Param0),ite(<(0,+(Param0,Param1)),+(1,Param1),+(1,Param2)))}"
+            ],
+            "time": 9.741468
+        },
+        "LinExpr_inv1_ex": {
+            "status": true,
+            "result": [
+                "14 {inv:ite(||(||(||(&&(<(1,Param0),<(1,Param1)),&&(<(Param0,1),<(1,Param1))),&&(<(Param0,1),<(Param1,1))),&&(<(Param1,1),<(1,Param0))),1,3)}"
+            ],
+            "time": 5.238305
+        },
+        "count1s": {
+            "status": true,
+            "result": [
+                "15 {combine:ite(<(Param4,Param3),+(Param0,Param1),-(+(Param0,Param1),Param3))}"
+            ],
+            "time": 15.783221
+        },
+        "qm_neg_2": {
+            "status": true,
+            "result": [
+                "7 {qm-foo:ite(||(<=(0,Param0),<=(0,Param1)),0,1)}"
+            ],
+            "time": 1.794068
+        },
+        "array_search_5": {
+            "status": true,
+            "result": [
+                "40 {findIdx:ite(&&(<(Param2,Param5),<(Param5,Param3)),3,ite(&&(<(Param2,Param5),<(Param5,Param4)),4,ite(<(Param2,Param5),5,ite(<(Param5,Param0),0,ite(<(Param5,Param1),1,2)))))}"
+            ],
+            "time": 16.671017
+        },
+        "secondmin": {
+            "status": true,
+            "result": [
+                "9 {combine:ite(<(Param0,Param3),Param0,ite(&&(<=(Param2,Param1),<(Param2,Param3)),Param3,ite(<(Param2,Param1),Param2,Param1)))}"
+            ],
+            "time": 6.310028
+        },
+        "array_search_11": {
+            "status": false
+        },
+        "array_sum_8_5": {
+            "status": false
+        },
+        "max8": {
+            "status": true,
+            "result": [
+                "70 {max8:ite(&&(&&(&&(&&(&&(&&(<=(Param0,Param2),<=(Param7,Param2)),<=(Param4,Param2)),<=(Param6,Param2)),<=(Param1,Param2)),<=(Param3,Param2)),<=(Param5,Param2)),Param2,ite(&&(&&(&&(&&(&&(<=(Param7,Param1),<=(Param4,Param1)),<=(Param0,Param1)),<=(Param3,Param1)),<=(Param5,Param1)),<=(Param6,Param1)),Param1,ite(&&(&&(&&(&&(<=(Param0,Param3),<=(Param7,Param3)),<=(Param6,Param3)),<=(Param5,Param3)),<=(Param4,Param3)),Param3,ite(&&(&&(&&(<=(Param7,Param5),<=(Param0,Param5)),<=(Param4,Param5)),<=(Param6,Param5)),Param5,ite(&&(&&(<=(Param0,Param4),<=(Param7,Param4)),<=(Param6,Param4)),Param4,ite(&&(<=(Param0,Param7),<=(Param6,Param7)),Param7,ite(&&(<=(Param3,Param0),<=(Param6,Param0)),Param0,Param6)))))))}"
+            ],
+            "time": 88.704559
+        },
+        "array_search_9": {
+            "status": true,
+            "result": [
+                "19 {findIdx:ite(&&(<(Param7,Param9),<(Param9,Param8)),8,ite(<(Param9,Param0),0,ite(<(Param7,Param9),9,ite(<(Param6,Param9),7,ite(&&(<(Param2,Param9),<(Param9,Param3)),3,ite(&&(<(Param2,Param9),<(Param9,Param4)),4,ite(<(Param5,Param9),6,ite(<(Param2,Param9),5,ite(<(Param9,Param1),1,2)))))))))}"
+            ],
+            "time": 6.790472
+        },
+        "qm_neg_4": {
+            "status": true,
+            "result": [
+                "13 {qm-foo:ite(&&(&&(&&(<(Param0,0),<(Param1,0)),<(Param2,0)),<(Param3,0)),1,0)}"
+            ],
+            "time": 8.403968
+        },
+        "qm_max3": {
+            "status": true,
+            "result": [
+                "9 {qm-foo:ite(&&(<(Param1,Param0),<(Param2,Param0)),Param0,ite(<(Param1,Param2),Param2,Param1))}"
+            ],
+            "time": 6.628099
+        },
+        "array_sum_3_5": {
+            "status": true,
+            "result": [
+                "17 {findSum:ite(&&(<(5,+(Param1,Param2)),<=(+(Param0,Param1),5)),+(Param1,Param2),ite(<=(+(Param0,Param1),5),0,+(Param0,Param1)))}"
+            ],
+            "time": 3.875339
+        },
+        "mpg_example3": {
+            "status": false
+        },
+        "max4": {
+            "status": true,
+            "result": [
+                "13 {max4:ite(&&(&&(<=(Param1,Param2),<=(Param0,Param2)),<=(Param3,Param2)),Param2,ite(&&(<=(Param3,Param0),<=(Param1,Param0)),Param0,ite(<=(Param1,Param3),Param3,Param1)))}"
+            ],
+            "time": 10.563712
+        },
+        "qm_choose_01": {
+            "status": true,
+            "result": [
+                "3 {qm-choose:ite(<(0,Param0),0,1)}"
+            ],
+            "time": 0.241752
+        },
+        "balanced": {
+            "status": true,
+            "result": [
+                "40 {combine:ite(&&(&&(=(Param2,-(0,Param3)),<=(Param3,Param5)),<=(0,Param4)),1,0)}"
+            ],
+            "time": 50.406475
+        },
+        "array_sum_5_15": {
+            "status": true,
+            "result": [
+                "34 {findSum:ite(&&(&&(&&(<(+(Param0,Param1),+(Param2,Param3)),<=(+(Param1,Param2),15)),<(15,+(Param2,Param3))),<=(+(Param0,Param1),15)),+(Param2,Param3),ite(&&(<(15,+(Param1,Param2)),<=(+(Param0,Param1),15)),+(Param1,Param2),ite(&&(<(15,+(Param3,Param4)),<=(+(Param0,Param1),15)),+(Param3,Param4),ite(<=(+(Param0,Param1),15),0,+(Param0,Param1)))))}"
+            ],
+            "time": 13.949069
+        },
+        "array_sum_6_5": {
+            "status": true,
+            "result": [
+                "62 {findSum:ite(&&(<(5,+(Param1,Param2)),<=(+(Param0,Param1),5)),+(Param1,Param2),ite(&&(&&(&&(<=(+(Param4,Param5),5),<=(+(Param2,Param3),5)),<=(+(Param0,Param1),5)),<=(+(Param3,Param4),5)),0,ite(&&(&&(&&(<=(+(Param2,Param3),5),<(5,+(Param4,Param5))),<=(+(Param3,Param4),5)),<=(+(Param0,Param1),5)),+(Param4,Param5),ite(&&(<=(+(Param2,Param3),5),<=(+(Param0,Param1),5)),+(Param3,Param4),ite(<=(+(Param0,Param1),5),+(Param2,Param3),+(Param0,Param1))))))}"
+            ],
+            "time": 33.440342
+        },
+        "zeroafter1": {
+            "status": true,
+            "result": [
+                "33 {combine:ite(||(&&(<(Param3,Param0),=(Param1,Param4)),&&(=(Param0,-(1,Param1)),<=(Param4,Param3))),1,ite(&&(<(0,Param0),<(0,Param1)),2,ite(||(<(Param0,+(Param1,Param3)),<(Param1,+(Param0,Param3))),0,*(-1,Param4))))}"
+            ],
+            "time": 42.265727
+        },
+        "qm_choose_yz": {
+            "status": true,
+            "result": [
+                "6 {qm-choose:ite(<(Param0,1),Param1,Param2)}"
+            ],
+            "time": 3.621654
+        },
+        "max_11": {
+            "status": false
+        },
+        "mpg_plane1": {
+            "status": true,
+            "result": [
+                "5 {eq1:+(Param0,Param1)}"
+            ],
+            "time": 3.266025
+        },
+        "array_search_3": {
+            "status": true,
+            "result": [
+                "7 {findIdx:ite(<(Param2,Param3),3,ite(<(Param1,Param3),2,ite(<(Param3,Param0),0,1)))}"
+            ],
+            "time": 1.02636
+        },
+        "array_sum_2_15": {
+            "status": true,
+            "result": [
+                "7 {findSum:ite(<=(+(Param0,Param1),15),0,+(Param0,Param1))}"
+            ],
+            "time": 1.112171
+        },
+        "qm_max2": {
+            "status": true,
+            "result": [
+                "5 {qm-foo:ite(<(Param1,Param0),Param0,Param1)}"
+            ],
+            "time": 2.111745
+        },
+        "LspPage9_2": {
+            "status": true,
+            "result": [
+                "26 {combine:ite(<=(Param2,-(10,Param3)),1,0)}"
+            ],
+            "time": 22.947339
+        },
+        "array_search_2": {
+            "status": true,
+            "result": [
+                "6 {findIdx:ite(<(Param1,Param2),2,ite(<(Param0,Param2),1,0))}"
+            ],
+            "time": 0.682134
+        },
+        "array_sum_9_15": {
+            "status": false
+        },
+        "dropwhile": {
+            "status": true,
+            "result": [
+                "9 {combine:ite(<(Param2,1),Param0,ite(<(Param3,Param2),Param1,+(Param4,Param5)))}"
+            ],
+            "time": 8.620396
+        },
+        "qm_max5": {
+            "status": true,
+            "result": [
+                "22 {qm-foo:ite(&&(&&(&&(<(Param0,Param2),<(Param4,Param2)),<(Param3,Param2)),<(Param1,Param2)),Param2,ite(&&(&&(<(Param0,Param4),<(Param3,Param4)),<(Param1,Param4)),Param4,ite(&&(<(Param1,Param3),<(Param0,Param3)),Param3,ite(<(Param1,Param0),Param0,Param1))))}"
+            ],
+            "time": 21.430004
+        },
+        "max15": {
+            "status": false
+        },
+        "array_search_13": {
+            "status": false
+        },
+        "qm_neg_eq_2": {
+            "status": true,
+            "result": [
+                "8 {qm-foo:ite(&&(<(Param0,1),<(Param1,1)),1,0)}"
+            ],
+            "time": 2.323269
+        },
+        "max12": {
+            "status": false
+        },
+        "linesight": {
+            "status": true,
+            "result": [
+                "5 {combine:ite(<(Param3,Param2),0,Param1)}"
+            ],
+            "time": 2.39681
+        },
+        "array_search_6": {
+            "status": true,
+            "result": [
+                "12 {findIdx:ite(<(Param5,Param6),6,ite(<(Param4,Param6),5,ite(<(Param6,Param0),0,ite(<(Param3,Param6),4,ite(<(Param2,Param6),3,ite(<(Param6,Param1),1,2))))))}"
+            ],
+            "time": 2.472995
+        },
+        "max5": {
+            "status": true,
+            "result": [
+                "18 {max5:ite(&&(&&(&&(<=(Param3,Param4),<=(Param0,Param4)),<=(Param1,Param4)),<=(Param2,Param4)),Param4,ite(&&(&&(<=(Param0,Param3),<=(Param2,Param3)),<=(Param1,Param3)),Param3,ite(&&(<=(Param0,Param1),<=(Param2,Param1)),Param1,ite(<=(Param2,Param0),Param0,Param2))))}"
+            ],
+            "time": 16.629716
+        },
+        "array_sum_4_5": {
+            "status": true,
+            "result": [
+                "22 {findSum:ite(&&(&&(<=(+(Param1,Param2),5),<(5,+(Param2,Param3))),<=(+(Param0,Param1),5)),+(Param2,Param3),ite(<(5,+(Param0,Param1)),+(Param0,Param1),ite(<(5,+(Param1,Param2)),+(Param1,Param2),0)))}"
+            ],
+            "time": 5.914162
+        },
+        "qm_loop_2": {
+            "status": true,
+            "result": [
+                "6 {qm-multi-loop:ite(<(0,Param1),Param0,ite(<(Param0,1),3,+(-1,Param0)))}"
+            ],
+            "time": 0.96255
+        },
+        "mpg_example2": {
+            "status": false
+        },
+        "LspPage9_1": {
+            "status": true,
+            "result": [
+                "14 {combine:ite(||(||(<(Param0,1),<(Param1,1)),<(Param3,Param4)),0,1)}"
+            ],
+            "time": 13.855657
+        },
+        "max7": {
+            "status": true,
+            "result": [
+                "50 {max7:ite(&&(&&(&&(&&(&&(<=(Param4,Param1),<=(Param6,Param1)),<=(Param2,Param1)),<=(Param5,Param1)),<=(Param0,Param1)),<=(Param3,Param1)),Param1,ite(&&(&&(&&(&&(<=(Param6,Param0),<=(Param2,Param0)),<=(Param5,Param0)),<=(Param4,Param0)),<=(Param3,Param0)),Param0,ite(&&(&&(&&(<=(Param6,Param4),<=(Param5,Param4)),<=(Param2,Param4)),<=(Param3,Param4)),Param4,ite(&&(&&(<=(Param5,Param3),<=(Param2,Param3)),<=(Param6,Param3)),Param3,ite(&&(<=(Param6,Param2),<=(Param5,Param2)),Param2,ite(<=(Param5,Param6),Param6,Param5))))))}"
+            ],
+            "time": 60.534843
+        },
+        "array_sum_9_5": {
+            "status": false
+        },
+        "max1spos_reduce": {
+            "status": true,
+            "result": [
+                "51 {combine:ite(&&(<=(Param4,-(Param2,Param5)),<=(Param3,Param2)),Param0,ite(<(Param4,-(Param3,Param5)),+(Param1,Param6),+(*(-1,Param5),Param6)))}"
+            ],
+            "time": 67.828503
+        },
+        "max1s": {
+            "status": true,
+            "result": [
+                "11 {combine:ite(&&(<(+(Param3,Param4),Param0),<(Param1,Param0)),Param0,ite(<(+(Param3,Param4),Param1),Param1,+(Param3,Param4)))}"
+            ],
+            "time": 11.342245
+        },
+        "mps": {
+            "status": true,
+            "result": [
+                "5 {combine:ite(<(+(Param1,Param2),Param0),Param0,+(Param1,Param2))}"
+            ],
+            "time": 3.153248
+        },
+        "thirdmin": {
+            "status": true,
+            "result": [
+                "21 {combine:ite(&&(&&(<(Param4,Param5),<(Param3,Param0)),<(Param2,Param1)),Param5,ite(<=(Param0,Param3),Param0,ite(<=(Param1,Param2),Param1,Param4)))}"
+            ],
+            "time": 22.278698
+        },
+        "mpg_plane3": {
+            "status": false
+        },
+        "qm_loop_3": {
+            "status": true,
+            "result": [
+                "18 {qm-multi-loop:ite(&&(&&(<(Param0,1),<(Param1,1)),<(Param2,1)),3,ite(&&(<(Param1,1),<(Param2,1)),+(-1,Param0),Param0))}"
+            ],
+            "time": 4.056841
+        },
+        "qm_max4": {
+            "status": true,
+            "result": [
+                "13 {qm-foo:ite(&&(&&(<(Param0,Param1),<(Param2,Param1)),<(Param3,Param1)),Param1,ite(&&(<(Param2,Param0),<(Param3,Param0)),Param0,ite(<(Param2,Param3),Param3,Param2)))}"
+            ],
+            "time": 9.524217
+        },
+        "issorted": {
+            "status": true,
+            "result": [
+                "8 {combine:ite(&&(&&(<(0,Param0),<(0,Param1)),<=(Param4,Param3)),1,0)}"
+            ],
+            "time": 6.958773
+        },
+        "max10": {
+            "status": false
+        },
+        "max1spos": {
+            "status": true,
+            "result": [
+                "58 {combine:ite(&&(<(Param5,-(Param3,Param6)),<(Param2,Param3)),+(Param1,Param8),ite(||(<(Param5,-(Param3,Param6)),<=(Param5,-(Param2,Param6))),Param0,+(*(-1,Param6),Param8)))}"
+            ],
+            "time": 96.747832
+        },
+        "array_sum_7_15": {
+            "status": true,
+            "result": [
+                "113 {findSum:ite(&&(&&(&&(&&(<=(+(Param3,Param4),15),<(15,+(Param4,Param5))),<=(+(Param2,Param3),15)),<=(+(Param0,Param1),15)),<=(+(Param1,Param2),15)),+(Param4,Param5),ite(&&(&&(&&(&&(&&(<(Param4,Param6),<=(+(Param2,Param3),15)),<=(+(Param0,Param1),15)),<=(+(Param3,Param4),15)),<=(+(Param1,Param2),15)),<(15,+(Param5,Param6))),+(Param5,Param6),ite(&&(&&(&&(&&(<=(+(Param5,Param6),15),<=(+(Param3,Param4),15)),<=(+(Param2,Param3),15)),<=(+(Param0,Param1),15)),<=(+(Param1,Param2),15)),0,ite(&&(<(15,+(Param1,Param2)),<=(+(Param0,Param1),15)),+(Param1,Param2),ite(&&(&&(<=(+(Param2,Param3),15),<=(+(Param0,Param1),15)),<(Param2,Param4)),+(Param3,Param4),ite(&&(<=(+(Param0,Param1),15),<(15,+(Param2,Param3))),+(Param2,Param3),+(Param0,Param1)))))))}"
+            ],
+            "time": 91.534303
+        },
+        "array_sum_2_5": {
+            "status": true,
+            "result": [
+                "5 {findSum:ite(<(5,+(Param0,Param1)),+(Param0,Param1),0)}"
+            ],
+            "time": 0.776769
+        },
+        "sum": {
+            "status": true,
+            "result": [
+                "2 {combine:+(Param0,Param1)}"
+            ],
+            "time": 0.723877
+        },
+        "mss": {
+            "status": true,
+            "result": [
+                "6 {combine:ite(&&(<(Param0,+(Param3,Param4)),<(Param1,+(Param3,Param4))),+(Param3,Param4),ite(<(Param0,Param1),Param1,Param0))}"
+            ],
+            "time": 4.933922
+        },
+        "qm_neg_eq_1": {
+            "status": true,
+            "result": [
+                "3 {qm-foo:ite(<(0,Param0),0,1)}"
+            ],
+            "time": 0.215862
+        },
+        "max6": {
+            "status": true,
+            "result": [
+                "34 {max6:ite(&&(&&(&&(&&(<=(Param3,Param0),<=(Param2,Param0)),<=(Param4,Param0)),<=(Param5,Param0)),<=(Param1,Param0)),Param0,ite(&&(&&(&&(<=(Param3,Param1),<=(Param4,Param1)),<=(Param2,Param1)),<=(Param5,Param1)),Param1,ite(&&(&&(<=(Param3,Param4),<=(Param2,Param4)),<=(Param5,Param4)),Param4,ite(&&(&&(<=(Param2,Param3),<=(Param0,Param3)),<=(Param5,Param3)),Param3,ite(<=(Param2,Param5),Param5,Param2)))))}"
+            ],
+            "time": 38.144124
+        },
+        "mpg_example5": {
+            "status": false
+        },
+        "array_search_14": {
+            "status": false
+        },
+        "array_search_10": {
+            "status": true,
+            "result": [
+                "37 {findIdx:ite(&&(<(Param5,Param10),<(Param10,Param6)),6,ite(&&(<(Param5,Param10),<(Param10,Param7)),7,ite(&&(<(Param5,Param10),<(Param10,Param8)),8,ite(&&(<(Param5,Param10),<(Param10,Param9)),9,ite(<(Param10,Param0),0,ite(&&(<(Param4,Param10),<(Param10,Param5)),5,ite(&&(<(Param3,Param10),<(Param10,Param4)),4,ite(<(9,+(-(7,Param6),Param10)),10,ite(<(Param2,Param10),3,ite(<(Param1,Param10),2,1))))))))))}"
+            ],
+            "time": 29.159494
+        },
+        "qm_neg_5": {
+            "status": true,
+            "result": [
+                "32 {qm-foo:ite(||(||(||(||(<=(0,Param0),<=(0,Param1)),<=(0,Param2)),<=(0,Param3)),<=(0,Param4)),0,1)}"
+            ],
+            "time": 29.569354
+        },
+        "array_sum_5_5": {
+            "status": true,
+            "result": [
+                "41 {findSum:ite(&&(&&(&&(<=(+(Param2,Param3),5),<(5,+(Param3,Param4))),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),+(Param3,Param4),ite(&&(&&(&&(<(Param1,Param3),<=(+(Param1,Param2),5)),<(5,+(Param2,Param3))),<=(+(Param0,Param1),5)),+(Param2,Param3),ite(&&(<(5,+(Param1,Param2)),<=(+(Param0,Param1),5)),+(Param1,Param2),ite(<(5,+(Param0,Param1)),+(Param0,Param1),0))))}"
+            ],
+            "time": 15.246836
+        },
+        "max3": {
+            "status": true,
+            "result": [
+                "7 {max3:ite(&&(<=(Param1,Param2),<=(Param0,Param2)),Param2,ite(<=(Param0,Param1),Param1,Param0))}"
+            ],
+            "time": 3.156922
+        },
+        "array_search_15": {
+            "status": false
+        },
+        "qm_loop_1": {
+            "status": true,
+            "result": [
+                "6 {qm-loop:ite(<(+(-1,Param0),0),3,+(-1,Param0))}"
+            ],
+            "time": 0.246339
+        },
+        "s2": {
+            "status": true,
+            "result": [
+                "2 {f:-1}"
+            ],
+            "time": 0.21322
+        },
+        "array_search_12": {
+            "status": false
+        },
+        "qm_neg_3": {
+            "status": true,
+            "result": [
+                "14 {qm-foo:ite(||(||(<=(0,Param0),<=(0,Param1)),<=(0,Param2)),0,1)}"
+            ],
+            "time": 8.257751
+        },
+        "mpg_guard3": {
+            "status": true,
+            "result": [
+                "21 {eq1:ite(<(Param1,+(Param2,+(+(Param0,Param1),+(Param0,Param1)))),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 30.00817
+        },
+        "zerostar1star": {
+            "status": true,
+            "result": [
+                "13 {combine:ite(&&(&&(<=(1,Param0),<=(1,Param1)),<=(Param4,Param3)),1,0)}"
+            ],
+            "time": 11.148877
+        },
+        "qm_neg_eq_5": {
+            "status": true,
+            "result": [
+                "21 {qm-foo:ite(||(||(||(||(<(0,Param0),<(0,Param1)),<(0,Param2)),<(0,Param3)),<(0,Param4)),0,1)}"
+            ],
+            "time": 20.256255
+        },
+        "array_sum_8_15": {
+            "status": false
+        },
+        "max13": {
+            "status": false
+        },
+        "mts": {
+            "status": true,
+            "result": [
+                "6 {combine:ite(<(+(Param0,Param3),Param1),Param1,+(Param0,Param3))}"
+            ],
+            "time": 4.045471
+        },
+        "array_sum_10_5": {
+            "status": false
+        },
+        "qm_neg_eq_3": {
+            "status": true,
+            "result": [
+                "10 {qm-foo:ite(&&(&&(<(Param1,1),<(Param0,1)),<(Param2,1)),1,0)}"
+            ],
+            "time": 5.685392
+        },
+        "array_sum_10_15": {
+            "status": false
+        },
+        "array_search_7": {
+            "status": true,
+            "result": [
+                "35 {findIdx:ite(&&(<(Param4,Param7),<(Param7,Param5)),5,ite(&&(<(Param4,Param7),<(Param7,Param6)),6,ite(&&(<(Param3,Param7),<(Param7,Param4)),4,ite(<(Param7,Param0),0,ite(<(Param3,Param7),7,ite(<(Param7,Param1),1,ite(<(Param7,Param2),2,3)))))))}"
+            ],
+            "time": 13.84371
+        },
+        "qm_neg_eq_4": {
+            "status": true,
+            "result": [
+                "21 {qm-foo:ite(&&(&&(&&(<(Param1,1),<(Param2,1)),<(Param3,1)),<(Param0,1)),1,0)}"
+            ],
+            "time": 16.589771
+        },
+        "array_sum_3_15": {
+            "status": true,
+            "result": [
+                "15 {findSum:ite(&&(<=(+(Param0,Param1),15),<(15,+(Param1,Param2))),+(Param1,Param2),ite(<=(+(Param0,Param1),15),0,+(Param0,Param1)))}"
+            ],
+            "time": 3.061697
+        },
+        "mpg_guard4": {
+            "status": true,
+            "result": [
+                "25 {eq1:ite(<(0,+(Param2,+(+(Param0,Param1),+(Param0,Param1)))),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 35.867229
+        },
+        "array_sum_6_15": {
+            "status": true,
+            "result": [
+                "37 {findSum:ite(&&(<(15,+(Param1,Param2)),<=(+(Param0,Param1),15)),+(Param1,Param2),ite(&&(<(15,+(Param2,Param3)),<=(+(Param0,Param1),15)),+(Param2,Param3),ite(&&(<=(+(Param0,Param1),15),<(15,+(Param3,Param4))),+(Param3,Param4),ite(&&(<=(+(Param0,Param1),15),<(15,+(Param4,Param5))),+(Param4,Param5),ite(<=(+(Param0,Param1),15),0,+(Param0,Param1))))))}"
+            ],
+            "time": 20.029283
+        },
+        "array_search_8": {
+            "status": true,
+            "result": [
+                "19 {findIdx:ite(<(Param8,Param0),0,ite(&&(<(Param5,Param8),<(Param8,Param6)),6,ite(&&(<(Param4,Param8),<(Param8,Param5)),5,ite(<(Param8,Param1),1,ite(&&(<(Param2,Param8),<(Param8,Param3)),3,ite(&&(<(Param4,Param8),<(Param8,Param7)),7,ite(<(Param4,Param8),8,ite(<(Param2,Param8),4,2))))))))}"
+            ],
+            "time": 6.543281
+        },
+        "mpg_guard2": {
+            "status": true,
+            "result": [
+                "9 {eq1:ite(<(0,+(Param2,+(Param0,Param1))),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 6.129059
+        },
+        "mpg_example4": {
+            "status": false
+        },
+        "qm_neg_1": {
+            "status": true,
+            "result": [
+                "4 {qm-foo:ite(<=(0,Param0),0,1)}"
+            ],
+            "time": 0.324264
+        },
+        "mpg_ite2": {
+            "status": true,
+            "result": [
+                "18 {eq1:ite(&&(<(0,+(Param1,Param2)),<(Param0,-(1,Param1))),+(1,Param2),ite(&&(<(0,+(Param0,Param1)),<(0,+(Param0,Param2))),+(1,Param0),+(1,Param1)))}"
+            ],
+            "time": 16.024965
+        },
+        "qm_in_range": {
+            "status": true,
+            "result": [
+                "5 {qm-choose:ite(&&(<(Param0,Param2),<(Param1,Param0)),1,0)}"
+            ],
+            "time": 2.485984
+        },
+        "array_sum_4_15": {
+            "status": true,
+            "result": [
+                "23 {findSum:ite(&&(&&(<(15,+(Param2,Param3)),<=(+(Param1,Param2),15)),<=(+(Param0,Param1),15)),+(Param2,Param3),ite(&&(<(15,+(Param1,Param2)),<=(+(Param0,Param1),15)),+(Param1,Param2),ite(<(15,+(Param0,Param1)),+(Param0,Param1),0)))}"
+            ],
+            "time": 7.66107
+        },
+        "array_search_4": {
+            "status": true,
+            "result": [
+                "9 {findIdx:ite(&&(<(Param4,Param1),<(Param0,Param4)),1,ite(&&(<(Param2,Param4),<(Param4,Param3)),3,ite(<(Param2,Param4),4,ite(&&(<(Param0,Param4),<(Param4,Param2)),2,0))))}"
+            ],
+            "time": 1.867133
+        },
+        "max14": {
+            "status": false
+        },
+        "s3": {
+            "status": true,
+            "result": [
+                "2 {f:-1}"
+            ],
+            "time": 0.336239
+        },
+        "array_sum_7_5": {
+            "status": true,
+            "result": [
+                "115 {findSum:ite(&&(&&(&&(<(5,+(Param3,Param4)),<=(+(Param2,Param3),5)),<=(+(Param0,Param1),5)),<=(+(Param1,Param2),5)),+(Param3,Param4),ite(&&(&&(&&(&&(<=(+(Param5,Param6),5),<=(+(Param2,Param3),5)),<=(+(Param4,Param5),5)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),0,ite(&&(&&(&&(&&(<(5,+(Param5,Param6)),<=(+(Param4,Param5),5)),<=(+(Param2,Param3),5)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),+(Param5,Param6),ite(&&(<(5,+(Param1,Param2)),<=(+(Param0,Param1),5)),+(Param1,Param2),ite(&&(&&(&&(<(5,+(Param4,Param5)),<=(+(Param3,Param4),5)),<=(+(Param0,Param1),5)),<=(+(Param2,Param3),5)),+(Param4,Param5),ite(&&(<=(+(Param0,Param1),5),<(Param1,Param3)),+(Param2,Param3),+(Param0,Param1)))))))}"
+            ],
+            "time": 83.642351
+        },
+        "max9": {
+            "status": false
+        },
+        "mpg_plane2": {
+            "status": false
+        },
+        "mpg_example1": {
+            "status": false
+        }
+    },
+    "pselect0.1": {
+        "mpg_guard1": {
+            "status": true,
+            "result": [
+                "9 {eq1:ite(<(+(Param0,Param1),1),-(Param0,Param1),+(Param0,Param1))}"
+            ],
+            "time": 1.274756
+        },
+        "count1s": {
+            "status": true,
+            "result": [
+                "14 {combine:ite(<(Param4,Param3),+(Param0,Param1),-(+(Param0,Param1),Param3))}"
+            ],
+            "time": 3.194696
+        },
+        "LinExpr_inv1_ex": {
+            "status": true,
+            "result": [
+                "13 {inv:ite(||(||(||(&&(<(1,Param0),<(1,Param1)),&&(<(Param0,1),<(1,Param1))),&&(<(Param0,1),<(Param1,1))),&&(<(Param1,1),<(1,Param0))),1,3)}"
+            ],
+            "time": 1.798895
+        },
+        "qm_neg_2": {
+            "status": true,
+            "result": [
+                "6 {qm-foo:ite(&&(<(Param0,0),<(Param1,0)),1,0)}"
+            ],
+            "time": 0.79894
+        },
+        "mpg_ite1": {
+            "status": true,
+            "result": [
+                "22 {eq1:ite(&&(&&(<(Param2,Param1),<(0,+(Param0,Param1))),<(Param0,-(1,Param2))),+(1,Param1),ite(<(Param2,+(Param0,+(Param1,Param2))),+(1,Param0),+(1,Param2)))}"
+            ],
+            "time": 8.488538
+        },
+        "array_search_5": {
+            "status": true,
+            "result": [
+                "26 {findIdx:ite(&&(<(Param3,Param5),<(Param5,Param4)),4,ite(<(Param3,Param5),5,ite(<(Param2,Param5),3,ite(<(Param5,Param0),0,ite(<(Param1,Param5),2,1)))))}"
+            ],
+            "time": 7.90453
+        },
+        "secondmin": {
+            "status": true,
+            "result": [
+                "20 {combine:ite(&&(<(Param1,Param2),<=(Param3,Param0)),Param1,ite(&&(<(Param3,Param2),<=(Param3,Param0)),Param2,ite(<(Param0,Param3),Param0,Param3)))}"
+            ],
+            "time": 3.528593
+        },
+        "max8": {
+            "status": true,
+            "result": [
+                "94 {max8:ite(&&(&&(&&(&&(&&(&&(<=(Param0,Param7),<=(Param5,Param7)),<=(Param6,Param7)),<=(Param4,Param7)),<=(Param3,Param7)),<=(Param1,Param7)),<=(Param2,Param7)),Param7,ite(&&(&&(&&(&&(&&(&&(<=(Param0,Param3),<=(Param2,Param3)),<=(Param4,Param3)),<=(Param6,Param3)),<=(Param1,Param3)),<=(Param5,Param3)),<=(Param7,Param3)),Param3,ite(&&(&&(&&(&&(<=(Param0,Param5),<=(Param6,Param5)),<=(Param4,Param5)),<=(Param1,Param5)),<=(Param2,Param5)),Param5,ite(&&(&&(&&(<=(Param6,Param1),<=(Param0,Param1)),<=(Param2,Param1)),<=(Param4,Param1)),Param1,ite(&&(&&(&&(<=(Param4,Param0),<=(Param2,Param0)),<=(Param6,Param0)),<=(Param7,Param0)),Param0,ite(&&(<=(Param4,Param2),<=(Param6,Param2)),Param2,ite(<=(Param4,Param6),Param6,Param4)))))))}"
+            ],
+            "time": 41.887613
+        },
+        "array_search_9": {
+            "status": true,
+            "result": [
+                "25 {findIdx:ite(<(Param8,Param9),9,ite(<(Param7,Param9),8,ite(&&(<(Param4,Param9),<(Param9,Param5)),5,ite(<(Param9,Param0),0,ite(&&(<(Param6,Param9),<(Param9,Param7)),7,ite(&&(<(Param1,Param9),<(Param9,Param2)),2,ite(&&(<(Param2,Param9),<(Param9,Param3)),3,ite(<(Param4,Param9),6,ite(<(Param9,Param1),1,4)))))))))}"
+            ],
+            "time": 8.546103
+        },
+        "qm_neg_4": {
+            "status": true,
+            "result": [
+                "11 {qm-foo:ite(&&(&&(&&(<(Param0,0),<(Param1,0)),<(Param2,0)),<(Param3,0)),1,0)}"
+            ],
+            "time": 1.718306
+        },
+        "array_search_11": {
+            "status": false
+        },
+        "array_sum_8_5": {
+            "status": false
+        },
+        "qm_max3": {
+            "status": true,
+            "result": [
+                "8 {qm-foo:ite(&&(<(Param1,Param0),<(Param2,Param0)),Param0,ite(<(Param1,Param2),Param2,Param1))}"
+            ],
+            "time": 1.180206
+        },
+        "array_sum_3_5": {
+            "status": true,
+            "result": [
+                "18 {findSum:ite(&&(<=(+(Param0,Param1),5),<=(+(Param1,Param2),5)),0,ite(<=(+(Param0,Param1),5),+(Param1,Param2),+(Param0,Param1)))}"
+            ],
+            "time": 2.816802
+        },
+        "balanced": {
+            "status": true,
+            "result": [
+                "13 {combine:ite(&&(&&(<=(Param3,Param5),<=(Param2,-(Param4,Param3))),=(Param2,-(0,Param3))),1,0)}"
+            ],
+            "time": 7.890171
+        },
+        "max4": {
+            "status": true,
+            "result": [
+                "16 {max4:ite(&&(&&(<=(Param0,Param2),<=(Param1,Param2)),<=(Param3,Param2)),Param2,ite(&&(<=(Param1,Param0),<=(Param3,Param0)),Param0,ite(<=(Param1,Param3),Param3,Param1)))}"
+            ],
+            "time": 2.710941
+        },
+        "qm_choose_01": {
+            "status": true,
+            "result": [
+                "4 {qm-choose:ite(<(Param0,1),1,0)}"
+            ],
+            "time": 0.274802
+        },
+        "mpg_example3": {
+            "status": false
+        },
+        "array_sum_5_15": {
+            "status": true,
+            "result": [
+                "43 {findSum:ite(&&(&&(<(15,+(Param2,Param3)),<=(+(Param1,Param2),15)),<=(+(Param0,Param1),15)),+(Param2,Param3),ite(<(15,+(Param0,Param1)),+(Param0,Param1),ite(&&(<(15,+(Param3,Param4)),<=(+(Param1,Param2),15)),+(Param3,Param4),ite(<(15,+(Param1,Param2)),+(Param1,Param2),0))))}"
+            ],
+            "time": 12.640143
+        },
+        "zeroafter1": {
+            "status": true,
+            "result": [
+                "24 {combine:ite(||(&&(=(Param0,-(Param4,Param1)),<(Param3,Param4)),<(Param0,-(Param3,Param1))),0,ite(||(&&(<(Param0,+(Param1,Param4)),=(Param0,-(1,Param3))),=(Param0,-(1,Param1))),1,ite(<(Param0,1),*(-1,Param4),2)))}"
+            ],
+            "time": 18.336228
+        },
+        "qm_choose_yz": {
+            "status": true,
+            "result": [
+                "5 {qm-choose:ite(<(Param0,1),Param1,Param2)}"
+            ],
+            "time": 0.619704
+        },
+        "LspPage9_2": {
+            "status": true,
+            "result": [
+                "30 {combine:ite(<(10,+(Param2,Param3)),0,1)}"
+            ],
+            "time": 5.482382
+        },
+        "max_11": {
+            "status": false
+        },
+        "mpg_plane1": {
+            "status": true,
+            "result": [
+                "3 {eq1:+(Param0,Param1)}"
+            ],
+            "time": 0.295798
+        },
+        "array_sum_6_5": {
+            "status": true,
+            "result": [
+                "94 {findSum:ite(&&(&&(&&(&&(&&(<(Param3,Param5),<=(+(Param2,Param3),5)),<=(+(Param0,Param1),5)),<(5,+(Param4,Param5))),<=(+(Param3,Param4),5)),<=(+(Param1,Param2),5)),+(Param4,Param5),ite(&&(&&(&&(<(5,+(Param3,Param4)),<=(+(Param2,Param3),5)),<=(+(Param0,Param1),5)),<=(+(Param1,Param2),5)),+(Param3,Param4),ite(&&(<=(+(Param0,Param1),5),<(5,+(Param1,Param2))),+(Param1,Param2),ite(&&(&&(<=(+(Param2,Param3),5),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),0,ite(&&(&&(&&(<(Param1,Param3),<=(+(Param1,Param2),5)),<(5,+(Param2,Param3))),<=(+(Param0,Param1),5)),+(Param2,Param3),+(Param0,Param1))))))}"
+            ],
+            "time": 38.809181
+        },
+        "array_search_3": {
+            "status": true,
+            "result": [
+                "11 {findIdx:ite(&&(<(Param1,Param3),<(Param3,Param2)),2,ite(<(Param1,Param3),3,ite(<(Param0,Param3),1,0)))}"
+            ],
+            "time": 1.613001
+        },
+        "array_sum_2_15": {
+            "status": true,
+            "result": [
+                "6 {findSum:ite(<=(+(Param0,Param1),15),0,+(Param0,Param1))}"
+            ],
+            "time": 0.711692
+        },
+        "qm_max2": {
+            "status": true,
+            "result": [
+                "6 {qm-foo:ite(<(Param0,Param1),Param1,Param0)}"
+            ],
+            "time": 0.793667
+        },
+        "array_search_2": {
+            "status": true,
+            "result": [
+                "6 {findIdx:ite(<(Param2,Param0),0,ite(<(Param1,Param2),2,1))}"
+            ],
+            "time": 0.760663
+        },
+        "dropwhile": {
+            "status": true,
+            "result": [
+                "18 {combine:ite(&&(<(0,Param3),<(0,Param2)),+(Param4,Param5),ite(<(Param2,1),Param0,Param1))}"
+            ],
+            "time": 3.488343
+        },
+        "array_sum_9_15": {
+            "status": false
+        },
+        "qm_max5": {
+            "status": true,
+            "result": [
+                "26 {qm-foo:ite(&&(&&(&&(<(Param4,Param0),<(Param1,Param0)),<(Param2,Param0)),<(Param3,Param0)),Param0,ite(&&(&&(<(Param4,Param2),<(Param3,Param2)),<(Param1,Param2)),Param2,ite(&&(<(Param4,Param3),<(Param1,Param3)),Param3,ite(<(Param1,Param4),Param4,Param1))))}"
+            ],
+            "time": 5.143355
+        },
+        "max15": {
+            "status": false
+        },
+        "array_search_13": {
+            "status": false
+        },
+        "qm_neg_eq_2": {
+            "status": true,
+            "result": [
+                "8 {qm-foo:ite(&&(<(Param0,1),<(Param1,1)),1,0)}"
+            ],
+            "time": 1.050445
+        },
+        "max12": {
+            "status": false
+        },
+        "max5": {
+            "status": true,
+            "result": [
+                "24 {max5:ite(&&(&&(&&(<=(Param3,Param4),<=(Param1,Param4)),<=(Param0,Param4)),<=(Param2,Param4)),Param4,ite(&&(&&(<=(Param3,Param1),<=(Param2,Param1)),<=(Param0,Param1)),Param1,ite(&&(<=(Param3,Param0),<=(Param2,Param0)),Param0,ite(<=(Param3,Param2),Param2,Param3))))}"
+            ],
+            "time": 4.839364
+        },
+        "linesight": {
+            "status": true,
+            "result": [
+                "9 {combine:ite(||(<(Param1,1),<(Param3,Param2)),0,1)}"
+            ],
+            "time": 1.29602
+        },
+        "array_search_6": {
+            "status": true,
+            "result": [
+                "14 {findIdx:ite(&&(<(Param3,Param6),<(Param6,Param4)),4,ite(<(Param6,Param0),0,ite(<(Param5,Param6),6,ite(&&(<(Param3,Param6),<(Param6,Param5)),5,ite(<(Param6,Param1),1,ite(<(Param2,Param6),3,2))))))}"
+            ],
+            "time": 2.788403
+        },
+        "array_sum_4_5": {
+            "status": true,
+            "result": [
+                "35 {findSum:ite(&&(&&(<=(+(Param1,Param2),5),<(5,+(Param2,Param3))),<=(+(Param0,Param1),5)),+(Param2,Param3),ite(<(5,+(Param0,Param1)),+(Param0,Param1),ite(<=(+(Param1,Param2),5),0,+(Param1,Param2))))}"
+            ],
+            "time": 7.037265
+        },
+        "qm_loop_2": {
+            "status": true,
+            "result": [
+                "10 {qm-multi-loop:ite(&&(<(Param0,1),<(Param1,1)),3,ite(<(0,Param1),Param0,+(-1,Param0)))}"
+            ],
+            "time": 1.371383
+        },
+        "max7": {
+            "status": true,
+            "result": [
+                "68 {max7:ite(&&(&&(&&(&&(&&(<=(Param5,Param1),<=(Param0,Param1)),<=(Param6,Param1)),<=(Param3,Param1)),<=(Param2,Param1)),<=(Param4,Param1)),Param1,ite(&&(&&(&&(&&(<=(Param6,Param0),<=(Param3,Param0)),<=(Param5,Param0)),<=(Param4,Param0)),<=(Param2,Param0)),Param0,ite(&&(&&(&&(<=(Param5,Param6),<=(Param3,Param6)),<=(Param2,Param6)),<=(Param4,Param6)),Param6,ite(&&(&&(<=(Param5,Param4),<=(Param3,Param4)),<=(Param2,Param4)),Param4,ite(&&(<=(Param5,Param3),<=(Param2,Param3)),Param3,ite(<=(Param5,Param2),Param2,Param5))))))}"
+            ],
+            "time": 23.869047
+        },
+        "LspPage9_1": {
+            "status": true,
+            "result": [
+                "17 {combine:ite(||(||(<(Param0,1),<(Param1,1)),<(Param3,Param4)),0,1)}"
+            ],
+            "time": 2.860127
+        },
+        "mpg_example2": {
+            "status": false
+        },
+        "array_sum_9_5": {
+            "status": false
+        },
+        "max1s": {
+            "status": true,
+            "result": [
+                "19 {combine:ite(&&(<(+(Param3,Param4),Param1),<(Param0,Param1)),Param1,ite(<(+(Param3,Param4),Param0),Param0,+(Param3,Param4)))}"
+            ],
+            "time": 4.368668
+        },
+        "max1spos_reduce": {
+            "status": false
+        },
+        "mps": {
+            "status": true,
+            "result": [
+                "10 {combine:ite(<(+(Param1,Param2),Param0),Param0,+(Param1,Param2))}"
+            ],
+            "time": 1.532407
+        },
+        "thirdmin": {
+            "status": true,
+            "result": [
+                "50 {combine:ite(&&(&&(<(Param4,Param5),<(Param2,Param1)),<(Param3,Param0)),Param5,ite(||(&&(<(Param2,Param1),<(Param3,Param0)),&&(=(Param1,Param4),<(Param3,Param0))),Param4,ite(<(Param3,Param0),Param1,Param0)))}"
+            ],
+            "time": 11.258429
+        },
+        "mpg_plane3": {
+            "status": false
+        },
+        "qm_loop_3": {
+            "status": true,
+            "result": [
+                "18 {qm-multi-loop:ite(&&(&&(<(Param2,1),<(Param1,1)),<(Param2,Param0)),+(-1,Param0),ite(&&(<(Param2,1),<(Param1,1)),3,Param0))}"
+            ],
+            "time": 2.768613
+        },
+        "qm_max4": {
+            "status": true,
+            "result": [
+                "21 {qm-foo:ite(&&(&&(<(Param1,Param3),<(Param0,Param3)),<(Param2,Param3)),Param3,ite(&&(<(Param0,Param1),<(Param2,Param1)),Param1,ite(<(Param0,Param2),Param2,Param0)))}"
+            ],
+            "time": 3.740396
+        },
+        "max10": {
+            "status": true,
+            "result": [
+                "128 {max10:ite(&&(&&(&&(&&(&&(&&(&&(&&(<=(Param2,Param4),<=(Param9,Param4)),<=(Param1,Param4)),<=(Param3,Param4)),<=(Param8,Param4)),<=(Param6,Param4)),<=(Param0,Param4)),<=(Param7,Param4)),<=(Param5,Param4)),Param4,ite(&&(&&(&&(&&(&&(&&(&&(<=(Param3,Param2),<=(Param0,Param2)),<=(Param6,Param2)),<=(Param1,Param2)),<=(Param7,Param2)),<=(Param5,Param2)),<=(Param8,Param2)),<=(Param9,Param2)),Param2,ite(&&(&&(&&(&&(&&(&&(<=(Param6,Param0),<=(Param8,Param0)),<=(Param9,Param0)),<=(Param5,Param0)),<=(Param1,Param0)),<=(Param7,Param0)),<=(Param3,Param0)),Param0,ite(&&(&&(&&(&&(&&(<=(Param3,Param7),<=(Param1,Param7)),<=(Param6,Param7)),<=(Param8,Param7)),<=(Param9,Param7)),<=(Param5,Param7)),Param7,ite(&&(&&(&&(&&(<=(Param9,Param1),<=(Param8,Param1)),<=(Param5,Param1)),<=(Param6,Param1)),<=(Param3,Param1)),Param1,ite(&&(&&(&&(<=(Param3,Param8),<=(Param6,Param8)),<=(Param5,Param8)),<=(Param9,Param8)),Param8,ite(&&(&&(<=(Param3,Param6),<=(Param9,Param6)),<=(Param5,Param6)),Param6,ite(&&(<=(Param3,Param5),<=(Param9,Param5)),Param5,ite(<=(Param3,Param9),Param9,Param3)))))))))}"
+            ],
+            "time": 96.378469
+        },
+        "issorted": {
+            "status": true,
+            "result": [
+                "9 {combine:ite(&&(<=(Param4,Param3),<(0,Param1)),Param0,0)}"
+            ],
+            "time": 1.456201
+        },
+        "max1spos": {
+            "status": false
+        },
+        "max6": {
+            "status": true,
+            "result": [
+                "55 {max6:ite(&&(&&(&&(&&(<=(Param1,Param2),<=(Param5,Param2)),<=(Param0,Param2)),<=(Param3,Param2)),<=(Param4,Param2)),Param2,ite(&&(&&(&&(<=(Param1,Param3),<=(Param0,Param3)),<=(Param5,Param3)),<=(Param4,Param3)),Param3,ite(&&(&&(<=(Param5,Param1),<=(Param4,Param1)),<=(Param0,Param1)),Param1,ite(&&(<=(Param5,Param0),<=(Param4,Param0)),Param0,ite(<=(Param5,Param4),Param4,Param5)))))}"
+            ],
+            "time": 16.253026
+        },
+        "array_sum_2_5": {
+            "status": true,
+            "result": [
+                "10 {findSum:ite(<=(+(Param0,Param1),5),0,+(Param0,Param1))}"
+            ],
+            "time": 1.290831
+        },
+        "sum": {
+            "status": true,
+            "result": [
+                "3 {combine:+(Param0,Param1)}"
+            ],
+            "time": 0.321699
+        },
+        "mss": {
+            "status": true,
+            "result": [
+                "38 {combine:ite(&&(<(+(Param3,Param4),Param1),<(Param0,Param1)),Param1,ite(<(+(Param3,Param4),Param0),Param0,+(Param3,Param4)))}"
+            ],
+            "time": 9.884345
+        },
+        "qm_neg_eq_1": {
+            "status": true,
+            "result": [
+                "4 {qm-foo:ite(<(Param0,1),1,0)}"
+            ],
+            "time": 0.297885
+        },
+        "array_sum_7_15": {
+            "status": true,
+            "result": [
+                "121 {findSum:ite(&&(&&(&&(&&(&&(<=(+(Param4,Param5),15),<(15,+(Param5,Param6))),<=(+(Param2,Param3),15)),<=(+(Param0,Param1),15)),<=(+(Param3,Param4),15)),<=(+(Param1,Param2),15)),+(Param5,Param6),ite(&&(&&(&&(&&(&&(<=(+(Param5,Param6),15),<=(+(Param3,Param4),15)),<=(+(Param2,Param3),15)),<=(+(Param4,Param5),15)),<=(+(Param0,Param1),15)),<=(+(Param1,Param2),15)),0,ite(&&(&&(&&(&&(<=(+(Param3,Param4),15),<(15,+(Param4,Param5))),<=(+(Param1,Param2),15)),<=(+(Param0,Param1),15)),<=(+(Param2,Param3),15)),+(Param4,Param5),ite(&&(&&(<=(+(Param2,Param3),15),<=(+(Param0,Param1),15)),<=(+(Param1,Param2),15)),+(Param3,Param4),ite(&&(&&(<=(+(Param1,Param2),15),<=(+(Param0,Param1),15)),<(15,+(Param2,Param3))),+(Param2,Param3),ite(&&(<=(+(Param0,Param1),15),<(15,+(Param1,Param2))),+(Param1,Param2),+(Param0,Param1)))))))}"
+            ],
+            "time": 81.937042
+        },
+        "array_search_12": {
+            "status": true,
+            "result": [
+                "32 {findIdx:ite(&&(<(Param5,Param12),<(Param12,Param6)),6,ite(<(Param12,Param0),0,ite(&&(<(Param9,Param12),<(Param12,Param10)),10,ite(&&(<(Param5,Param12),<(Param12,Param7)),7,ite(&&(<(Param8,Param12),<(Param12,Param9)),9,ite(&&(<(Param12,Param2),<(Param1,Param12)),2,ite(&&(<(Param4,Param12),<(Param12,Param5)),5,ite(&&(<(Param8,Param12),<(Param12,Param11)),11,ite(&&(<(Param4,Param12),<(Param12,Param8)),8,ite(&&(<(Param12,Param3),<(Param1,Param12)),3,ite(<(Param12,Param1),1,ite(&&(<(Param3,Param12),<(Param12,Param4)),4,12))))))))))))}"
+            ],
+            "time": 18.592877
+        },
+        "mpg_example5": {
+            "status": false
+        },
+        "array_search_14": {
+            "status": false
+        },
+        "array_search_10": {
+            "status": true,
+            "result": [
+                "22 {findIdx:ite(&&(<(Param6,Param10),<(Param10,Param7)),7,ite(<(Param10,Param0),0,ite(&&(<(Param5,Param10),<(Param10,Param6)),6,ite(&&(<(Param5,Param10),<(Param10,Param8)),8,ite(&&(<(Param5,Param10),<(Param10,Param9)),9,ite(&&(<(Param10,Param3),<(Param2,Param10)),3,ite(&&(<(Param4,Param10),<(Param10,Param5)),5,ite(&&(<(Param2,Param10),<(Param10,Param4)),4,ite(<(Param10,Param1),1,ite(&&(<(Param10,Param2),<(Param1,Param10)),2,10))))))))))}"
+            ],
+            "time": 10.35976
+        },
+        "qm_neg_5": {
+            "status": true,
+            "result": [
+                "15 {qm-foo:ite(&&(&&(&&(&&(<(Param4,0),<(Param2,0)),<(Param3,0)),<(Param1,0)),<(Param0,0)),1,0)}"
+            ],
+            "time": 2.529494
+        },
+        "max3": {
+            "status": true,
+            "result": [
+                "10 {max3:ite(&&(<=(Param1,Param0),<=(Param2,Param0)),Param0,ite(<=(Param1,Param2),Param2,Param1))}"
+            ],
+            "time": 1.336095
+        },
+        "qm_neg_3": {
+            "status": true,
+            "result": [
+                "9 {qm-foo:ite(&&(&&(<(Param1,0),<(Param0,0)),<(Param2,0)),1,0)}"
+            ],
+            "time": 1.216267
+        },
+        "qm_loop_1": {
+            "status": true,
+            "result": [
+                "6 {qm-loop:ite(<(+(-1,Param0),0),3,+(-1,Param0))}"
+            ],
+            "time": 0.369201
+        },
+        "s2": {
+            "status": true,
+            "result": [
+                "2 {f:-1}"
+            ],
+            "time": 0.153036
+        },
+        "qm_neg_eq_5": {
+            "status": true,
+            "result": [
+                "18 {qm-foo:ite(&&(&&(&&(&&(<(Param4,1),<(Param2,1)),<(Param3,1)),<(Param1,1)),<(Param0,1)),1,0)}"
+            ],
+            "time": 3.008084
+        },
+        "mpg_guard3": {
+            "status": true,
+            "result": [
+                "16 {eq1:ite(<(Param1,+(Param2,+(+(Param0,Param1),+(Param0,Param1)))),+(Param0,Param1),-(Param0,Param1))}"
+            ],
+            "time": 10.587705
+        },
+        "array_sum_5_5": {
+            "status": true,
+            "result": [
+                "50 {findSum:ite(&&(&&(&&(<=(+(Param3,Param4),5),<=(+(Param2,Param3),5)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),0,ite(&&(&&(<=(+(Param0,Param1),5),<(5,+(Param2,Param3))),<=(+(Param1,Param2),5)),+(Param2,Param3),ite(&&(<=(+(Param0,Param1),5),<(5,+(Param1,Param2))),+(Param1,Param2),ite(<(5,+(Param0,Param1)),+(Param0,Param1),+(Param3,Param4)))))}"
+            ],
+            "time": 12.706229
+        },
+        "zerostar1star": {
+            "status": true,
+            "result": [
+                "17 {combine:ite(||(||(&&(<=(Param1,Param4),<=(Param3,0)),<=(Param0,0)),<=(Param1,0)),0,1)}"
+            ],
+            "time": 3.413157
+        },
+        "array_search_15": {
+            "status": false
+        },
+        "array_sum_8_15": {
+            "status": false
+        },
+        "max13": {
+            "status": false
+        },
+        "mts": {
+            "status": true,
+            "result": [
+                "7 {combine:ite(<(+(Param0,Param3),Param1),Param1,+(Param0,Param3))}"
+            ],
+            "time": 0.991906
+        },
+        "array_sum_10_5": {
+            "status": false
+        },
+        "qm_neg_eq_3": {
+            "status": true,
+            "result": [
+                "12 {qm-foo:ite(&&(&&(<(Param2,1),<(Param0,1)),<(Param1,1)),1,0)}"
+            ],
+            "time": 1.746414
+        },
+        "array_search_7": {
+            "status": true,
+            "result": [
+                "20 {findIdx:ite(&&(<(Param4,Param7),<(Param7,Param5)),5,ite(<(Param7,Param0),0,ite(&&(<(Param4,Param7),<(Param7,Param6)),6,ite(<(Param4,Param7),7,ite(&&(<(Param3,Param7),<(Param7,Param4)),4,ite(<(Param2,Param7),3,ite(<(Param7,Param1),1,2)))))))}"
+            ],
+            "time": 5.889234
+        },
+        "mpg_guard4": {
+            "status": true,
+            "result": [
+                "34 {eq1:ite(<(Param2,-(1,+(+(Param0,Param1),+(Param0,Param1)))),-(Param0,Param1),+(Param0,Param1))}"
+            ],
+            "time": 36.627243
+        },
+        "qm_neg_eq_4": {
+            "status": true,
+            "result": [
+                "18 {qm-foo:ite(&&(&&(&&(<(Param0,1),<(Param1,1)),<(Param2,1)),<(Param3,1)),1,0)}"
+            ],
+            "time": 2.723953
+        },
+        "array_sum_3_15": {
+            "status": true,
+            "result": [
+                "16 {findSum:ite(&&(<(15,+(Param1,Param2)),<=(+(Param0,Param1),15)),+(Param1,Param2),ite(<=(+(Param0,Param1),15),0,+(Param0,Param1)))}"
+            ],
+            "time": 2.544106
+        },
+        "array_sum_10_15": {
+            "status": false
+        },
+        "mpg_example4": {
+            "status": false
+        },
+        "array_sum_6_15": {
+            "status": true,
+            "result": [
+                "90 {findSum:ite(&&(&&(&&(&&(<=(+(Param3,Param4),15),<(15,+(Param4,Param5))),<=(+(Param1,Param2),15)),<=(+(Param0,Param1),15)),<=(+(Param2,Param3),15)),+(Param4,Param5),ite(&&(&&(&&(<(15,+(Param3,Param4)),<=(+(Param1,Param2),15)),<=(+(Param2,Param3),15)),<=(+(Param0,Param1),15)),+(Param3,Param4),ite(&&(&&(&&(<=(+(Param3,Param4),15),<=(+(Param1,Param2),15)),<=(+(Param0,Param1),15)),<=(+(Param2,Param3),15)),0,ite(&&(<=(+(Param0,Param1),15),<=(+(Param1,Param2),15)),+(Param2,Param3),ite(<=(+(Param0,Param1),15),+(Param1,Param2),+(Param0,Param1))))))}"
+            ],
+            "time": 40.335394
+        },
+        "mpg_guard2": {
+            "status": true,
+            "result": [
+                "9 {eq1:ite(<(Param2,-(1,+(Param0,Param1))),-(Param0,Param1),+(Param0,Param1))}"
+            ],
+            "time": 1.455258
+        },
+        "array_search_8": {
+            "status": true,
+            "result": [
+                "21 {findIdx:ite(&&(<(Param6,Param8),<(Param8,Param7)),7,ite(&&(<(Param4,Param8),<(Param8,Param5)),5,ite(<(Param8,Param0),0,ite(<(Param6,Param8),8,ite(&&(<(Param2,Param8),<(Param8,Param3)),3,ite(<(Param4,Param8),6,ite(&&(<(Param8,Param2),<(Param1,Param8)),2,ite(<(Param8,Param1),1,4))))))))}"
+            ],
+            "time": 5.759575
+        },
+        "qm_neg_1": {
+            "status": true,
+            "result": [
+                "4 {qm-foo:ite(<=(0,Param0),0,1)}"
+            ],
+            "time": 0.234309
+        },
+        "mpg_ite2": {
+            "status": true,
+            "result": [
+                "24 {eq1:ite(&&(<(Param0,-(1,Param1)),<(0,+(Param1,Param2))),+(1,Param2),ite(&&(<(0,+(Param0,Param2)),<(0,+(Param0,Param1))),+(1,Param0),+(1,Param1)))}"
+            ],
+            "time": 4.63323
+        },
+        "qm_in_range": {
+            "status": true,
+            "result": [
+                "7 {qm-choose:ite(&&(<(Param0,Param2),<(Param1,Param0)),1,0)}"
+            ],
+            "time": 0.876069
+        },
+        "max14": {
+            "status": false
+        },
+        "array_sum_4_15": {
+            "status": true,
+            "result": [
+                "27 {findSum:ite(&&(&&(<=(+(Param1,Param2),15),<=(+(Param2,Param3),15)),<=(+(Param0,Param1),15)),0,ite(&&(<=(+(Param0,Param1),15),<(15,+(Param1,Param2))),+(Param1,Param2),ite(<=(+(Param0,Param1),15),+(Param2,Param3),+(Param0,Param1))))}"
+            ],
+            "time": 6.11746
+        },
+        "array_search_4": {
+            "status": true,
+            "result": [
+                "9 {findIdx:ite(&&(<(Param4,Param1),<(Param0,Param4)),1,ite(&&(<(Param4,Param2),<(Param0,Param4)),2,ite(&&(<(Param0,Param4),<(Param4,Param3)),3,ite(<(Param4,Param0),0,4))))}"
+            ],
+            "time": 1.696298
+        },
+        "s3": {
+            "status": true,
+            "result": [
+                "2 {f:-1}"
+            ],
+            "time": 0.151626
+        },
+        "array_sum_7_5": {
+            "status": true,
+            "result": [
+                "128 {findSum:ite(&&(&&(&&(&&(&&(<=(+(Param4,Param5),5),<(5,+(Param5,Param6))),<=(+(Param3,Param4),5)),<=(+(Param1,Param2),5)),<=(+(Param0,Param1),5)),<=(+(Param2,Param3),5)),+(Param5,Param6),ite(&&(&&(&&(&&(<(Param2,Param4),<=(+(Param2,Param3),5)),<(5,+(Param3,Param4))),<=(+(Param0,Param1),5)),<=(+(Param1,Param2),5)),+(Param3,Param4),ite(&&(&&(<(5,+(Param2,Param3)),<=(+(Param0,Param1),5)),<=(+(Param1,Param2),5)),+(Param2,Param3),ite(&&(<(5,+(Param1,Param2)),<=(+(Param0,Param1),5)),+(Param1,Param2),ite(&&(<(5,+(Param4,Param5)),<=(+(Param0,Param1),5)),+(Param4,Param5),ite(<=(+(Param0,Param1),5),0,+(Param0,Param1)))))))}"
+            ],
+            "time": 76.478544
+        },
+        "max9": {
+            "status": true,
+            "result": [
+                "120 {max9:ite(&&(&&(&&(&&(&&(&&(&&(<=(Param6,Param4),<=(Param5,Param4)),<=(Param2,Param4)),<=(Param8,Param4)),<=(Param7,Param4)),<=(Param0,Param4)),<=(Param1,Param4)),<=(Param3,Param4)),Param4,ite(&&(&&(&&(&&(&&(&&(<=(Param6,Param0),<=(Param7,Param0)),<=(Param5,Param0)),<=(Param8,Param0)),<=(Param1,Param0)),<=(Param2,Param0)),<=(Param3,Param0)),Param0,ite(&&(&&(&&(&&(&&(<=(Param6,Param3),<=(Param2,Param3)),<=(Param7,Param3)),<=(Param8,Param3)),<=(Param1,Param3)),<=(Param5,Param3)),Param3,ite(&&(&&(&&(&&(<=(Param6,Param7),<=(Param2,Param7)),<=(Param8,Param7)),<=(Param1,Param7)),<=(Param5,Param7)),Param7,ite(&&(&&(&&(&&(<=(Param8,Param5),<=(Param6,Param5)),<=(Param0,Param5)),<=(Param1,Param5)),<=(Param2,Param5)),Param5,ite(&&(&&(<=(Param6,Param2),<=(Param8,Param2)),<=(Param1,Param2)),Param2,ite(&&(<=(Param6,Param1),<=(Param8,Param1)),Param1,ite(<=(Param8,Param6),Param6,Param8))))))))}"
+            ],
+            "time": 80.724644
+        },
+        "mpg_plane2": {
+            "status": false
+        },
+        "mpg_example1": {
+            "status": false
+        }
+    }
+}

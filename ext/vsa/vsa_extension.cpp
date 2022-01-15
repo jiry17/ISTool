@@ -35,7 +35,8 @@ WitnessList VSAExtension::getWitness(Semantics *semantics, const WitnessData &ou
         LOG(FATAL) << "VSA ext: unsupported semantics " << name;
     }
     auto* wf = witness_pool.find(name)->second;
-    return wf->witness(oup);
+    auto res = wf->witness(oup);
+    return res;
 }
 
 const std::string KVSAName = "VSA";

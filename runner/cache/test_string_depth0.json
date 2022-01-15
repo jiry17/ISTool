@@ -1,0 +1,2156 @@
+{
+    "maxflash": {
+        "lastname-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),str.len(Param0))}"
+            ],
+            "time": 0.008914
+        },
+        "initials-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(str.substr(Param0,0,1),str.++(str.replace(str.substr(Param0,str.indexof(Param0,\" \",0),2),\" \",\".\"),\".\"))}"
+            ],
+            "time": 0.415974
+        },
+        "initials": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(str.substr(Param0,0,1),str.++(str.replace(str.substr(Param0,str.indexof(Param0,\" \",0),2),\" \",\".\"),\".\"))}"
+            ],
+            "time": 0.352105
+        },
+        "most-frequently-occurring-text": {
+            "status": false
+        },
+        "cell-contains-all-of-many-things": {
+            "status": false
+        },
+        "strip-html-from-text-or-numbers": {
+            "status": false
+        },
+        "remove-characters-from-right": {
+            "status": true,
+            "result": [
+                "2 {f:str.to.int(str.substr(Param0,0,str.indexof(Param0,\" \",1)))}"
+            ],
+            "time": 0.018869
+        },
+        "name-combine-4-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\",\",str.++(\" \",str.++(str.substr(Param0,0,1),\".\"))))}"
+            ],
+            "time": 0.258789
+        },
+        "get-last-line-in-cell": {
+            "status": false
+        },
+        "phone-6-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),3)}"
+            ],
+            "time": 0.344736
+        },
+        "split-text-and-numbers": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,+(-1,Param1))}"
+            ],
+            "time": 0.239301
+        },
+        "phone-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,3)}"
+            ],
+            "time": 0.00366
+        },
+        "name-combine-2-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",str.++(str.substr(Param1,0,1),\".\")))}"
+            ],
+            "time": 0.045256
+        },
+        "phone-5_short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,1,-(str.indexof(Param0,\" \",0),1))}"
+            ],
+            "time": 0.39019
+        },
+        "cell-contains-number": {
+            "status": false
+        },
+        "univ_3_short": {
+            "status": false
+        },
+        "get-last-name-from-name": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,-(str.indexof(Param0,\" \",1),-1),str.len(Param0))}"
+            ],
+            "time": 1.393289
+        },
+        "add-a-line-break-with-a-formula": {
+            "status": false
+        },
+        "univ_4_short": {
+            "status": false
+        },
+        "name-combine-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",Param1))}"
+            ],
+            "time": 0.006461
+        },
+        "phone-1": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,4,3)}"
+            ],
+            "time": 0.001415
+        },
+        "get-domain-from-email-address_2": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param1,0,str.indexof(Param1,\"_\",1))}"
+            ],
+            "time": 1.783416
+        },
+        "phone-5-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,1,-(str.indexof(Param0,\" \",0),1))}"
+            ],
+            "time": 0.308628
+        },
+        "phone-7_short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,-(-(str.len(Param0),5),2),3)}"
+            ],
+            "time": 0.082326
+        },
+        "firstname": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",0))}"
+            ],
+            "time": 0.009514
+        },
+        "univ_5-long": {
+            "status": false
+        },
+        "38664547": {
+            "status": false
+        },
+        "31753108": {
+            "status": false
+        },
+        "replace-one-character-with-another": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\" \",\"-\"),\" \",\"-\")}"
+            ],
+            "time": 1.609456
+        },
+        "convert-numbers-to-text": {
+            "status": false
+        },
+        "name-combine-4-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\",\",str.++(\" \",str.++(str.substr(Param0,0,1),\".\"))))}"
+            ],
+            "time": 0.222284
+        },
+        "univ_1_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\",\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.395357
+        },
+        "create-email-address-with-name-and-domain": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.++(str.++(Param1,\"_\"),Param2))}"
+            ],
+            "time": 13.201038
+        },
+        "phone-9": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(str.replace(str.substr(Param0,1,str.len(Param0)),\"-\",\".\"),\"-\",\".\"),\" \",\".\")}"
+            ],
+            "time": 4.628536
+        },
+        "phone-6": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),3)}"
+            ],
+            "time": 0.249328
+        },
+        "univ_6": {
+            "status": false
+        },
+        "remove-file-extension-from-filename": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\".\",1))}"
+            ],
+            "time": 0.329283
+        },
+        "initials-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(str.substr(Param0,0,1),str.++(str.replace(str.substr(Param0,str.indexof(Param0,\" \",0),2),\" \",\".\"),\".\"))}"
+            ],
+            "time": 0.389606
+        },
+        "phone-10": {
+            "status": false
+        },
+        "phone-2_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(4,4),3)}"
+            ],
+            "time": 0.002187
+        },
+        "name-combine-4_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\",\",str.++(\" \",str.++(str.substr(Param0,0,1),\".\"))))}"
+            ],
+            "time": 0.198714
+        },
+        "split-numbers-from-units-of-measure_1": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,+(-1,Param1))}"
+            ],
+            "time": 0.004439
+        },
+        "reverse-name": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\" \",Param0))}"
+            ],
+            "time": 0.004054
+        },
+        "remove-unwanted-characters": {
+            "status": false
+        },
+        "phone-9-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(str.replace(str.substr(Param0,1,str.len(Param0)),\"-\",\".\"),\"-\",\".\"),\" \",\".\")}"
+            ],
+            "time": 5.379419
+        },
+        "phone-8-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,-(str.len(Param0),3),3)}"
+            ],
+            "time": 0.009898
+        },
+        "count-consecutive-monthly-orders": {
+            "status": false
+        },
+        "univ_5-long-repeat": {
+            "status": false
+        },
+        "univ_2": {
+            "status": false
+        },
+        "lastname_small": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),str.len(Param0))}"
+            ],
+            "time": 0.006995
+        },
+        "reverse-name-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\" \",Param0))}"
+            ],
+            "time": 0.004969
+        },
+        "univ_3": {
+            "status": false
+        },
+        "strip-numeric-characters-from-cell": {
+            "status": false
+        },
+        "phone-10-long": {
+            "status": false
+        },
+        "univ_1-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\",\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.501989
+        },
+        "univ_3-long": {
+            "status": false
+        },
+        "univ_2_short": {
+            "status": false
+        },
+        "extract-text-between-parentheses": {
+            "status": false
+        },
+        "univ_6-long": {
+            "status": false
+        },
+        "stackoverflow1": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,str.indexof(Param0,str.++(\" \",\"Inc\"),1))}"
+            ],
+            "time": 8.421972
+        },
+        "bikes": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,-(str.len(Param0),3))}"
+            ],
+            "time": 0.027808
+        },
+        "univ_3-long-repeat": {
+            "status": false
+        },
+        "cell-contains-one-of-many-with-exclusions": {
+            "status": false
+        },
+        "lastname-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),str.len(Param0))}"
+            ],
+            "time": 0.007465
+        },
+        "phone-7": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\"-\",0)),3)}"
+            ],
+            "time": 0.136576
+        },
+        "extract-word-containing-specific-text": {
+            "status": false
+        },
+        "get-middle-name-from-full-name": {
+            "status": false
+        },
+        "join-first-and-last-name": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",Param1))}"
+            ],
+            "time": 0.024961
+        },
+        "initials_small": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(str.substr(Param0,0,1),str.++(str.replace(str.substr(Param0,str.indexof(Param0,\" \",0),2),\" \",\".\"),\".\"))}"
+            ],
+            "time": 0.330903
+        },
+        "name-combine-3": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.++(\".\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.024114
+        },
+        "firstname_small": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",0))}"
+            ],
+            "time": 0.005448
+        },
+        "firstname-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",0))}"
+            ],
+            "time": 0.006882
+        },
+        "phone-8-long": {
+            "status": false
+        },
+        "get-first-name-from-name-with-comma": {
+            "status": false
+        },
+        "bikes-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,-(str.len(Param0),3))}"
+            ],
+            "time": 0.029736
+        },
+        "name-combine_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",Param1))}"
+            ],
+            "time": 0.004629
+        },
+        "2171308": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.substr(Param0,str.indexof(Param0,\" \",1),str.len(Param0)))}"
+            ],
+            "time": 4.725928
+        },
+        "exceljet4": {
+            "status": false
+        },
+        "40498040": {
+            "status": false
+        },
+        "35744094": {
+            "status": false
+        },
+        "cell-contains-some-words-but-not-others": {
+            "status": false
+        },
+        "extract-word-that-begins-with-specific-character": {
+            "status": false
+        },
+        "stackoverflow6": {
+            "status": false
+        },
+        "37281007": {
+            "status": false
+        },
+        "stackoverflow3": {
+            "status": false
+        },
+        "cell-contains-one-of-many-things": {
+            "status": false
+        },
+        "phone-3-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(\"(\",str.++(str.substr(Param0,0,3),str.++(\")\",str.++(\" \",str.substr(Param0,4,str.len(Param0))))))}"
+            ],
+            "time": 4.853833
+        },
+        "phone-9-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(str.replace(str.substr(Param0,1,str.len(Param0)),\"-\",\".\"),\"-\",\".\"),\" \",\".\")}"
+            ],
+            "time": 5.362
+        },
+        "split-text-string-at-specific-character": {
+            "status": false
+        },
+        "34801680": {
+            "status": false
+        },
+        "reverse-name_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\" \",Param0))}"
+            ],
+            "time": 0.005523
+        },
+        "get-last-word": {
+            "status": false
+        },
+        "phone-4-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\"-\",\".\"),\"-\",\".\")}"
+            ],
+            "time": 0.037104
+        },
+        "name-combine-2_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",str.++(str.substr(Param1,0,1),\".\")))}"
+            ],
+            "time": 0.028319
+        },
+        "get-domain-name-from-url": {
+            "status": false
+        },
+        "phone": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,3)}"
+            ],
+            "time": 0.001717
+        },
+        "lastname": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),str.len(Param0))}"
+            ],
+            "time": 0.007031
+        },
+        "phone-2-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(4,4),3)}"
+            ],
+            "time": 0.004531
+        },
+        "univ_1": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\",\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.412113
+        },
+        "change-negative-numbers-to-positive": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(Param0,\"-\",\"\")}"
+            ],
+            "time": 0.004289
+        },
+        "cell-contains-specific-text": {
+            "status": false
+        },
+        "phone-1_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,4,3)}"
+            ],
+            "time": 0.000965
+        },
+        "dr-name-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(\"Dr.\",str.++(\" \",str.substr(Param0,0,str.indexof(Param0,\" \",0))))}"
+            ],
+            "time": 0.185018
+        },
+        "remove-leading-and-trailing-spaces-from-text": {
+            "status": false
+        },
+        "remove-characters-from-left": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,Param1,str.len(Param0))}"
+            ],
+            "time": 0.004329
+        },
+        "19558979": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(-1,Param1),1)}"
+            ],
+            "time": 0.011513
+        },
+        "phone-9-short": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(str.replace(str.substr(Param0,1,str.len(Param0)),\"-\",\".\"),\"-\",\".\"),\" \",\".\")}"
+            ],
+            "time": 5.448793
+        },
+        "17212077": {
+            "status": false
+        },
+        "convert-text-to-numbers": {
+            "status": true,
+            "result": [
+                "2 {f:str.to.int(Param0)}"
+            ],
+            "time": 0.000551
+        },
+        "phone-2-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(4,4),3)}"
+            ],
+            "time": 0.002499
+        },
+        "count-total-words-in-a-cell": {
+            "status": false
+        },
+        "phone-1-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,4,3)}"
+            ],
+            "time": 0.003438
+        },
+        "11604909": {
+            "status": false
+        },
+        "phone-4-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\"-\",\".\"),\"-\",\".\")}"
+            ],
+            "time": 0.040019
+        },
+        "stackoverflow2": {
+            "status": false
+        },
+        "cell-equals-one-of-many-things": {
+            "status": false
+        },
+        "name-combine": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",Param1))}"
+            ],
+            "time": 0.004096
+        },
+        "stackoverflow11": {
+            "status": false
+        },
+        "univ_6_short": {
+            "status": false
+        },
+        "name-combine-3-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.++(\".\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.029927
+        },
+        "name-combine-3_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.++(\".\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.054739
+        },
+        "36462127": {
+            "status": false
+        },
+        "phone-4_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\"-\",\".\"),\"-\",\".\")}"
+            ],
+            "time": 0.035689
+        },
+        "stackoverflow8": {
+            "status": false
+        },
+        "phone-5-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,1,-(str.indexof(Param0,\" \",0),1))}"
+            ],
+            "time": 0.204719
+        },
+        "reverse-name-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\" \",Param0))}"
+            ],
+            "time": 0.004138
+        },
+        "compare-two-strings": {
+            "status": true,
+            "result": [
+                "3 {f:str.prefixof(Param0,Param1)}"
+            ],
+            "time": 0.05297
+        },
+        "phone-6-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),3)}"
+            ],
+            "time": 0.153504
+        },
+        "phone-6-short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),3)}"
+            ],
+            "time": 0.260521
+        },
+        "23435880": {
+            "status": true,
+            "result": [
+                "3 {f:+(-1,+(-1,+(-1,str.len(Param1))))}"
+            ],
+            "time": 0.676018
+        },
+        "bikes-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,-(str.len(Param0),3))}"
+            ],
+            "time": 0.018001
+        },
+        "phone-3": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(\"(\",str.++(str.substr(Param0,0,3),str.++(\")\",str.++(\" \",str.substr(Param0,4,str.len(Param0))))))}"
+            ],
+            "time": 5.253142
+        },
+        "name-combine-3-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.++(\".\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.027746
+        },
+        "phone_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,3)}"
+            ],
+            "time": 0.001086
+        },
+        "phone-8_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,-(str.len(Param0),3),3)}"
+            ],
+            "time": 0.006058
+        },
+        "35016216": {
+            "status": false
+        },
+        "univ_4": {
+            "status": false
+        },
+        "phone-3-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(\"(\",str.++(str.substr(Param0,0,3),str.++(\")\",str.++(\" \",str.substr(Param0,4,str.len(Param0))))))}"
+            ],
+            "time": 5.85069
+        },
+        "get-first-name-from-name": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",1))}"
+            ],
+            "time": 0.315257
+        },
+        "count-specific-words-in-a-cell": {
+            "status": false
+        },
+        "19274448": {
+            "status": false
+        },
+        "phone-2": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(4,4),3)}"
+            ],
+            "time": 0.001322
+        },
+        "phone-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,3)}"
+            ],
+            "time": 0.002003
+        },
+        "name-combine-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",Param1))}"
+            ],
+            "time": 0.004546
+        },
+        "firstname-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",0))}"
+            ],
+            "time": 0.005901
+        },
+        "name-combine-2-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",str.++(str.substr(Param1,0,1),\".\")))}"
+            ],
+            "time": 0.029968
+        },
+        "phone-8": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,-(str.len(Param0),3),3)}"
+            ],
+            "time": 0.006985
+        },
+        "univ_2-long-repeat": {
+            "status": false
+        },
+        "remove-text-by-position": {
+            "status": false
+        },
+        "phone-7-short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\"-\",0)),3)}"
+            ],
+            "time": 0.137118
+        },
+        "bikes_small": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,-(str.len(Param0),3))}"
+            ],
+            "time": 0.054423
+        },
+        "univ_1-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\",\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.088579
+        },
+        "position-of-2nd-3rd-etc-instance-of-character": {
+            "status": true,
+            "result": [
+                "2 {f:-(str.len(Param0),Param2)}"
+            ],
+            "time": 0.00478
+        },
+        "exceljet1": {
+            "status": false
+        },
+        "stackoverflow7": {
+            "status": false
+        },
+        "39060015": {
+            "status": false
+        },
+        "split-numbers-from-units-of-measure_2": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(-1,Param1),Param1)}"
+            ],
+            "time": 0.005329
+        },
+        "stackoverflow4": {
+            "status": false
+        },
+        "43606446": {
+            "status": false
+        },
+        "37534494": {
+            "status": false
+        },
+        "find-nth-occurrence-of-character": {
+            "status": false
+        },
+        "join-cells-with-comma": {
+            "status": false
+        },
+        "38871714": {
+            "status": false
+        },
+        "phone-4": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\"-\",\".\"),\"-\",\".\")}"
+            ],
+            "time": 0.032867
+        },
+        "phone-10-long-repeat": {
+            "status": false
+        },
+        "clean-and-reformat-telephone-numbers": {
+            "status": false
+        },
+        "phone-6_short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),3)}"
+            ],
+            "time": 0.115593
+        },
+        "phone-5-short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,1,-(str.indexof(Param0,\" \",0),1))}"
+            ],
+            "time": 0.314742
+        },
+        "phone-5": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,1,-(str.indexof(Param0,\" \",0),1))}"
+            ],
+            "time": 0.304
+        },
+        "phone-3_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(\"(\",str.++(str.substr(Param0,0,3),str.++(\")\",str.++(\" \",str.substr(Param0,4,str.len(Param0))))))}"
+            ],
+            "time": 5.420198
+        },
+        "stackoverflow5": {
+            "status": false
+        },
+        "12948338": {
+            "status": false
+        },
+        "phone-7-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\"-\",0)),3)}"
+            ],
+            "time": 0.194528
+        },
+        "name-combine-2": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",str.++(str.substr(Param1,0,1),\".\")))}"
+            ],
+            "time": 0.02844
+        },
+        "44789427": {
+            "status": false
+        },
+        "univ_4-long-repeat": {
+            "status": false
+        },
+        "phone-9_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(str.replace(str.substr(Param0,1,str.len(Param0)),\"-\",\".\"),\"-\",\".\"),\" \",\".\")}"
+            ],
+            "time": 4.395892
+        },
+        "remove-text-by-matching": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\"-\",\"\"),\"-\",\"\")}"
+            ],
+            "time": 1.234614
+        },
+        "stackoverflow10": {
+            "status": false
+        },
+        "count-total-characters-in-a-cell": {
+            "status": true,
+            "result": [
+                "2 {f:str.len(Param0)}"
+            ],
+            "time": 0.000614
+        },
+        "strip-non-numeric-characters": {
+            "status": false
+        },
+        "get-last-name-from-name-with-comma": {
+            "status": false
+        },
+        "get-first-word": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",1))}"
+            ],
+            "time": 0.25023
+        },
+        "41503046": {
+            "status": false
+        },
+        "33619752": {
+            "status": false
+        },
+        "30732554": {
+            "status": false
+        },
+        "dr-name_small": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(\"Dr.\",str.++(\" \",str.substr(Param0,0,str.indexof(Param0,\" \",0))))}"
+            ],
+            "time": 0.242119
+        },
+        "phone-10_short": {
+            "status": false
+        },
+        "stackoverflow9": {
+            "status": false
+        },
+        "univ_4-long": {
+            "status": false
+        },
+        "count-line-breaks-in-cell": {
+            "status": false
+        },
+        "univ_2-long": {
+            "status": false
+        },
+        "create-email-address-from-name": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.++(str.substr(Param1,0,1),Param0),\"_acme.com\")}"
+            ],
+            "time": 4.329405
+        },
+        "dr-name": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(\"Dr.\",str.++(\" \",str.substr(Param0,0,str.indexof(Param0,\" \",0))))}"
+            ],
+            "time": 0.168719
+        },
+        "25239569": {
+            "status": false
+        },
+        "dr-name-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(\"Dr.\",str.++(\" \",str.substr(Param0,0,str.indexof(Param0,\" \",0))))}"
+            ],
+            "time": 0.169813
+        },
+        "phone-1-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,4,3)}"
+            ],
+            "time": 0.001834
+        },
+        "univ_6-long-repeat": {
+            "status": false
+        },
+        "phone-7-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\"-\",0)),3)}"
+            ],
+            "time": 0.160205
+        },
+        "univ_5": {
+            "status": false
+        },
+        "exceljet2": {
+            "status": false
+        },
+        "extract-nth-word-from-text-string": {
+            "status": false
+        },
+        "11440431": {
+            "status": false
+        },
+        "name-combine-4": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\",\",str.++(\" \",str.++(str.substr(Param0,0,1),\".\"))))}"
+            ],
+            "time": 0.322452
+        },
+        "univ_5_short": {
+            "status": false
+        },
+        "43120683": {
+            "status": false
+        },
+        "28627624_1": {
+            "status": false
+        },
+        "count-specific-characters-in-a-cell": {
+            "status": false
+        },
+        "exceljet3": {
+            "status": false
+        }
+    },
+    "mselect": {
+        "lastname-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),str.len(Param0))}"
+            ],
+            "time": 0.035128
+        },
+        "initials-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(str.substr(Param0,0,1),str.++(str.replace(str.substr(Param0,str.indexof(Param0,\" \",0),2),\" \",\".\"),\".\"))}"
+            ],
+            "time": 0.242921
+        },
+        "initials": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(str.substr(Param0,0,1),str.++(str.replace(str.substr(Param0,str.indexof(Param0,\" \",0),2),\" \",\".\"),\".\"))}"
+            ],
+            "time": 0.242331
+        },
+        "cell-contains-all-of-many-things": {
+            "status": false
+        },
+        "most-frequently-occurring-text": {
+            "status": false
+        },
+        "name-combine-4-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\",\",str.++(\" \",str.++(str.substr(Param0,0,1),\".\"))))}"
+            ],
+            "time": 0.153998
+        },
+        "strip-html-from-text-or-numbers": {
+            "status": false
+        },
+        "remove-characters-from-right": {
+            "status": true,
+            "result": [
+                "2 {f:str.to.int(str.substr(Param0,0,str.indexof(Param0,\" \",1)))}"
+            ],
+            "time": 0.016745
+        },
+        "get-last-line-in-cell": {
+            "status": false
+        },
+        "phone-6-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),3)}"
+            ],
+            "time": 0.167087
+        },
+        "split-text-and-numbers": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,+(-1,Param1))}"
+            ],
+            "time": 0.23131
+        },
+        "phone-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,3)}"
+            ],
+            "time": 0.05195
+        },
+        "name-combine-2-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",str.++(str.substr(Param1,0,1),\".\")))}"
+            ],
+            "time": 0.04201
+        },
+        "phone-5_short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,1,-(str.indexof(Param0,\" \",0),1))}"
+            ],
+            "time": 0.127684
+        },
+        "cell-contains-number": {
+            "status": false
+        },
+        "univ_3_short": {
+            "status": false
+        },
+        "get-last-name-from-name": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,-(str.indexof(Param0,\" \",1),-1),str.len(Param0))}"
+            ],
+            "time": 0.945336
+        },
+        "add-a-line-break-with-a-formula": {
+            "status": false
+        },
+        "univ_4_short": {
+            "status": false
+        },
+        "name-combine-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",Param1))}"
+            ],
+            "time": 0.031384
+        },
+        "phone-1": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,4,3)}"
+            ],
+            "time": 0.011529
+        },
+        "get-domain-from-email-address_2": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param1,0,str.indexof(Param1,\"_\",1))}"
+            ],
+            "time": 1.23105
+        },
+        "phone-5-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,1,-(str.indexof(Param0,\" \",0),1))}"
+            ],
+            "time": 0.360039
+        },
+        "phone-7_short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,-(-(str.len(Param0),5),2),3)}"
+            ],
+            "time": 0.051583
+        },
+        "firstname": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",0))}"
+            ],
+            "time": 0.006644
+        },
+        "univ_5-long": {
+            "status": false
+        },
+        "38664547": {
+            "status": false
+        },
+        "31753108": {
+            "status": false
+        },
+        "replace-one-character-with-another": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\" \",\"-\"),\" \",\"-\")}"
+            ],
+            "time": 1.005394
+        },
+        "convert-numbers-to-text": {
+            "status": false
+        },
+        "name-combine-4-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\",\",str.++(\" \",str.++(str.substr(Param0,0,1),\".\"))))}"
+            ],
+            "time": 0.192089
+        },
+        "univ_1_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\",\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.260992
+        },
+        "remove-unwanted-characters": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,Param1,\"\"),Param1,\"\")}"
+            ],
+            "time": 0.215578
+        },
+        "create-email-address-with-name-and-domain": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.++(str.++(Param1,\"_\"),Param2))}"
+            ],
+            "time": 10.247161
+        },
+        "phone-9": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(str.replace(str.substr(Param0,1,str.len(Param0)),\"-\",\".\"),\"-\",\".\"),\" \",\".\")}"
+            ],
+            "time": 4.265883
+        },
+        "phone-6": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),3)}"
+            ],
+            "time": 0.157078
+        },
+        "remove-file-extension-from-filename": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\".\",1))}"
+            ],
+            "time": 0.187883
+        },
+        "initials-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(str.substr(Param0,0,1),str.++(str.replace(str.substr(Param0,str.indexof(Param0,\" \",0),2),\" \",\".\"),\".\"))}"
+            ],
+            "time": 0.401486
+        },
+        "univ_6": {
+            "status": false
+        },
+        "phone-2_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(4,4),3)}"
+            ],
+            "time": 0.010899
+        },
+        "name-combine-4_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\",\",str.++(\" \",str.++(str.substr(Param0,0,1),\".\"))))}"
+            ],
+            "time": 0.194364
+        },
+        "split-numbers-from-units-of-measure_1": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,+(-1,Param1))}"
+            ],
+            "time": 0.017848
+        },
+        "reverse-name": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\" \",Param0))}"
+            ],
+            "time": 0.010745
+        },
+        "phone-10": {
+            "status": false
+        },
+        "phone-9-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(str.replace(str.substr(Param0,1,str.len(Param0)),\"-\",\".\"),\"-\",\".\"),\" \",\".\")}"
+            ],
+            "time": 4.266725
+        },
+        "phone-8-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,-(str.len(Param0),3),3)}"
+            ],
+            "time": 0.043372
+        },
+        "count-consecutive-monthly-orders": {
+            "status": false
+        },
+        "univ_5-long-repeat": {
+            "status": false
+        },
+        "univ_2": {
+            "status": false
+        },
+        "lastname_small": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),str.len(Param0))}"
+            ],
+            "time": 0.006901
+        },
+        "reverse-name-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\" \",Param0))}"
+            ],
+            "time": 0.011947
+        },
+        "univ_3": {
+            "status": false
+        },
+        "strip-numeric-characters-from-cell": {
+            "status": false
+        },
+        "phone-10-long": {
+            "status": false
+        },
+        "univ_1-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\",\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.260399
+        },
+        "univ_3-long": {
+            "status": false
+        },
+        "univ_2_short": {
+            "status": false
+        },
+        "extract-text-between-parentheses": {
+            "status": false
+        },
+        "univ_6-long": {
+            "status": false
+        },
+        "stackoverflow1": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,str.indexof(Param0,str.++(\" \",\"Inc\"),1))}"
+            ],
+            "time": 6.613749
+        },
+        "bikes": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,-(str.len(Param0),3))}"
+            ],
+            "time": 0.026465
+        },
+        "phone-8-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,-(str.len(Param0),3),3)}"
+            ],
+            "time": 0.016005
+        },
+        "univ_3-long-repeat": {
+            "status": false
+        },
+        "lastname-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),str.len(Param0))}"
+            ],
+            "time": 0.01278
+        },
+        "phone-7": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\"-\",0)),3)}"
+            ],
+            "time": 0.091115
+        },
+        "extract-word-containing-specific-text": {
+            "status": false
+        },
+        "get-middle-name-from-full-name": {
+            "status": false
+        },
+        "join-first-and-last-name": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",Param1))}"
+            ],
+            "time": 0.038202
+        },
+        "initials_small": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(str.substr(Param0,0,1),str.++(str.replace(str.substr(Param0,str.indexof(Param0,\" \",0),2),\" \",\".\"),\".\"))}"
+            ],
+            "time": 0.224968
+        },
+        "name-combine-3": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.++(\".\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.023963
+        },
+        "firstname_small": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",0))}"
+            ],
+            "time": 0.006665
+        },
+        "firstname-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",0))}"
+            ],
+            "time": 0.031514
+        },
+        "cell-contains-one-of-many-with-exclusions": {
+            "status": false
+        },
+        "2171308": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.substr(Param0,str.indexof(Param0,\" \",1),str.len(Param0)))}"
+            ],
+            "time": 3.808138
+        },
+        "bikes-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,-(str.len(Param0),3))}"
+            ],
+            "time": 0.030867
+        },
+        "name-combine_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",Param1))}"
+            ],
+            "time": 0.006923
+        },
+        "get-first-name-from-name-with-comma": {
+            "status": false
+        },
+        "exceljet4": {
+            "status": false
+        },
+        "40498040": {
+            "status": false
+        },
+        "35744094": {
+            "status": false
+        },
+        "cell-contains-some-words-but-not-others": {
+            "status": false
+        },
+        "extract-word-that-begins-with-specific-character": {
+            "status": false
+        },
+        "stackoverflow6": {
+            "status": false
+        },
+        "37281007": {
+            "status": false
+        },
+        "stackoverflow3": {
+            "status": false
+        },
+        "phone-3-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(\"(\",str.++(str.substr(Param0,0,3),str.++(\")\",str.++(\" \",str.substr(Param0,4,str.len(Param0))))))}"
+            ],
+            "time": 4.011268
+        },
+        "cell-contains-one-of-many-things": {
+            "status": false
+        },
+        "phone-9-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(str.replace(str.substr(Param0,1,str.len(Param0)),\"-\",\".\"),\"-\",\".\"),\" \",\".\")}"
+            ],
+            "time": 3.987282
+        },
+        "split-text-string-at-specific-character": {
+            "status": false
+        },
+        "34801680": {
+            "status": false
+        },
+        "reverse-name_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\" \",Param0))}"
+            ],
+            "time": 0.00976
+        },
+        "get-last-word": {
+            "status": false
+        },
+        "phone-4-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\"-\",\".\"),\"-\",\".\")}"
+            ],
+            "time": 0.142915
+        },
+        "name-combine-2_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",str.++(str.substr(Param1,0,1),\".\")))}"
+            ],
+            "time": 0.024183
+        },
+        "get-domain-name-from-url": {
+            "status": false
+        },
+        "phone": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,3)}"
+            ],
+            "time": 0.00844
+        },
+        "lastname": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),str.len(Param0))}"
+            ],
+            "time": 0.006829
+        },
+        "phone-2-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(4,4),3)}"
+            ],
+            "time": 0.07939
+        },
+        "univ_1": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\",\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.338067
+        },
+        "change-negative-numbers-to-positive": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(Param0,\"-\",\"\")}"
+            ],
+            "time": 0.008516
+        },
+        "cell-contains-specific-text": {
+            "status": false
+        },
+        "phone-1_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,4,3)}"
+            ],
+            "time": 0.011517
+        },
+        "dr-name-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(\"Dr.\",str.++(\" \",str.substr(Param0,0,str.indexof(Param0,\" \",0))))}"
+            ],
+            "time": 0.160366
+        },
+        "remove-leading-and-trailing-spaces-from-text": {
+            "status": false
+        },
+        "remove-characters-from-left": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,Param1,str.len(Param0))}"
+            ],
+            "time": 0.008105
+        },
+        "19558979": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(-1,Param1),1)}"
+            ],
+            "time": 0.010739
+        },
+        "phone-9-short": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(str.replace(str.substr(Param0,1,str.len(Param0)),\"-\",\".\"),\"-\",\".\"),\" \",\".\")}"
+            ],
+            "time": 3.753673
+        },
+        "17212077": {
+            "status": false
+        },
+        "convert-text-to-numbers": {
+            "status": true,
+            "result": [
+                "2 {f:str.to.int(Param0)}"
+            ],
+            "time": 0.004318
+        },
+        "phone-2-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(4,4),3)}"
+            ],
+            "time": 0.019178
+        },
+        "count-total-words-in-a-cell": {
+            "status": false
+        },
+        "phone-1-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,4,3)}"
+            ],
+            "time": 0.051887
+        },
+        "11604909": {
+            "status": false
+        },
+        "phone-4-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\"-\",\".\"),\"-\",\".\")}"
+            ],
+            "time": 0.04426
+        },
+        "stackoverflow2": {
+            "status": false
+        },
+        "cell-equals-one-of-many-things": {
+            "status": false
+        },
+        "name-combine": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",Param1))}"
+            ],
+            "time": 0.006914
+        },
+        "stackoverflow11": {
+            "status": false
+        },
+        "univ_6_short": {
+            "status": false
+        },
+        "name-combine-3-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.++(\".\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.04535
+        },
+        "name-combine-3_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.++(\".\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.024978
+        },
+        "36462127": {
+            "status": false
+        },
+        "phone-4_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\"-\",\".\"),\"-\",\".\")}"
+            ],
+            "time": 0.036257
+        },
+        "phone-3": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(\"(\",str.++(str.substr(Param0,0,3),str.++(\")\",str.++(\" \",str.substr(Param0,4,str.len(Param0))))))}"
+            ],
+            "time": 4.052979
+        },
+        "phone-5-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,1,-(str.indexof(Param0,\" \",0),1))}"
+            ],
+            "time": 0.252572
+        },
+        "reverse-name-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\" \",Param0))}"
+            ],
+            "time": 0.029081
+        },
+        "compare-two-strings": {
+            "status": true,
+            "result": [
+                "3 {f:str.prefixof(Param0,Param1)}"
+            ],
+            "time": 0.034739
+        },
+        "phone-6-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),3)}"
+            ],
+            "time": 0.166514
+        },
+        "phone-6-short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),3)}"
+            ],
+            "time": 0.140996
+        },
+        "stackoverflow8": {
+            "status": false
+        },
+        "bikes-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,-(str.len(Param0),3))}"
+            ],
+            "time": 0.02737
+        },
+        "23435880": {
+            "status": true,
+            "result": [
+                "3 {f:+(-1,+(-1,+(-1,str.len(Param1))))}"
+            ],
+            "time": 0.547083
+        },
+        "name-combine-3-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.substr(Param0,0,1),str.++(\".\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.028799
+        },
+        "phone_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,3)}"
+            ],
+            "time": 0.00606
+        },
+        "phone-8_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,-(str.len(Param0),3),3)}"
+            ],
+            "time": 0.030454
+        },
+        "35016216": {
+            "status": false
+        },
+        "univ_4": {
+            "status": false
+        },
+        "phone-3-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(\"(\",str.++(str.substr(Param0,0,3),str.++(\")\",str.++(\" \",str.substr(Param0,4,str.len(Param0))))))}"
+            ],
+            "time": 4.205766
+        },
+        "get-first-name-from-name": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",1))}"
+            ],
+            "time": 0.184268
+        },
+        "count-specific-words-in-a-cell": {
+            "status": false
+        },
+        "19274448": {
+            "status": false
+        },
+        "phone-2": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,+(4,4),3)}"
+            ],
+            "time": 0.015488
+        },
+        "phone-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,3)}"
+            ],
+            "time": 0.043259
+        },
+        "name-combine-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",Param1))}"
+            ],
+            "time": 0.011978
+        },
+        "firstname-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",0))}"
+            ],
+            "time": 0.012709
+        },
+        "name-combine-2-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",str.++(str.substr(Param1,0,1),\".\")))}"
+            ],
+            "time": 0.045116
+        },
+        "phone-8": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,-(str.len(Param0),3),3)}"
+            ],
+            "time": 0.01087
+        },
+        "univ_2-long-repeat": {
+            "status": false
+        },
+        "remove-text-by-position": {
+            "status": false
+        },
+        "phone-7-short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\"-\",0)),3)}"
+            ],
+            "time": 0.117033
+        },
+        "bikes_small": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,0,-(str.len(Param0),3))}"
+            ],
+            "time": 0.025357
+        },
+        "univ_1-long-repeat": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\",\",str.++(\" \",Param1)))}"
+            ],
+            "time": 0.067286
+        },
+        "position-of-2nd-3rd-etc-instance-of-character": {
+            "status": true,
+            "result": [
+                "2 {f:-(str.len(Param0),Param2)}"
+            ],
+            "time": 0.008271
+        },
+        "exceljet1": {
+            "status": false
+        },
+        "stackoverflow7": {
+            "status": false
+        },
+        "split-numbers-from-units-of-measure_2": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(-1,Param1),Param1)}"
+            ],
+            "time": 0.017861
+        },
+        "39060015": {
+            "status": false
+        },
+        "stackoverflow4": {
+            "status": false
+        },
+        "43606446": {
+            "status": false
+        },
+        "37534494": {
+            "status": false
+        },
+        "find-nth-occurrence-of-character": {
+            "status": false
+        },
+        "join-cells-with-comma": {
+            "status": false
+        },
+        "38871714": {
+            "status": false
+        },
+        "phone-4": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\"-\",\".\"),\"-\",\".\")}"
+            ],
+            "time": 0.026107
+        },
+        "phone-10-long-repeat": {
+            "status": false
+        },
+        "clean-and-reformat-telephone-numbers": {
+            "status": false
+        },
+        "phone-6_short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\" \",0)),3)}"
+            ],
+            "time": 0.094857
+        },
+        "phone-5-short": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,1,-(str.indexof(Param0,\" \",0),1))}"
+            ],
+            "time": 0.333688
+        },
+        "phone-5": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,1,-(str.indexof(Param0,\" \",0),1))}"
+            ],
+            "time": 0.189909
+        },
+        "phone-3_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(\"(\",str.++(str.substr(Param0,0,3),str.++(\")\",str.++(\" \",str.substr(Param0,4,str.len(Param0))))))}"
+            ],
+            "time": 4.268331
+        },
+        "stackoverflow5": {
+            "status": false
+        },
+        "12948338": {
+            "status": false
+        },
+        "phone-7-long": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\"-\",0)),3)}"
+            ],
+            "time": 0.180043
+        },
+        "name-combine-2": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param0,str.++(\" \",str.++(str.substr(Param1,0,1),\".\")))}"
+            ],
+            "time": 0.024162
+        },
+        "44789427": {
+            "status": false
+        },
+        "univ_4-long-repeat": {
+            "status": false
+        },
+        "phone-9_short": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(str.replace(str.substr(Param0,1,str.len(Param0)),\"-\",\".\"),\"-\",\".\"),\" \",\".\")}"
+            ],
+            "time": 3.578524
+        },
+        "remove-text-by-matching": {
+            "status": true,
+            "result": [
+                "2 {f:str.replace(str.replace(Param0,\"-\",\"\"),\"-\",\"\")}"
+            ],
+            "time": 0.893738
+        },
+        "stackoverflow10": {
+            "status": false
+        },
+        "count-total-characters-in-a-cell": {
+            "status": true,
+            "result": [
+                "2 {f:str.len(Param0)}"
+            ],
+            "time": 0.004383
+        },
+        "strip-non-numeric-characters": {
+            "status": false
+        },
+        "get-last-name-from-name-with-comma": {
+            "status": false
+        },
+        "get-first-word": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,0,str.indexof(Param0,\" \",1))}"
+            ],
+            "time": 0.209695
+        },
+        "41503046": {
+            "status": false
+        },
+        "33619752": {
+            "status": false
+        },
+        "30732554": {
+            "status": false
+        },
+        "dr-name_small": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(\"Dr.\",str.++(\" \",str.substr(Param0,0,str.indexof(Param0,\" \",0))))}"
+            ],
+            "time": 0.171118
+        },
+        "phone-10_short": {
+            "status": false
+        },
+        "stackoverflow9": {
+            "status": false
+        },
+        "univ_4-long": {
+            "status": false
+        },
+        "count-line-breaks-in-cell": {
+            "status": false
+        },
+        "univ_2-long": {
+            "status": false
+        },
+        "create-email-address-from-name": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(str.++(str.substr(Param1,0,1),Param0),\"_acme.com\")}"
+            ],
+            "time": 3.170827
+        },
+        "dr-name": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(\"Dr.\",str.++(\" \",str.substr(Param0,0,str.indexof(Param0,\" \",0))))}"
+            ],
+            "time": 0.10401
+        },
+        "25239569": {
+            "status": false
+        },
+        "dr-name-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.++(\"Dr.\",str.++(\" \",str.substr(Param0,0,str.indexof(Param0,\" \",0))))}"
+            ],
+            "time": 0.132756
+        },
+        "phone-1-long": {
+            "status": true,
+            "result": [
+                "2 {f:str.substr(Param0,4,3)}"
+            ],
+            "time": 0.018557
+        },
+        "univ_6-long-repeat": {
+            "status": false
+        },
+        "phone-7-long-repeat": {
+            "status": true,
+            "result": [
+                "3 {f:str.substr(Param0,+(1,str.indexof(Param0,\"-\",0)),3)}"
+            ],
+            "time": 0.236539
+        },
+        "univ_5": {
+            "status": false
+        },
+        "exceljet2": {
+            "status": false
+        },
+        "extract-nth-word-from-text-string": {
+            "status": false
+        },
+        "11440431": {
+            "status": false
+        },
+        "name-combine-4": {
+            "status": true,
+            "result": [
+                "2 {f:str.++(Param1,str.++(\",\",str.++(\" \",str.++(str.substr(Param0,0,1),\".\"))))}"
+            ],
+            "time": 0.231134
+        },
+        "univ_5_short": {
+            "status": false
+        },
+        "43120683": {
+            "status": false
+        },
+        "28627624_1": {
+            "status": false
+        },
+        "count-specific-characters-in-a-cell": {
+            "status": false
+        },
+        "exceljet3": {
+            "status": false
+        }
+    }
+}

@@ -94,7 +94,7 @@ void TopDownContextGraph::print() const {
             std::cout << "  " << edge.weight << ": " << edge.semantics->getName() << "(";
             for (int j = 0; j < edge.v_list.size(); ++j) {
                 if (j) std::cout << ",";
-                std::cout << j;
+                std::cout << edge.v_list[j];
             }
             std::cout << ")" << std::endl;
         }

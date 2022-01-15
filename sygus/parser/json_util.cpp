@@ -2,7 +2,7 @@
 // Created by pro on 2021/12/5.
 //
 
-#include "json_util.h"
+#include "istool/sygus/parser/json_util.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/sygus/theory/basic/string/str.h"
 #include <fstream>
@@ -52,4 +52,10 @@ Data json::getDataFromJson(const Json::Value &value) {
         LOG(FATAL) << "Unfinished type: BitVec";
     }
     TEST_PARSER(false);
+}
+
+void json::saveJsonToFile(const Json::Value& value, const std::string& file_path) {
+    auto* file = fopen(file_path.c_str(), "w");
+    fprintf(file, "%s\n", value.toStyledString().c_str());
+    fclose(file);
 }

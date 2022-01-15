@@ -20,6 +20,9 @@ Data * Env::getConstRef(const std::string &name, const Data& default_value) {
 }
 
 void Env::setConst(const std::string &name, const Data &value) {
+    if (const_pool.find(name) == const_pool.end()) {
+        const_pool[name] = new Data();
+    }
     *(const_pool[name]) = value;
 }
 
@@ -31,6 +34,9 @@ DataList * Env::getConstListRef(const std::string &name) {
 }
 
 void Env::setConst(const std::string &name, const DataList &value) {
+    if (const_list_pool.find(name) == const_list_pool.end()) {
+        const_list_pool[name] = new DataList();
+    }
     *(const_list_pool[name]) = value;
 }
 

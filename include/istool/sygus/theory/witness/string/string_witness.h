@@ -11,8 +11,8 @@
 #define DefineStringWitnessFunction(name) \
 class name ## WitnessFunction: public WitnessFunction { \
 public: \
-    DataList* const_list; \
-    name ## WitnessFunction(DataList* _const_list): const_list(_const_list) {} \
+    DataList* const_list, *input_list; \
+    name ## WitnessFunction(DataList* _const_list, DataList* _input_list): const_list(_const_list), input_list(_input_list) {} \
     virtual WitnessList witness(const WitnessData& oup); \
 };
 
@@ -29,9 +29,9 @@ public:
 
 class StringSubStrWitnessFunction: public WitnessFunction {
 public:
-    DataList* const_list;
+    DataList* const_list, *input_list;
     Data* int_min, *int_max;
-    StringSubStrWitnessFunction(DataList* _const_list, Data* _int_min, Data* _int_max);
+    StringSubStrWitnessFunction(DataList* _const_list, DataList* _input_list, Data* _int_min, Data* _int_max);
     virtual WitnessList witness(const WitnessData& oup);
 };
 
@@ -39,9 +39,9 @@ DefineStringWitnessFunction(StringLen)
 
 class StringIndexOfWitnessFunction: public WitnessFunction {
 public:
-    DataList* const_list;
+    DataList* const_list, *input_list;
     Data* int_min, *int_max;
-    StringIndexOfWitnessFunction(DataList* _const_list, Data* _int_min, Data* _int_max);
+    StringIndexOfWitnessFunction(DataList* _const_list, DataList* _input_list, Data* _int_min, Data* _int_max);
     virtual WitnessList witness(const WitnessData& oup);
 };
 
@@ -53,6 +53,7 @@ DefineStringWitnessFunction(StrToInt)
 namespace theory {
     namespace string {
         extern const std::string KStringConstList;
+        extern const std::string KStringInputList;
         void loadWitnessFunction(Env *env);
     }
 }

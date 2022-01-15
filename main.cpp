@@ -21,7 +21,8 @@
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/sygus/theory/basic/string/str.h"
 #include "istool/sygus/theory/witness/theory_witness.h"
-#include "istool/selector/split/split_selector.h"
+#include "istool/sygus/parser/json_util.h"
+#include "istool/selector/split/z3_split_selector.h"
 #include "glog/logging.h"
 
 FunctionContext CBSInvoker(Specification* spec, TimeGuard* guard) {
@@ -112,7 +113,6 @@ FunctionContext PolyGenSelectorInvoker(Specification* spec, TimeGuard* guard) {
     auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
     auto* solver = new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
     auto res = solver->synthesis(guard);
-    std::cout << v->example_num << std::endl;
     return res;
 }
 
@@ -197,7 +197,83 @@ FunctionContext MaxFlashInvoker(Specification* spec, TimeGuard* guard) {
     return solver->synthesis(guard);
 }
 
+#include <dirent.h>
+#include <cstddef>
+
+std::vector<std::string> getFiles(const std::string& path)
+{
+    DIR *dir = opendir(path.c_str());
+    struct dirent *ptr;
+    std::vector<std::string> res;
+    while ((ptr = readdir(dir)) != NULL)
+    {
+        if (strcmp(ptr->d_name, ".") == 0 || strcmp(ptr->d_name, "..") == 0)
+            continue;
+        else if (ptr->d_type == 8) {
+            std::string name = ptr->d_name;
+            if (name.find(".sl") == std::string::npos) continue;
+            res.push_back(path + ptr->d_name);
+        } else if (ptr->d_type == 10)
+            continue;
+    }
+    closedir(dir);
+    return res;
+}
+
+PProgram parseProgram(const Json::Value& node, const std::unordered_map<std::string, PProgram>& var_map, Env* env) {
+    if (node.isString()) {
+        assert(var_map.find(node.asString()) != var_map.end());
+        return var_map.find(node.asString())->second;
+    }
+    try {
+        auto data = json::getDataFromJson(node);
+        return program::buildConst(data);
+    } catch (ParseError& e) {}
+    std::string op = node[0].asString();
+    auto semantics = env->getSemantics(op);
+    ProgramList sub_list;
+    for (int i = 1; i < node.size(); ++i) {
+        sub_list.push_back(parseProgram(node[i], var_map, env));
+    }
+    return std::make_shared<Program>(semantics, sub_list);
+}
+
+#include <cmath>
+
+void learnModel() {
+    std::string dir = config::KSourcePath + "/tests/string/";
+    std::string model_path = config::KSourcePath + "ext/vsa/model.json";
+    auto file_list = getFiles(dir);
+    ProgramList program_list;
+    for (const auto& path: file_list) {
+        Specification* spec = parser::getSyGuSSpecFromFile(path);
+        Json::Value root = parser::getJsonForSyGuSFile(path);
+        for (auto& item: root) {
+            if (item[0].asString() == "define-fun") {
+                std::unordered_map<std::string, PProgram> var_map;
+                int id = 0;
+                for (auto& var_info: item[2]) {
+                    auto name = var_info[0].asString();
+                    auto type = json::getTypeFromJson(var_info[1]);
+                    var_map[name] = program::buildParam(id++, type);
+                }
+                auto program = parseProgram(item[4], var_map, spec->env.get());
+                std::cout << program->toString() << std::endl;
+                program_list.push_back(program);
+            }
+        }
+    }
+    double default_value = std::log(1000);
+    auto model = new NGramModel(1, ext::vsa::KDefaultAbstracter, default_value);
+    ext::vsa::learn(model, program_list);
+    for (auto& program: program_list) {
+        std::cout << program->toString() << " " << dynamic_cast<TopDownModel*>(model)->getWeight(program.get()) << std::endl;
+    }
+    ext::vsa::saveNGramModel(model, model_path);
+}
+
 int main() {
+    learnModel(); exit(0);
     // std::string file = config::KSourcePath + "/tests/polygen/secondmin.sl";
     std::string file = config::KSourcePath + "/tests/string/phone-10_short.sl";
     auto* spec = parser::getSyGuSSpecFromFile(file);

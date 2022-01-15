@@ -22,7 +22,7 @@ MaxFlash::MaxFlash(Specification *_spec, Verifier* _v, TopDownModel* model, cons
         LOG(FATAL) << "MaxFlash can only synthesize a single program";
     }
     graph = new TopDownContextGraph(spec->info_list[0]->grammar, model);
-
+    graph->print();
     auto* step_data = spec->env->getConstRef(solver::maxflash::KIterProbStepName);
     if (step_data->isNull()) {
         spec->env->setConst(solver::maxflash::KIterProbStepName, BuildData(Int, KDefaultIterStep));
@@ -219,7 +219,8 @@ MaxFlashNode * MaxFlash::initNode(int id, const WitnessTerm &oup_list, int examp
     auto& graph_node = graph->node_list[id];
 
     if (example_id <= 0) {
-        return result = new SingleMaxFlashNode(id, graph_node.lower_bound, oup_list[0]);
+        result = new SingleMaxFlashNode(id, graph_node.lower_bound, oup_list[0]);
+        return result;
     } else {
         auto* r = dynamic_cast<SingleMaxFlashNode*>(initNode(id, {oup_list[oup_list.size() - 1]}, -example_id));
         auto l_oup_list = oup_list; l_oup_list.pop_back();
@@ -258,6 +259,8 @@ FunctionContext MaxFlash::synthesis(TimeGuard *guard) {
         auto current_program = root->best_program;
         res_info = semantics::buildSingleContext(func_name, current_program);
         if (v->verify(res_info, &counter_example)) return res_info;
+        auto io_example = io_space->getIOExample(counter_example);
+        std::cout << current_program->toString() << std::endl;
         insertExample(counter_example);
     }
 }
