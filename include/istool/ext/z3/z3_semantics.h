@@ -15,6 +15,8 @@ struct Z3EncodeRes {
     Z3EncodeRes(const z3::expr& _res, const z3::expr_vector& _cons_list);
 };
 
+typedef std::vector<Z3EncodeRes> Z3EncodeList;
+
 class Z3Semantics {
 public:
     virtual Z3EncodeRes encodeZ3Expr(const std::vector<Z3EncodeRes>& inp_list) = 0;
@@ -35,7 +37,7 @@ DefineZ3Semantics(And)
 DefineZ3Semantics(Or)
 DefineZ3Semantics(Imply)
 
-#define LoadZ3Semantics(ext, name, sem) ext->registerZ3Semantics(name, new Z3 ## sem ## Semantics())
+#define LoadZ3Semantics(ext, name, sem) ext->registerOperator(name, new Z3 ## sem ## Semantics())
 
 class Z3Extension;
 

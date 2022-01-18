@@ -220,24 +220,6 @@ std::vector<std::string> getFiles(const std::string& path)
     return res;
 }
 
-PProgram parseProgram(const Json::Value& node, const std::unordered_map<std::string, PProgram>& var_map, Env* env) {
-    if (node.isString()) {
-        assert(var_map.find(node.asString()) != var_map.end());
-        return var_map.find(node.asString())->second;
-    }
-    try {
-        auto data = json::getDataFromJson(node);
-        return program::buildConst(data);
-    } catch (ParseError& e) {}
-    std::string op = node[0].asString();
-    auto semantics = env->getSemantics(op);
-    ProgramList sub_list;
-    for (int i = 1; i < node.size(); ++i) {
-        sub_list.push_back(parseProgram(node[i], var_map, env));
-    }
-    return std::make_shared<Program>(semantics, sub_list);
-}
-
 #include <cmath>
 
 void learnModel() {
@@ -250,16 +232,7 @@ void learnModel() {
         Json::Value root = parser::getJsonForSyGuSFile(path);
         for (auto& item: root) {
             if (item[0].asString() == "define-fun") {
-                std::unordered_map<std::string, PProgram> var_map;
-                int id = 0;
-                for (auto& var_info: item[2]) {
-                    auto name = var_info[0].asString();
-                    auto type = json::getTypeFromJson(var_info[1]);
-                    var_map[name] = program::buildParam(id++, type);
-                }
-                auto program = parseProgram(item[4], var_map, spec->env.get());
-                std::cout << program->toString() << std::endl;
-                program_list.push_back(program);
+                program_list.push_back(json::getProgramFromJson(item, spec->env.get()));
             }
         }
     }

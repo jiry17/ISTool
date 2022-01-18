@@ -6,12 +6,14 @@
 #define ISTOOL_VSA_EXTENSION_H
 
 #include "istool/basic/env.h"
-#include "istool/ext/vsa/witness.h"
+#include "witness_manager.h"
+#include <list>
 
 class VSAExtension: public Extension {
 public:
-    std::unordered_map<std::string, WitnessFunction*> witness_pool;
+    std::list<WitnessManager*> manager_list;
     VSAExtension();
+    void registerWitnessManager(WitnessManager* manager);
     void registerWitnessFunction(const std::string& name, WitnessFunction* semantics);
     WitnessList getWitness(Semantics* semantics, const WitnessData& oup, const DataList& inp_list) const;
     virtual ~VSAExtension();

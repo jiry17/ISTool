@@ -47,6 +47,7 @@ namespace type {
     std::string typeList2String(const TypeList& type_list);
     bool equal(const PType& t1, const PType& t2);
     PType getTBool();
+    PType getTVarA();
 }
 
 #endif //ISTOOL_TYPE_H

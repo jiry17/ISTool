@@ -34,12 +34,12 @@ IOExample Z3IOExampleSpace::getIOExample(const Example &example) {
     for (const auto& inp: inp_list) {
         auto val = program::run(inp.get(), example);
         z3_inp_list.push_back(ext->buildConst(val));
-    }
+    } 
     auto oup_type = sig_map.find(func_name)->second.second;
     auto oup_var = ext->buildVar(oup_type.get(), "oup");
     z3_inp_list.push_back(oup_var);
     z3::solver s(ext->ctx);
-    auto encode_res = ext->encodeZ3ExprForProgram(oup_cons.get(), z3_inp_list);
+    auto encode_res = ext->encodeZ3ExprForProgram(oup_cons.get(), ext::z3::z3Vector2EncodeList(z3_inp_list));
     s.add(encode_res.res); s.add(z3::mk_and(encode_res.cons_list));
     auto res = s.check();
     if (res != z3::sat) {

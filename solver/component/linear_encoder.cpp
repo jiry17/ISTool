@@ -97,7 +97,7 @@ namespace {
     }
 }
 
-Z3EncodeRes LinearEncoder::encodeExample(const z3::expr_vector &inp_list, const std::string &prefix) const {
+Z3EncodeRes LinearEncoder::encodeExample(const Z3EncodeList &inp_list, const std::string &prefix) const {
     base->indexSymbol();
     // build value component
     std::vector<ValueComponent> value_component_list;

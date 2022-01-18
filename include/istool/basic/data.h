@@ -19,6 +19,7 @@ public:
     std::string toString() const;
     bool operator == (const Data& d) const;
     bool operator <= (const Data& d) const;
+    bool operator < (const Data& d) const;
     Value* get() const;
     Type* getType() const;
     PType getPType() const;

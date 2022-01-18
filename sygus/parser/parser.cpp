@@ -6,6 +6,8 @@
 #include "istool/sygus/parser/json_util.h"
 #include "istool/sygus/theory/basic/theory_semantics.h"
 #include "istool/sygus/theory/z3/theory_z3_semantics.h"
+#include "istool/ext/composed_semantics/composed_semantics.h"
+#include "istool/ext/composed_semantics/composed_z3_semantics.h"
 #include "istool/basic/config.h"
 #include "istool/ext/z3/z3_example_space.h"
 #include "glog/logging.h"
@@ -250,57 +252,6 @@ namespace {
         }
         return result;
     }
-
-    Json::Value _unfoldFunction(const Json::Value& value, const std::unordered_map<std::string, Json::Value>& func_map) {
-        if (value.isString()) {
-            auto name = value.asString();
-            if (func_map.find(name) != func_map.end()) {
-                return func_map.find(name)->second;
-            }
-            return value;
-        }
-        try {
-            auto data = json::getDataFromJson(value);
-            return value;
-        } catch (ParseError& e) {}
-        Json::Value result;
-        for (const auto& sub_node: value) {
-            result.append(_unfoldFunction(sub_node, func_map));
-        }
-        return result;
-    }
-
-    Json::Value _unfoldFunction(const std::vector<Json::Value>& input_list, const Json::Value& func_spec) {
-        auto param_list = func_spec[2];
-        std::unordered_map<std::string, Json::Value> param_map;
-        for (int i = 0; i < param_list.size(); ++i) {
-            auto name = param_list[i][0].asString();
-            param_map[name] = input_list[i];
-        }
-        return _unfoldFunction(func_spec[4], param_map);
-    }
-
-    Json::Value _replaceAuxFunctions(const Json::Value& cons, const std::unordered_map<std::string, Json::Value>& func_map) {
-        if (cons.isString()) return cons;
-        try {
-            auto data = json::getDataFromJson(cons);
-            return cons;
-        } catch (ParseError& e) {}
-        assert(cons.isArray() && cons.size() > 1);
-        std::string name = cons[0].asString();
-        if (func_map.find(name) != func_map.end()) {
-            std::vector<Json::Value> param_list;
-            for (int i = 1; i < cons.size(); ++i) {
-                param_list.push_back(_replaceAuxFunctions(cons[i], func_map));
-            }
-            return _replaceAuxFunctions(_unfoldFunction(param_list, func_map.find(name)->second), func_map);
-        }
-        Json::Value res;
-        for (const auto& sub_node: cons) {
-            res.append(_replaceAuxFunctions(sub_node, func_map));
-        }
-        return res;
-    }
 }
 
 Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
@@ -311,6 +262,13 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     auto theory = getTheory(theory_list[0][1].asString());
     sygus::initSyGuSExtension(env.get(), theory);
     sygus::loadSyGuSTheories(env.get(), theory::loadBasicSemantics);
+
+    auto declare_fun_list = getEntriesViaName(root, "define-fun");
+    for (auto& entry: declare_fun_list) {
+        auto name = entry[1].asString();
+        PProgram program = json::getProgramFromJson(entry, env.get());
+        env->setSemantics(name, std::make_shared<ComposedSemantics>(program, entry[2].size(), name));
+    }
 
     auto fun_list = getEntriesViaName(root, "synth-fun");
     std::vector<PSynthInfo> info_list;
@@ -344,12 +302,8 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     }
 
     sygus::loadSyGuSTheories(env.get(), theory::loadZ3Semantics);
-
-    auto declare_fun_list = getEntriesViaName(root, "define-fun");
-    std::unordered_map<std::string, Json::Value> func_map;
-    for (auto& entry: declare_fun_list) {
-        auto name = entry[1].asString();
-        func_map[name] = entry;
+    if (!declare_fun_list.empty()) {
+        ext::z3::registerComposedManager(ext::z3::getExtension(env.get()));
     }
 
     TypeList var_type_list;
@@ -364,8 +318,7 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     ProgramList cons_program_list;
     std::map<std::string, PProgram> cache;
     for (auto& entry: cons_list) {
-        auto cons = _replaceAuxFunctions(entry[1], func_map);
-        cons_program_list.push_back(buildConsProgram(cons, var_info_map, syn_info_map, cache, env.get()));
+        cons_program_list.push_back(buildConsProgram(entry[1], var_info_map, syn_info_map, cache, env.get()));
     }
     if (cons_program_list.empty()) {
         LOG(FATAL) << "Constraint should not be empty";

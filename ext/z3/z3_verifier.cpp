@@ -26,16 +26,14 @@ Z3EncodeRes Z3Verifier::encodeConsProgram(const PProgram &program, const Functio
         if (info.find(name) == info.end()) {
             LOG(FATAL) << "Cannot find program " << name;
         }
-        z3::expr_vector sub_param_list(param_list.ctx());
-        for (auto& sub: sub_list) sub_param_list.push_back(sub.res);
-        auto encode_res = ext->encodeZ3ExprForProgram(info.find(name)->second.get(), sub_param_list);
+        auto encode_res = ext->encodeZ3ExprForProgram(info.find(name)->second.get(), sub_list);
         for (auto& sub: sub_list) {
             for (const auto& cons: sub.cons_list) encode_res.cons_list.push_back(cons);
         }
         cache.insert(std::make_pair(program.get(), encode_res));
         return encode_res;
     }
-    auto encode_res = ext->encodeZ3ExprForSemantics(program->semantics.get(), sub_list, param_list);
+    auto encode_res = ext->encodeZ3ExprForSemantics(program->semantics.get(), sub_list, ext::z3::z3Vector2EncodeList(param_list));
     cache.insert(std::make_pair(program.get(), encode_res));
     return encode_res;
 }

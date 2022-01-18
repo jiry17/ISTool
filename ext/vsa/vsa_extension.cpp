@@ -7,36 +7,36 @@
 
 VSAExtension::VSAExtension() {
     ext::vsa::loadLogicWitness(this);
+    manager_list.push_back(new BasicWitnessManager());
 }
 
 VSAExtension::~VSAExtension() {
-    for (const auto& info: witness_pool) {
-        delete info.second;
-    }
+    for (auto* m: manager_list) delete m;
 }
 
+void VSAExtension::registerWitnessManager(WitnessManager *manager) {
+    manager_list.push_front(manager);
+}
 void VSAExtension::registerWitnessFunction(const std::string &name, WitnessFunction *semantics) {
-    witness_pool[name] = semantics;
+    OperatorWitnessManager* om = nullptr;
+    for (auto* m: manager_list) {
+        om = dynamic_cast<OperatorWitnessManager*>(m);
+        if (om) break;
+    }
+    if (!om) {
+        om = new OperatorWitnessManager();
+        registerWitnessManager(om);
+    }
+    om->registerWitness(name, semantics);
 }
 
 WitnessList VSAExtension::getWitness(Semantics *semantics, const WitnessData &oup, const DataList &inp_list) const {
-    auto* cs = dynamic_cast<ConstSemantics*>(semantics);
-    if (cs) {
-        if (oup->isInclude(cs->w)) return {{}};
-        return {};
+    for (auto* m: manager_list) {
+        if (m->isMatch(semantics)) {
+            return m->getWitness(semantics, oup, inp_list);
+        }
     }
-    auto* ps = dynamic_cast<ParamSemantics*>(semantics);
-    if (ps) {
-        if (oup->isInclude(inp_list[ps->id])) return {{}};
-        return {};
-    }
-    std::string name = semantics->getName();
-    if (witness_pool.find(name) == witness_pool.end()) {
-        LOG(FATAL) << "VSA ext: unsupported semantics " << name;
-    }
-    auto* wf = witness_pool.find(name)->second;
-    auto res = wf->witness(oup);
-    return res;
+    LOG(FATAL) << "Witness: unsupported semantics " << semantics->name;
 }
 
 const std::string KVSAName = "VSA";

@@ -34,7 +34,7 @@ bool Z3SplitSelector::verify(const FunctionContext &res, Example *counter_exampl
     z3::expr_vector inp_list(ext->ctx);
     for (int i = 0; i < io_space->inp_list.size(); ++i) {
         auto var = ext->buildVar(info->inp_type_list[i].get(), "Input" + std::to_string(i));
-        auto encode_res = ext->encodeZ3ExprForProgram(io_space->inp_list[i].get(), param_list);
+        auto encode_res = ext->encodeZ3ExprForProgram(io_space->inp_list[i].get(), ext::z3::z3Vector2EncodeList(param_list));
         if (!encode_res.cons_list.empty()) {
             LOG(FATAL) << "Z3SplitSelector require the input program always to be valid";
         }
@@ -44,7 +44,7 @@ bool Z3SplitSelector::verify(const FunctionContext &res, Example *counter_exampl
     z3::expr_vector seed_oup_list(ext->ctx), seed_valid_list(ext->ctx);
     for (int i = 0; i < seed_list.size(); ++i) {
         auto oup_var = ext->buildVar(info->oup_type.get(), "Output" + std::to_string(i));
-        auto encode_res = ext->encodeZ3ExprForProgram(seed_list[i].get(), inp_list);
+        auto encode_res = ext->encodeZ3ExprForProgram(seed_list[i].get(), ext::z3::z3Vector2EncodeList(inp_list));
         seed_oup_list.push_back(oup_var); solver.add(oup_var == encode_res.res);
         if (encode_res.cons_list.empty()) {
             seed_valid_list.push_back(ext->ctx.bool_val(true));

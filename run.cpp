@@ -18,6 +18,7 @@
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
 #include "istool/selector/baseline/clia_random_selector.h"
 #include "istool/selector/split/finite_split_selector.h"
+#include "istool/ext/composed_semantics/composed_witness.h"
 
 typedef std::pair<int, FunctionContext> SynthesisResult;
 
@@ -86,9 +87,11 @@ SynthesisResult invokeMaxFlash(Specification* spec) {
     auto* sv = new DirectSelector(v);
 
     sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+    ext::vsa::registerDefaultComposedManager(ext::vsa::getExtension(spec->env.get()));
 
-    std::string model_path = config::KSourcePath + "ext/vsa/model.json";
-    auto* model = ext::vsa::loadDefaultNGramModel(model_path);
+    //std::string model_path = config::KSourcePath + "ext/vsa/model.json";
+    //auto* model = ext::vsa::loadDefaultNGramModel(model_path);
+    auto* model = ext::vsa::getSizeModel();
     auto* solver = new MaxFlash(spec, sv, model, prepare);
     auto res = solver->synthesis(nullptr);
     return {sv->example_count, res};
@@ -97,6 +100,7 @@ SynthesisResult invokeMaxFlash(Specification* spec) {
 SynthesisResult invokeSplitMaxFlash(Specification* spec) {
     auto* v = new FiniteSplitSelector(spec, 1000);
     sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+    ext::vsa::registerDefaultComposedManager(ext::vsa::getExtension(spec->env.get()));
 
     std::string model_path = config::KSourcePath + "ext/vsa/model.json";
     auto* model = ext::vsa::loadDefaultNGramModel(model_path);
@@ -113,10 +117,11 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        //benchmark_name = "/tmp/tmp.hABJQGVQ89/tests/polygen/qm_neg_eq_5.sl";
-        benchmark_name = "/tmp/tmp.hABJQGVQ89/tests/string/cell-contains-number.sl";
+        benchmark_name = "/tmp/tmp.hABJQGVQ89/tests/polygen/mts.sl";
+        solver_name = "polygen";
+        //benchmark_name = "/tmp/tmp.hABJQGVQ89/tests/test.sl";
+        //solver_name = "maxflash";
         output_name = "/tmp/629453237.out";
-        solver_name = "maxflash";
     }
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
     SynthesisResult result;

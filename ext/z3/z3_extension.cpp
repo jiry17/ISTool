@@ -18,14 +18,14 @@ std::string Z3EncodeRes::toString() const {
 
 Z3Extension::Z3Extension() {
     ext::z3::loadLogicSemantics(this);
+    semantics_list.push_back(new BasicZ3SemanticsManager(this));
 }
 
 void Z3Extension::registerZ3Type(Z3Type *util) {
     util_list.push_front(util);
 }
-
-void Z3Extension::registerZ3Semantics(const std::string &name, Z3Semantics *semantics) {
-    semantics_pool[name] = semantics;
+void Z3Extension::registerSemanticsManager(Z3SemanticsManager *manager) {
+    semantics_list.push_front(manager);
 }
 
 Z3Type * Z3Extension::getZ3Type(Type *type) const {
@@ -45,28 +45,16 @@ z3::expr Z3Extension::buildVar(Type *type, const std::string &name) {
     return util->buildVar(type, name, ctx);
 }
 
-Z3Semantics * Z3Extension::getZ3Semantics(Semantics *semantics) const {
-    std::string name = semantics->getName();
-    if (semantics_pool.find(name) == semantics_pool.end()) {
-        LOG(INFO) << "Z3 ext: unsupported semantics " << name;
+Z3EncodeRes Z3Extension::encodeZ3ExprForSemantics(Semantics *semantics, const std::vector<Z3EncodeRes> &inp_list, const Z3EncodeList &param_list) {
+    for (auto* manager: semantics_list) {
+        if (manager->isMatch(semantics)) {
+            return manager->encodeZ3ExprForSemantics(semantics, inp_list, param_list);
+        }
     }
-    return semantics_pool.find(name)->second;
+    LOG(FATAL) << "Z3: unsupported semantics " << semantics->name;
 }
 
-Z3EncodeRes Z3Extension::encodeZ3ExprForSemantics(Semantics *semantics, const std::vector<Z3EncodeRes> &inp_list, const z3::expr_vector &param_list) {
-    auto* ps = dynamic_cast<ParamSemantics*>(semantics);
-    if (ps) {
-        return {param_list[ps->id], {ctx}};
-    }
-    auto* cs = dynamic_cast<ConstSemantics*>(semantics);
-    if (cs) {
-        return {buildConst(cs->w), {ctx}};
-    }
-    auto* zs = getZ3Semantics(semantics);
-    return zs->encodeZ3Expr(inp_list);
-}
-
-Z3EncodeRes Z3Extension::encodeZ3ExprForProgram(Program *program, const z3::expr_vector &param_list) {
+Z3EncodeRes Z3Extension::encodeZ3ExprForProgram(Program *program, const Z3EncodeList &param_list) {
     std::vector<Z3EncodeRes> inp_list;
     for (const auto& sub: program->sub_list) {
         inp_list.push_back(encodeZ3ExprForProgram(sub.get(), param_list));
@@ -81,9 +69,7 @@ Data Z3Extension::getValueFromModel(const z3::model &model, const z3::expr &expr
 
 Z3Extension::~Z3Extension() {
     for (auto* util: util_list) delete util;
-    for (auto& sem_info: semantics_pool) {
-        delete sem_info.second;
-    }
+    for (auto* manager: semantics_list) delete manager;
 }
 
 void Z3Extension::setTimeOut(z3::solver &solver, TimeGuard *guard) {
@@ -108,4 +94,25 @@ Z3Extension * ext::z3::getExtension(Env *env) {
     auto* z3_ext = new Z3Extension();
     env->registerExtension(KZ3Name, z3_ext);
     return z3_ext;
+}
+
+void Z3Extension::registerOperator(const std::string &name, Z3Semantics *semantics) {
+    OperatorZ3SemanticsManager* m = nullptr;
+    for (auto* manager: semantics_list) {
+        m = dynamic_cast<OperatorZ3SemanticsManager*>(manager);
+        if (m) break;
+    }
+    if (!m) {
+        m = new OperatorZ3SemanticsManager();
+        registerSemanticsManager(m);
+    }
+    m->registerZ3Semantics(name, semantics);
+}
+
+Z3EncodeList ext::z3::z3Vector2EncodeList(const ::z3::expr_vector &expr_list) {
+    Z3EncodeList res; ::z3::expr_vector empty_list(expr_list.ctx());
+    for (const auto& expr: expr_list) {
+        res.emplace_back(expr, empty_list);
+    }
+    return res;
 }

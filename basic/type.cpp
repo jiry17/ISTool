@@ -41,6 +41,12 @@ PType type::getTBool() {
     return bool_type;
 }
 
+PType type::getTVarA() {
+    static PType var_type;
+    if (!var_type) var_type = std::make_shared<TVar>("a");
+    return var_type;
+}
+
 std::string type::typeList2String(const TypeList &type_list) {
     std::string res = "[";
     for (int i = 0; i < type_list.size(); ++i) {

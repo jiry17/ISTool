@@ -6,6 +6,7 @@
 #define ISTOOL_JSON_UTIL_H
 
 #include "istool/basic/data.h"
+#include "istool/basic/program.h"
 #include "json/json.h"
 #include <exception>
 
@@ -19,6 +20,7 @@ namespace json {
     PType getTypeFromJson(const Json::Value& value);
     Data getDataFromJson(const Json::Value& value);
     void saveJsonToFile(const Json::Value& value, const std::string& file_path);
+    PProgram getProgramFromJson(const Json::Value& value, Env* env);
 }
 
 

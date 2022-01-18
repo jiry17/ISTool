@@ -74,8 +74,7 @@ Data IntModSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
 LqSemantics::LqSemantics(): NormalSemantics("<", TBOOL, {TVARA, TVARA}) {
 }
 Data LqSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
-    bool w = (inp_list[0] <= inp_list[1]) && !(inp_list[0] == inp_list[1]);
-    return Data(std::make_shared<BoolValue>(w));
+    return Data(std::make_shared<BoolValue>(inp_list[0] < inp_list[1]));
 }
 
 LeqSemantics::LeqSemantics(): NormalSemantics("<=", TBOOL, {TVARA, TVARA}) {
@@ -87,8 +86,7 @@ Data LeqSemantics::run(DataList &&inp_list, ExecuteInfo* info) {
 GqSemantics::GqSemantics(): NormalSemantics(">", TBOOL, {TVARA, TVARA}) {
 }
 Data GqSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
-    bool w = (inp_list[1] <= inp_list[0]) && !(inp_list[0] == inp_list[1]);
-    return Data(std::make_shared<BoolValue>(w));
+    return Data(std::make_shared<BoolValue>(inp_list[1] < inp_list[0]));
 }
 
 GeqSemantics::GeqSemantics(): NormalSemantics(">=", TBOOL, {TVARA, TVARA}) {

@@ -27,7 +27,7 @@ public:
     LinearEncoder(Grammar* _grammar, Env* _env, int _factor = 1, const std::map<std::string, int>& _special_usage = {});
     virtual void enlarge();
     virtual z3::expr_vector encodeStructure(const std::string& prefix);
-    virtual Z3EncodeRes encodeExample(const z3::expr_vector &inp_list, const std::string& prefix) const;
+    virtual Z3EncodeRes encodeExample(const Z3EncodeList &inp_list, const std::string& prefix) const;
     virtual PProgram programBuilder(const z3::model& model) const;
     virtual ~LinearEncoder() = default;
 };

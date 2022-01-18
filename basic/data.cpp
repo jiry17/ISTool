@@ -20,6 +20,10 @@ bool Data::operator==(const Data &d) const {
     return value->equal(d.value.get());
 }
 
+bool Data::operator < (const Data& d) const {
+    return (*this) <= d && !(*this == d);
+}
+
 bool Data::operator <= (const Data& d) const {
     auto* cv1 = dynamic_cast<ComparableValue*>(value.get());
     auto* cv2 = dynamic_cast<ComparableValue*>(d.value.get());

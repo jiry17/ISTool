@@ -10,6 +10,7 @@
 class WitnessFunction {
 public:
     virtual WitnessList witness(const WitnessData& oup) = 0;
+    virtual ~WitnessFunction() = default;
 };
 
 #define DefineWitnessFunction(name) \

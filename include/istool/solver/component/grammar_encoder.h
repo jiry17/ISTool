@@ -16,7 +16,7 @@ public:
     Z3GrammarEncoder(Grammar* _base, Env* _ctx);
     virtual void enlarge() = 0;
     virtual z3::expr_vector encodeStructure(const std::string& prefix = "") = 0;
-    virtual Z3EncodeRes encodeExample(const z3::expr_vector& inp_list, const std::string& prefix = "") const = 0;
+    virtual Z3EncodeRes encodeExample(const Z3EncodeList& inp_list, const std::string& prefix = "") const = 0;
     virtual PProgram programBuilder(const z3::model& model) const = 0;
     virtual ~Z3GrammarEncoder() = default;
 };

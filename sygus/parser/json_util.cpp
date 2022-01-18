@@ -2,6 +2,7 @@
 // Created by pro on 2021/12/5.
 //
 
+#include "istool/basic/env.h"
 #include "istool/sygus/parser/json_util.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/sygus/theory/basic/string/str.h"
@@ -58,4 +59,39 @@ void json::saveJsonToFile(const Json::Value& value, const std::string& file_path
     auto* file = fopen(file_path.c_str(), "w");
     fprintf(file, "%s\n", value.toStyledString().c_str());
     fclose(file);
+}
+
+namespace {
+    PProgram _parseProgram(const Json::Value& node, const std::unordered_map<std::string, PProgram>& var_map, Env* env) {
+        if (node.isString()) {
+            assert(var_map.find(node.asString()) != var_map.end());
+            return var_map.find(node.asString())->second;
+        }
+        try {
+            auto data = json::getDataFromJson(node);
+            return program::buildConst(data);
+        } catch (ParseError& e) {}
+        std::string op = node[0].asString();
+        auto semantics = env->getSemantics(op);
+        ProgramList sub_list;
+        for (int i = 1; i < node.size(); ++i) {
+            sub_list.push_back(_parseProgram(node[i], var_map, env));
+        }
+        return std::make_shared<Program>(semantics, sub_list);
+    }
+}
+
+PProgram json::getProgramFromJson(const Json::Value& node, Env* env) {
+    TEST_PARSER(node.isArray() && node.size() == 5);
+    TEST_PARSER(node[0].isString() && node[0].asString() == "define-fun");
+
+    std::unordered_map<std::string, PProgram> var_map;
+    int id = 0;
+    for (auto& var_info: node[2]) {
+        auto name = var_info[0].asString();
+        auto type = json::getTypeFromJson(var_info[1]);
+        var_map[name] = program::buildParam(id++, type);
+    }
+    auto program = _parseProgram(node[4], var_map, env);
+    return program;
 }

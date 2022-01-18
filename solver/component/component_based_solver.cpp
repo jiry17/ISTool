@@ -37,11 +37,7 @@ Z3EncodeRes ComponentBasedSynthesizer::encodeExample(Program *program, const Exa
             LOG(FATAL) << "Cannot find program " << iv->name;
         }
         auto* encoder = encoder_map.find(iv->name)->second;
-        z3::expr_vector sub_values(ext->ctx);
-        for (auto& sub_res: res_list) {
-            sub_values.push_back(sub_res.res);
-        }
-        auto res = encoder->encodeExample(sub_values, prefix + std::to_string(feature_id) + "@");
+        auto res = encoder->encodeExample(res_list, prefix + std::to_string(feature_id) + "@");
         for (auto& sub_res: res_list) {
             for (const auto& cons: sub_res.cons_list) {
                 res.cons_list.push_back(cons);
@@ -52,7 +48,7 @@ Z3EncodeRes ComponentBasedSynthesizer::encodeExample(Program *program, const Exa
     }
     z3::expr_vector param_list(ext->ctx);
     for (const auto& d: example) param_list.push_back(ext->buildConst(d));
-    auto res = ext->encodeZ3ExprForSemantics(program->semantics.get(), res_list, param_list);
+    auto res = ext->encodeZ3ExprForSemantics(program->semantics.get(), res_list, ext::z3::z3Vector2EncodeList(param_list));
     cache.insert({feature, res});
     return res;
 }

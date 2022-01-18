@@ -10,9 +10,7 @@ IntValue::IntValue(int _w): w(_w), TypedValue(theory::clia::getTInt()) {
 }
 bool IntValue::equal(Value *value) const {
     auto* iv = dynamic_cast<IntValue*>(value);
-    if (!iv) {
-        LOG(FATAL) << "Expect IntValue, but get" << value->toString();
-    }
+    if (!iv) return false;
     return iv->w == w;
 }
 std::string IntValue::toString() const {

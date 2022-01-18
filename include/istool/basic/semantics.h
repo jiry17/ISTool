@@ -46,6 +46,7 @@ public:
     FullExecutedSemantics(const std::string& name);
     Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo* info);
     virtual Data run(DataList&& inp_list, ExecuteInfo* info) = 0;
+    virtual ~FullExecutedSemantics() = default;
 };
 
 class NormalSemantics: public FullExecutedSemantics, public TypedSemantics {
