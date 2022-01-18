@@ -27,23 +27,6 @@ Data CurrySemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     return ext::ho::buildAnonymousData(f);
 }
 
-TmpExecuteInfo::TmpExecuteInfo(const DataList &param_value): ExecuteInfo(param_value) {}
-void TmpExecuteInfo::clear(const std::string &name) {
-    auto it = tmp_value_map.find(name);
-    assert(it != tmp_value_map.end());
-    tmp_value_map.erase(it);
-}
-Data TmpExecuteInfo::get(const std::string &name) {
-    auto it = tmp_value_map.find(name);
-    assert(it != tmp_value_map.end());
-    return it->second;
-}
-void TmpExecuteInfo::set(const std::string &name, const Data &value) {
-    auto it = tmp_value_map.find(name);
-    assert(it == tmp_value_map.end());
-    tmp_value_map[name] = value;
-}
-
 TmpSemantics::TmpSemantics(const std::string &_name): FullExecutedSemantics(_name) {}
 Data TmpSemantics::run(DataList &&inp, ExecuteInfo *info) {
     auto* ti = dynamic_cast<TmpExecuteInfo*>(info);

@@ -8,17 +8,12 @@
 #include <exception>
 #include <unordered_map>
 #include "data.h"
+#include "execute_info.h"
 #include "z3++.h"
 #include "type.h"
 
-class ExecuteInfo {
-public:
-    DataList param_value;
-    ExecuteInfo(const DataList& _param_value);
-    virtual ~ExecuteInfo() = default;
-};
-
 class Program;
+class Env;
 
 struct SemanticsError: public std::exception {
 };
@@ -70,22 +65,10 @@ public:
     ~ConstSemantics() = default;
 };
 
-class FunctionContext: public std::unordered_map<std::string, std::shared_ptr<Program>> {
-public:
-    std::string toString() const;
-};
-
-class FunctionContextInfo: public ExecuteInfo {
-public:
-    FunctionContext context;
-    FunctionContextInfo(const DataList& _param, const FunctionContext& _context);
-    std::shared_ptr<Program> getFunction(const std::string& name) const;
-    virtual ~FunctionContextInfo() = default;
-};
-
 class InvokeSemantics: public NormalSemantics {
 public:
-    InvokeSemantics(const std::string& _func_name, const PType& oup_type, const TypeList& inp_list);
+    Env* env;
+    InvokeSemantics(const std::string& _func_name, const PType& oup_type, const TypeList& inp_list, Env* _env);
     virtual Data run(DataList&&, ExecuteInfo* info);
     virtual ~InvokeSemantics() = default;
 };
@@ -121,7 +104,6 @@ public:
     virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo* info);
 };
 
-class Env;
 #define LoadSemantics(name, sem) env->setSemantics(name, std::make_shared<sem ## Semantics>())
 
 namespace semantics {

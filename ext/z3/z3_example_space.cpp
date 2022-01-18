@@ -6,7 +6,7 @@
 #include "glog/logging.h"
 
 Z3ExampleSpace::Z3ExampleSpace(const PProgram &_cons_prog, Env *_env, const TypeList& _type_list, const std::unordered_map<std::string, Signature> &_sig_map):
-        ExampleSpace(_cons_prog), ext(ext::z3::getExtension(_env)), type_list(_type_list), sig_map(_sig_map) {
+        ExampleSpace(_cons_prog, _env), ext(ext::z3::getExtension(_env)), type_list(_type_list), sig_map(_sig_map) {
 }
 Z3IOExampleSpace::Z3IOExampleSpace(const PProgram &_cons_prog, Env *_env, const TypeList& _type_list, const std::unordered_map<std::string, Signature> &sig_map,
         const std::string& _name, const ProgramList &_inp_list, const PProgram &_oup_cons):
@@ -19,10 +19,10 @@ bool Z3IOExampleSpace::satisfyExample(const FunctionContext &info, const Example
      }
      auto* p = info.find(func_name)->second.get();
      DataList inp_vals;
-     for (const auto& inp: inp_list) inp_vals.push_back(program::run(inp.get(), example));
-     Data oup = program::run(p, example);
+     for (const auto& inp: inp_list) inp_vals.push_back(env->run(inp.get(), example));
+     Data oup = env->run(p, example);
      auto full_inp = example; full_inp.push_back(oup);
-     auto res = program::run(oup_cons.get(), full_inp);
+     auto res = env->run(oup_cons.get(), full_inp);
      auto* bv = dynamic_cast<BoolValue*>(res.get());
      return bv->w;
 }
@@ -32,7 +32,7 @@ IOExample Z3IOExampleSpace::getIOExample(const Example &example) {
     if (cache.find(feature) != cache.end()) return cache[feature];
     z3::expr_vector z3_inp_list(ext->ctx);
     for (const auto& inp: inp_list) {
-        auto val = program::run(inp.get(), example);
+        auto val = env->run(inp.get(), example);
         z3_inp_list.push_back(ext->buildConst(val));
     } 
     auto oup_type = sig_map.find(func_name)->second.second;

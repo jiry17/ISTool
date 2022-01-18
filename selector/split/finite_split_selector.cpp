@@ -29,7 +29,7 @@ int FiniteSplitSelector::getCost(const DataList &inp) const {
     std::unordered_map<std::string, int> result_map;
     int cost = 0;
     for (const auto& p: seed_list) {
-        auto res = program::run(p.get(), inp);
+        auto res = example_space->env->run(p.get(), inp);
         auto feature = res.toString();
         cost = std::max(cost, result_map[feature]++);
     }

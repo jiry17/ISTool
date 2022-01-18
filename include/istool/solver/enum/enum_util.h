@@ -27,7 +27,8 @@ public:
     ProgramChecker is_runnable;
     std::unordered_map<std::string, ExampleList> example_pool;
     std::unordered_set<std::string> visited_set;
-    OBEOptimizer(const ProgramChecker & _is_runnable, const std::unordered_map<std::string, ExampleList>& _pool);
+    Env* env;
+    OBEOptimizer(const ProgramChecker & _is_runnable, const std::unordered_map<std::string, ExampleList>& _pool, Env* _env);
     virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p);
     virtual void clear();
     virtual ~OBEOptimizer() = default;

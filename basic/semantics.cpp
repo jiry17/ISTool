@@ -8,9 +8,6 @@
 #include <map>
 #include "glog/logging.h"
 
-ExecuteInfo::ExecuteInfo(const DataList &_param_value): param_value(_param_value) {
-}
-
 Semantics::Semantics(const std::string &_name): name(_name) {
 }
 std::string Semantics::getName() {
@@ -64,25 +61,14 @@ std::string FunctionContext::toString() const {
     return res;
 }
 
-FunctionContextInfo::FunctionContextInfo(const DataList &_param, const FunctionContext &_context):
-    ExecuteInfo(_param), context(_context) {
-}
-std::shared_ptr<Program> FunctionContextInfo::getFunction(const std::string &name) const {
-    if (context.find(name) == context.end()) {
-        return nullptr;
-    }
-    return context.find(name)->second;
-}
-
-InvokeSemantics::InvokeSemantics(const std::string &_func_name, const PType &oup_type, const TypeList &inp_list):
-    NormalSemantics(_func_name, std::move(oup_type), std::move(inp_list)) {
+InvokeSemantics::InvokeSemantics(const std::string &_func_name, const PType &oup_type, const TypeList &inp_list, Env* _env):
+    NormalSemantics(_func_name, std::move(oup_type), std::move(inp_list)), env(_env) {
 }
 
 Data InvokeSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
-    auto* f_info = dynamic_cast<FunctionContextInfo*>(info);
-    auto p = f_info->getFunction(name);
+    auto p = info->func_context[name];
     if (!p) throw SemanticsError();
-    return program::run(p.get(), inp_list);
+    return env->run(p.get(), inp_list);
 }
 
 #define TBOOL type::getTBool()

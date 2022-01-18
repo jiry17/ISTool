@@ -71,7 +71,7 @@ FunctionContext OBESolver::synthesis(const std::vector<Example> &example_list, T
             for (const auto& example: example_list) {
                 Example invoke_example;
                 for (const auto& sub: p->sub_list) {
-                    invoke_example.push_back(program::run(sub.get(), example));
+                    invoke_example.push_back(spec->env->run(sub.get(), example));
                 }
                 auto feature = data::dataList2String(invoke_example);
                 if (feature_set.find(feature) == feature_set.end()) {
@@ -84,8 +84,9 @@ FunctionContext OBESolver::synthesis(const std::vector<Example> &example_list, T
         example_pool[name] = res;
     }
 
-    auto* obe_optimizer = new OBEOptimizer(is_runnable, example_pool);
-    auto* finite_example_space = new FiniteExampleSpace(spec->example_space->cons_program, example_list);
+    Env* env = spec->env.get();
+    auto* obe_optimizer = new OBEOptimizer(is_runnable, example_pool, env);
+    auto* finite_example_space = new FiniteExampleSpace(spec->example_space->cons_program, example_list, env);
     auto* finite_verifier = new FiniteExampleVerifier(finite_example_space);
 
     EnumConfig c(finite_verifier, obe_optimizer, guard);

@@ -142,7 +142,7 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
     for (const auto& program: program_list) {
         DataList output_list;
         for (const auto& io_example: io_example_list) {
-            output_list.push_back(program::run(program.get(), io_example.first));
+            output_list.push_back(spec->env->run(program.get(), io_example.first));
         }
         auto feature = data::dataList2String(output_list);
         if (cache.find(feature) == cache.end()) {

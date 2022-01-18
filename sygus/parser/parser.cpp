@@ -184,7 +184,7 @@ namespace {
             auto syn_info = syn_info_map.find(name)->second;
             PType oup_type = syn_info->oup_type;
             TypeList inp_type_list = syn_info->inp_type_list;
-            sem = std::make_shared<InvokeSemantics>(syn_info->name, std::move(oup_type), std::move(inp_type_list));
+            sem = std::make_shared<InvokeSemantics>(syn_info->name, std::move(oup_type), std::move(inp_type_list), env);
         } else {
             sem = env->getSemantics(name);
         }

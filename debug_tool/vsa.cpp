@@ -38,12 +38,12 @@ namespace {
     }
 }
 
-void debug::testVSA(VSANode *root, const ExampleList &example_list) {
+void debug::testVSA(VSANode *root, const ExampleList &example_list, Env* env) {
     auto wl = _getWitnessList(root);
     for (int _ = 0; _ < 100; ++_) {
         auto p = getRandomProgram(root);
         for (int i = 0; i < wl.size(); ++i) {
-            assert(wl[i]->isInclude(program::run(p.get(), example_list[i])));
+            assert(wl[i]->isInclude(env->run(p.get(), example_list[i])));
         }
     }
 }

@@ -49,13 +49,14 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
     io_example_list.push_back(io_space->getIOExample(counter_example));
     ProgramList term_list, condition_list;
 
+    Env* env = spec->env.get();
     while (true) {
         TimeCheck(guard);
         auto last_example = example_list[example_list.size() - 1];
         auto last_io_example = io_example_list[example_list.size() - 1];
         bool is_occur = false;
         for (const auto& term: term_list) {
-            if (example::satisfyIOExample(term.get(), last_io_example)) {
+            if (example::satisfyIOExample(term.get(), last_io_example, env)) {
                 is_occur = true; break;
             }
         }
@@ -88,10 +89,10 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             IOExampleList positive_list, negative_list, mid_list;
             auto current_term = term_list[i];
             for (const auto& current_example: rem_example) {
-                if (example::satisfyIOExample(current_term.get(), current_example)) {
+                if (example::satisfyIOExample(current_term.get(), current_example, env)) {
                     bool is_mid = false;
                     for (int j = i + 1; j < term_list.size(); ++j) {
-                        if (example::satisfyIOExample(term_list[j].get(), current_example)) {
+                        if (example::satisfyIOExample(term_list[j].get(), current_example, env)) {
                             is_mid = true;
                             break;
                         }
@@ -105,13 +106,13 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             auto condition = condition_list[i];
             bool is_valid = true;
             for (const auto& example: positive_list) {
-                if (!program::run(condition.get(), example.first).isTrue()) {
+                if (!env->run(condition.get(), example.first).isTrue()) {
                     is_valid = false; break;
                 }
             }
             if (is_valid) {
                 for (const auto& example: negative_list) {
-                    if (program::run(condition.get(), example.first).isTrue()) {
+                    if (env->run(condition.get(), example.first).isTrue()) {
                         is_valid = false; break;
                     }
                 }
@@ -123,7 +124,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             condition_list[i] = condition;
             rem_example = negative_list;
             for (const auto& example: mid_list) {
-                if (!program::run(condition.get(), example.first).isTrue()) {
+                if (!env->run(condition.get(), example.first).isTrue()) {
                     rem_example.push_back(example);
                 }
             }

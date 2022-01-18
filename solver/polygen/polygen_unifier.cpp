@@ -22,12 +22,12 @@ PolyGenUnifier::~PolyGenUnifier() {
 }
 
 namespace {
-    ProgramList _reorderTermList(const ProgramList& term_list, const IOExampleList& example_list) {
+    ProgramList _reorderTermList(const ProgramList& term_list, const IOExampleList& example_list, Env* env) {
         std::vector<std::pair<int, PProgram>> info_list;
         for (const auto& term: term_list) {
             int num = 0;
             for (const auto& example: example_list) {
-                if (example::satisfyIOExample(term.get(), example)) ++num;
+                if (example::satisfyIOExample(term.get(), example, env)) ++num;
             }
             info_list.emplace_back(num, term);
         }
@@ -54,7 +54,7 @@ PProgram PolyGenUnifier::unify(const ProgramList &raw_term_list, const ExampleLi
     for (const auto& example: example_list) {
         io_example_list.push_back(io_space->getIOExample(example));
     }
-    ProgramList term_list = _reorderTermList(raw_term_list, io_example_list);
+    ProgramList term_list = _reorderTermList(raw_term_list, io_example_list, spec->env.get());
 
     ProgramList condition_list;
     for (int term_id = 0; term_id + 1 < term_list.size(); ++term_id) {
@@ -62,12 +62,12 @@ PProgram PolyGenUnifier::unify(const ProgramList &raw_term_list, const ExampleLi
         auto term = term_list[term_id];
         IOExampleList positive_list, negative_list, free_list;
         for (const auto& example: io_example_list) {
-            if (!example::satisfyIOExample(term.get(), example)) {
+            if (!example::satisfyIOExample(term.get(), example, spec->env.get())) {
                 negative_list.push_back(example);
             } else {
                 bool is_free = false;
                 for (int i = term_id + 1; i < term_list.size(); ++i) {
-                    if (example::satisfyIOExample(term_list[i].get(), example)) {
+                    if (example::satisfyIOExample(term_list[i].get(), example, spec->env.get())) {
                         is_free = true; break;
                     }
                 }
@@ -80,7 +80,7 @@ PProgram PolyGenUnifier::unify(const ProgramList &raw_term_list, const ExampleLi
 
         io_example_list = negative_list;
         for (const auto& example: free_list) {
-            if (!program::run(res.get(), example.first).isTrue()) {
+            if (!spec->env->run(res.get(), example.first).isTrue()) {
                 io_example_list.push_back(example);
             }
         }

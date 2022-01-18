@@ -38,20 +38,6 @@ PProgram program::buildParam(int id, const PType &type) {
     return std::make_shared<Program>(semantics::buildParamSemantics(id, type), std::move(sub_list));
 }
 
-Data program::run(Program* program, const DataList &inp) {
-    auto* log = new ExecuteInfo(inp);
-    auto res = program->run(log);
-    delete log;
-    return res;
-}
-
-Data program::runWithFunc(Program* program, const DataList &inp, const FunctionContext &ctx) {
-    auto* info = new FunctionContextInfo(inp, ctx);
-    auto res = program->run(info);
-    delete info;
-    return res;
-}
-
 namespace {
     PProgram _programMap(Program* p, const ProgramConstructor& c, std::unordered_map<Program*, PProgram>& cache) {
         if (cache.find(p) != cache.end()) return cache[p];

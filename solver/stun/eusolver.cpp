@@ -80,7 +80,8 @@ namespace {
         ExampleList example_list;
         std::unordered_set<std::string> feature_set;
         std::vector<UnifyInfo> info_list;
-        PredicateVerifier(const ExampleList& _example_list): example_list(_example_list) {}
+        Env* env;
+        PredicateVerifier(const ExampleList& _example_list, Env* _env): example_list(_example_list), env(_env) {}
         virtual bool verify(const FunctionContext& res, Example* counter_example) {
             if (counter_example) {
                 LOG(INFO) << "PredicateVerifier is a dummy verifier for EuSolver. It cannot generate counterexamples.";
@@ -88,7 +89,7 @@ namespace {
             assert(res.size() == 1); auto prog = res.begin()->second;
             Bitset info;
             for (int i = 0; i < example_list.size(); ++i) {
-                info.append(program::run(prog.get(), example_list[i]).isTrue());
+                info.append(env->run(prog.get(), example_list[i]).isTrue());
             }
 
             auto feature = info.toString();
@@ -205,7 +206,7 @@ namespace {
 
 PProgram EuUnifier::unify(const ProgramList &term_list, const ExampleList &example_list, TimeGuard *guard) {
     if (term_list.size() == 1) return term_list[0];
-    auto* verifier = new PredicateVerifier(example_list);
+    auto* verifier = new PredicateVerifier(example_list, spec->env.get());
     auto* optimizer = new TrivialOptimizer();
     EnumConfig c(verifier, optimizer, guard);
     std::vector<UnifyInfo> term_info_list;

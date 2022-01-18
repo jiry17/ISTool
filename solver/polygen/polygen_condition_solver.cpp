@@ -24,12 +24,12 @@ namespace {
         return std::make_shared<SynthInfo>(info->name, inp_type, type::getTBool(), g);
     }
 
-    void _insertTermsToExample(IOExampleList& example_list, const ProgramList& term_list) {
+    void _insertTermsToExample(IOExampleList& example_list, const ProgramList& term_list, Env* env) {
         for (int i = 0; i < example_list.size(); ++i) {
             // todo: handle SemanticsError
             DataList term_results;
             for (const auto& term: term_list) {
-                term_results.push_back(program::run(term.get(), example_list[i].first));
+                term_results.push_back(env->run(term.get(), example_list[i].first));
             }
             for (auto& d: term_results) {
                 example_list[i].first.push_back(d);
@@ -59,7 +59,7 @@ PProgram PolyGenConditionSolver::getCondition(const ProgramList &term_list, cons
         io_example_list.emplace_back(example.first, BuildData(Bool, false));
     }
     if (KIsUseTerm) {
-        _insertTermsToExample(io_example_list, term_list);
+        _insertTermsToExample(io_example_list, term_list, spec->env.get());
     }
     auto example_space = example::buildFiniteIOExampleSpace(io_example_list, spec->info_list[0]->name, spec->env.get());
     auto* cond_spec = new Specification({cond_info}, spec->env, example_space);

@@ -14,8 +14,8 @@ bool TrivialVerifier::verify(const FunctionContext &info, Example *counter_examp
     return true;
 }
 
-OBEOptimizer::OBEOptimizer(const ProgramChecker &_is_runnable, const std::unordered_map<std::string, ExampleList> &_pool):
-        is_runnable(_is_runnable), example_pool(_pool) {
+OBEOptimizer::OBEOptimizer(const ProgramChecker &_is_runnable, const std::unordered_map<std::string, ExampleList> &_pool, Env* _env):
+        is_runnable(_is_runnable), example_pool(_pool), env(_env) {
 }
 bool OBEOptimizer::isDuplicated(const std::string& name, NonTerminal *nt, const PProgram &p) {
     if (!is_runnable(p.get()) || example_pool.find(name) == example_pool.end()) return false;
@@ -23,7 +23,7 @@ bool OBEOptimizer::isDuplicated(const std::string& name, NonTerminal *nt, const 
     DataList res;
     for (auto& example: example_list) {
         try {
-            res.push_back(program::run(p.get(), example));
+            res.push_back(env->run(p.get(), example));
         } catch (SemanticsError& e) {
             return true;
         }

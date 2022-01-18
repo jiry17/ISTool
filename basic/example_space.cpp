@@ -13,11 +13,11 @@ namespace {
     }
 }
 
-ExampleSpace::ExampleSpace(const PProgram &_cons_program): cons_program(_cons_program) {
+ExampleSpace::ExampleSpace(const PProgram &_cons_program, Env* _env): cons_program(_cons_program), env(_env) {
 }
 bool ExampleSpace::satisfyExample(const FunctionContext &info, const Example &example) {
     try {
-        auto res = program::runWithFunc(cons_program.get(), example, info);
+        auto res = env->run(cons_program.get(), example, info);
         return getBool(res);
     } catch (SemanticsError& e) {
         return false;
@@ -27,19 +27,19 @@ bool ExampleSpace::satisfyExample(const FunctionContext &info, const Example &ex
 IOExampleSpace::IOExampleSpace(const std::string &_func_name): func_name(_func_name) {
 }
 
-FiniteExampleSpace::FiniteExampleSpace(const PProgram &_cons_program, const ExampleList &_example_space):
-    ExampleSpace(_cons_program), example_space(_example_space) {
+FiniteExampleSpace::FiniteExampleSpace(const PProgram &_cons_program, const ExampleList &_example_space, Env* env):
+    ExampleSpace(_cons_program, env), example_space(_example_space) {
 }
 FiniteIOExampleSpace::FiniteIOExampleSpace(const PProgram &_cons_program, const ExampleList &_example_space,
-        const std::string &_name, const ProgramList &_inp_list, const PProgram &_oup):
-        FiniteExampleSpace(_cons_program, _example_space), IOExampleSpace(_name), inp_list(_inp_list), oup(_oup) {
+        const std::string &_name, const ProgramList &_inp_list, const PProgram &_oup, Env* env):
+        FiniteExampleSpace(_cons_program, _example_space, env), IOExampleSpace(_name), inp_list(_inp_list), oup(_oup) {
 }
 IOExample FiniteIOExampleSpace::getIOExample(const Example &example) {
     DataList inp_vals;
     for (const auto& p: inp_list) {
-        inp_vals.push_back(program::run(p.get(), example));
+        inp_vals.push_back(env->run(p.get(), example));
     }
-    auto oup_val = program::run(oup.get(), example);
+    auto oup_val = env->run(oup.get(), example);
     return {inp_vals, oup_val};
 }
 bool FiniteIOExampleSpace::satisfyExample(const FunctionContext &ctx, const Example &example) {
@@ -47,11 +47,11 @@ bool FiniteIOExampleSpace::satisfyExample(const FunctionContext &ctx, const Exam
     if (ctx.find(func_name) == ctx.end()) {
         LOG(FATAL) << "Cannot find program " << func_name;
     }
-    return example::satisfyIOExample(ctx.find(func_name)->second.get(), io_example);
+    return example::satisfyIOExample(ctx.find(func_name)->second.get(), io_example, env);
 }
 
-bool example::satisfyIOExample(Program *program, const IOExample &example) {
-    return program::run(program, example.first) == example.second;
+bool example::satisfyIOExample(Program *program, const IOExample &example, Env* env) {
+    return env->run(program, example.first) == example.second;
 }
 
 PExampleSpace example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env) {
@@ -69,7 +69,7 @@ PExampleSpace example::buildFiniteIOExampleSpace(const IOExampleList &examples, 
     auto oup_type = examples[0].second.getPType();
     auto r = program::buildParam(n, oup_type);
     auto l = std::make_shared<Program>(
-            std::make_shared<InvokeSemantics>(name, oup_type, inp_types),
+            std::make_shared<InvokeSemantics>(name, oup_type, inp_types, env),
             l_subs);
     ProgramList sub_list = {l, r};
     auto cons_program = std::make_shared<Program>(env->getSemantics("="), sub_list);
@@ -79,7 +79,7 @@ PExampleSpace example::buildFiniteIOExampleSpace(const IOExampleList &examples, 
         example.push_back(io_example.second);
         example_list.push_back(example);
     }
-    return std::make_shared<FiniteIOExampleSpace>(cons_program, example_list, name, l_subs, r);
+    return std::make_shared<FiniteIOExampleSpace>(cons_program, example_list, name, l_subs, r, env);
 }
 
 std::string example::ioExample2String(const IOExample &example) {

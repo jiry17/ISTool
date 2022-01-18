@@ -140,7 +140,7 @@ bool MaxFlash::getBestProgram(MaxFlashNode *node, int example_id, double upper_b
             return false;
         }
         auto candidate = multi_node->l->best_program;
-        if (multi_node->r->oup->isInclude(program::run(candidate.get(), counter_example_list[example_id].first))) {
+        if (multi_node->r->oup->isInclude(spec->env->run(candidate.get(), counter_example_list[example_id].first))) {
             node->best_program = candidate;
             node->lower_bound = multi_node->l->lower_bound;
             return true;

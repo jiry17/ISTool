@@ -3,10 +3,12 @@
 //
 
 #include "istool/basic/env.h"
+#include "istool/basic/program.h"
 #include "glog/logging.h"
 
 Env::Env() {
     semantics::loadLogicSemantics(this);
+    info_builder = new ExecuteInfoBuilder();
 }
 
 Data * Env::getConstRef(const std::string &name, const Data& default_value) {
@@ -47,6 +49,7 @@ Env::~Env() {
     for (auto& ext_info: extension_pool) {
         delete ext_info.second;
     }
+    delete info_builder;
 }
 
 Extension * Env::getExtension(const std::string &name) const {
@@ -67,4 +70,15 @@ PSemantics Env::getSemantics(const std::string &name) const {
         LOG(FATAL) << "Unknown semantics " << name;
     }
     return semantics_pool.find(name)->second;
+}
+
+void Env::setExecuteInfoBuilder(ExecuteInfoBuilder *builder) {
+    delete info_builder;
+    info_builder = builder;
+}
+
+Data Env::run(Program *program, const DataList &param_list, const FunctionContext &ctx) {
+    auto* info = info_builder->buildInfo(param_list, ctx);
+    auto res = program->run(info);
+    delete info; return res;
 }

@@ -18,6 +18,7 @@ class Env {
     std::unordered_map<std::string, DataList*> const_list_pool;
     std::unordered_map<std::string, Extension*> extension_pool;
     std::unordered_map<std::string, PSemantics> semantics_pool;
+    ExecuteInfoBuilder* info_builder;
 public:
     Env();
 
@@ -32,6 +33,9 @@ public:
 
     void setSemantics(const std::string& name, const PSemantics& semantics);
     PSemantics getSemantics(const std::string& name) const;
+
+    void setExecuteInfoBuilder(ExecuteInfoBuilder* builder);
+    Data run(Program* program, const DataList& param_list, const FunctionContext &ctx={});
     ~Env();
 };
 

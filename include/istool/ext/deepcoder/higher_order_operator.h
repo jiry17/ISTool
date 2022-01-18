@@ -6,6 +6,7 @@
 #define ISTOOL_HIGHER_ORDER_OPERATOR_H
 
 #include "istool/basic/program.h"
+#include "tmp_info.h"
 
 class ApplySemantics: public Semantics {
 public:
@@ -19,15 +20,6 @@ public:
     CurrySemantics();
     virtual ~CurrySemantics() = default;
     virtual Data run(const ProgramList& sub_list, ExecuteInfo* info);
-};
-
-class TmpExecuteInfo: public ExecuteInfo {
-public:
-    std::unordered_map<std::string, Data> tmp_value_map;
-    TmpExecuteInfo(const DataList& param_value);
-    void set(const std::string& name, const Data& value);
-    void clear(const std::string& name);
-    Data get(const std::string& name);
 };
 
 class TmpSemantics: public FullExecutedSemantics {

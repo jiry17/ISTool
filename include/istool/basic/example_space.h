@@ -18,7 +18,8 @@ typedef std::vector<IOExample> IOExampleList;
 class ExampleSpace {
 public:
     PProgram cons_program;
-    ExampleSpace(const PProgram& _cons_program);
+    Env* env;
+    ExampleSpace(const PProgram& _cons_program, Env* _env);
     virtual bool satisfyExample(const FunctionContext& info, const Example& example);
     virtual ~ExampleSpace() = default;
 };
@@ -36,7 +37,7 @@ public:
 class FiniteExampleSpace: public ExampleSpace {
 public:
     ExampleList example_space;
-    FiniteExampleSpace(const PProgram& _cons_program, const ExampleList& _example_space);
+    FiniteExampleSpace(const PProgram& _cons_program, const ExampleList& _example_space, Env* env);
     virtual ~FiniteExampleSpace() = default;
 };
 
@@ -45,7 +46,7 @@ public:
     ProgramList inp_list;
     PProgram oup;
     FiniteIOExampleSpace(const PProgram& _cons_program, const ExampleList& _example_space, const std::string& _name,
-            const ProgramList& _inp_list, const PProgram& _oup);
+            const ProgramList& _inp_list, const PProgram& _oup, Env* env);
     virtual bool satisfyExample(const FunctionContext& info, const Example& example);
     virtual IOExample getIOExample(const Example& example);
     virtual ~FiniteIOExampleSpace() = default;
@@ -53,7 +54,7 @@ public:
 
 namespace example {
     PExampleSpace buildFiniteIOExampleSpace(const IOExampleList& examples, const std::string& name, Env* env);
-    bool satisfyIOExample(Program* program, const IOExample& example);
+    bool satisfyIOExample(Program* program, const IOExample& example, Env* env);
     std::string ioExample2String(const IOExample& example);
     Example ioExample2Example(const IOExample& example);
 }

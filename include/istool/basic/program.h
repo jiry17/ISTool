@@ -30,8 +30,6 @@ namespace program {
     PProgram buildConst(const Data& w);
     PProgram programMap(Program* p, const ProgramConstructor& c);
     PProgram rewriteParam(const PProgram& p, const ProgramList& param_list);
-    Data run(Program* program, const DataList& inp);
-    Data runWithFunc(Program* program, const DataList& inp, const FunctionContext& ctx);
 }
 
 #endif //ISTOOL_PROGRAM_H
