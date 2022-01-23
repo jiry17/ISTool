@@ -6,14 +6,15 @@
 #include "glog/logging.h"
 #include <mutex>
 
-Solver::Solver(Specification *_spec): spec(_spec) {}
+Solver::Solver(Specification *_spec, Verifier* _v): spec(_spec), v(_v) {}
+Solver::~Solver() {delete v;}
 PBESolver::PBESolver(Specification *_spec): spec(_spec) {}
 
 CEGISSolver::CEGISSolver(PBESolver *_pbe_solver, Verifier *_v):
-    pbe_solver(_pbe_solver), v(_v), Solver(_pbe_solver->spec) {
+    pbe_solver(_pbe_solver), Solver(_pbe_solver->spec, _v) {
 }
 CEGISSolver::~CEGISSolver() {
-    delete pbe_solver; delete v;
+    delete pbe_solver;
 }
 FunctionContext CEGISSolver::synthesis(TimeGuard* guard) {
     std::vector<Example> example_list;

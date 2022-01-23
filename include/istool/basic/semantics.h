@@ -65,12 +65,19 @@ public:
     ~ConstSemantics() = default;
 };
 
-class InvokeSemantics: public NormalSemantics {
+class InvokeSemantics: public FullExecutedSemantics {
 public:
     Env* env;
-    InvokeSemantics(const std::string& _func_name, const PType& oup_type, const TypeList& inp_list, Env* _env);
+    InvokeSemantics(const std::string& _func_name, Env* _env);
     virtual Data run(DataList&&, ExecuteInfo* info);
     virtual ~InvokeSemantics() = default;
+};
+
+
+class TypedInvokeSemantics: public InvokeSemantics, public TypedSemantics {
+public:
+    TypedInvokeSemantics(const std::string& _func_name, const PType& oup_type, const TypeList& inp_list, Env* _env);
+    virtual ~TypedInvokeSemantics() = default;
 };
 
 #define DefineNormalSemantics(name) \

@@ -11,10 +11,9 @@
 
 class BasicEnumSolver: public Solver {
 public:
-    Verifier* v;
     BasicEnumSolver(Specification* _spec, Verifier* _v);
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr);
-    virtual ~BasicEnumSolver();
+    virtual ~BasicEnumSolver() = default;
 };
 
 class OBESolver: public PBESolver {

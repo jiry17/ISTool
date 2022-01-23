@@ -69,7 +69,7 @@ PExampleSpace example::buildFiniteIOExampleSpace(const IOExampleList &examples, 
     auto oup_type = examples[0].second.getPType();
     auto r = program::buildParam(n, oup_type);
     auto l = std::make_shared<Program>(
-            std::make_shared<InvokeSemantics>(name, oup_type, inp_types, env),
+            std::make_shared<TypedInvokeSemantics>(name, oup_type, inp_types, env),
             l_subs);
     ProgramList sub_list = {l, r};
     auto cons_program = std::make_shared<Program>(env->getSemantics("="), sub_list);

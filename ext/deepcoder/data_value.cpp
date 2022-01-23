@@ -2,6 +2,7 @@
 // Created by pro on 2022/1/15.
 //
 
+#include "istool/ext/deepcoder/data_type.h"
 #include "istool/ext/deepcoder/data_value.h"
 #include "glog/logging.h"
 
@@ -81,4 +82,3 @@ Data ext::ho::buildProduct(const DataList &elements) {
 Data ext::ho::buildSum(int id, const Data &value) {
     return Data(std::make_shared<SumValue>(id, value));
 }
-

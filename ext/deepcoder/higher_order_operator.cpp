@@ -71,5 +71,5 @@ Data LambdaSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
 
 void ext::ho::loadHigherOrderOperators(Env *env) {
     LoadSemantics("apply", Apply); LoadSemantics("curry", Curry);
-    // TODO: change the type of executeInfo
+    registerTmpExecuteInfo(env);
 }

@@ -12,9 +12,10 @@
 class Solver {
 public:
     Specification* spec;
+    Verifier* v;
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr) = 0;
-    Solver(Specification* _spec);
-    virtual ~Solver() = default;
+    Solver(Specification* _spec, Verifier* _v);
+    virtual ~Solver();
 };
 
 class PBESolver {
@@ -28,15 +29,12 @@ public:
 class CEGISSolver: public Solver {
 public:
     PBESolver* pbe_solver;
-    Verifier* v;
     CEGISSolver(PBESolver* _pbe_solver, Verifier* _v);
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr);
     virtual ~CEGISSolver();
 };
 
-typedef std::function<Solver*(Specification* spec)> SolverBuilder;
-typedef std::function<PBESolver*(Specification* spec)> PBESolverBuilder;
-
-#define DefaultSolverBuilder(name) ([](Specification* spec){return new name(spec);})
+typedef std::function<Solver*(Specification*, Verifier*)> SolverBuilder;
+typedef std::function<PBESolver*(Specification*)> PBESolverBuilder;
 
 #endif //ISTOOL_SOLVER_H

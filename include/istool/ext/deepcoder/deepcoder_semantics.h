@@ -44,6 +44,21 @@ DefineNormalSemantics(ListAppend)
 DefineNormalSemantics(ListCons)
 DefineNormalSemantics(ListNil)
 
+class TriangleSemantics: public FullExecutedSemantics {
+public:
+    TriangleSemantics();
+    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
+    ~TriangleSemantics() = default;
+};
+
+class AccessSemantics: public FullExecutedSemantics {
+public:
+    int id;
+    AccessSemantics(int _id);
+    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
+    ~AccessSemantics() = default;
+};
+
 namespace ext::ho {
     void loadDeepCoderSemantics(Env* env);
 }

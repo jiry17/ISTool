@@ -7,57 +7,55 @@
 
 #include "istool/basic/type.h"
 
-class SumType: public Type {
+class TSum: public Type {
 public:
     TypeList sub_types;
-    SumType(const TypeList& sub_types);
+    TSum(const TypeList& sub_types);
     virtual std::string getName();
     virtual bool equal(Type* type);
-    ~SumType() = default;
+    ~TSum() = default;
 };
 
-class ProductType: public Type {
+class TProduct: public Type {
 public:
     TypeList sub_types;
-    ProductType(const TypeList& sub_types);
+    TProduct(const TypeList& sub_types);
     virtual std::string getName();
     virtual bool equal(Type* type);
-    ~ProductType() = default;
+    ~TProduct() = default;
 };
 
-class ArrowType: public Type {
+class TArrow: public Type {
 public:
     TypeList inp_types;
     PType oup_type;
-    ArrowType(const TypeList& _inp_types, const PType& _oup_type);
+    TArrow(const TypeList& _inp_types, const PType& _oup_type);
     virtual std::string getName();
     virtual bool equal(Type* type);
-    ~ArrowType() = default;
+    ~TArrow() = default;
 };
 
-class ListType: public Type {
+class TList: public Type {
 public:
     PType content;
-    ListType(const PType& _content);
+    TList(const PType& _content);
     virtual std::string getName();
     virtual bool equal(Type* type);
-    ~ListType() = default;
+    ~TList() = default;
 };
 
-class BTreeType: public Type {
+class TBTree: public Type {
 public:
     PType content, leaf;
-    BTreeType(const PType& _content, const PType& _leaf);
+    TBTree(const PType& _content, const PType& _leaf);
     virtual std::string getName();
     virtual bool equal(Type* type);
-    ~BTreeType() = default;
+    ~TBTree() = default;
 };
 
-namespace ext {
-    namespace ho {
-        PType getTIntList();
-        PType getTVarAList();
-    }
+namespace ext::ho {
+    PType getTIntList();
+    PType getTVarAList();
 }
 
 #endif //ISTOOL_DATA_TYPE_H

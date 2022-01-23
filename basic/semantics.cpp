@@ -61,14 +61,16 @@ std::string FunctionContext::toString() const {
     return res;
 }
 
-InvokeSemantics::InvokeSemantics(const std::string &_func_name, const PType &oup_type, const TypeList &inp_list, Env* _env):
-    NormalSemantics(_func_name, std::move(oup_type), std::move(inp_list)), env(_env) {
+InvokeSemantics::InvokeSemantics(const std::string &_func_name, Env *_env): FullExecutedSemantics(_func_name), env(_env) {
 }
-
 Data InvokeSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto p = info->func_context[name];
     if (!p) throw SemanticsError();
     return env->run(p.get(), inp_list);
+}
+
+TypedInvokeSemantics::TypedInvokeSemantics(const std::string &_func_name, const PType &oup_type, const TypeList &inp_list, Env* _env):
+    InvokeSemantics(_func_name, _env), TypedSemantics(oup_type, inp_list) {
 }
 
 #define TBOOL type::getTBool()

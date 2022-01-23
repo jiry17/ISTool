@@ -13,7 +13,7 @@ namespace {
 const std::string solver::maxflash::KIterProbStepName = "MaxFlash@IterProbStep";
 
 MaxFlash::MaxFlash(Specification *_spec, Verifier* _v, TopDownModel* model, const VSAEnvPreparation& _p):
-    Solver(_spec), ext(ext::vsa::getExtension(_spec->env.get())), v(_v), p(_p), env_id(-1) {
+    Solver(_spec, _v), ext(ext::vsa::getExtension(_spec->env.get())), p(_p), env_id(-1) {
     io_space = dynamic_cast<IOExampleSpace*>(spec->example_space.get());
     if (!io_space) {
         LOG(FATAL) << "MaxFlash requires IOExamples";

@@ -9,15 +9,16 @@
 #include <vector>
 #include "z3++.h"
 
+class Type;
+typedef std::shared_ptr<Type> PType;
+typedef std::vector<PType> TypeList;
+
 class Type {
 public:
     virtual std::string getName() = 0;
     virtual bool equal(Type* type) = 0;
     virtual ~Type() = default;
 };
-
-typedef std::shared_ptr<Type> PType;
-typedef std::vector<PType> TypeList;
 
 class TBot: public Type {
 public:

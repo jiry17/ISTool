@@ -30,7 +30,6 @@ public:
     VSAExtension* ext;
     IOExampleSpace* io_space;
     TopDownContextGraph* graph;
-    Verifier* v;
     MaxFlash(Specification* _spec, Verifier* _v, TopDownModel* model, const VSAEnvPreparation& _p);
     virtual FunctionContext synthesis(TimeGuard *guard);
     ~MaxFlash();

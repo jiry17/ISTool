@@ -6,9 +6,13 @@
 #include "istool/basic/program.h"
 #include "glog/logging.h"
 
-Env::Env() {
+Env::Env(): random_engine(0) {
     semantics::loadLogicSemantics(this);
     info_builder = new ExecuteInfoBuilder();
+}
+
+int Env::setRandomSeed(int seed) {
+    random_engine.seed(seed);
 }
 
 Data * Env::getConstRef(const std::string &name, const Data& default_value) {

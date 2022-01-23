@@ -11,7 +11,6 @@
 class CEGISPolyGen: public Solver {
     PolyGenTermSolver* term_solver;
     PolyGenConditionSolver* cond_solver;
-    Verifier* v;
     IOExampleSpace* io_space;
 public:
     CEGISPolyGen(Specification* spec, const PSynthInfo& term_info, const PSynthInfo& unify_info,

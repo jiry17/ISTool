@@ -7,6 +7,7 @@
 
 #include "semantics.h"
 #include <unordered_map>
+#include <random>
 
 class Extension {
 public:
@@ -20,6 +21,7 @@ class Env {
     std::unordered_map<std::string, PSemantics> semantics_pool;
     ExecuteInfoBuilder* info_builder;
 public:
+    std::minstd_rand random_engine;
     Env();
 
     Data* getConstRef(const std::string& name, const Data& default_value = {});
@@ -36,6 +38,8 @@ public:
 
     void setExecuteInfoBuilder(ExecuteInfoBuilder* builder);
     Data run(Program* program, const DataList& param_list, const FunctionContext &ctx={});
+
+    int setRandomSeed(int seed);
     ~Env();
 };
 

@@ -4,6 +4,7 @@
 
 #include "istool/ext/deepcoder/deepcoder_semantics.h"
 #include "istool/sygus/theory/basic/clia/clia_value.h"
+#include "istool/sygus/theory/basic/clia/clia_semantics.h"
 #include "istool/ext/deepcoder/data_type.h"
 #include "istool/ext/deepcoder/data_value.h"
 #include "istool/ext/deepcoder/anonymous_function.h"
@@ -58,8 +59,26 @@ Data ListLenSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
 }
 
 ListMaxSemantics::ListMaxSemantics(): NormalSemantics("maximum", TINT, {TINTLIST}) {}
+Data ListMaxSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    auto* lv = _getList(inp_list[0]);
+    if (lv->value.empty()) throw SemanticsError();
+    int res = getIntValue(lv->value[0]);
+    for (int i = 1; i < lv->value.size(); ++i) {
+        res = std::max(res, getIntValue(lv->value[i]));
+    }
+    return BuildData(Int, res);
+}
 
 ListMinSemantics::ListMinSemantics(): NormalSemantics("minimum", TINT, {TINTLIST}) {}
+Data ListMinSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    auto* lv = _getList(inp_list[0]);
+    if (lv->value.empty()) throw SemanticsError();
+    int res = getIntValue(lv->value[0]);
+    for (int i = 1; i < lv->value.size(); ++i) {
+        res = std::min(res, getIntValue(lv->value[i]));
+    }
+    return BuildData(Int, res);
+}
 
 ListHeadSemantics::ListHeadSemantics(): NormalSemantics("head", TVARA, {TLISTA}) {}
 Data ListHeadSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
@@ -87,7 +106,7 @@ Data ListAccessSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
 
 namespace {
     PType _getArrowType(const TypeList& inp_list, const PType& oup) {
-        return std::make_shared<ArrowType>(inp_list, oup);
+        return std::make_shared<TArrow>(inp_list, oup);
     }
 
     Data _invoke(Semantics* semantics, const DataList& inp, ExecuteInfo* info) {
@@ -148,7 +167,7 @@ namespace {
 
     PType _getListB() {
         static PType res;
-        if (!res) res = std::make_shared<ListType>(_getVarB());
+        if (!res) res = std::make_shared<TList>(_getVarB());
         return res;
     }
     PType _getVarC() {
@@ -159,7 +178,7 @@ namespace {
 
     PType _getListC() {
         static PType res;
-        if (!res) res = std::make_shared<ListType>(_getVarB());
+        if (!res) res = std::make_shared<TList>(_getVarB());
         return res;
     }
 }
@@ -283,7 +302,38 @@ Data ListNilSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return buildList({});
 }
 
+TriangleSemantics::TriangleSemantics(): FullExecutedSemantics("tri") {}
+Data TriangleSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    return BuildData(Product, inp_list);
+}
+
+AccessSemantics::AccessSemantics(int _id): id(_id), FullExecutedSemantics("access" + std::to_string(_id)) {}
+Data AccessSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    auto* pv = dynamic_cast<ProductValue*>(inp_list[0].get());
+    assert(id >= 0 && id < pv->elements.size());
+    return pv->elements[id];
+}
+
+
+namespace {
+    const int KDefaultINF = 1e8;
+}
+
 void ext::ho::loadDeepCoderSemantics(Env *env) {
     loadHigherOrderOperators(env);
+    auto* inf = env->getConstRef(theory::clia::KINFName, BuildData(Int, KDefaultINF));
     LoadSemantics("max", IntMax); LoadSemantics("min", IntMin);
+    env->setSemantics("sum", std::make_shared<ListSumSemantics>(inf));
+    LoadSemantics("len", ListLen); LoadSemantics("maximum", ListMax);
+    LoadSemantics("minimum", ListMin); LoadSemantics("head", ListHead);
+    LoadSemantics("last", ListLast); LoadSemantics("access", ListAccess);
+    LoadSemantics("count", ListCount); LoadSemantics("neg", IntNeg);
+    LoadSemantics("take", ListTake); LoadSemantics("drop", ListDrop);
+    LoadSemantics("map", ListMap); LoadSemantics("filter", ListFilter);
+    LoadSemantics("zipwith", ListZipWith); LoadSemantics("scanl", ListScanl);
+    LoadSemantics("scanr", ListScanr); LoadSemantics("rev", ListRev);
+    LoadSemantics("sort", ListSort); LoadSemantics("odd", IntOdd);
+    LoadSemantics("even", IntEven); LoadSemantics("++", ListCat);
+    LoadSemantics("fold", ListFold); LoadSemantics("append", ListAppend);
+    LoadSemantics("cons", ListCons); LoadSemantics("nil", ListNil);
 }

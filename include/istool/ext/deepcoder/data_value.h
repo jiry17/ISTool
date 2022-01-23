@@ -6,6 +6,7 @@
 #define ISTOOL_DATA_VALUE_H
 
 #include "istool/basic/data.h"
+#include "istool/basic/env.h"
 
 class ProductValue: public Value {
 public:
