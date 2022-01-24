@@ -34,22 +34,10 @@ Data ext::ho::polyFMap(Program *p, Type *type, const Data &data, Env *env) {
     return data;
 }
 
-namespace {
-    void _splitTriangle(const PProgram& p, ProgramList& res) {
-        if (p->semantics->name == "tri") {
-            for (const auto& sub: p->sub_list) {
-                _splitTriangle(sub, res);
-            }
-        } else {
-            res.push_back(p);
-        }
-    }
-}
-
 ProgramList ext::ho::splitTriangle(const PProgram& p) {
-    ProgramList res;
-    _splitTriangle(p, res);
-    return res;
+    if (dynamic_cast<TriangleSemantics*>(p->semantics.get())) {
+        return p->sub_list;
+    } else return {p};
 }
 
 namespace {

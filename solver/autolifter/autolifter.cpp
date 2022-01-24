@@ -149,9 +149,11 @@ namespace {
 
 SingleLiftingRes AutoLifter::synthesisSinglePartial(PartialLiftingTask *task, TimeGuard* guard) {
     auto* sf_solver = sf_builder(task);
-    auto f = sf_solver->synthesis(guard);
+    auto res = sf_solver->synthesis(guard);
+    auto f = res.second;
     delete sf_solver;
 
+    task->h = res.first;
     auto* g = task->info->c_builder->buildProgram(task->p.get(), task->info->m.get(), task->info->F.get(), task->h.get(), f.get());
     auto info = _buildCombinatorInfo(g);
 

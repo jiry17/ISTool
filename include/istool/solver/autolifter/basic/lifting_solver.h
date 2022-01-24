@@ -43,7 +43,9 @@ class SFSolver {
 public:
     PartialLiftingTask* task;
     SFSolver(PartialLiftingTask* _task);
-    virtual PProgram synthesis(TimeGuard* guard) = 0;
+
+    // return (useful components in h, f)
+    virtual std::pair<PProgram, PProgram> synthesis(TimeGuard* guard) = 0;
     virtual ~SFSolver() = default;
 };
 

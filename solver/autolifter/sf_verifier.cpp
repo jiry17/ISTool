@@ -11,7 +11,7 @@ namespace {
     int KDefaultExampleNum = 1000;
 }
 
-SfVerifier::SfVerifier(PartialLiftingTask *_task): task(_task), size_limit(5) {
+SFVerifier::SFVerifier(PartialLiftingTask *_task, bool _is_consider_h): task(_task), size_limit(5), is_consider_h(_is_consider_h) {
     auto* env = task->info->env;
     example_num = env->getConstRef(solver::autolifter::KOccamExampleNumName, BuildData(Int, KDefaultExampleNum));
     p_list = ext::ho::splitTriangle(task->p);
@@ -46,10 +46,8 @@ namespace {
     }
 }
 
-bool SfVerifier::verify(const FunctionContext &info, Example *counter_example) {
+std::pair<int, int> SFVerifier::verify(const PProgram& f) {
     int num = theory::clia::getIntValue(*example_num);
-    if (info.size() > 1) LOG(FATAL) << "There is only a single target program in a PLP task";
-    auto f = info.begin()->second;
     int f_size = f->size();
     if (f_size > size_limit) size_limit = std::max(size_limit * 2, f_size);
     int target = num * size_limit;
@@ -65,8 +63,10 @@ bool SfVerifier::verify(const FunctionContext &info, Example *counter_example) {
     for (int i = 0; i < p_list.size(); ++i) {
         task->info->extendModCache(p_list[i].get(), p_cache_list[i], target);
     }
-    for (int i = 0; i < h_list.size(); ++i) {
-        task->info->extendFMapCache(h_list[i].get(), h_cache_list[i], target);
+    if (is_consider_h) {
+        for (int i = 0; i < h_list.size(); ++i) {
+            task->info->extendFMapCache(h_list[i].get(), h_cache_list[i], target);
+        }
     }
     for (int i = 0; i < f_list.size(); ++i) {
         if (f_cache_list[i]) {
@@ -77,7 +77,9 @@ bool SfVerifier::verify(const FunctionContext &info, Example *counter_example) {
     auto get_feature = [&](int id) -> std::pair<std::string, std::string> {
         DataList eq_part, test_part;
         for (auto* cache: p_cache_list) eq_part.push_back(cache->at(id));
-        for (auto* cache: h_cache_list) eq_part.push_back(cache->at(id));
+        if (is_consider_h) {
+            for (auto *cache: h_cache_list) eq_part.push_back(cache->at(id));
+        }
         for (int i = 0; i < f_cache_list.size(); ++i) {
             if (f_cache_list[i]) test_part.push_back(f_cache_list[i]->at(id));
             else {
@@ -96,10 +98,7 @@ bool SfVerifier::verify(const FunctionContext &info, Example *counter_example) {
         if (it == feature_map.end()) {
             feature_map[feature.first] = {example_pos, feature.second};
         } else if (it->second.second != feature.second) {
-            auto x = task->info->example_space->getExample(example_pos)[0];
-            auto y = task->info->example_space->getExample(it->second.first)[0];
-            (*counter_example) = {x, y};
-            return false;
+            return {example_pos, it->second.first};
         }
         example_pos = (example_pos + 1) % target;
     }
@@ -109,5 +108,15 @@ bool SfVerifier::verify(const FunctionContext &info, Example *counter_example) {
             task->info->registerFMapCache(f_list[i].get(), _shift(tmp_cache[i], example_pos));
         }
     }
-    return true;
+    return {-1, -1};
+}
+
+bool SFVerifier::verify(const FunctionContext &info, Example *counter_example) {
+    if (info.size() > 1) LOG(FATAL) << "There is only a single target program in a PLP task";
+    auto res = verify(info.begin()->second);
+    if (res.first == -1) return true;
+    auto x = task->info->example_space->getExample(res.first)[0];
+    auto y = task->info->example_space->getExample(res.second)[0];
+    (*counter_example) = {x, y};
+    return false;
 }

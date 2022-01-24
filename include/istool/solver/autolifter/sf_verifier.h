@@ -8,16 +8,18 @@
 #include "basic/occam_verifier.h"
 #include "istool/solver/autolifter/basic/lifting_problem.h"
 
-class SfVerifier: public Verifier {
+class SFVerifier: public Verifier {
     int size_limit, example_pos;
+    bool is_consider_h;
 public:
     PartialLiftingTask* task;
     Data* example_num;
     ProgramList p_list, h_list;
     std::vector<DataList*> p_cache_list, h_cache_list;
+    std::pair<int, int> verify(const PProgram& f);
     virtual bool verify(const FunctionContext& info, Example* counter_example);
-    ~SfVerifier() = default;
-    SfVerifier(PartialLiftingTask* _task);
+    ~SFVerifier() = default;
+    SFVerifier(PartialLiftingTask* _task, bool _is_consider_h);
 };
 
 
