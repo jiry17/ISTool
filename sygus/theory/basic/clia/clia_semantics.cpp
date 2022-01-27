@@ -109,22 +109,4 @@ Data IteSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     return sub_list[2]->run(info);
 }
 
-namespace {
-    const int KDefaultINF = 1e8;
-}
-
 const std::string theory::clia::KINFName = "CLIA@INF";
-
-#define LoadINFSemantics(name, sem) env->setSemantics(name, std::make_shared<sem ## Semantics>(inf))
-
-void theory::loadCLIASemantics(Env *env) {
-    auto* inf = env->getConstRef(theory::clia::KINFName, Data(std::make_shared<IntValue>(KDefaultINF)));
-    LoadINFSemantics("+", IntPlus);
-    LoadINFSemantics("-", IntMinus);
-    LoadINFSemantics("*", IntTimes);
-    LoadSemantics("div", IntDiv);
-    LoadSemantics("mod", IntMod);
-    LoadSemantics("<", Lq); LoadSemantics("<=", Leq);
-    LoadSemantics(">", Gq); LoadSemantics(">=", Geq);
-    LoadSemantics("=", Eq); LoadSemantics("ite", Ite);
-}

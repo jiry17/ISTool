@@ -25,6 +25,15 @@ bool TSum::equal(Type *type) {
     }
     return true;
 }
+std::string TSum::getBaseName() {
+    return "Sum";
+}
+TypeList TSum::getParams() {
+    return sub_types;
+}
+PType TSum::clone(const TypeList &type_list) {
+    return std::make_shared<TSum>(type_list);
+}
 
 TProduct::TProduct(const TypeList &_sub_types): sub_types(_sub_types) {
 }
@@ -45,6 +54,15 @@ bool TProduct::equal(Type *type) {
     }
     return true;
 }
+std::string TProduct::getBaseName() {
+    return "Product";
+}
+TypeList TProduct::getParams() {
+    return sub_types;
+}
+PType TProduct::clone(const TypeList &type_list) {
+    return std::make_shared<TProduct>(type_list);
+}
 
 TArrow::TArrow(const TypeList &_inp_types, const PType &_oup_type): inp_types(_inp_types), oup_type(_oup_type) {
 }
@@ -60,6 +78,21 @@ bool TArrow::equal(Type *type) {
     }
     return true;
 }
+std::string TArrow::getBaseName() {
+    return "->";
+}
+TypeList TArrow::getParams() {
+    auto res = inp_types;
+    res.push_back(oup_type);
+    return res;
+}
+PType TArrow::clone(const TypeList &type_list) {
+    int n = type_list.size();
+    TypeList inp_list(n - 1);
+    for (int i = 0; i + 1 < n; ++i) inp_list[i] = type_list[i];
+    PType oup = type_list[n - 1];
+    return std::make_shared<TArrow>(inp_list, oup);
+}
 
 TList::TList(const PType &_content): content(_content) {
 }
@@ -71,6 +104,15 @@ bool TList::equal(Type *type) {
     if (!lt) return false;
     return content->equal(lt->content.get());
 }
+std::string TList::getBaseName() {
+    return "List";
+}
+TypeList TList::getParams() {
+    return {content};
+}
+PType TList::clone(const TypeList &type_list) {
+    return std::make_shared<TList>(type_list[0]);
+}
 
 TBTree::TBTree(const PType &_content, const PType &_leaf): content(_content), leaf(_leaf) {
 }
@@ -81,6 +123,15 @@ bool TBTree::equal(Type* type) {
     auto* bt = dynamic_cast<TBTree*>(type);
     if (!bt) return false;
     return content->equal(bt->content.get()) && leaf->equal(bt->leaf.get());
+}
+std::string TBTree::getBaseName() {
+    return "BTree";
+}
+TypeList TBTree::getParams() {
+    return {content, leaf};
+}
+PType TBTree::clone(const TypeList &type_list) {
+    return std::make_shared<TBTree>(type_list[0], type_list[1]);
 }
 
 PType ext::ho::getTIntList() {

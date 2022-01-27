@@ -3,44 +3,83 @@
 //
 
 #include "istool/basic/type_system.h"
+#include "glog/logging.h"
 
-PType DummyTypeSystem::getType(const PProgram &program) const {
-    return std::make_shared<TBot>();
-}
-PType DummyTypeSystem::typeCheck(const PProgram &program) const {
-    return std::make_shared<TBot>();
+namespace {
+    const std::string KTypeSystemName = "TypeSystem";
 }
 
-PType BasicTypeSystem::getType(const PProgram &program) const {
-    auto* ps = dynamic_cast<ParamSemantics*>(program->semantics.get());
-    if (ps) {
-        auto* vt = dynamic_cast<TVar*>(ps->oup_type.get());
-        if (vt) return nullptr;
-        return ps->oup_type;
+BasicValueTypeInfo::BasicValueTypeInfo(): bot_type(std::make_shared<TBot>()), bool_type(std::make_shared<TBool>()) {
+}
+bool BasicValueTypeInfo::isMatch(Value *value) {
+    return dynamic_cast<NullValue*>(value) || dynamic_cast<BoolValue*>(value);
+}
+PType BasicValueTypeInfo::getType(Value *value) {
+    if (dynamic_cast<NullValue*>(value)) return bot_type;
+    if (dynamic_cast<BoolValue*>(value)) return bool_type;
+}
+
+TypeSystem::TypeSystem(TypeExtension *_ext): ext(_ext) {}
+BasicTypeSystem::BasicTypeSystem(TypeExtension *_ext): TypeSystem(_ext) {}
+
+ValueTypeInfo * TypeExtension::getTypeInfo(Value *value) {
+    for (auto* type_info: type_info_list) {
+        if (type_info->isMatch(value)) return type_info;
     }
-    auto* cs = dynamic_cast<ConstSemantics*>(program->semantics.get());
+    LOG(FATAL) << "Unknown value " << value->toString();
+}
+
+PType BasicTypeSystem::join(const PType &x, const PType &y) {
+    if (dynamic_cast<TVar*>(x.get())) return y;
+    if (dynamic_cast<TVar*>(y.get())) return x;
+    if (type::equal(x, y)) return x;
+    return nullptr;
+}
+PType BasicTypeSystem::getType(Program *p) {
+    auto* cs = dynamic_cast<ConstSemantics*>(p->semantics.get());
     if (cs) {
-        return cs->w.getPType();
+        auto* info = ext->getTypeInfo(cs->w.get());
+        return info->getType(cs->w.get());
     }
-    auto* ts = dynamic_cast<TypedSemantics*>(program->semantics.get());
-    if (!ts) return nullptr;
-    return ts->oup_type;
+    auto* ts = dynamic_cast<TypedSemantics*>(p->semantics.get());
+    if (!ts) return nullptr; else return ts->oup_type;
 }
 
-PType BasicTypeSystem::typeCheck(const PProgram &program) const {
-    auto oup_type = getType(program);
-    auto* ts = dynamic_cast<TypedSemantics*>(program->semantics.get());
-    TypeList sub_types;
-    for (const auto& sub: program->sub_list) {
-        auto res = getType(sub);
-        if (!res) return nullptr;
-        sub_types.push_back(res);
+TypeExtension::TypeExtension() {
+    type_system = new BasicTypeSystem(this);
+    type_info_list.push_back(new BasicValueTypeInfo());
+}
+void TypeExtension::registerTypeSystem(TypeSystem *_type_system) {
+    delete type_system;
+    type_system = _type_system;
+}
+void TypeExtension::registerTypeInfo(ValueTypeInfo *info) {
+    type_info_list.push_back(info);
+}
+PType TypeExtension::join(const PType &x, const PType &y) {
+    return type_system->join(x, y);
+}
+PType TypeExtension::getType(Program *p) {
+    return type_system->getType(p);
+}
+PType TypeExtension::getType(Value *value) {
+    auto* type_info = getTypeInfo(value);
+    return type_info->getType(value);
+}
+TypeExtension::~TypeExtension() {
+    delete type_system;
+    for (auto* info: type_info_list) delete info;
+}
+
+TypeExtension * type::getTypeExtension(Env *env) {
+    auto* type_system = env->getExtension(KTypeSystemName);
+    if (!type_system) {
+        type_system = new TypeExtension();
+        env->registerExtension(KTypeSystemName, type_system);
     }
-    if (sub_types.size() != ts->inp_type_list.size()) return nullptr;
-    for (int i = 0; i < sub_types.size(); ++i) {
-        if (!type::equal(sub_types[i], ts->inp_type_list[i])) {
-            return nullptr;
-        }
-    }
-    return oup_type;
+    return dynamic_cast<TypeExtension*>(type_system);
+}
+void type::registerTypeSystem(TypeSystem *type_system, Env* env) {
+    auto* ext = getTypeExtension(env);
+    ext->registerTypeSystem(type_system);
 }

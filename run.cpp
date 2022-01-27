@@ -8,7 +8,8 @@
 #include <istool/solver/polygen/dnf_learner.h>
 #include <istool/solver/stun/stun.h>
 #include <istool/solver/polygen/polygen_cegis.h>
-#include <istool/selector/split/z3_split_selector.h>
+#include <istool/selector/split/z3_splitor.h>
+#include <istool/selector/split/split_selector.h>
 #include "istool/solver/vsa/vsa_solver.h"
 #include "istool/solver/maxflash/maxflash.h"
 #include "istool/sygus/theory/basic/string/str.h"
@@ -17,7 +18,7 @@
 #include "istool/sygus/theory/witness/string/string_witness.h"
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
 #include "istool/selector/baseline/clia_random_selector.h"
-#include "istool/selector/split/finite_split_selector.h"
+#include "istool/selector/split/finite_splitor.h"
 #include "istool/ext/composed_semantics/composed_witness.h"
 
 typedef std::pair<int, FunctionContext> SynthesisResult;
@@ -34,8 +35,9 @@ SynthesisResult invokeBasicPolyGen(Specification* spec, bool is_random=false) {
 }
 
 SynthesisResult invokeSplitPolyGen(Specification* spec, bool is_100ms=false) {
-    if (is_100ms) selector::setSelectorTimeOut(spec->env.get(), 0.1);
-    auto* v = new Z3SplitSelector(spec, 50);
+    if (is_100ms) selector::setSplitorTimeOut(spec->env.get(), 0.1);
+    auto* splitor = new Z3Splitor(spec->example_space.get(), spec->info_list[0]->oup_type, spec->info_list[0]->inp_type_list);
+    auto* v = new SplitSelector(splitor, spec->info_list[0], 50);
     auto domain_builder = solver::lia::liaSolverBuilder;
     auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
     auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
@@ -98,7 +100,8 @@ SynthesisResult invokeMaxFlash(Specification* spec) {
 }
 
 SynthesisResult invokeSplitMaxFlash(Specification* spec) {
-    auto* v = new FiniteSplitSelector(spec, 1000);
+    auto* splitor = new FiniteSplitor(spec->example_space.get());
+    auto* v = new SplitSelector(splitor, spec->info_list[0], 1000);
     sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
     ext::vsa::registerDefaultComposedManager(ext::vsa::getExtension(spec->env.get()));
 

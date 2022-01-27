@@ -6,7 +6,7 @@
 #include "glog/logging.h"
 
 
-IntValue::IntValue(int _w): w(_w), TypedValue(theory::clia::getTInt()) {
+IntValue::IntValue(int _w): w(_w) {
 }
 bool IntValue::equal(Value *value) const {
     auto* iv = dynamic_cast<IntValue*>(value);
@@ -22,6 +22,14 @@ bool IntValue::leq(Value *value) const {
         LOG(FATAL) << "Expect IntValue, but get " << value->toString();
     }
     return w <= iv->w;
+}
+
+IntValueTypeInfo::IntValueTypeInfo(): int_type(std::make_shared<TInt>()) {}
+bool IntValueTypeInfo::isMatch(Value *value) {
+    return dynamic_cast<IntValue*>(value);
+}
+PType IntValueTypeInfo::getType(Value *value) {
+    return int_type;
 }
 
 int theory::clia::getIntValue(const Data &data) {

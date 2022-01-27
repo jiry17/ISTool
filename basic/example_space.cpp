@@ -3,6 +3,7 @@
 //
 
 #include "istool/basic/example_space.h"
+#include "istool/basic/type_system.h"
 #include "glog/logging.h"
 #include <unordered_map>
 
@@ -58,15 +59,16 @@ PExampleSpace example::buildFiniteIOExampleSpace(const IOExampleList &examples, 
     if (examples.empty()) {
         LOG(FATAL) << "Example space should not be empty";
     }
+    auto* type_ext = type::getTypeExtension(env);
     int n = examples[0].first.size();
     ProgramList l_subs;
     TypeList inp_types;
     for (int i = 0; i < n; ++i) {
-        auto type = examples[0].first[i].getPType();
+        auto type = type_ext->getType(examples[0].first[i].get());
         l_subs.push_back(program::buildParam(i, type));
         inp_types.push_back(type);
     }
-    auto oup_type = examples[0].second.getPType();
+    auto oup_type = type_ext->getType(examples[0].second.get());
     auto r = program::buildParam(n, oup_type);
     auto l = std::make_shared<Program>(
             std::make_shared<TypedInvokeSemantics>(name, oup_type, inp_types, env),

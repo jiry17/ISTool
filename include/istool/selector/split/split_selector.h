@@ -6,12 +6,15 @@
 #define ISTOOL_SPLIT_SELECTOR_H
 
 #include "istool/selector/selector.h"
+#include "splitor.h"
 
 class SplitSelector: public Selector {
 public:
+    Splitor* splitor;
     ProgramList seed_list;
-    SplitSelector(const PSynthInfo& info, int n);
-    virtual ~SplitSelector() = default;
+    SplitSelector(Splitor* _selector, const PSynthInfo& info, int n);
+    bool verify(const FunctionContext& info, Example* counter_example);
+    virtual ~SplitSelector();
 };
 
 

@@ -7,13 +7,23 @@
 
 #include "istool/basic/value.h"
 #include "istool/basic/data.h"
+#include "istool/basic/type_system.h"
 
-class StringValue: public Value, public TypedValue {
+class StringValue: public Value {
 public:
     std::string s;
     StringValue(const std::string& _s);
     virtual std::string toString() const;
     virtual bool equal(Value* value) const;
+};
+
+class StringValueTypeInfo: public ValueTypeInfo {
+    PType string_type;
+public:
+    StringValueTypeInfo();
+    virtual bool isMatch(Value* value);
+    virtual PType getType(Value* value);
+    virtual ~StringValueTypeInfo() = default;
 };
 
 namespace theory {

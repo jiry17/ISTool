@@ -7,8 +7,9 @@
 std::string TString::getName() {
     return "String";
 }
-bool TString::equal(Type *type) {
-    return dynamic_cast<TString*>(type);
+
+PType TString::clone(const TypeList &type_list) {
+    return std::make_shared<TString>();
 }
 
 PType theory::string::getTString() {

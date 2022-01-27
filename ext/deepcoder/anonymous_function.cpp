@@ -18,6 +18,13 @@ Data AnonymousSemantics::run(const std::vector<std::shared_ptr<Program> > &sub_l
     return f(sub_list, info);
 }
 
+TypedAnonymousSemantics::TypedAnonymousSemantics(const SemanticsFunction &f, const TypeList &inp_list, const PType &oup, const std::string &name):
+    TypedSemantics(oup, inp_list), AnonymousSemantics(f, name) {
+}
+TypedAnonymousSemantics::TypedAnonymousSemantics(const FullSemanticsFunction &f, const TypeList &inp_list, const PType &oup, const std::string &name):
+    TypedSemantics(oup, inp_list), AnonymousSemantics(f, name) {
+}
+
 Data ext::ho::buildAnonymousData(const SemanticsFunction &f, const std::string &name) {
     auto as = std::make_shared<AnonymousSemantics>(f, name);
     return Data(std::make_shared<SemanticsValue>(as));

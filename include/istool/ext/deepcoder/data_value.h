@@ -6,6 +6,7 @@
 #define ISTOOL_DATA_VALUE_H
 
 #include "istool/basic/data.h"
+#include "istool/basic/type_system.h"
 #include "istool/basic/env.h"
 
 class ProductValue: public Value {
@@ -22,7 +23,8 @@ class SumValue: public Value {
 public:
     int id;
     Data value;
-    SumValue(int _id, const Data& _value);
+    int n;
+    SumValue(int _id, const Data& _value, int _n=-1);
     virtual ~SumValue() = default;
     virtual std::string toString() const;
     virtual bool equal(Value* v) const;
@@ -39,6 +41,7 @@ public:
 
 class BTreeValue: public Value {
 public:
+    BTreeValue();
     virtual ~BTreeValue() = default;
 };
 typedef std::shared_ptr<BTreeValue> BTreeNode;
@@ -54,12 +57,23 @@ public:
 };
 
 class BTreeLeafValue: public BTreeValue {
+protected:
+    virtual PType constructType();
 public:
     Data value;
     BTreeLeafValue(const Data& _v);
     virtual ~BTreeLeafValue() = default;
     virtual std::string toString() const;
     virtual bool equal(Value* v) const;
+};
+
+class DeepCoderValueTypeInfo: public ValueTypeInfo {
+    TypeExtension* ext;
+public:
+    DeepCoderValueTypeInfo(TypeExtension* _ext);
+    virtual bool isMatch(Value* value);
+    virtual PType getType(Value* value);
+    virtual ~DeepCoderValueTypeInfo() = default;
 };
 
 namespace ext::ho {

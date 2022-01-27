@@ -6,6 +6,7 @@
 #define ISTOOL_Z3_EXTENSION_H
 
 #include "istool/basic/env.h"
+#include "istool/basic/type_system.h"
 #include "istool/basic/program.h"
 #include "istool/basic/time_guard.h"
 #include "z3_type.h"
@@ -17,8 +18,10 @@ class Z3Extension: public Extension {
     std::list<Z3Type*> util_list;
     std::list<Z3SemanticsManager*> semantics_list;
     Z3Type* getZ3Type(Type* type) const;
+    Env* env;
+    TypeExtension* type_ext;
 public:
-    Z3Extension();
+    Z3Extension(Env* env);
     void registerZ3Type(Z3Type* util);
     void registerSemanticsManager(Z3SemanticsManager* manager);
     void registerOperator(const std::string& name, Z3Semantics* semantics);

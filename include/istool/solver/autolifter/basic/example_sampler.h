@@ -5,6 +5,7 @@
 #ifndef ISTOOL_EXAMPLE_SAMPLER_H
 #define ISTOOL_EXAMPLE_SAMPLER_H
 
+#include <functional>
 #include "streamed_example_space.h"
 #include "istool/ext/deepcoder/data_value.h"
 

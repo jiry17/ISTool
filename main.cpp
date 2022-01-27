@@ -22,7 +22,8 @@
 #include "istool/sygus/theory/basic/string/str.h"
 #include "istool/sygus/theory/witness/theory_witness.h"
 #include "istool/sygus/parser/json_util.h"
-#include "istool/selector/split/z3_split_selector.h"
+#include "istool/selector/split/z3_splitor.h"
+#include "istool/selector/split/split_selector.h"
 #include "glog/logging.h"
 
 FunctionContext CBSInvoker(Specification* spec, TimeGuard* guard) {
@@ -107,7 +108,8 @@ FunctionContext PolyGenInvoker(Specification* spec, TimeGuard* guard) {
 }
 
 FunctionContext PolyGenSelectorInvoker(Specification* spec, TimeGuard* guard) {
-    auto* v = new Z3SplitSelector(spec, 50);
+    auto* splitor = new Z3Splitor(spec->example_space.get(), spec->info_list[0]->oup_type, spec->info_list[0]->inp_type_list);
+    auto* v = new SplitSelector(splitor, spec->info_list[0], 50);
     auto domain_builder = solver::lia::liaSolverBuilder;
     auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
     auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());

@@ -2,6 +2,7 @@
 // Created by pro on 2021/12/18.
 //
 
+#include "istool/basic/type_system.h"
 #include "istool/ext/z3/z3_extension.h"
 #include "glog/logging.h"
 #include <sstream>
@@ -16,9 +17,10 @@ std::string Z3EncodeRes::toString() const {
     return s + "}";
 }
 
-Z3Extension::Z3Extension() {
+Z3Extension::Z3Extension(Env* _env): env(_env) {
     ext::z3::loadLogicSemantics(this);
     semantics_list.push_back(new BasicZ3SemanticsManager(this));
+    type_ext = type::getTypeExtension(env);
 }
 
 void Z3Extension::registerZ3Type(Z3Type *util) {
@@ -36,7 +38,7 @@ Z3Type * Z3Extension::getZ3Type(Type *type) const {
 }
 
 z3::expr Z3Extension::buildConst(const Data &data) {
-    auto* util = getZ3Type(data.getType());
+    auto* util = getZ3Type(type_ext->getType(data.get()).get());
     return util->buildConst(data, ctx);
 }
 
@@ -91,7 +93,7 @@ Z3Extension * ext::z3::getExtension(Env *env) {
         }
         return z3_ext;
     }
-    auto* z3_ext = new Z3Extension();
+    auto* z3_ext = new Z3Extension(env);
     env->registerExtension(KZ3Name, z3_ext);
     return z3_ext;
 }

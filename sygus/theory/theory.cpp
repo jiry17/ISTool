@@ -4,7 +4,8 @@
 
 #include "istool/basic/env.h"
 #include "istool/sygus/theory/theory.h"
-#include "istool/sygus/theory/basic/clia/clia_semantics.h"
+#include "istool/sygus/theory/basic/clia/clia.h"
+#include "istool/sygus/theory/basic/string/str.h"
 #include <map>
 
 #include "glog/logging.h"

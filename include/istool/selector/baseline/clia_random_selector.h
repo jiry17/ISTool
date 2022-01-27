@@ -8,12 +8,14 @@
 #include "istool/ext/z3/z3_verifier.h"
 #include "istool/selector/selector.h"
 
-class CLIARandomSelector: public Z3Verifier, public Selector {
+class CLIARandomSelector: public Selector {
 public:
     int KRandomRange;
-    Z3IOExampleSpace* io_space;
+    Z3Extension* ext;
+    Z3Verifier* v;
     CLIARandomSelector(Env* env, Z3IOExampleSpace* example_space);
     virtual bool verify(const FunctionContext& info, Example* counter_example);
+    virtual ~CLIARandomSelector();
 };
 
 namespace selector {

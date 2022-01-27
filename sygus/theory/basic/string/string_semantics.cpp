@@ -103,16 +103,4 @@ Data StrToIntSemantics::run(DataList &&inp_list, ExecuteInfo* info) {
     return BuildData(Int, res);
 }
 
-void theory::loadStringSemantics(Env *env) {
-    auto* inf = env->getConstRef(theory::clia::KINFName);
-    LoadSemantics("str.++", StringCat); LoadSemantics("str.len", StringLen);
-    LoadSemantics("str.at", StringAt); LoadSemantics("str.substr", StringSubStr);
-    LoadSemantics("str.prefixof", StringPrefixOf); LoadSemantics("str.suffixof", StringSuffixOf);
-    LoadSemantics("str.contains", StringContains); LoadSemantics("str.indexof", StringIndexOf);
-    LoadSemantics("str.replace", StringReplace); LoadSemantics("int.to.str", IntToStr);
-    env->setSemantics("str.to.int", std::make_shared<StrToIntSemantics>(inf));
-}
-
-
-
 

@@ -19,6 +19,13 @@ public:
     virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo* info);
 };
 
+class TypedAnonymousSemantics: public AnonymousSemantics, public TypedSemantics {
+public:
+    TypedAnonymousSemantics(const SemanticsFunction& f, const TypeList& inp_list, const PType& oup, const std::string& name="?");
+    TypedAnonymousSemantics(const FullSemanticsFunction& f, const TypeList& inp_list, const PType& oup, const std::string& name="?");
+    virtual ~TypedAnonymousSemantics() = default;
+};
+
 class SemanticsValue: public Value {
 public:
     PSemantics sem;

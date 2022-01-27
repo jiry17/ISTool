@@ -37,18 +37,6 @@ Value * Data::get() const {
     return value.get();
 }
 
-PType Data::getPType() const {
-    auto* tv = dynamic_cast<TypedValue*>(value.get());
-    if (!tv) {
-        LOG(FATAL) << "Cannot get type for data " << toString();
-    }
-    return tv->type;
-}
-
-Type * Data::getType() const {
-    return getPType().get();
-}
-
 bool Data::isTrue() const {
     auto* bv = dynamic_cast<BoolValue*>(value.get());
     return bv->w;

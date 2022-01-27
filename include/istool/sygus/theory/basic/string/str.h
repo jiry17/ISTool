@@ -8,4 +8,9 @@
 #include "string_type.h"
 #include "string_value.h"
 
+namespace theory {
+    void loadStringTheory(Env* env);
+}
+
+
 #endif //ISTOOL_STRING_H

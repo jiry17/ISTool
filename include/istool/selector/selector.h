@@ -8,24 +8,23 @@
 #include "istool/basic/env.h"
 #include "istool/basic/verifier.h"
 
-class Selector {
+class ExampleCounter {
 public:
     int example_count = 0;
     void addExampleCount();
 };
 
-class DirectSelector: public Selector, public Verifier {
+class Selector: public ExampleCounter, public Verifier {
+public:
+    virtual ~Selector() = default;
+};
+
+class DirectSelector: public Selector {
 public:
     Verifier* v;
     DirectSelector(Verifier* _v);
     virtual bool verify(const FunctionContext& info, Example* counter_example);
     ~DirectSelector();
 };
-
-namespace selector {
-    extern const std::string KSelectorTimeLimitName;
-    void setSelectorTimeOut(Env* env, double ti);
-    Data* getSelectorTimeOut(Env* env);
-}
 
 #endif //ISTOOL_SELECTOR_H

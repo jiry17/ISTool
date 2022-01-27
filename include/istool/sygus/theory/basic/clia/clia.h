@@ -12,6 +12,7 @@ namespace theory {
     namespace clia {
         extern const std::string KINFName;
     }
+    void loadCLIATheory(Env* env);
 }
 
 #endif //ISTOOL_CLIA_H

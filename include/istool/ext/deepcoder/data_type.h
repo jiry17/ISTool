@@ -13,6 +13,9 @@ public:
     TSum(const TypeList& sub_types);
     virtual std::string getName();
     virtual bool equal(Type* type);
+    virtual std::string getBaseName();
+    virtual TypeList getParams();
+    virtual PType clone(const TypeList& type_list);
     ~TSum() = default;
 };
 
@@ -22,6 +25,9 @@ public:
     TProduct(const TypeList& sub_types);
     virtual std::string getName();
     virtual bool equal(Type* type);
+    virtual std::string getBaseName();
+    virtual TypeList getParams();
+    virtual PType clone(const TypeList& type_list);
     ~TProduct() = default;
 };
 
@@ -32,6 +38,9 @@ public:
     TArrow(const TypeList& _inp_types, const PType& _oup_type);
     virtual std::string getName();
     virtual bool equal(Type* type);
+    virtual std::string getBaseName();
+    virtual TypeList getParams();
+    virtual PType clone(const TypeList& type_list);
     ~TArrow() = default;
 };
 
@@ -41,6 +50,9 @@ public:
     TList(const PType& _content);
     virtual std::string getName();
     virtual bool equal(Type* type);
+    virtual std::string getBaseName();
+    virtual TypeList getParams();
+    virtual PType clone(const TypeList& type_list);
     ~TList() = default;
 };
 
@@ -50,6 +62,9 @@ public:
     TBTree(const PType& _content, const PType& _leaf);
     virtual std::string getName();
     virtual bool equal(Type* type);
+    virtual std::string getBaseName();
+    virtual TypeList getParams();
+    virtual PType clone(const TypeList& type_list);
     ~TBTree() = default;
 };
 

@@ -3,18 +3,18 @@
 //
 
 #include "istool/sygus/theory/basic/theory_semantics.h"
-#include "istool/sygus/theory/basic/clia/clia_semantics.h"
-#include "istool/sygus/theory/basic/string/string_semantics.h"
+#include "istool/sygus/theory/basic/clia/clia.h"
+#include "istool/sygus/theory/basic/string/str.h"
 #include "glog/logging.h"
 
 void theory::loadBasicSemantics(Env *env, TheoryToken token) {
     switch (token) {
         case TheoryToken::CLIA: {
-            theory::loadCLIASemantics(env);
+            theory::loadCLIATheory(env);
             return;
         }
         case TheoryToken::STRING: {
-            theory::loadStringSemantics(env);
+            theory::loadStringTheory(env);
             return;
         }
         // case TheoryToken::BV:

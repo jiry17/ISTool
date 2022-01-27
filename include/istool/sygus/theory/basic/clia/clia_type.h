@@ -7,10 +7,10 @@
 
 #include "istool/basic/data.h"
 
-class TInt: public Type {
+class TInt: public SimpleType {
 public:
     virtual std::string getName();
-    virtual bool equal(Type* type);
+    virtual PType clone(const TypeList& params);
 };
 
 namespace theory {

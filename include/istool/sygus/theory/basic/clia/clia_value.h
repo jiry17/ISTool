@@ -7,14 +7,24 @@
 
 #include "clia_type.h"
 #include "istool/basic/value.h"
+#include "istool/basic/type_system.h"
 
-class IntValue: public Value, public TypedValue, public ComparableValue {
+class IntValue: public Value, public ComparableValue {
 public:
     int w;
     IntValue(int _w);
     virtual std::string toString() const;
     virtual bool equal(Value* value) const;
     virtual bool leq(Value* value) const;
+};
+
+class IntValueTypeInfo: public ValueTypeInfo {
+    PType int_type;
+public:
+    IntValueTypeInfo();
+    virtual bool isMatch(Value* value);
+    virtual PType getType(Value* value);
+    virtual ~IntValueTypeInfo() = default;
 };
 
 namespace theory {

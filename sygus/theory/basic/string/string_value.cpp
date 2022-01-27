@@ -6,7 +6,7 @@
 #include "istool/sygus/theory/basic/string/string_type.h"
 #include "glog/logging.h"
 
-StringValue::StringValue(const std::string &_s): s(_s), TypedValue(theory::string::getTString()) {
+StringValue::StringValue(const std::string &_s): s(_s), Value() {
 }
 std::string StringValue::toString() const {
     return "\"" + s + "\"";
@@ -25,4 +25,12 @@ std::string theory::string::getStringValue(const Data &d) {
         LOG(FATAL) << "Expect StringValue, but get " << d.toString();
     }
     return sv->s;
+}
+
+StringValueTypeInfo::StringValueTypeInfo(): string_type(std::make_shared<TString>()) {}
+bool StringValueTypeInfo::isMatch(Value *value) {
+    return dynamic_cast<StringValue*>(value);
+}
+PType StringValueTypeInfo::getType(Value *value) {
+    return std::make_shared<TString>();
 }

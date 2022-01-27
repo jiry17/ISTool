@@ -4,11 +4,11 @@
 
 #include "istool/sygus/theory/basic/clia/clia_type.h"
 
-bool TInt::equal(Type *type) {
-    return dynamic_cast<TInt*>(type);
-}
 std::string TInt::getName() {
     return "Int";
+}
+PType TInt::clone(const TypeList &params) {
+    return std::make_shared<TInt>();
 }
 
 PType theory::clia::getTInt() {

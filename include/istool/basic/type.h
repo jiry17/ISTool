@@ -17,29 +17,41 @@ class Type {
 public:
     virtual std::string getName() = 0;
     virtual bool equal(Type* type) = 0;
+    virtual std::string getBaseName() = 0;
+    virtual TypeList getParams() = 0;
+    virtual PType clone(const TypeList& params) = 0;
     virtual ~Type() = default;
 };
 
-class TBot: public Type {
+class SimpleType: public Type {
+public:
+    virtual bool equal(Type* type);
+    virtual std::string getBaseName();
+    virtual TypeList getParams();
+    virtual ~SimpleType() = default;
+};
+
+class TBot: public SimpleType {
 public:
     virtual std::string getName();
-    virtual bool equal(Type* type);
+    virtual PType clone(const TypeList& params);
     virtual ~TBot() = default;
 };
 
-class TVar: public Type {
+class TVar: public SimpleType {
 public:
     std::string name;
     TVar(const std::string& _name);
     virtual std::string getName();
-    virtual bool equal(Type* type);
+    virtual PType clone(const TypeList& params);
     virtual ~TVar() = default;
 };
 
-class TBool: public Type {
+class TBool: public SimpleType {
 public:
     virtual std::string getName();
-    virtual bool equal(Type* type);
+    virtual PType clone(const TypeList& params);
+    virtual ~TBool() = default;
 };
 
 typedef std::pair<TypeList, PType> Signature;
@@ -47,6 +59,8 @@ typedef std::pair<TypeList, PType> Signature;
 namespace type {
     std::string typeList2String(const TypeList& type_list);
     bool equal(const PType& t1, const PType& t2);
+    TypeList assignVarName(const TypeList& type_list);
+    PType substituteVar(const PType& type, const std::unordered_map<std::string, PType>& type_map);
     PType getTBool();
     PType getTVarA();
 }

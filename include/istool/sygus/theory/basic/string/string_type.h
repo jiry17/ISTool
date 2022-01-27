@@ -8,10 +8,11 @@
 #include "istool/basic/type.h"
 
 
-class TString: public Type {
+class TString: public SimpleType {
 public:
     virtual std::string getName();
-    virtual bool equal(Type* type);
+    virtual PType clone(const TypeList& type_list);
+    virtual ~TString() = default;
 };
 
 namespace theory {
