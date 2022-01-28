@@ -20,7 +20,9 @@ Z3Splitor::Z3Splitor(ExampleSpace *_example_space, const PType &_oup_type, const
 
 bool Z3Splitor::getSplitExample(const PProgram &p, const ProgramList &seed_list, Example *counter_example, TimeGuard *guard) {
     z3::solver solver(ext->ctx);
-    v->prepareZ3Solver(solver, semantics::buildSingleContext(io_space->func_name, p));
+    if (p) {
+        v->prepareZ3Solver(solver, semantics::buildSingleContext(io_space->func_name, p));
+    }
     auto z3_res = solver.check();
     if (z3_res == z3::unsat) return true;
     if (z3_res != z3::sat) LOG(FATAL) << "Z3 failed with result " << z3_res;

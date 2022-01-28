@@ -8,7 +8,7 @@
 #include "polygen_term_solver.h"
 #include "polygen_condition_solver.h"
 
-class CEGISPolyGen: public Solver {
+class CEGISPolyGen: public VerifiedSolver {
     PolyGenTermSolver* term_solver;
     PolyGenConditionSolver* cond_solver;
     IOExampleSpace* io_space;

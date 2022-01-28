@@ -21,7 +21,7 @@ bool FiniteSplitor::getSplitExample(const PProgram &p, const ProgramList &seed_l
     int best_cost = seed_list.size() + 1;
     for (int i = 0; i < example_list.size(); ++i) {
         auto& example = example_list[i];
-        if (env->run(p.get(), example.first) == example.second) continue;
+        if (p && env->run(p.get(), example.first) == example.second) continue;
         int cost = getCost(example.first, seed_list);
         if (cost < best_cost) {
             best_cost = cost; best_id = i;

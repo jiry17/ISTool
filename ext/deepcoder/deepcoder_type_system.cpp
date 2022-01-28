@@ -69,7 +69,7 @@ namespace {
     }
 }
 
-PType DeepCoderTypeSystem::join(const PType &x, const PType &y) {
+PType DeepCoderTypeSystem::intersect(const PType &x, const PType &y) {
     std::unordered_map<std::string, PType> res;
     if (!_getMGU({{x, y}}, res)) return nullptr;
     return type::substituteVar(x, res);

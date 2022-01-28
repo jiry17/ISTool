@@ -133,8 +133,7 @@ void PolyGenTermSolverInvoker(Specification* spec, TimeGuard* guard) {
     exit(0);
 }
 
-auto prepare = [](Specification* spec, const IOExample& io_example) {
-    auto* env = spec->env.get(); auto* g = spec->info_list[0]->grammar;
+auto prepare = [](Grammar* g, Env* env, const IOExample& io_example) {
     std::vector<std::string> string_const_list;
     auto add_const = [&](const Data& d) {
         auto* sv = dynamic_cast<StringValue*>(d.get());
@@ -176,12 +175,12 @@ FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
         }
         return false;
     });
-    auto* builder = new BFSVSABuilder(info->grammar, pruner, spec->env.get());
+    auto builder = std::make_shared<BFSVSABuilder>(info->grammar, pruner, spec->env.get(), prepare);
     // auto* builder = new DFSVSABuilder(info->grammar, pruner, spec->env);
 
     sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
 
-    auto* solver = new BasicVSASolver(spec, builder, prepare, ext::vsa::getSizeModel());
+    auto* solver = new BasicVSASolver(spec, builder, ext::vsa::getSizeModel());
     auto* verifier = sygus::getVerifier(spec);
     auto* cegis = new CEGISSolver(solver, verifier);
 
@@ -247,8 +246,9 @@ void learnModel() {
     ext::vsa::saveNGramModel(model, model_path);
 }
 
+
+
 int main() {
-    learnModel(); exit(0);
     // std::string file = config::KSourcePath + "/tests/polygen/secondmin.sl";
     std::string file = config::KSourcePath + "/tests/string/phone-10_short.sl";
     auto* spec = parser::getSyGuSSpecFromFile(file);

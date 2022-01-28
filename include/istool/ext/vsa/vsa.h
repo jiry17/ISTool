@@ -49,6 +49,8 @@ public:
     virtual std::string toString();
 };
 
+typedef std::function<void(Grammar*, Env* env, const IOExample&)> VSAEnvSetter;
+
 namespace ext {
     namespace vsa {
         void cleanUpVSA(VSANode* root);
@@ -58,7 +60,5 @@ namespace ext {
         void deleteVSA(VSANode* root);
     }
 }
-
-typedef std::function<void(Specification*, const IOExample&)> VSAEnvPreparation;
 
 #endif //ISTOOL_VSA_H

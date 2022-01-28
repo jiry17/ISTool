@@ -8,19 +8,35 @@
 #include "istool/selector/selector.h"
 #include "istool/selector/split/splitor.h"
 
-class SampleSyCore {
+class SeedGenerator {
 public:
-    virtual void addExample(const Example& example) = 0;
-    virtual bool isAllEquivalent() = 0;
+    virtual void addExample(const IOExample& example) = 0;
+    virtual ProgramList getSeeds(int num, double time_limit) = 0;
+    virtual ~SeedGenerator() = default;
 };
 
-class SampleSy: public Selector {
+class EquivalenceChecker {
+public:
+    virtual void addExample(const IOExample& example) = 0;
+    virtual std::pair<PProgram, PProgram> isAllEquivalent() = 0;
+    virtual ~EquivalenceChecker() = default;
+};
+
+class SampleSy: public CompleteSelector {
 public:
     Splitor* splitor;
-    SampleSy(Splitor* _splitor);
-    virtual void addExample() = 0;
-    virtual bool verify(const FunctionContext& info, Example* counter_example);
-    virtual ~SampleSy() = default;
+    SeedGenerator* gen;
+    EquivalenceChecker* checker;
+    Data* KSampleTimeOut, *KSampleNum;
+    SampleSy(Specification* _spec, Splitor* _splitor, SeedGenerator* _gen, EquivalenceChecker* checker);
+    virtual PProgram getNextAction(Example* example);
+    virtual void addExample(const IOExample& example);
+    virtual ~SampleSy();
 };
+
+namespace selector::samplesy {
+    extern const std::string KSampleTimeOutLimit;
+    extern const std::string KSampleNumLimit;
+}
 
 #endif //ISTOOL_SAMPLESY_H

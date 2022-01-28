@@ -6,7 +6,7 @@
 #include "istool/solver/enum/enum_solver.h"
 #include "glog/logging.h"
 
-BasicEnumSolver::BasicEnumSolver(Specification *_spec, Verifier *_v): Solver(_spec, _v){
+BasicEnumSolver::BasicEnumSolver(Specification *_spec, Verifier *_v): VerifiedSolver(_spec, _v){
 }
 FunctionContext BasicEnumSolver::synthesis(TimeGuard* guard) {
     auto* o = new TrivialOptimizer();

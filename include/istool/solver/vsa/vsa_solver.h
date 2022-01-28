@@ -12,12 +12,11 @@
 class BasicVSASolver: public PBESolver {
     VSANode* buildVSA(const ExampleList& example_list, TimeGuard* guard);
 public:
-    VSABuilder* builder;
+    PVSABuilder builder;
     IOExampleSpace* io_space;
     TopDownModel* model;
-    VSAEnvPreparation prepare;
     std::unordered_map<std::string, VSANode*> cache;
-    BasicVSASolver(Specification* spec, VSABuilder* _builder, const VSAEnvPreparation& _p, TopDownModel* _model);
+    BasicVSASolver(Specification* spec, const PVSABuilder& _builder, TopDownModel* _model);
     virtual FunctionContext synthesis(const ExampleList& example_list, TimeGuard* guard);
     virtual ~BasicVSASolver();
 };

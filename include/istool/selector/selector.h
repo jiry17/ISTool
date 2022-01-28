@@ -7,6 +7,7 @@
 
 #include "istool/basic/env.h"
 #include "istool/basic/verifier.h"
+#include "istool/solver/solver.h"
 
 class ExampleCounter {
 public:
@@ -17,6 +18,16 @@ public:
 class Selector: public ExampleCounter, public Verifier {
 public:
     virtual ~Selector() = default;
+};
+
+class CompleteSelector: public ExampleCounter, public Solver {
+public:
+    IOExampleSpace* io_space;
+    CompleteSelector(Specification* spec);
+    virtual PProgram getNextAction(Example* example) = 0;
+    virtual void addExample(const IOExample& example) = 0;
+    virtual FunctionContext synthesis(TimeGuard* guard = nullptr);
+    virtual ~CompleteSelector() = default;
 };
 
 class DirectSelector: public Selector {

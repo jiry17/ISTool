@@ -10,11 +10,11 @@
 #include "istool/solver/solver.h"
 #include "istool/ext/vsa/vsa_extension.h"
 
-class MaxFlash: public Solver {
+class MaxFlash: public VerifiedSolver {
     IOExampleList counter_example_list;
     std::vector<std::unordered_map<std::string, MaxFlashNode*>> combined_node_map, single_node_map;
     int KIterProbStep;
-    VSAEnvPreparation p;
+    VSAEnvSetter setter;
     int env_id;
 
     void prepareEnv(int example_id);
@@ -30,7 +30,7 @@ public:
     VSAExtension* ext;
     IOExampleSpace* io_space;
     TopDownContextGraph* graph;
-    MaxFlash(Specification* _spec, Verifier* _v, TopDownModel* model, const VSAEnvPreparation& _p);
+    MaxFlash(Specification* _spec, Verifier* _v, TopDownModel* model, const VSAEnvSetter& _setter);
     virtual FunctionContext synthesis(TimeGuard *guard);
     ~MaxFlash();
 };

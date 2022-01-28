@@ -29,7 +29,7 @@ ValueTypeInfo * TypeExtension::getTypeInfo(Value *value) {
     LOG(FATAL) << "Unknown value " << value->toString();
 }
 
-PType BasicTypeSystem::join(const PType &x, const PType &y) {
+PType BasicTypeSystem::intersect(const PType &x, const PType &y) {
     if (dynamic_cast<TVar*>(x.get())) return y;
     if (dynamic_cast<TVar*>(y.get())) return x;
     if (type::equal(x, y)) return x;
@@ -57,7 +57,7 @@ void TypeExtension::registerTypeInfo(ValueTypeInfo *info) {
     type_info_list.push_back(info);
 }
 PType TypeExtension::join(const PType &x, const PType &y) {
-    return type_system->join(x, y);
+    return type_system->intersect(x, y);
 }
 PType TypeExtension::getType(Program *p) {
     return type_system->getType(p);

@@ -9,7 +9,7 @@
 #include "istool/solver/enum/enum_util.h"
 #include <unordered_set>
 
-class BasicEnumSolver: public Solver {
+class BasicEnumSolver: public VerifiedSolver {
 public:
     BasicEnumSolver(Specification* _spec, Verifier* _v);
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr);

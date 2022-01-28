@@ -21,13 +21,34 @@ bool SizeLimitPruner::isPrune(VSANode *node) {
     return true;
 }
 
-VSABuilder::VSABuilder(Grammar *_g, VSAPruner *_pruner, Env* env): g(_g), pruner(_pruner), ext(ext::vsa::getExtension(env)) {
+VSABuilder::VSABuilder(Grammar *_g, VSAPruner *_pruner, Env* _env, const VSAEnvSetter& _setter):
+    g(_g), pruner(_pruner), ext(ext::vsa::getExtension(env)), env(_env), setter(_setter) {
 }
 VSABuilder::~VSABuilder() {
     delete pruner;
+    for (auto& info: single_build_cache) delete info.second;
+    for (auto& info: merge_build_cache) delete info.second;
+}
+
+VSANode * VSABuilder::buildVSA(const Data &oup, const DataList &inp_list, TimeGuard *guard) {
+    auto feature = data::dataList2String(inp_list) + "->"+ oup.toString();
+    if (single_build_cache.find(feature) != single_build_cache.end()) {
+        return single_build_cache[feature];
+    }
+    setter(g, env, {inp_list, oup});
+    return single_build_cache[feature] = _buildVSA(oup, inp_list, guard);
+}
+VSANode * VSABuilder::mergeVSA(VSANode *l, VSANode *r, TimeGuard *guard) {
+    if (merge_build_cache.find({l, r}) != merge_build_cache.end()) {
+        return merge_build_cache[{l, r}];
+    }
+    return merge_build_cache[{l, r}] = _mergeVSA(l, r, guard);
 }
 
 VSANode* VSABuilder::buildFullVSA() {
+    if (single_build_cache.find("") != single_build_cache.end()) {
+        return single_build_cache[""];
+    }
     g->indexSymbol();
     VSANodeList node_list;
     auto total = std::make_shared<TotalWitnessValue>();
@@ -44,12 +65,14 @@ VSANode* VSABuilder::buildFullVSA() {
         }
     }
     ext::vsa::cleanUpVSA(node_list[0]);
-    return node_list[0];
+    return single_build_cache[""] = node_list[0];
 }
 
-DFSVSABuilder::DFSVSABuilder(Grammar *_g, VSAPruner *pruner, Env* env): VSABuilder(_g, pruner, env) {
+DFSVSABuilder::DFSVSABuilder(Grammar *_g, VSAPruner *pruner, Env* env, const VSAEnvSetter& setter):
+    VSABuilder(_g, pruner, env, setter) {
 }
-BFSVSABuilder::BFSVSABuilder(Grammar *_g, VSAPruner *pruner, Env* env): VSABuilder(_g, pruner, env) {
+BFSVSABuilder::BFSVSABuilder(Grammar *_g, VSAPruner *pruner, Env* env, const VSAEnvSetter& setter):
+    VSABuilder(_g, pruner, env, setter) {
 }
 
 VSANode* DFSVSABuilder::buildVSA(NonTerminal *nt, const WitnessData &oup, const DataList &inp_list, TimeGuard *guard, std::unordered_map<std::string, VSANode*> &cache) {
@@ -76,7 +99,7 @@ VSANode* DFSVSABuilder::buildVSA(NonTerminal *nt, const WitnessData &oup, const 
     return node;
 }
 
-VSANode* DFSVSABuilder::buildVSA(const Data &oup, const DataList &inp_list, TimeGuard *guard) {
+VSANode* DFSVSABuilder::_buildVSA(const Data &oup, const DataList &inp_list, TimeGuard *guard) {
     pruner->clear();
     std::unordered_map<std::string, VSANode*> cache;
     auto wit_oup = std::make_shared<DirectWitnessValue>(oup);
@@ -160,7 +183,7 @@ namespace {
     }
 }
 
-VSANode* DFSVSABuilder::mergeVSA(VSANode* l, VSANode* r, TimeGuard *guard) {
+VSANode* DFSVSABuilder::_mergeVSA(VSANode* l, VSANode* r, TimeGuard *guard) {
     pruner->clear();
     orderEdgeList(l); orderEdgeList(r);
     std::unordered_map<std::string, VSANode*> cache;
@@ -169,7 +192,7 @@ VSANode* DFSVSABuilder::mergeVSA(VSANode* l, VSANode* r, TimeGuard *guard) {
     return root;
 }
 
-VSANode* BFSVSABuilder::buildVSA(const Data &oup, const DataList &inp_list, TimeGuard *guard) {
+VSANode* BFSVSABuilder::_buildVSA(const Data &oup, const DataList &inp_list, TimeGuard *guard) {
     std::unordered_map<std::string, VSANode*> cache;
     std::queue<VSANode*> Q; pruner->clear();
     auto insert = [&](NonTerminal* nt, const WitnessData& d) {
@@ -204,7 +227,7 @@ VSANode* BFSVSABuilder::buildVSA(const Data &oup, const DataList &inp_list, Time
     return root;
 }
 
-VSANode* BFSVSABuilder::mergeVSA(VSANode* l, VSANode* r, TimeGuard *guard) {
+VSANode* BFSVSABuilder::_mergeVSA(VSANode* l, VSANode* r, TimeGuard *guard) {
     pruner->clear();
     orderEdgeList(l); orderEdgeList(r);
     std::unordered_map<std::string, VSANode*> cache;

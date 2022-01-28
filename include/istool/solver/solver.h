@@ -12,10 +12,16 @@
 class Solver {
 public:
     Specification* spec;
-    Verifier* v;
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr) = 0;
-    Solver(Specification* _spec, Verifier* _v);
-    virtual ~Solver();
+    Solver(Specification* _spec);
+    virtual ~Solver() = default;
+};
+
+class VerifiedSolver: public Solver {
+public:
+    Verifier* v;
+    VerifiedSolver(Specification* spec, Verifier* _v);
+    virtual ~VerifiedSolver();
 };
 
 class PBESolver {
@@ -26,7 +32,7 @@ public:
     virtual ~PBESolver() = default;
 };
 
-class CEGISSolver: public Solver {
+class CEGISSolver: public VerifiedSolver {
 public:
     PBESolver* pbe_solver;
     CEGISSolver(PBESolver* _pbe_solver, Verifier* _v);

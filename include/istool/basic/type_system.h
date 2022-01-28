@@ -33,7 +33,7 @@ class TypeSystem {
 public:
     TypeExtension* ext;
     TypeSystem(TypeExtension* _ext);
-    virtual PType join(const PType& x, const PType& y) = 0;
+    virtual PType intersect(const PType& x, const PType& y) = 0;
     virtual PType getType(Program* p) = 0;
     virtual ~TypeSystem() = default;
 };
@@ -41,7 +41,7 @@ public:
 class BasicTypeSystem: public TypeSystem {
 public:
     BasicTypeSystem(TypeExtension* _ext);
-    virtual PType join(const PType& x, const PType& y);
+    virtual PType intersect(const PType& x, const PType& y);
     virtual PType getType(Program* p);
     virtual ~BasicTypeSystem() = default;
 };

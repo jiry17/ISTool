@@ -6,12 +6,13 @@
 #include "glog/logging.h"
 #include <mutex>
 
-Solver::Solver(Specification *_spec, Verifier* _v): spec(_spec), v(_v) {}
-Solver::~Solver() {delete v;}
+Solver::Solver(Specification *_spec): spec(_spec) {}
+VerifiedSolver::VerifiedSolver(Specification *spec, Verifier *_v): Solver(spec), v(_v) {}
+VerifiedSolver::~VerifiedSolver() {delete v;}
 PBESolver::PBESolver(Specification *_spec): spec(_spec) {}
 
 CEGISSolver::CEGISSolver(PBESolver *_pbe_solver, Verifier *_v):
-    pbe_solver(_pbe_solver), Solver(_pbe_solver->spec, _v) {
+    pbe_solver(_pbe_solver), VerifiedSolver(_pbe_solver->spec, _v) {
 }
 CEGISSolver::~CEGISSolver() {
     delete pbe_solver;

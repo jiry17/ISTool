@@ -9,7 +9,7 @@
 
 class DeepCoderTypeSystem: public TypeSystem {
 public:
-    virtual PType join(const PType& x, const PType& y);
+    virtual PType intersect(const PType& x, const PType& y);
     virtual PType getType(Program* p);
     virtual ~DeepCoderTypeSystem() = default;
 };

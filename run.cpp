@@ -46,8 +46,7 @@ SynthesisResult invokeSplitPolyGen(Specification* spec, bool is_100ms=false) {
     return {v->example_count, res};
 }
 
-auto prepare = [](Specification* spec, const IOExample& io_example) {
-    auto* env = spec->env.get(); auto* g = spec->info_list[0]->grammar;
+auto prepare = [](Grammar* g, Env* env, const IOExample& io_example) {
     DataList string_const_list, string_input_list;
     auto add_const = [](DataList& list, const Data& d) {
         auto* sv = dynamic_cast<StringValue*>(d.get());

@@ -5,16 +5,15 @@
 #include "istool/solver/vsa/vsa_solver.h"
 #include "glog/logging.h"
 
-BasicVSASolver::~BasicVSASolver() {
-    delete builder; delete model;
-    for (auto& item: cache) ext::vsa::deleteVSA(item.second);
-}
-BasicVSASolver::BasicVSASolver(Specification *spec, VSABuilder *_builder, const VSAEnvPreparation& p, TopDownModel* _model):
-    PBESolver(spec), builder(_builder), prepare(p), model(_model) {
+BasicVSASolver::BasicVSASolver(Specification *spec, const PVSABuilder &_builder, TopDownModel *_model):
+    PBESolver(spec), builder(_builder), model(_model) {
     io_space = dynamic_cast<IOExampleSpace*>(spec->example_space.get());
     if (!io_space) {
         LOG(FATAL) << "VSA solver supports only IO examples";
     }
+}
+BasicVSASolver::~BasicVSASolver() {
+    delete model;
 }
 
 VSANode* BasicVSASolver::buildVSA(const ExampleList &example_list, TimeGuard *guard) {
@@ -33,7 +32,6 @@ VSANode* BasicVSASolver::buildVSA(const ExampleList &example_list, TimeGuard *gu
             return cache[feature] = builder->buildFullVSA();
         }
         auto io_example = io_space->getIOExample(example_list[0]);
-        prepare(spec, io_example);
         res = builder->buildVSA(io_example.second, io_example.first, guard);
         feature = "@" + data::dataList2String(example_list[0]);
         return cache[feature] = res;
