@@ -20,14 +20,22 @@ public:
     virtual ~Selector() = default;
 };
 
+class EquivalenceChecker {
+public:
+    virtual void addExample(const IOExample& example) = 0;
+    virtual ProgramList getTwoDifferentPrograms() = 0;
+    virtual ~EquivalenceChecker() = default;
+};
+
 class CompleteSelector: public ExampleCounter, public Solver {
 public:
     IOExampleSpace* io_space;
-    CompleteSelector(Specification* spec);
-    virtual PProgram getNextAction(Example* example) = 0;
+    EquivalenceChecker* checker;
+    CompleteSelector(Specification* spec, EquivalenceChecker* _checker);
+    virtual Example getNextExample(const PProgram& x, const PProgram& y) = 0;
     virtual void addExample(const IOExample& example) = 0;
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr);
-    virtual ~CompleteSelector() = default;
+    virtual ~CompleteSelector();
 };
 
 class DirectSelector: public Selector {

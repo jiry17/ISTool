@@ -64,6 +64,28 @@ Z3EncodeRes Z3Extension::encodeZ3ExprForProgram(Program *program, const Z3Encode
     return encodeZ3ExprForSemantics(program->semantics.get(), inp_list, param_list);
 }
 
+Z3EncodeRes Z3Extension::encodeZ3ExprForConsProgram(Program *program, const FunctionContext& info, const Z3EncodeList &param_list) {
+    std::vector<Z3EncodeRes> sub_list;
+    for (auto& p: program->sub_list) {
+        sub_list.push_back(encodeZ3ExprForConsProgram(p.get(), info, param_list));
+    }
+
+    auto* iv = dynamic_cast<InvokeSemantics*>(program->semantics.get());
+    if (iv) {
+        std::string name = iv->name;
+        if (info.find(name) == info.end()) {
+            LOG(FATAL) << "Cannot find program " << name;
+        }
+        auto encode_res = encodeZ3ExprForProgram(info.find(name)->second.get(), sub_list);
+        for (auto& sub: sub_list) {
+            for (const auto& cons: sub.cons_list) encode_res.cons_list.push_back(cons);
+        }
+        return encode_res;
+    }
+    auto encode_res = encodeZ3ExprForSemantics(program->semantics.get(), sub_list, param_list);
+    return encode_res;
+}
+
 Data Z3Extension::getValueFromModel(const z3::model &model, const z3::expr &expr, Type *type, bool is_strict) {
     auto* util = getZ3Type(type);
     return util->getValueFromModel(model, expr, type, is_strict);

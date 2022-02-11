@@ -9,9 +9,9 @@ Splitor::Splitor(ExampleSpace *_example_space): example_space(_example_space) {
     KSplitTimeOut = selector::getSplitorTimeOut(example_space->env);
 }
 
-bool Splitor::getSplitExample(const PProgram &p, const ProgramList &seed_list, Example *counter_example) {
+bool Splitor::getSplitExample(Program* cons_program, const FunctionContext &info, const ProgramList &seed_list, Example *counter_example) {
     auto* tmp_guard = new TimeGuard(theory::clia::getIntValue(*KSplitTimeOut) / 1000.);
-    auto res = getSplitExample(p, seed_list, counter_example, tmp_guard);
+    auto res = getSplitExample(cons_program, info, seed_list, counter_example, tmp_guard);
     delete tmp_guard;
     return res;
 }

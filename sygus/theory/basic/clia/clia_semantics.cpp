@@ -101,6 +101,12 @@ Data EqSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return Data(std::make_shared<BoolValue>(inp_list[0] == inp_list[1]));
 }
 
+NeqSemantics::NeqSemantics(): NormalSemantics("!=", TBOOL, {TVARA, TVARA}) {
+}
+Data NeqSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    return Data(std::make_shared<BoolValue>(!(inp_list[0] == inp_list[1])));
+}
+
 IteSemantics::IteSemantics(): Semantics("ite"), TypedSemantics(TVARA, {TBOOL, TVARA, TVARA}) {
 }
 Data IteSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {

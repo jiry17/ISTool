@@ -119,7 +119,7 @@ WitnessList IntGqWitnessFunction::witness(const WitnessData &oup) {
     return wl;
 }
 
-// Consider only bool and int
+// Consider only int
 WitnessList IntEqWitnessFunction::witness(const WitnessData &oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup}};
     auto* dv = dynamic_cast<DirectWitnessValue*>(oup.get());
@@ -127,6 +127,25 @@ WitnessList IntEqWitnessFunction::witness(const WitnessData &oup) {
     int lim_l = theory::clia::getIntValue(*int_min), lim_r = theory::clia::getIntValue(*int_max);
     WitnessList wl;
     if (res) {
+        for (int i = lim_l; i <= lim_r; ++i) {
+            wl.push_back({BuildDirectWData(Int, i), BuildDirectWData(Int, i)});
+        }
+    } else {
+        for (int i = lim_l; i <= lim_r; ++i) {
+            if (i > lim_l) wl.push_back({BuildDirectWData(Int, i), theory::clia::buildRange(lim_l, i - 1)});
+            if (i < lim_r) wl.push_back({BuildDirectWData(Int, i), theory::clia::buildRange(i + 1, lim_r)});
+        }
+    }
+    return wl;
+}
+
+WitnessList IntNeqWitnessFunction::witness(const WitnessData &oup) {
+    if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup}};
+    auto* dv = dynamic_cast<DirectWitnessValue*>(oup.get());
+    auto res = getBoolValue(oup);
+    int lim_l = theory::clia::getIntValue(*int_min), lim_r = theory::clia::getIntValue(*int_max);
+    WitnessList wl;
+    if (!res) {
         for (int i = lim_l; i <= lim_r; ++i) {
             wl.push_back({BuildDirectWData(Int, i), BuildDirectWData(Int, i)});
         }
@@ -161,5 +180,6 @@ void theory::clia::loadWitnessFunction(Env *env) {
     LoadCLIAWitnessFunction("mod", IntMod); LoadCLIAWitnessFunction("<", IntLq);
     LoadCLIAWitnessFunction("<=", IntLeq); LoadCLIAWitnessFunction(">", IntGq);
     LoadCLIAWitnessFunction(">=", IntGeq);  LoadCLIAWitnessFunction("=", IntEq);
+    LoadCLIAWitnessFunction("!=", IntNeq);
     ext->registerWitnessFunction("ite", new IteWitnessFunction());
 }

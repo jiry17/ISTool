@@ -15,19 +15,34 @@ FiniteSplitor::FiniteSplitor(ExampleSpace *_example_space): Splitor(_example_spa
     }
 }
 
-bool FiniteSplitor::getSplitExample(const PProgram &p, const ProgramList &seed_list, Example *counter_example,
-        TimeGuard *guard) {
+bool FiniteSplitor::getSplitExample(Program* cons_program, const FunctionContext &info,
+        const ProgramList &seed_list, Example *counter_example, TimeGuard *guard) {
+    /*static int num = 0;
+    std::vector<std::string> keys = {"Launa", "Brendan"};
+    num += 1;
+    if (num <= 2) {
+        for (auto& example: io_space->example_space) {
+            auto feature = data::dataList2String(example);
+            if (feature.find(keys[num - 1]) != std::string::npos) {
+                (*counter_example) = example;
+                return false;
+            }
+        }
+        assert(0);
+    }*/
+
     int best_id = -1;
-    int best_cost = seed_list.size() + 1;
+    int best_cost = 1e9;
     for (int i = 0; i < example_list.size(); ++i) {
         auto& example = example_list[i];
-        if (p && env->run(p.get(), example.first) == example.second) continue;
+        if (!env->run(cons_program, example::ioExample2Example(example), info).isTrue()) continue;
         int cost = getCost(example.first, seed_list);
         if (cost < best_cost) {
             best_cost = cost; best_id = i;
         }
     }
     if (best_id == -1) return true;
+    LOG(INFO) << "Best cost = " << best_cost << "; Sample num = " << seed_list.size();
     if (counter_example) (*counter_example) = io_space->example_space[best_id];
     return false;
 }
@@ -38,7 +53,8 @@ int FiniteSplitor::getCost(const DataList &inp, const ProgramList &seed_list) {
     for (const auto& p: seed_list) {
         auto res = env->run(p.get(), inp);
         auto feature = res.toString();
-        cost = std::max(cost, result_map[feature]++);
+        //cost = std::max(cost, result_map[feature]++);
+        cost += (result_map[feature]++);
     }
     return cost;
 }

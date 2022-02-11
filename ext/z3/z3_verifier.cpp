@@ -10,45 +10,12 @@
 Z3Verifier::Z3Verifier(Z3ExampleSpace *_example_space): example_space(_example_space), ext(_example_space->ext) {
 }
 
-Z3EncodeRes Z3Verifier::encodeConsProgram(const PProgram &program, const FunctionContext &info,
-        const z3::expr_vector& param_list, std::unordered_map<Program*, Z3EncodeRes>& cache) const {
-    if (cache.find(program.get()) != cache.end()) {
-        return cache.find(program.get())->second;
-    }
-    std::vector<Z3EncodeRes> sub_list;
-    for (auto& p: program->sub_list) {
-        sub_list.push_back(encodeConsProgram(p, info, param_list, cache));
-    }
-
-    auto* iv = dynamic_cast<InvokeSemantics*>(program->semantics.get());
-    if (iv) {
-        std::string name = iv->name;
-        if (info.find(name) == info.end()) {
-            LOG(FATAL) << "Cannot find program " << name;
-        }
-        auto encode_res = ext->encodeZ3ExprForProgram(info.find(name)->second.get(), sub_list);
-        for (auto& sub: sub_list) {
-            for (const auto& cons: sub.cons_list) encode_res.cons_list.push_back(cons);
-        }
-        cache.insert(std::make_pair(program.get(), encode_res));
-        return encode_res;
-    }
-    auto encode_res = ext->encodeZ3ExprForSemantics(program->semantics.get(), sub_list, ext::z3::z3Vector2EncodeList(param_list));
-    cache.insert(std::make_pair(program.get(), encode_res));
-    return encode_res;
-}
-
-Z3EncodeRes Z3Verifier::encodeConsProgram(const PProgram &program, const FunctionContext &info, const z3::expr_vector &param_list) const {
-    std::unordered_map<Program*, Z3EncodeRes> cache;
-    return encodeConsProgram(program, info, param_list, cache);
-}
-
 void Z3Verifier::prepareZ3Solver(z3::solver &solver, const FunctionContext &info) {
     z3::expr_vector param_list(ext->ctx);
     for (int i = 0; i < example_space->type_list.size(); ++i) {
         param_list.push_back(ext->buildVar(example_space->type_list[i].get(), "Param" + std::to_string(i)));
     }
-    auto encode_res = encodeConsProgram(example_space->cons_program, info, param_list);
+    auto encode_res = ext->encodeZ3ExprForConsProgram(example_space->cons_program.get(), info, ext::z3::z3Vector2EncodeList(param_list));
     solver.add(!encode_res.res || !z3::mk_and(encode_res.cons_list));
 }
 

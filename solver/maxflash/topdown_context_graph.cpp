@@ -52,7 +52,7 @@ TopDownContextGraph::TopDownContextGraph(Grammar *g, TopDownModel *model) {
     for (int u = 0; u < node_list.size(); ++u) {
         for (int e_id = 0; e_id < node_list[u].edge_list.size(); ++e_id) {
             for (const auto& id: node_list[u].edge_list[e_id].v_list) {
-                reversed_edge_list[id].emplace_back(u,e_id);
+                reversed_edge_list[id].emplace_back(u, e_id);
             }
         }
     }
@@ -60,7 +60,7 @@ TopDownContextGraph::TopDownContextGraph(Grammar *g, TopDownModel *model) {
     auto update = [&](int id, double new_lower_bound) -> void {
         if (node_list[id].lower_bound <= new_lower_bound + KDoubleEps) return;
         node_list[id].lower_bound = new_lower_bound;
-        Q.push({id, new_lower_bound});
+        Q.push({new_lower_bound, id});
     };
     for (int i = 0; i < node_list.size(); ++i) {
         double lower_bound = KDoubleINF;

@@ -27,6 +27,7 @@ DefineIntWitnessFunction(IntGq)
 DefineIntWitnessFunction(IntGeq)
 // Todo: support polymorphism
 DefineIntWitnessFunction(IntEq)
+DefineIntWitnessFunction(IntNeq)
 DefineWitnessFunction(Ite)
 
 namespace theory {

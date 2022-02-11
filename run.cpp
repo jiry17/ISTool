@@ -10,6 +10,8 @@
 #include <istool/solver/polygen/polygen_cegis.h>
 #include <istool/selector/split/z3_splitor.h>
 #include <istool/selector/split/split_selector.h>
+#include <istool/selector/samplesy/finite_equivalence_checker.h>
+#include <istool/selector/samplesy/vsa_seed_generator.h>
 #include "istool/solver/vsa/vsa_solver.h"
 #include "istool/solver/maxflash/maxflash.h"
 #include "istool/sygus/theory/basic/string/str.h"
@@ -20,6 +22,9 @@
 #include "istool/selector/baseline/clia_random_selector.h"
 #include "istool/selector/split/finite_splitor.h"
 #include "istool/ext/composed_semantics/composed_witness.h"
+#include "istool/dsl/samplesy/samplesy_dsl.h"
+#include "istool/selector/samplesy/samplesy.h"
+#include "istool/selector/finite_random_selector.h"
 
 typedef std::pair<int, FunctionContext> SynthesisResult;
 
@@ -37,7 +42,7 @@ SynthesisResult invokeBasicPolyGen(Specification* spec, bool is_random=false) {
 SynthesisResult invokeSplitPolyGen(Specification* spec, bool is_100ms=false) {
     if (is_100ms) selector::setSplitorTimeOut(spec->env.get(), 0.1);
     auto* splitor = new Z3Splitor(spec->example_space.get(), spec->info_list[0]->oup_type, spec->info_list[0]->inp_type_list);
-    auto* v = new SplitSelector(splitor, spec->info_list[0], 50);
+    auto* v = new SplitSelector(splitor, spec->info_list[0], 50, spec->env.get());
     auto domain_builder = solver::lia::liaSolverBuilder;
     auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
     auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
@@ -48,19 +53,23 @@ SynthesisResult invokeSplitPolyGen(Specification* spec, bool is_100ms=false) {
 
 auto prepare = [](Grammar* g, Env* env, const IOExample& io_example) {
     DataList string_const_list, string_input_list;
-    auto add_const = [](DataList& list, const Data& d) {
-        auto* sv = dynamic_cast<StringValue*>(d.get());
-        if (sv) list.push_back(d);
-    };
+    std::unordered_set<std::string> const_set;
     for (auto* symbol: g->symbol_list) {
         for (auto* rule: symbol->rule_list) {
             auto* sem = dynamic_cast<ConstSemantics*>(rule->semantics.get());
-            if (sem) add_const(string_const_list, sem->w);
+            if (sem) {
+                auto* sv = dynamic_cast<StringValue*>(sem->w.get());
+                if (!sv) continue;
+                if (const_set.find(sv->s) == const_set.end()) {
+                    const_set.insert(sv->s);
+                    string_const_list.push_back(sem->w);
+                }
+            }
         }
     }
     for (const auto& inp: io_example.first) {
         auto* sv = dynamic_cast<StringValue*>(inp.get());
-        if (sv) add_const(string_input_list, inp);
+        if (sv) string_input_list.push_back(inp);
     }
 
     int int_max = 1;
@@ -76,7 +85,7 @@ auto prepare = [](Grammar* g, Env* env, const IOExample& io_example) {
     }
     int_max = 20;
 
-    env->setConst(theory::clia::KWitnessIntMinName, BuildData(Int, -1));
+    env->setConst(theory::clia::KWitnessIntMinName, BuildData(Int, -int_max));
     env->setConst(theory::string::KStringConstList, string_const_list);
     env->setConst(theory::string::KStringInputList, string_input_list);
     env->setConst(theory::clia::KWitnessIntMaxName, BuildData(Int, int_max));
@@ -100,7 +109,7 @@ SynthesisResult invokeMaxFlash(Specification* spec) {
 
 SynthesisResult invokeSplitMaxFlash(Specification* spec) {
     auto* splitor = new FiniteSplitor(spec->example_space.get());
-    auto* v = new SplitSelector(splitor, spec->info_list[0], 1000);
+    auto* v = new SplitSelector(splitor, spec->info_list[0], 1000, spec->env.get());
     sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
     ext::vsa::registerDefaultComposedManager(ext::vsa::getExtension(spec->env.get()));
 
@@ -111,6 +120,70 @@ SynthesisResult invokeSplitMaxFlash(Specification* spec) {
     return {v->example_count, res};
 }
 
+SynthesisResult invokeSampleSy(Specification* spec) {
+    sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+    auto info = spec->info_list[0];
+    samplesy::registerSampleSyBasic(spec->env.get());
+    samplesy::registerSampleSyWitness(spec->env.get());
+    info->grammar = samplesy::rewriteGrammar(info->grammar, spec->env.get(), dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get()));
+
+    auto* pruner = new TrivialPruner();
+    auto* limited_g = grammar::generateHeightLimitedGrammar(info->grammar, 6);
+    auto builder = std::make_shared<DFSVSABuilder>(limited_g, pruner, spec->env.get(), prepare);
+    auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
+    assert(fio);
+
+    auto* diff_gen = new VSADifferentProgramGenerator(builder);
+    auto* checker = new FiniteEquivalenceChecker(diff_gen, fio);
+
+    diff_gen = new VSADifferentProgramGenerator(builder);
+    auto* gen = new FiniteVSASeedGenerator(builder, new VSASizeBasedSampler(spec->env.get()), diff_gen, fio);
+    auto* splitor = new FiniteSplitor(fio);
+    auto* solver = new SampleSy(spec, splitor, gen, checker);
+    auto res = solver->synthesis(nullptr);
+    return {solver->example_count, res};
+}
+
+SynthesisResult invokeRandomSy(Specification* spec) {
+    sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+    auto info = spec->info_list[0];
+    samplesy::registerSampleSyBasic(spec->env.get());
+    samplesy::registerSampleSyWitness(spec->env.get());
+    info->grammar = samplesy::rewriteGrammar(info->grammar, spec->env.get(), dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get()));
+
+    auto* pruner = new TrivialPruner();
+    auto* limited_g = grammar::generateHeightLimitedGrammar(info->grammar, 6);
+    auto builder = std::make_shared<DFSVSABuilder>(limited_g, pruner, spec->env.get(), prepare);
+    auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
+    assert(fio);
+    auto* diff_gen = new VSADifferentProgramGenerator(builder);
+    auto* checker = new FiniteEquivalenceChecker(diff_gen, fio);
+    auto* solver = new FiniteRandomSelector(spec, checker);
+    auto res = solver->synthesis(nullptr);
+    return {solver->example_count, res};
+}
+
+SynthesisResult invokeCompleteSplitor(Specification* spec) {
+    sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+    auto info = spec->info_list[0];
+    samplesy::registerSampleSyBasic(spec->env.get());
+    samplesy::registerSampleSyWitness(spec->env.get());
+    info->grammar = samplesy::rewriteGrammar(info->grammar, spec->env.get(), dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get()));
+
+    auto* pruner = new TrivialPruner();
+    auto* limited_g = grammar::generateHeightLimitedGrammar(info->grammar, 6);
+    auto builder = std::make_shared<DFSVSABuilder>(limited_g, pruner, spec->env.get(), prepare);
+    auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
+    assert(fio);
+    auto* diff_gen = new VSADifferentProgramGenerator(builder);
+    auto* checker = new FiniteEquivalenceChecker(diff_gen, fio);
+    auto* splitor = new FiniteSplitor(fio);
+    auto* solver = new CompleteSplitSelector(spec, splitor, checker, 5000);
+    auto res = solver->synthesis(nullptr);
+    return {solver->example_count, res};
+
+}
+
 int main(int argc, char** argv) {
     assert(argc == 4 || argc == 1);
     std::string benchmark_name, output_name, solver_name;
@@ -119,9 +192,9 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        benchmark_name = "/tmp/tmp.hABJQGVQ89/tests/polygen/mts.sl";
-        solver_name = "polygen";
-        //benchmark_name = "/tmp/tmp.hABJQGVQ89/tests/test.sl";
+        // benchmark_name = "/tmp/tmp.i5X31IAVA3/tests/string/name-combine-3-long.sl";
+        solver_name = "maxflash";
+        benchmark_name = "/tmp/tmp.i5X31IAVA3/tests/testfail.sl";
         //solver_name = "maxflash";
         output_name = "/tmp/629453237.out";
     }
@@ -140,7 +213,13 @@ int main(int argc, char** argv) {
         result = invokeSplitPolyGen(spec, false);
     } else if (solver_name == "pselect0.1") {
         result = invokeSplitPolyGen(spec, true);
-    } else assert(0);
+    } else if (solver_name == "samplesy") {
+        result = invokeSampleSy(spec);
+    } else if (solver_name == "splitor") {
+        result = invokeCompleteSplitor(spec);
+    } else if (solver_name == "randomsy") {
+        result = invokeRandomSy(spec);
+    }
     std::cout << result.first << " " << result.second.toString() << std::endl;
     FILE* f = fopen(output_name.c_str(), "w");
     fprintf(f, "%d %s\n", result.first, result.second.toString().c_str());

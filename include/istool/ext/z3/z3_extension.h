@@ -31,6 +31,7 @@ public:
     z3::expr buildConst(const Data& data);
     Z3EncodeRes encodeZ3ExprForSemantics(Semantics* semantics, const Z3EncodeList& inp_list, const Z3EncodeList& param_list);
     Z3EncodeRes encodeZ3ExprForProgram(Program* program, const Z3EncodeList& param_list);
+    Z3EncodeRes encodeZ3ExprForConsProgram(Program* program, const FunctionContext& info, const Z3EncodeList& param_list);
     Data getValueFromModel(const z3::model& model, const z3::expr& expr, Type* type, bool is_strict = false);
     void setTimeOut(z3::solver& solver, TimeGuard* guard);
     virtual ~Z3Extension();

@@ -9,10 +9,7 @@
 #include "z3_example_space.h"
 
 class Z3Verifier: public Verifier {
-    Z3EncodeRes encodeConsProgram(const PProgram& program, const FunctionContext& info, const z3::expr_vector& param_list,
-            std::unordered_map<Program*, Z3EncodeRes>& cache) const;
 public:
-    Z3EncodeRes encodeConsProgram(const PProgram& program, const FunctionContext& info, const z3::expr_vector& param_list) const;
     void prepareZ3Solver(z3::solver& solver, const FunctionContext& info);
     void getExample(const z3::model& model, Example* counter_example);
     Z3ExampleSpace* example_space;

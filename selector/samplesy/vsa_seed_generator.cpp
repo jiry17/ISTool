@@ -21,10 +21,10 @@ namespace {
         std::vector<double> res(n + m, 0.0);
         for (int i = 0; i < n; ++i) {
             for (int j = 0; j < m; ++j) {
-                res[i + j + 1] += x[i] * y[j];
+                res[i + j] += x[i] * y[j];
             }
         }
-        while (!res.empty() && res[int(res.size()) - 1] < 1) res.pop_back();
+        while (!res.empty() && res[int(res.size()) - 1] < 0.5) res.pop_back();
         return res;
     }
 
@@ -34,7 +34,7 @@ namespace {
         for (int i = 0; i < std::max(n, m); ++i) {
             res[i] = (i < x.size() ? x[i] : 0.0) + (i < y.size() ? y[i] : 0.0);
         }
-        while (!res.empty() && res[int(res.size()) - 1] < 1) res.pop_back();
+        while (!res.empty() && res[int(res.size()) - 1] < 0.5) res.pop_back();
         return res;
     }
 
@@ -43,7 +43,7 @@ namespace {
         double w = d(env->random_engine);
         double sum = 0.0;
         for (int i = 0; i < A.size(); ++i) sum += A[i];
-        assert(sum >= 1.0);
+        assert(sum >= 0.5);
         for (int i = 0; i < A.size(); ++i) {
             double k = A[i] / sum;
             if (k + 1e-8 >= w) return i;
@@ -58,7 +58,7 @@ namespace {
         }
         for (int w: A[pos]) {
             tmp[pos] = w;
-            _mergeIntStorage(pos, A, tmp, res);
+            _mergeIntStorage(pos + 1, A, tmp, res);
         }
     }
 
@@ -67,6 +67,14 @@ namespace {
         std::vector<int> tmp(A.size());
         _mergeIntStorage(0, A, tmp, result);
         return result;
+    }
+
+    std::string sizeList2String(const std::vector<double>& s) {
+        std::string res = "[";
+        for (int i = 0; i < s.size(); ++i) {
+            if (i) res += ","; res += std::to_string(s[i]);
+        }
+        return res + "]";
     }
 }
 
@@ -79,23 +87,33 @@ std::vector<double> VSASizeBasedSampler::getEdgeSize(const VSAEdge &edge) {
     }
     return res;
 }
+void VSASizeBasedSampler::calculateNodeSize(VSANode *node, std::vector<bool> &visited) {
+    if (visited[node->id]) return;
+    visited[node->id] = true;
+    for (auto& edge: node->edge_list) {
+        for (auto* sub_node: edge.node_list) calculateNodeSize(sub_node, visited);
+        auto edge_size = getEdgeSize(edge);
+        edge_size_pool[node->id].push_back(edge_size);
+        size_list[node->id] = _sum(size_list[node->id], edge_size);
+    }
+}
 void VSASizeBasedSampler::setRoot(VSANode *new_root) {
     root = new_root; int n = ext::vsa::indexVSANode(root);
     node_list.resize(n);
     for (int i = 0; i < node_list.size(); ++i) node_list[i] = nullptr;
-    for (int i = n - 1; i >= 0; ++i) {
-        size_list[i].clear();
-        for (const auto& edge: node_list[i]->edge_list) {
-            size_list[i] = _sum(size_list[i], getEdgeSize(edge));
-        }
-    }
+    _collectAllNode(root, node_list);
+    size_list.resize(n);
+    for (int i = 0; i < n; ++i) size_list[i].clear();
+    std::vector<bool> is_visited(n, false);
+    edge_size_pool.clear(); edge_size_pool.resize(n);
+    calculateNodeSize(root, is_visited);
 }
 PProgram VSASizeBasedSampler::sampleProgram(const VSAEdge &edge, int target_size) {
     std::vector<std::vector<int>> size_pool;
     for (auto* node: edge.node_list) {
         std::vector<int> possible_size;
-        for (int i = 0; i < target_size; ++i) {
-            if (size_list[node->id][i] >= 1.0) possible_size.push_back(i);
+        for (int i = 0; i < target_size && i < size_list[node->id].size(); ++i) {
+            if (size_list[node->id][i] >= 0.5) possible_size.push_back(i);
         }
         size_pool.push_back(possible_size);
     }
@@ -110,8 +128,9 @@ PProgram VSASizeBasedSampler::sampleProgram(const VSAEdge &edge, int target_size
             weight *= size_list[edge.node_list[i]->id][size_plan[i]];
         }
         weight_list.push_back(weight);
+        possible_size_plan.push_back(size_plan);
     }
-
+    assert(!weight_list.empty());
     int plan_id = _getSample(weight_list, env);
     ProgramList sub_list;
     for (int i = 0; i < edge.node_list.size(); ++i) {
@@ -120,18 +139,24 @@ PProgram VSASizeBasedSampler::sampleProgram(const VSAEdge &edge, int target_size
     return std::make_shared<Program>(edge.semantics, sub_list);
 }
 PProgram VSASizeBasedSampler::sampleProgram(VSANode *node, int target_size) {
-    assert(target_size < node_list.size());
+    assert(target_size < size_list[node->id].size());
     std::vector<double> edge_size_list;
-    for (const auto& edge: node->edge_list) {
-        auto edge_size = getEdgeSize(edge);
+    for (int i = 0; i < node->edge_list.size(); ++i) {
+        auto edge_size = edge_size_pool[node->id][i];
         if (target_size >= edge_size.size()) edge_size_list.push_back(0.0);
         else edge_size_list.push_back(edge_size[target_size]);
     }
+    double total = 0.0;
+    for (auto w: edge_size_list) total += w;
     int edge_id = _getSample(edge_size_list, env);
     return sampleProgram(node->edge_list[edge_id], target_size);
 }
 PProgram VSASizeBasedSampler::sampleNext() {
-    int target_size = _getSample(size_list[0], env);
+    std::vector<double> size_weight;
+    for (double w: size_list[0]) {
+        if (w > 0.5) size_weight.push_back(1.0); else size_weight.push_back(0.0);
+    }
+    int target_size = _getSample(size_weight, env);
     return sampleProgram(root, target_size);
 }
 
@@ -153,6 +178,61 @@ ProgramList VSASeedGenerator::getSeeds(int num, double time_limit) {
     ProgramList res;
     while (guard->getRemainTime() >= 0. && res.size() < num) {
         res.push_back(sampler->sampleNext());
+    }
+    return res;
+}
+
+FiniteVSASeedGenerator::FiniteVSASeedGenerator(const PVSABuilder &_builder, VSASampler *_sampler, DifferentProgramGenerator* _g, FiniteIOExampleSpace *io_space):
+    builder(_builder), sampler(_sampler), g(_g) {
+    root = builder->buildFullVSA();
+    for (const auto& example: io_space->example_space) {
+        io_examples.push_back(io_space->getIOExample(example));
+    }
+}
+
+namespace {
+    bool isEquivalent(Program* x, Program* y, const IOExampleList& example_list, Env* env) {
+        for (auto& example: example_list) {
+            if (!(env->run(x, example.first) == env->run(y, example.first))) return false;
+        }
+        return true;
+    }
+}
+
+void FiniteVSASeedGenerator::addExample(const IOExample &example) {
+    auto next_root = builder->buildVSA(example.second, example.first, nullptr);
+    root = builder->mergeVSA(root, next_root, nullptr);
+    g->addExample(example);
+}
+
+
+ProgramList FiniteVSASeedGenerator::getSeeds(int num, double time_limit) {
+    auto* guard = new TimeGuard(time_limit);
+    sampler->setRoot(root);
+    ProgramList res;
+    while (guard->getRemainTime() >= 0. && res.size() < num) {
+        res.push_back(sampler->sampleNext());
+    }
+    PProgram now = res[0]; int count = 0;
+    for (const auto& p: res) {
+        if (isEquivalent(now.get(), p.get(), io_examples, builder->env)) count++;
+        else {
+            count--;
+            if (count == 0) {
+                count = 1; now = p;
+            }
+        }
+    }
+    count = 0;
+    for (const auto& p: res) {
+        if (isEquivalent(now.get(), p.get(), io_examples, builder->env)) count++;
+    }
+    if (count + 100 > res.size()) {
+        LOG(INFO) << "Start enhance from " << res.size() << " samples";
+        for (auto& example: io_examples) {
+            for (auto& p: g->getDifferentProgram(example, 10)) res.push_back(p);
+        }
+        LOG(INFO) << "Finish with " << res.size() << " samples";
     }
     return res;
 }

@@ -24,6 +24,11 @@
 #include "istool/sygus/parser/json_util.h"
 #include "istool/selector/split/z3_splitor.h"
 #include "istool/selector/split/split_selector.h"
+#include "istool/selector/samplesy/samplesy.h"
+#include "istool/selector/samplesy/finite_equivalence_checker.h"
+#include "istool/selector/samplesy/vsa_seed_generator.h"
+#include "istool/selector/split/finite_splitor.h"
+#include "istool/dsl/samplesy/samplesy_dsl.h"
 #include "glog/logging.h"
 
 FunctionContext CBSInvoker(Specification* spec, TimeGuard* guard) {
@@ -109,7 +114,7 @@ FunctionContext PolyGenInvoker(Specification* spec, TimeGuard* guard) {
 
 FunctionContext PolyGenSelectorInvoker(Specification* spec, TimeGuard* guard) {
     auto* splitor = new Z3Splitor(spec->example_space.get(), spec->info_list[0]->oup_type, spec->info_list[0]->inp_type_list);
-    auto* v = new SplitSelector(splitor, spec->info_list[0], 50);
+    auto* v = new SplitSelector(splitor, spec->info_list[0], 50, spec->env.get());
     auto domain_builder = solver::lia::liaSolverBuilder;
     auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
     auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
@@ -134,51 +139,77 @@ void PolyGenTermSolverInvoker(Specification* spec, TimeGuard* guard) {
 }
 
 auto prepare = [](Grammar* g, Env* env, const IOExample& io_example) {
-    std::vector<std::string> string_const_list;
-    auto add_const = [&](const Data& d) {
-        auto* sv = dynamic_cast<StringValue*>(d.get());
-        if (sv) string_const_list.push_back(sv->s);
-    };
+    DataList string_const_list, string_input_list;
+    std::unordered_set<std::string> const_set;
     for (auto* symbol: g->symbol_list) {
         for (auto* rule: symbol->rule_list) {
             auto* sem = dynamic_cast<ConstSemantics*>(rule->semantics.get());
-            if (sem) add_const(sem->w);
+            if (sem) {
+                auto* sv = dynamic_cast<StringValue*>(sem->w.get());
+                if (!sv) continue;
+                if (const_set.find(sv->s) == const_set.end()) {
+                    const_set.insert(sv->s);
+                    string_const_list.push_back(sem->w);
+                }
+            }
         }
     }
-    for (const auto& inp: io_example.first) add_const(inp);
-    add_const(io_example.second);
-
-    DataList const_list; int int_max = 1;
-    for (const auto& s: string_const_list) {
-        const_list.push_back(BuildData(String, s));
-        int_max = std::max(int_max, int(s.length()));
+    for (const auto& inp: io_example.first) {
+        auto* sv = dynamic_cast<StringValue*>(inp.get());
+        if (sv) string_input_list.push_back(inp);
     }
 
-    env->setConst(theory::clia::KWitnessIntMinName, BuildData(Int, -1));
-    env->setConst(theory::string::KStringConstList, const_list);
+    int int_max = 1;
+    for (const auto& s: string_const_list) {
+        int_max = std::max(int_max, int(theory::string::getStringValue(s).length()));
+    }
+    for (const auto& s: string_input_list) {
+        int_max = std::max(int_max, int(theory::string::getStringValue(s).length()));
+    }
+    for (const auto& inp: io_example.first) {
+        auto* iv = dynamic_cast<IntValue*>(inp.get());
+        if (iv) int_max = std::max(int_max, iv->w);
+    }
+    int_max = 20;
+
+    env->setConst(theory::clia::KWitnessIntMinName, BuildData(Int, -int_max));
+    env->setConst(theory::string::KStringConstList, string_const_list);
+    env->setConst(theory::string::KStringInputList, string_input_list);
     env->setConst(theory::clia::KWitnessIntMaxName, BuildData(Int, int_max));
 };
+
+void registerSampleSy(Specification* spec) {
+    samplesy::registerSampleSyBasic(spec->env.get());
+    samplesy::registerSampleSyWitness(spec->env.get());
+    auto info = spec->info_list[0];
+    info->grammar = samplesy::rewriteGrammar(info->grammar, spec->env.get(), dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get()));
+}
 
 FunctionContext BasicVSAInvoker(Specification* spec, TimeGuard* guard) {
     if (spec->info_list.size() > 1) {
         LOG(FATAL) << "VSASolver can only synthesize a single program";
     }
+
+    sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+    registerSampleSy(spec);
     auto info = spec->info_list[0];
-    auto* pruner = new SizeLimitPruner(10000, [](VSANode* node) {
+    auto* pruner = new SizeLimitPruner(1e9, [](VSANode* node) {
         auto* sn = dynamic_cast<SingleVSANode*>(node);
         if (sn) {
             auto* oup = dynamic_cast<DirectWitnessValue*>(sn->oup.get());
             if (oup) {
                 auto* w = dynamic_cast<StringValue*>(oup->d.get());
-                if (w) return w->s.length() >= 15;
+                if (w) return w->s.length() >= 20;
             }
         }
         return false;
     });
+
+    auto* limited_g = grammar::generateHeightLimitedGrammar(info->grammar, 7);
+    limited_g->print();
+    info->grammar = limited_g;
     auto builder = std::make_shared<BFSVSABuilder>(info->grammar, pruner, spec->env.get(), prepare);
     // auto* builder = new DFSVSABuilder(info->grammar, pruner, spec->env);
-
-    sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
 
     auto* solver = new BasicVSASolver(spec, builder, ext::vsa::getSizeModel());
     auto* verifier = sygus::getVerifier(spec);
@@ -192,6 +223,7 @@ FunctionContext MaxFlashInvoker(Specification* spec, TimeGuard* guard) {
     auto* v = sygus::getVerifier(spec);
 
     sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+    registerSampleSy(spec);
 
     auto* model = ext::vsa::getSizeModel();
     auto* solver = new MaxFlash(spec, v, model, prepare);
@@ -246,14 +278,31 @@ void learnModel() {
     ext::vsa::saveNGramModel(model, model_path);
 }
 
+void runSampleSy(Specification* spec, TimeGuard* guard) {
+    sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+    auto info = spec->info_list[0];
+    registerSampleSy(spec);
 
+    auto* pruner = new TrivialPruner();
+    auto* limited_g = grammar::generateHeightLimitedGrammar(info->grammar, 6);
+    auto builder = std::make_shared<DFSVSABuilder>(limited_g, pruner, spec->env.get(), prepare);
+    auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
+    assert(fio);
+    auto* checker = new VSAEquivalenceChecker(builder, fio);
+    auto* gen = new VSASeedGenerator(builder, new VSASizeBasedSampler(spec->env.get()));
+    auto* splitor = new FiniteSplitor(fio);
+    auto* solver = new SampleSy(spec, splitor, gen, checker);
+    solver->synthesis(guard);
+    std::cout << solver->example_count << std::endl;
+}
 
 int main() {
     // std::string file = config::KSourcePath + "/tests/polygen/secondmin.sl";
-    std::string file = config::KSourcePath + "/tests/string/phone-10_short.sl";
+    std::string file = config::KSourcePath + "/tests/string/exceljet1.sl";
     auto* spec = parser::getSyGuSSpecFromFile(file);
     auto* guard = new TimeGuard(500);
-    auto res = MaxFlashInvoker(spec, guard);
+    //runSampleSy(spec, guard); return 0;
+    auto res = BasicVSAInvoker(spec, guard);
     //auto res = LIASolverInvoker(spec, guard);
     std::cout << res.toString() << std::endl;
     std::cout << "Time Cost: " << guard->getPeriod() << " seconds";

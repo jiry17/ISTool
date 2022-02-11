@@ -1,13 +1,20 @@
 //
-// Created by pro on 2022/1/28.
+// Created by pro on 2022/2/7.
 //
 
-#ifndef ISTOOL_VSA_EQUIVALENCE_CHECKER_H
-#define ISTOOL_VSA_EQUIVALENCE_CHECKER_H
+#ifndef ISTOOL_DIFFERENT_PROGRAM_GENERATOR_H
+#define ISTOOL_DIFFERENT_PROGRAM_GENERATOR_H
 
-#include "samplesy.h"
+#include "istool/basic/specification.h"
 #include "istool/solver/vsa/vsa_solver.h"
-#include <stack>
+
+class DifferentProgramGenerator {
+public:
+    virtual void addExample(const IOExample& example) = 0;
+    virtual ProgramList getDifferentProgram(const IOExample& inp, int num) = 0;
+    virtual ~DifferentProgramGenerator() = default;
+};
+
 
 namespace selector::samplesy {
     class CollectRes {
@@ -18,23 +25,22 @@ namespace selector::samplesy {
     };
 }
 
-class VSAEquivalenceChecker: public EquivalenceChecker {
+class VSADifferentProgramGenerator: public DifferentProgramGenerator {
     std::vector<std::vector<selector::samplesy::CollectRes>> res_pool;
     std::vector<VSANode*> node_list;
     VSAExtension* ext;
-
+    void setRoot(VSANode* node);
     bool extendResPool(int size, ExecuteInfo* info);
     selector::samplesy::CollectRes getRes(const VSAEdge& edge, const std::vector<int>& id_list, ExecuteInfo* info);
     bool isValidWitness(const VSAEdge& edge, const Data& oup, const std::vector<int>& id_list, const DataList& params);
-    std::pair<PProgram, PProgram> isAllEquivalent(const IOExample& example);
 public:
     PVSABuilder builder;
     VSANode* root;
-    FiniteIOExampleSpace* example_space;
-    VSAEquivalenceChecker(const PVSABuilder& _builder, FiniteIOExampleSpace* _example_space);
+    VSADifferentProgramGenerator(const PVSABuilder& _builder);
     virtual void addExample(const IOExample& example);
-    virtual std::pair<PProgram, PProgram> isAllEquivalent();
-    virtual ~VSAEquivalenceChecker() = default;
+    virtual ProgramList getDifferentProgram(const IOExample& example, int num);
+    virtual ~VSADifferentProgramGenerator() = default;
 };
 
-#endif //ISTOOL_VSA_EQUIVALENCE_CHECKER_H
+
+#endif //ISTOOL_DIFFERENT_PROGRAM_GENERATOR_H

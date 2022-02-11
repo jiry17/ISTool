@@ -15,21 +15,13 @@ public:
     virtual ~SeedGenerator() = default;
 };
 
-class EquivalenceChecker {
-public:
-    virtual void addExample(const IOExample& example) = 0;
-    virtual std::pair<PProgram, PProgram> isAllEquivalent() = 0;
-    virtual ~EquivalenceChecker() = default;
-};
-
 class SampleSy: public CompleteSelector {
 public:
     Splitor* splitor;
     SeedGenerator* gen;
-    EquivalenceChecker* checker;
     Data* KSampleTimeOut, *KSampleNum;
     SampleSy(Specification* _spec, Splitor* _splitor, SeedGenerator* _gen, EquivalenceChecker* checker);
-    virtual PProgram getNextAction(Example* example);
+    virtual Example getNextExample(const PProgram& x, const PProgram& y);
     virtual void addExample(const IOExample& example);
     virtual ~SampleSy();
 };

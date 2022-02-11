@@ -65,6 +65,10 @@ Z3EncodeRes Z3EqSemantics::encodeZ3Expr(const std::vector<Z3EncodeRes> &inp_list
     auto x = inp_list[0], y = inp_list[1];
     return {x.res == y.res, merge(x.cons_list, y.cons_list)};
 }
+Z3EncodeRes Z3NeqSemantics::encodeZ3Expr(const std::vector<Z3EncodeRes> &inp_list) {
+    auto x = inp_list[0], y = inp_list[1];
+    return {x.res != y.res, merge(x.cons_list, y.cons_list)};
+}
 Z3EncodeRes Z3IteSemantics::encodeZ3Expr(const std::vector<Z3EncodeRes> &inp_list) {
     assert(inp_list.size() == 3);
     auto b = inp_list[0], x = inp_list[1], y = inp_list[2];
@@ -80,5 +84,5 @@ void theory::clia::loadZ3Semantics(Env *env) {
     LoadZ3Semantics(z3_env, "mod", IntMod); LoadZ3Semantics(z3_env, "<", Lq);
     LoadZ3Semantics(z3_env, "<=", Leq); LoadZ3Semantics(z3_env, ">", Gq);
     LoadZ3Semantics(z3_env, ">=", Geq); LoadZ3Semantics(z3_env, "=", Eq);
-    LoadZ3Semantics(z3_env, "=", Eq); LoadZ3Semantics(z3_env, "ite", Ite);
+    LoadZ3Semantics(z3_env, "!=", Neq); LoadZ3Semantics(z3_env, "ite", Ite);
 }

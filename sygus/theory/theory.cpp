@@ -39,10 +39,14 @@ TheoryToken sygus::getSyGuSTheory(Env *env) {
     LOG(FATAL) << "Uninitialized extension " << KSyGuSName;
 }
 
-SyGuSExtension * sygus::initSyGuSExtension(Env *env, TheoryToken theory) {
-    auto* ext = new SyGuSExtension(theory);
-    env->registerExtension(KSyGuSName, ext);
-    return ext;
+void sygus::setTheory(Env *env, TheoryToken theory) {
+    auto* ext = env->getExtension(KSyGuSName);
+    if (!ext) {
+        ext = new SyGuSExtension(theory);
+        env->registerExtension(KSyGuSName, ext);
+    }
+    auto* se = dynamic_cast<SyGuSExtension*>(ext);
+    se->theory = theory;
 }
 
 namespace {

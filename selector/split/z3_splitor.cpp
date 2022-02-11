@@ -14,20 +14,12 @@ Z3Splitor::Z3Splitor(ExampleSpace *_example_space, const PType &_oup_type, const
     if (!io_space) {
         LOG(FATAL) << "Z3Splitor requires Z3IOExampleSpace";
     }
-    v = new Z3Verifier(io_space);
-    ext = v->ext;
+    ext = ext::z3::getExtension(env);
 }
 
-bool Z3Splitor::getSplitExample(const PProgram &p, const ProgramList &seed_list, Example *counter_example, TimeGuard *guard) {
+bool Z3Splitor::getSplitExample(Program *cons_program, const FunctionContext &info, const ProgramList &seed_list,
+        Example *counter_example, TimeGuard *guard) {
     z3::solver solver(ext->ctx);
-    if (p) {
-        v->prepareZ3Solver(solver, semantics::buildSingleContext(io_space->func_name, p));
-    }
-    auto z3_res = solver.check();
-    if (z3_res == z3::unsat) return true;
-    if (z3_res != z3::sat) LOG(FATAL) << "Z3 failed with result " << z3_res;
-    if (!counter_example) return false;
-    z3::model model = solver.get_model();
 
     z3::expr_vector param_list(ext->ctx);
     for (int i = 0; i < io_space->type_list.size(); ++i) {
@@ -43,6 +35,20 @@ bool Z3Splitor::getSplitExample(const PProgram &p, const ProgramList &seed_list,
         inp_list.push_back(var);
         solver.add(var == encode_res.res);
     }
+    auto global_oup_var = ext->buildVar(oup_type.get(), "Output");
+    auto full_inp_list = inp_list;
+    full_inp_list.push_back(global_oup_var);
+    auto oup_cons_res = ext->encodeZ3ExprForProgram(io_space->oup_cons.get(), ext::z3::z3Vector2EncodeList(full_inp_list));
+    solver.add(oup_cons_res.res && z3::mk_and(oup_cons_res.cons_list));
+    auto cons_res = ext->encodeZ3ExprForConsProgram(cons_program, info, ext::z3::z3Vector2EncodeList(full_inp_list));
+    solver.add(oup_cons_res.res && z3::mk_and(cons_res.cons_list));
+
+    auto z3_res = solver.check();
+    if (z3_res == z3::unsat) return true;
+    if (z3_res != z3::sat) LOG(FATAL) << "Z3 failed with result " << z3_res;
+    if (!counter_example) return false;
+    z3::model model = solver.get_model();
+
     z3::expr_vector seed_oup_list(ext->ctx), seed_valid_list(ext->ctx);
     for (int i = 0; i < seed_list.size(); ++i) {
         auto oup_var = ext->buildVar(oup_type.get(), "Output" + std::to_string(i));
@@ -82,11 +88,9 @@ bool Z3Splitor::getSplitExample(const PProgram &p, const ProgramList &seed_list,
         }
     }
 
-    v->getExample(model, counter_example);
+    counter_example->clear();
+    for (int i = 0; i < param_list.size(); ++i) {
+        counter_example->push_back(ext->getValueFromModel(model, param_list[i], io_space->type_list[i].get(), false));
+    }
     return false;
-
-}
-
-Z3Splitor::~Z3Splitor() {
-    delete v;
 }

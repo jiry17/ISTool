@@ -6,6 +6,7 @@
 #include <queue>
 #include "istool/solver/vsa/vsa_builder.h"
 #include "debug_tool/vsa.h"
+#include "glog/logging.h"
 
 bool TrivialPruner::isPrune(VSANode *node) {return false;}
 void TrivialPruner::clear() {}
@@ -22,12 +23,12 @@ bool SizeLimitPruner::isPrune(VSANode *node) {
 }
 
 VSABuilder::VSABuilder(Grammar *_g, VSAPruner *_pruner, Env* _env, const VSAEnvSetter& _setter):
-    g(_g), pruner(_pruner), ext(ext::vsa::getExtension(env)), env(_env), setter(_setter) {
+    g(_g), pruner(_pruner), ext(ext::vsa::getExtension(_env)), env(_env), setter(_setter) {
 }
 VSABuilder::~VSABuilder() {
     delete pruner;
-    for (auto& info: single_build_cache) delete info.second;
-    for (auto& info: merge_build_cache) delete info.second;
+    for (auto& info: single_build_cache) ext::vsa::deleteVSA(info.second);
+    for (auto& info: merge_build_cache) ext::vsa::deleteVSA(info.second);
 }
 
 VSANode * VSABuilder::buildVSA(const Data &oup, const DataList &inp_list, TimeGuard *guard) {
@@ -36,13 +37,17 @@ VSANode * VSABuilder::buildVSA(const Data &oup, const DataList &inp_list, TimeGu
         return single_build_cache[feature];
     }
     setter(g, env, {inp_list, oup});
-    return single_build_cache[feature] = _buildVSA(oup, inp_list, guard);
+    auto res = single_build_cache[feature] = _buildVSA(oup, inp_list, guard);
+    LOG(INFO) << "Build single size " << ext::vsa::getEdgeSize(res);
+    return res;
 }
 VSANode * VSABuilder::mergeVSA(VSANode *l, VSANode *r, TimeGuard *guard) {
     if (merge_build_cache.find({l, r}) != merge_build_cache.end()) {
         return merge_build_cache[{l, r}];
     }
-    return merge_build_cache[{l, r}] = _mergeVSA(l, r, guard);
+    auto res = merge_build_cache[{l, r}] = _mergeVSA(l, r, guard);
+    LOG(INFO) << "Merge size " << ext::vsa::getEdgeSize(res);
+    return res;
 }
 
 VSANode* VSABuilder::buildFullVSA() {

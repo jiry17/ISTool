@@ -10,7 +10,7 @@ void ExampleCounter::addExampleCount() {
     example_count += 1;
 }
 
-CompleteSelector::CompleteSelector(Specification *spec): Solver(spec) {
+CompleteSelector::CompleteSelector(Specification *spec, EquivalenceChecker* _checker): Solver(spec), checker(_checker) {
     if (spec->info_list.size() > 1) {
         LOG(FATAL) << "CompleteSelector can synthesize only a single program";
     }
@@ -20,14 +20,22 @@ CompleteSelector::CompleteSelector(Specification *spec): Solver(spec) {
     }
 }
 FunctionContext CompleteSelector::synthesis(TimeGuard *guard) {
-    Example example;
     while (1) {
-        auto res = getNextAction(&example);
-        if (res) return semantics::buildSingleContext(io_space->func_name, res);
+        auto programs = checker->getTwoDifferentPrograms();
+        if (programs.size() == 1) {
+            return semantics::buildSingleContext(io_space->func_name, programs[0]);
+        }
+        assert(programs.size() == 2);
+        auto example = getNextExample(programs[0], programs[1]);
         addExampleCount();
         auto io_example = io_space->getIOExample(example);
+        LOG(INFO) << "Add new example " << example::ioExample2String(io_example);
+        checker->addExample(io_example);
         addExample(io_example);
     }
+}
+CompleteSelector::~CompleteSelector() noexcept {
+    delete checker;
 }
 
 bool DirectSelector::verify(const FunctionContext &info, Example *counter_example) {

@@ -12,13 +12,14 @@
 
 class Splitor {
 protected:
-    virtual bool getSplitExample(const PProgram& p, const ProgramList& seed_list, Example* counter_example,
-            TimeGuard* guard) = 0;
+    virtual bool getSplitExample(Program* cons_program, const FunctionContext& info,
+            const ProgramList& seed_list, Example* counter_example, TimeGuard* guard) = 0;
 public:
     ExampleSpace* example_space;
     Data* KSplitTimeOut;
     Splitor(ExampleSpace* _example_space);
-    bool getSplitExample(const PProgram& p, const ProgramList& seed_list, Example* counter_example);
+    bool getSplitExample(Program* cons_program, const FunctionContext& info, const ProgramList& seed_list,
+            Example* counter_example);
     ~Splitor() = default;
 };
 

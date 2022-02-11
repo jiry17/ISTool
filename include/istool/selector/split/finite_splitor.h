@@ -10,8 +10,8 @@
 
 class FiniteSplitor: public Splitor {
 protected:
-    virtual bool getSplitExample(const PProgram& p, const ProgramList& seed_list, Example* counter_example,
-                                 TimeGuard* guard);
+    virtual bool getSplitExample(Program* cons_program, const FunctionContext& info,
+                                 const ProgramList& seed_list, Example* counter_example, TimeGuard* guard);
     int getCost(const DataList& inp, const ProgramList& seed_list);
 public:
     IOExampleList example_list;

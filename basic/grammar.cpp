@@ -5,6 +5,8 @@
 #include "istool/basic/grammar.h"
 #include "glog/logging.h"
 #include <set>
+#include <queue>
+#include <unordered_set>
 
 NonTerminal::NonTerminal(const std::string &_name, const PType& _type): name(_name), type(_type) {
 }
@@ -120,6 +122,66 @@ void Grammar::print() const {
     }
 }
 
+namespace {
+    bool _getSymbolDepth(NonTerminal* symbol, std::unordered_map<NonTerminal*, int>& cache, std::unordered_set<NonTerminal*>& stack_set) {
+        if (stack_set.find(symbol) != stack_set.end()) return true;
+        if (cache.find(symbol) != cache.end()) return cache[symbol];
+        stack_set.insert(symbol);
+        int res = 0;
+        for (auto* rule: symbol->rule_list) {
+            for (auto* sub: rule->param_list) {
+                if (_getSymbolDepth(sub, cache, stack_set)) return true;
+                res = std::max(res, cache[sub] + 1);
+            }
+        }
+        return cache[symbol] = res;
+    }
+
+    int _getSymbolDepth(NonTerminal* symbol) {
+        std::unordered_map<NonTerminal*, int> cache;
+        std::unordered_set<NonTerminal*> stack_set;
+        if (_getSymbolDepth(symbol, cache, stack_set)) return 1e9;
+        return cache[symbol];
+    }
+}
+
+Grammar * grammar::generateHeightLimitedGrammar(Grammar *grammar, int limit) {
+    grammar->indexSymbol();
+    std::vector<NTList> symbol_pool(limit + 1, NTList(grammar->symbol_list.size(), nullptr));
+    std::vector<int> height_list;
+    for (auto* symbol: grammar->symbol_list) {
+        height_list.push_back(_getSymbolDepth(symbol));
+    }
+    for (int h = 0; h <= limit; ++h) {
+        for (int i = 0; i < grammar->symbol_list.size(); ++i) {
+            auto* symbol = grammar->symbol_list[i];
+            if (h > height_list[i]) {
+                symbol_pool[h][i] = symbol_pool[h - 1][i];
+                continue;
+            }
+            auto* new_symbol = new NonTerminal(symbol->name + "@" + std::to_string(h), symbol->type);
+            symbol_pool[h][i] = new_symbol;
+            for (auto* rule: symbol->rule_list) {
+                if (!h && !rule->param_list.empty()) continue;
+                NTList sub_list;
+                for (auto* param: rule->param_list) {
+                    sub_list.push_back(symbol_pool[h - 1][param->id]);
+                }
+                auto* new_r = new Rule(rule->semantics, std::move(sub_list));
+                new_symbol->rule_list.push_back(new_r);
+            }
+        }
+    }
+    NTList symbol_list;
+    for (auto* symbol: grammar->symbol_list) {
+        for (int i = 0; i <= limit && i <= height_list[symbol->id]; ++i) {
+            symbol_list.push_back(symbol_pool[i][symbol->id]);
+        }
+    }
+    auto g = new Grammar(symbol_pool[limit][0], symbol_list);
+    return g;
+}
+
 Grammar * grammar::copyGrammar(Grammar *grammar) {
     int n = grammar->symbol_list.size();
     NTList symbols(n); grammar->indexSymbol();
@@ -136,7 +198,8 @@ Grammar * grammar::copyGrammar(Grammar *grammar) {
             symbols[symbol->id]->rule_list.push_back(new Rule(rule->semantics, std::move(param_list)));
         }
     }
-    return new Grammar(symbols[grammar->start->id], symbols);
+    auto* res = new Grammar(symbols[grammar->start->id], symbols);
+    return res;
 }
 
 namespace {
@@ -154,13 +217,57 @@ std::string grammar::getFreeName(Grammar *grammar) {
     return "tmp@" + std::to_string(id);
 }
 
+namespace {
+    const int KINF = 1e9;
+}
+
 PProgram grammar::getMinimalProgram(Grammar *grammar) {
-    // todo: complete this function
-    for (auto* rule: grammar->start->rule_list) {
-        if (rule->param_list.empty()) {
-            ProgramList sub_list;
-            return std::make_shared<Program>(rule->semantics, sub_list);
+    grammar->indexSymbol();
+    int n = grammar->symbol_list.size();
+    std::vector<int> d(n, KINF);
+    ProgramList res(n, nullptr);
+    std::priority_queue<std::pair<int, int>> Q;
+
+    std::vector<std::vector<std::pair<NonTerminal*, Rule*>>> reversed_edge(n);
+    for (auto* symbol: grammar->symbol_list) {
+        for (auto* rule: symbol->rule_list) {
+            for (auto* sub: rule->param_list) {
+                reversed_edge[sub->id].emplace_back(symbol, rule);
+            }
         }
     }
-    LOG(FATAL) << "There is no program with size 1";
+
+    for (auto* symbol: grammar->symbol_list) {
+        bool is_start = false;
+        for (auto* rule: symbol->rule_list) {
+            if (rule->param_list.empty()) {
+                ProgramList empty_list;
+                res[symbol->id] = std::make_shared<Program>(rule->semantics, empty_list);
+                d[symbol->id] = 1; is_start = true;
+                break;
+            }
+        }
+        if (is_start) Q.push({d[symbol->id], symbol->id});
+    }
+
+    while (!Q.empty()) {
+        auto k = Q.top(); Q.pop();
+        if (d[k.second] != k.first) continue;
+        auto* symbol = grammar->symbol_list[k.second];
+        for (auto& [node, edge]: reversed_edge[k.second]) {
+            ProgramList sub_list;
+            int size = 1;
+            for (auto* sub: edge->param_list) {
+                size = std::min(d[node->id], size + d[sub->id]);
+                sub_list.push_back(res[sub->id]);
+            }
+            if (size < d[node->id]) {
+                Q.push({d[node->id], node->id});
+                d[node->id] = node->id;
+                res[node->id] = std::make_shared<Program>(edge->semantics, sub_list);
+            }
+        }
+    }
+    LOG(INFO) << "min program " << res[0]->toString();
+    return res[0];
 }

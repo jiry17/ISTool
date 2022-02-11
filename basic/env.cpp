@@ -20,6 +20,7 @@ Data * Env::getConstRef(const std::string &name, const Data& default_value) {
         const_pool[name] = new Data(default_value);
     }
     if (!default_value.isNull() && const_pool[name]->isNull()) {
+        delete const_pool[name];
         const_pool[name] = new Data(default_value);
     }
     return const_pool[name];

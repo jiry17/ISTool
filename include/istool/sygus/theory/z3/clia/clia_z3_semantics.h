@@ -18,6 +18,7 @@ DefineZ3Semantics(Leq)
 DefineZ3Semantics(Gq)
 DefineZ3Semantics(Geq)
 DefineZ3Semantics(Eq)
+DefineZ3Semantics(Neq)
 DefineZ3Semantics(Ite)
 
 namespace theory {

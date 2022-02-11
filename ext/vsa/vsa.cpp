@@ -19,6 +19,9 @@ std::string VSAEdge::toString() const {
 }
 VSANode::VSANode(NonTerminal *_symbol, int _example_num): symbol(_symbol), example_num(_example_num), id(0) {
 }
+std::string VSANode::toString() {
+    return symbol->name + "@" + getWitnessString();
+}
 
 
 SingleVSANode::SingleVSANode(NonTerminal *_symbol, const WitnessData &_oup): VSANode(_symbol, 1), oup(_oup) {
@@ -140,11 +143,50 @@ bool ext::vsa::isAcyclic(VSANode *root, int n) {
     return _isAcyclic(root, in_stack, visited);
 }
 
-std::string SingleVSANode::toString() {
+int ext::vsa::indexVSANodeByTopoSort(VSANode *root) {
+    int n = indexVSANode(root); assert(isAcyclic(root, n));
+    std::vector<VSANode*> node_list(n, nullptr);
+    _collectAllNodes(root, node_list);
+    std::vector<VSANode*> topo_list;
+    std::vector<std::vector<VSANode*>> rev_edge_list(n);
+    std::vector<int> out_deg_list(n, 0);
+
+    for (auto* node: node_list) {
+        for (const auto& edge: node->edge_list) {
+            for (auto* sub_node: edge.node_list) {
+                rev_edge_list[sub_node->id].push_back(node);
+                out_deg_list[node->id]++;
+            }
+        }
+    }
+
+    std::queue<VSANode*> Q;
+    for (int i = 0; i < n; ++i) {
+        if (out_deg_list[i] == 0) Q.push(node_list[i]);
+    }
+    while (!Q.empty()) {
+        auto* node = Q.front(); topo_list.push_back(node);
+        for (auto* pre: rev_edge_list[node->id]) {
+            out_deg_list[pre->id]--;
+            if (out_deg_list[pre->id] == 0) {
+                Q.push(pre);
+            }
+        }
+        Q.pop();
+    }
+
+    std::reverse(topo_list.begin(), topo_list.end());
+    for (int i = 0; i < topo_list.size(); ++i) {
+        topo_list[i]->id = i;
+    }
+    return n;
+}
+
+std::string SingleVSANode::getWitnessString() {
     return oup->toString();
 }
 
-std::string MultiExampleVSANode::toString() {
+std::string MultiExampleVSANode::getWitnessString() {
     return l->toString() + "|" + r->toString();
 }
 
@@ -167,4 +209,41 @@ void ext::vsa::deleteVSA(VSANode *root) {
     int n = indexVSANode(root);
     VSANodeList node_list(n, nullptr); _collectAllNodes(root, node_list);
     for (auto* node: node_list) delete node;
+}
+
+namespace {
+    int _getEdgeSize(VSANode* node, std::unordered_set<VSANode*>& cache) {
+        if (cache.find(node) != cache.end()) return 0;
+        cache.insert(node); int res = 0;
+        for (const auto& edge: node->edge_list) {
+            res += edge.node_list.size();
+            for (auto* sub: edge.node_list) {
+                res += _getEdgeSize(sub, cache);
+            }
+        }
+        return res;
+    }
+}
+
+int ext::vsa::getEdgeSize(VSANode *root) {
+    std::unordered_set<VSANode*> cache;
+    return _getEdgeSize(root, cache);
+}
+
+namespace {
+    double _getProgramNum(VSANode* root, std::unordered_map<VSANode*, double>& cache) {
+        if (cache.find(root) != cache.end()) return cache[root];
+        double res = 0;
+        for (auto& e: root->edge_list) {
+            double edge_num = 1.0;
+            for (auto* p: e.node_list) edge_num *= _getProgramNum(p, cache);
+            res += edge_num;
+        }
+        return res;
+    }
+}
+
+double ext::vsa::getProgramNum(VSANode *root) {
+    std::unordered_map<VSANode*, double> cache;
+    return _getProgramNum(root, cache);
 }

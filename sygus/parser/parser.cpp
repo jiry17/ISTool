@@ -260,7 +260,7 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     auto theory_list = getEntriesViaName(root, "set-logic");
     assert(theory_list.size() == 1);
     auto theory = getTheory(theory_list[0][1].asString());
-    sygus::initSyGuSExtension(env.get(), theory);
+    sygus::setTheory(env.get(), theory);
     sygus::loadSyGuSTheories(env.get(), theory::loadBasicSemantics);
 
     auto declare_fun_list = getEntriesViaName(root, "define-fun");

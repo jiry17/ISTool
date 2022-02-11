@@ -31,7 +31,8 @@ public:
     VSAEdgeList edge_list;
     VSANode(NonTerminal* _symbol, int _example_num);
     virtual ~VSANode() = default;
-    virtual std::string toString() = 0;
+    virtual std::string getWitnessString() = 0;
+    std::string toString();
 };
 
 class SingleVSANode: public VSANode {
@@ -39,14 +40,14 @@ public:
     WitnessData oup;
     SingleVSANode(NonTerminal* _symbol, const WitnessData& _oup);
     virtual ~SingleVSANode() = default;
-    virtual std::string toString();
+    virtual std::string getWitnessString();
 };
 
 class MultiExampleVSANode: public VSANode {
 public:
     VSANode *l, *r;
     MultiExampleVSANode(VSANode* l, VSANode* r);
-    virtual std::string toString();
+    virtual std::string getWitnessString();
 };
 
 typedef std::function<void(Grammar*, Env* env, const IOExample&)> VSAEnvSetter;
@@ -55,9 +56,12 @@ namespace ext {
     namespace vsa {
         void cleanUpVSA(VSANode* root);
         int indexVSANode(VSANode* root);
+        int indexVSANodeByTopoSort(VSANode* root);
+        int getEdgeSize(VSANode* root);
         bool isAcyclic(VSANode* root, int n = -1);
         void printVSA(VSANode* root);
         void deleteVSA(VSANode* root);
+        double getProgramNum(VSANode* root);
     }
 }
 
