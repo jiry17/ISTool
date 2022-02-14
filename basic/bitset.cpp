@@ -52,6 +52,17 @@ Bitset Bitset::operator|(const Bitset &x) const{
     return Bitset(std::move(result), n);
 }
 
+Bitset Bitset::operator^(const Bitset &x) const {
+    std::vector<unsigned int> result(A);
+#ifdef DEBUG
+    assert(x.n == n);
+#endif
+    for (int i = 0; i < A.size(); ++i) {
+        result[i] ^= x.A[i];
+    }
+    return Bitset(std::move(result), n);
+}
+
 Bitset Bitset::exclude(const Bitset &x) const {
     std::vector<unsigned int> result(A);
 #ifdef DEBUG
@@ -77,6 +88,21 @@ bool Bitset::checkCover(const Bitset &x) const {
 std::string Bitset::toString() const {
     std::string result = "";
     for (int i = 0; i < n; ++i) result += std::to_string((*this)[i]);
+    return result;
+}
+
+std::string Bitset::toXString() const {
+    if (n == 0) return "#x0";
+    std::string result = "#x";
+    std::vector<char> A;
+    for (int i = 0; i <= n - 1; i += 4) {
+        int w = 0;
+        for (int j = 0; j < 4 && i + j < n; ++j) {
+            w += ((*this)[i + j] << j);
+        }
+        if (w < 10) A.push_back(w + '0'); else A.push_back(w - 10 + 'a');
+    }
+    for (int i = A.size(); i; --i) result += A[i - 1];
     return result;
 }
 
@@ -111,4 +137,12 @@ Bitset Bitset::operator~() const {
 bool Bitset::operator < (const Bitset& x) const {
     if (n < x.n) return true; else if (n > x.n) return false;
     return A < x.A;
+}
+
+bool Bitset::operator == (const Bitset &x) const {
+    if (n != x.n) return false;
+    for (int i = 0; i < A.size(); ++i) {
+        if (A[i] != x.A[i]) return false;
+    }
+    return true;
 }

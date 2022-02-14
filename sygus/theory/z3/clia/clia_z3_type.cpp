@@ -31,8 +31,11 @@ bool Z3BoolType::matchType(Type *type) const {
 }
 Data Z3BoolType::getValueFromModel(const z3::model &model, const z3::expr &expr, Type *type, bool is_strict) const {
     auto value = model.eval(expr);
-    if (value.is_bool()) {
-        return Data(std::make_shared<BoolValue>(value.bool_value() == Z3_L_TRUE));
+    if (value.bool_value() == Z3_L_TRUE) {
+        return BuildData(Bool, true);
+    }
+    if (value.bool_value() == Z3_L_FALSE) {
+        return BuildData(Bool, false);
     }
     if (is_strict) return Data();
     return Data(std::make_shared<BoolValue>(true));

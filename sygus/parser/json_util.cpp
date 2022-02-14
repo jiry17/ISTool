@@ -6,6 +6,7 @@
 #include "istool/sygus/parser/json_util.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/sygus/theory/basic/string/str.h"
+#include "istool/sygus/theory/basic/bv/bv.h"
 #include <fstream>
 #include <sstream>
 #include "glog/logging.h"
@@ -24,33 +25,42 @@ Json::Value json::loadJsonFromFile(const std::string &name) {
 PType json::getTypeFromJson(const Json::Value &value) {
     if (value.isString()) {
         std::string name = value.asString();
-        if (name == "Int") return std::make_shared<TInt>();
-        if (name == "Bool") return std::make_shared<TBool>();
-        if (name == "String") return std::make_shared<TString>();
+        if (name == "Int") return theory::clia::getTInt();
+        if (name == "Bool") return type::getTBool();
+        if (name == "String") return theory::string::getTString();
         TEST_PARSER(false)
     }
     TEST_PARSER(value.isArray());
     if (value.size() == 3 && value[0].isString() && value[1].isString() &&
         value[0].asString() == "_" && value[1].asString() == "BitVec") {
-        LOG(FATAL) << "Unfinished type: BitVec";
+        int size = value[2][1].asInt();
+        return theory::bv::getTBitVector(size);
     }
     TEST_PARSER(false)
 }
 
-Data json::getDataFromJson(const Json::Value &value) {
-    TEST_PARSER(value.isArray()) TEST_PARSER(value[0].isString())
-    std::string type = value[0].asString();
-    if (type == "Int") {
+Data json::getDataFromJson(const Json::Value &value, Env* env) {
+    TEST_PARSER(value.isArray())
+    auto type = getTypeFromJson(value[0]);
+    if (dynamic_cast<TInt*>(type.get())) {
         TEST_PARSER(value.size() == 2 && value[1].isInt())
         return BuildData(Int, value[1].asInt());
-    } else if (type == "Bool") {
+    } else if (dynamic_cast<TBool*>(type.get())) {
         TEST_PARSER(value.size() == 2 && value[1].isString())
         return BuildData(Bool, value[1].asString() == "true");
-    } else if (type == "String") {
+    } else if (dynamic_cast<TString*>(type.get())) {
         TEST_PARSER(value.size() == 2 && value[1].isString());
         return BuildData(String, value[1].asString());
-    } else if (type == "BitVec") {
-        LOG(FATAL) << "Unfinished type: BitVec";
+    }
+    auto* bt = dynamic_cast<TBitVector*>(type.get());
+    if (bt) {
+        int size = bt->size;
+        auto w = value[1].asUInt64();
+        Bitset res(size, 0);
+        for (int i = 0; i < size; ++i) {
+            if ((w >> (unsigned long long)(i)) & 1ull) res.set(i, 1);
+        }
+        return BuildData(BitVector, res);
     }
     TEST_PARSER(false);
 }
@@ -68,7 +78,7 @@ namespace {
             return var_map.find(node.asString())->second;
         }
         try {
-            auto data = json::getDataFromJson(node);
+            auto data = json::getDataFromJson(node, env);
             return program::buildConst(data);
         } catch (ParseError& e) {}
         std::string op = node[0].asString();

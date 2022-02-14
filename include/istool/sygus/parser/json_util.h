@@ -18,7 +18,7 @@ struct ParseError: public std::exception {
 namespace json {
     Json::Value loadJsonFromFile(const std::string& name);
     PType getTypeFromJson(const Json::Value& value);
-    Data getDataFromJson(const Json::Value& value);
+    Data getDataFromJson(const Json::Value& value, Env* env);
     void saveJsonToFile(const Json::Value& value, const std::string& file_path);
     PProgram getProgramFromJson(const Json::Value& value, Env* env);
 }

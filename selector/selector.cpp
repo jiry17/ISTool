@@ -39,8 +39,10 @@ CompleteSelector::~CompleteSelector() noexcept {
 }
 
 bool DirectSelector::verify(const FunctionContext &info, Example *counter_example) {
-    if (counter_example) addExampleCount();
-    return v->verify(info, counter_example);
+    auto res = v->verify(info, counter_example);
+    if (!res && counter_example) addExampleCount();
+    return res;
 }
 DirectSelector::DirectSelector(Verifier *_v): v(_v) {}
-DirectSelector::~DirectSelector() {delete v;}
+// TODO: Decide when to delete v
+DirectSelector::~DirectSelector() {}

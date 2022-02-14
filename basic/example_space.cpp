@@ -52,7 +52,9 @@ bool FiniteIOExampleSpace::satisfyExample(const FunctionContext &ctx, const Exam
 }
 
 bool example::satisfyIOExample(Program *program, const IOExample &example, Env* env) {
-    return env->run(program, example.first) == example.second;
+    auto oup = env->run(program, example.first);
+    if (!(oup == example.second)) LOG(INFO) << program->toString() << " " << example::ioExample2String(example) << " " << oup.toString() << std::endl;
+    return oup == example.second;
 }
 
 PExampleSpace example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env) {

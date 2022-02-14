@@ -6,6 +6,7 @@
 #include "istool/sygus/parser/json_util.h"
 #include "istool/sygus/theory/basic/theory_semantics.h"
 #include "istool/sygus/theory/z3/theory_z3_semantics.h"
+#include "istool/sygus/theory/basic/bv/bv.h"
 #include "istool/ext/composed_semantics/composed_semantics.h"
 #include "istool/ext/composed_semantics/composed_z3_semantics.h"
 #include "istool/basic/config.h"
@@ -29,6 +30,7 @@ namespace {
     TheoryToken getTheory(const std::string& name) {
         if (name == "LIA") return TheoryToken::CLIA;
         if (name == "SLIA") return TheoryToken::STRING;
+        if (name == "BV") return TheoryToken::BV;
         LOG(FATAL) << "Unknown Theory " << name;
     }
 
@@ -135,7 +137,7 @@ namespace {
                 } else {
                     TEST_PARSER(rule_node.isArray())
                     try {
-                        Data d = json::getDataFromJson(rule_node);
+                        Data d = json::getDataFromJson(rule_node, env);
                         auto s = semantics::buildConstSemantics(d);
                         symbol->rule_list.push_back(new Rule(std::move(s), {}));
                     } catch (ParseError& e) {
@@ -169,7 +171,7 @@ namespace {
         }
         TEST_PARSER(entry.isArray())
         try {
-            auto data = json::getDataFromJson(entry);
+            auto data = json::getDataFromJson(entry, env);
             return cache[feature] = program::buildConst(data);
         } catch (ParseError& e) {
         }
@@ -191,15 +193,15 @@ namespace {
         return cache[feature] = std::make_shared<Program>(std::move(sem), std::move(sub_list));
     }
 
-    IOExample parseIOExample(const Json::Value& node, const PSynthInfo& info) {
+    IOExample parseIOExample(const Json::Value& node, const PSynthInfo& info, Env* env) {
         auto main = node[1];
         auto op = main[0].asString(); auto l = main[1]; auto r = main[2];
         if (!l.isArray() || !l[0].isString() || l[0].asString() != info->name) std::swap(l, r);
         TEST_PARSER(op == "=" && l.isArray() && l[0].isString() && l[0].asString() == info->name)
-        auto oup = json::getDataFromJson(r);
+        auto oup = json::getDataFromJson(r, env);
         DataList inp_list;
         for (int i = 1; i < l.size(); ++i) {
-            inp_list.push_back(json::getDataFromJson(l[i]));
+            inp_list.push_back(json::getDataFromJson(l[i], env));
         }
         return {inp_list, oup};
     }
@@ -222,26 +224,26 @@ Specification * parser::getSyGuSSpecFromFile(const std::string &file_name) {
 }
 
 namespace {
-    void _collectAllNames(const Json::Value& cons, std::unordered_set<std::string>& name_set) {
+    void _collectAllNames(const Json::Value& cons, std::unordered_set<std::string>& name_set, Env* env) {
         if (cons.isString()) {
             name_set.insert(cons.asString()); return;
         }
         try {
-            json::getDataFromJson(cons);
+            json::getDataFromJson(cons, env);
             return;
         } catch (ParseError& e) {}
         if (cons.isArray()) {
             for (const auto& sub_node: cons) {
-                _collectAllNames(sub_node, name_set);
+                _collectAllNames(sub_node, name_set, env);
             }
         }
     }
 
     std::vector<Json::Value> _removeUselessVars(const std::vector<Json::Value>& var_list,
-            const std::vector<Json::Value>& cons_list) {
+            const std::vector<Json::Value>& cons_list, Env* env) {
         std::unordered_set<std::string> name_map;
         for (const auto& cons_node: cons_list) {
-            _collectAllNames(cons_node[1], name_map);
+            _collectAllNames(cons_node[1], name_map, env);
         }
         std::vector<Json::Value> result;
         for (const auto& var_node: var_list) {
@@ -252,6 +254,32 @@ namespace {
         }
         return result;
     }
+
+    void _getBitVecLength(const Json::Value& root, Env* env, int& size) {
+        try {
+            auto type = json::getTypeFromJson(root);
+            auto* bt = dynamic_cast<TBitVector*>(type.get());
+            if (bt) {
+                if (size != -1 && size != bt->size) {
+                    LOG(FATAL) << "BitVec with different sizes are used in the same task";
+                }
+                size = bt->size;
+            }
+            return;
+        } catch (ParseError& e) {}
+        if (root.isArray()) {
+            for (auto& sub: root) _getBitVecLength(sub, env, size);
+        }
+    }
+
+    void _loadBitVecLength(const Json::Value& root, Env* env) {
+        int size = -1;
+        _getBitVecLength(root, env, size);
+        if (size == -1) {
+            LOG(FATAL) << "The length of BitVec is unknown";
+        }
+        theory::bv::setBitVectorLength(env, size);
+    }
 }
 
 Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
@@ -261,6 +289,8 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     assert(theory_list.size() == 1);
     auto theory = getTheory(theory_list[0][1].asString());
     sygus::setTheory(env.get(), theory);
+    if (theory == TheoryToken::BV) _loadBitVecLength(root, env.get());
+
     sygus::loadSyGuSTheories(env.get(), theory::loadBasicSemantics);
 
     auto declare_fun_list = getEntriesViaName(root, "define-fun");
@@ -282,7 +312,7 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
 
     auto cons_list = getEntriesViaName(root, "constraint");
     auto declare_var_list = getEntriesViaName(root, "declare-var");
-    declare_var_list = _removeUselessVars(declare_var_list, cons_list);
+    declare_var_list = _removeUselessVars(declare_var_list, cons_list, env.get());
 
     if (declare_var_list.empty()) {
         // try build PBE spec
@@ -293,7 +323,7 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
             std::string name = syn_info->name;
             for (auto& cons: cons_list) {
                 // LOG(INFO) << "Parse example " << cons;
-                example_list.push_back(parseIOExample(cons, syn_info));
+                example_list.push_back(parseIOExample(cons, syn_info, env.get()));
             }
             auto example_space = example::buildFiniteIOExampleSpace(example_list, name, env.get());
             return new Specification(info_list, env, example_space);

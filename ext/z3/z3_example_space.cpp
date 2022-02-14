@@ -8,9 +8,9 @@
 Z3ExampleSpace::Z3ExampleSpace(const PProgram &_cons_prog, Env *_env, const TypeList& _type_list, const std::unordered_map<std::string, Signature> &_sig_map):
         ExampleSpace(_cons_prog, _env), ext(ext::z3::getExtension(_env)), type_list(_type_list), sig_map(_sig_map) {
 }
-Z3IOExampleSpace::Z3IOExampleSpace(const PProgram &_cons_prog, Env *_env, const TypeList& _type_list, const std::unordered_map<std::string, Signature> &sig_map,
+Z3IOExampleSpace::Z3IOExampleSpace(const PProgram &_cons_prog, Env *_env, const TypeList& _type_list, const Signature &sig,
         const std::string& _name, const ProgramList &_inp_list, const PProgram &_oup_cons):
-        Z3ExampleSpace(_cons_prog, _env, _type_list, sig_map), IOExampleSpace(_name), inp_list(_inp_list), oup_cons(_oup_cons) {
+        Z3ExampleSpace(_cons_prog, _env, _type_list, {{_name, sig}}), IOExampleSpace(_name), inp_list(_inp_list), oup_cons(_oup_cons) {
 }
 
 bool Z3IOExampleSpace::satisfyExample(const FunctionContext &info, const Example &example) {
@@ -89,5 +89,5 @@ PExampleSpace example::buildZ3ExampleSpace(const PProgram &cons, Env *env, const
     };
     auto oup_cons = program::programMap(cons.get(), rewrite);
 
-    return std::make_shared<Z3IOExampleSpace>(cons, env, type_list, sig_map, name, inp_list, oup_cons);
+    return std::make_shared<Z3IOExampleSpace>(cons, env, type_list, sig_map.find(name)->second, name, inp_list, oup_cons);
 }

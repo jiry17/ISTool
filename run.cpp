@@ -25,6 +25,7 @@
 #include "istool/dsl/samplesy/samplesy_dsl.h"
 #include "istool/selector/samplesy/samplesy.h"
 #include "istool/selector/finite_random_selector.h"
+#include "istool/solver/enum/enum_solver.h"
 
 typedef std::pair<int, FunctionContext> SynthesisResult;
 
@@ -90,6 +91,32 @@ auto prepare = [](Grammar* g, Env* env, const IOExample& io_example) {
     env->setConst(theory::string::KStringInputList, string_input_list);
     env->setConst(theory::clia::KWitnessIntMaxName, BuildData(Int, int_max));
 };
+
+SynthesisResult InvokeVanillaVSA(Specification* spec) {
+    sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+    auto info = spec->info_list[0];
+    auto* pruner = new SizeLimitPruner(1e5, [](VSANode* node) {
+        auto* sn = dynamic_cast<SingleVSANode*>(node);
+        if (sn) {
+            auto* oup = dynamic_cast<DirectWitnessValue*>(sn->oup.get());
+            if (oup) {
+                auto* w = dynamic_cast<StringValue*>(oup->d.get());
+                if (w) return w->s.length() >= 20;
+            }
+        }
+        return false;
+    });
+
+    auto builder = std::make_shared<BFSVSABuilder>(info->grammar, pruner, spec->env.get(), prepare);
+
+    auto* solver = new BasicVSASolver(spec, builder, ext::vsa::getSizeModel());
+    auto* verifier = sygus::getVerifier(spec);
+    auto* sv = new DirectSelector(verifier);
+    auto* cegis = new CEGISSolver(solver, sv);
+
+    auto res = cegis->synthesis(nullptr);
+    return {sv->example_count, res};
+}
 
 
 SynthesisResult invokeMaxFlash(Specification* spec) {
@@ -181,8 +208,21 @@ SynthesisResult invokeCompleteSplitor(Specification* spec) {
     auto* solver = new CompleteSplitSelector(spec, splitor, checker, 5000);
     auto res = solver->synthesis(nullptr);
     return {solver->example_count, res};
-
 }
+
+SynthesisResult InvokeOBE(Specification* spec) {
+    auto* v = sygus::getVerifier(spec);
+    auto* sv = new DirectSelector(v);
+    spec->info_list[0]->grammar->print();
+    ProgramChecker runnable = [](Program* p) {return true;};
+
+    auto* obe = new OBESolver(spec, sv, runnable);
+    auto* solver = new CEGISSolver(obe, sv);
+
+    auto res = solver->synthesis(nullptr);
+    return {sv->example_count, res};
+}
+
 
 int main(int argc, char** argv) {
     assert(argc == 4 || argc == 1);
@@ -193,7 +233,7 @@ int main(int argc, char** argv) {
         solver_name = argv[3];
     } else {
         // benchmark_name = "/tmp/tmp.i5X31IAVA3/tests/string/name-combine-3-long.sl";
-        solver_name = "maxflash";
+        solver_name = "vsa";
         benchmark_name = "/tmp/tmp.i5X31IAVA3/tests/testfail.sl";
         //solver_name = "maxflash";
         output_name = "/tmp/629453237.out";
@@ -219,6 +259,10 @@ int main(int argc, char** argv) {
         result = invokeCompleteSplitor(spec);
     } else if (solver_name == "randomsy") {
         result = invokeRandomSy(spec);
+    } else if (solver_name == "vsa") {
+        result = InvokeVanillaVSA(spec);
+    } else if (solver_name == "obe") {
+        result = InvokeOBE(spec);
     }
     std::cout << result.first << " " << result.second.toString() << std::endl;
     FILE* f = fopen(output_name.c_str(), "w");

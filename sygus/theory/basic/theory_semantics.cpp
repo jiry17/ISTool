@@ -5,6 +5,7 @@
 #include "istool/sygus/theory/basic/theory_semantics.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/sygus/theory/basic/string/str.h"
+#include "istool/sygus/theory/basic/bv/bv.h"
 #include "glog/logging.h"
 
 void theory::loadBasicSemantics(Env *env, TheoryToken token) {
@@ -17,7 +18,10 @@ void theory::loadBasicSemantics(Env *env, TheoryToken token) {
             theory::loadStringTheory(env);
             return;
         }
-        // case TheoryToken::BV:
+        case TheoryToken::BV: {
+            theory::loadBVTheory(env);
+            return;
+        }
         default:
             LOG(FATAL) << "Unsupported theory";
     }

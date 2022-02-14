@@ -48,10 +48,8 @@ public:
     ~IteSemantics() = default;
 };
 
-namespace theory {
-    namespace clia {
-        extern const std::string KINFName;
-    }
+namespace theory::clia {
+    extern const std::string KINFName;
 }
 
 #endif //ISTOOL_CLIA_SEMANTICS_H

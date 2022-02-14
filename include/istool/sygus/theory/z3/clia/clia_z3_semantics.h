@@ -21,10 +21,8 @@ DefineZ3Semantics(Eq)
 DefineZ3Semantics(Neq)
 DefineZ3Semantics(Ite)
 
-namespace theory {
-    namespace clia {
-        void loadZ3Semantics(Env *env);
-    }
+namespace theory::clia {
+    void loadZ3Semantics(Env *env);
 }
 
 

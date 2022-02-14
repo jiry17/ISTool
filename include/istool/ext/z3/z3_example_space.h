@@ -23,7 +23,7 @@ class Z3IOExampleSpace: public Z3ExampleSpace, public IOExampleSpace {
 public:
     ProgramList inp_list;
     PProgram oup_cons;
-    Z3IOExampleSpace(const PProgram& _cons_prog, Env* _env, const TypeList& _type_list, const std::unordered_map<std::string, Signature>& sig_map,
+    Z3IOExampleSpace(const PProgram& _cons_prog, Env* _env, const TypeList& _type_list, const Signature& sig,
             const std::string& name, const ProgramList& _inp_list, const PProgram& _oup_cons);
     virtual IOExample getIOExample(const Example& example);
     virtual bool satisfyExample(const FunctionContext& info, const Example& example);
