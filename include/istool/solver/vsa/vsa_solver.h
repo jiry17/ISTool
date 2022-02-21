@@ -9,14 +9,36 @@
 #include "istool/solver/solver.h"
 #include "istool/ext/vsa/top_down_model.h"
 
+class VSAProgramSelector {
+public:
+    virtual PProgram select(VSANode* node) = 0;
+    virtual ~VSAProgramSelector() = default;
+};
+
+class VSAMinimalProgramSelector: public VSAProgramSelector {
+public:
+    TopDownModel* model;
+    VSAMinimalProgramSelector(TopDownModel* _model);
+    virtual PProgram select(VSANode* node);
+    virtual ~VSAMinimalProgramSelector();
+};
+
+class VSARandomProgramSelector: public VSAProgramSelector {
+    Env* env;
+public:
+    VSARandomProgramSelector(Env* _env);
+    virtual PProgram select(VSANode* node);
+    virtual ~VSARandomProgramSelector() = default;
+};
+
 class BasicVSASolver: public PBESolver {
     VSANode* buildVSA(const ExampleList& example_list, TimeGuard* guard);
 public:
     PVSABuilder builder;
     IOExampleSpace* io_space;
-    TopDownModel* model;
+    VSAProgramSelector* selector;
     std::unordered_map<std::string, VSANode*> cache;
-    BasicVSASolver(Specification* spec, const PVSABuilder& _builder, TopDownModel* _model);
+    BasicVSASolver(Specification* spec, const PVSABuilder& _builder, VSAProgramSelector* _selector);
     virtual FunctionContext synthesis(const ExampleList& example_list, TimeGuard* guard);
     virtual ~BasicVSASolver();
 };

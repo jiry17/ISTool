@@ -38,7 +38,7 @@ add_subdirectory(dsl)
 aux_source_directory(debug_tool DEBUG_TOOL_SRC)
 add_library(debug_lib ${DEBUG_TOOL_SRC})
  
-set(SRC_LIBS basic_lib ext_lib ${SyGuS_LIBS} solver_lib selector_lib dsl_lib debug_lib)
+set(SRC_LIBS solver_lib basic_lib ext_lib ${SyGuS_LIBS} selector_lib dsl_lib debug_lib)
 
 #add_executable(ISTool main.cpp)
 #target_link_libraries(ISTool ${SRC_LIBS} ${SRC_LIBS} ${THIRDPARTY_LIBS})

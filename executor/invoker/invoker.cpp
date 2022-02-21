@@ -6,27 +6,44 @@
 #include "istool/selector/selector.h"
 #include "glog/logging.h"
 
-FunctionContext invoker::synthesis(Specification *spec, Verifier *v, SolverToken solver_token, TimeGuard* guard) {
+InvokeConfig::~InvokeConfig() {
+    for (auto& item: item_map) delete item.second;
+}
+
+InvokeConfig::InvokeConfigItem::InvokeConfigItem(void *_data, std::function<void (void *)> _free_operator):
+    data(_data), free_operator(_free_operator) {
+}
+InvokeConfig::InvokeConfigItem::~InvokeConfigItem() {
+    free_operator(data);
+}
+
+FunctionContext invoker::synthesis(Specification *spec, Verifier *v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config) {
     switch (solver_token) {
         case SolverToken::COMPONENT_BASED_SYNTHESIS:
-            return invoker::single::invokeCBS(spec, v, guard);
+            return invoker::single::invokeCBS(spec, v, guard, config);
         case SolverToken::OBSERVATIONAL_EQUIVALENCE:
-            return invoker::single::invokeOBE(spec, v, guard);
+            return invoker::single::invokeOBE(spec, v, guard, config);
         case SolverToken::EUSOLVER:
-            return invoker::single::invokeEuSolver(spec, v, guard);
+            return invoker::single::invokeEuSolver(spec, v, guard, config);
+        case SolverToken::VANILLA_VSA:
+            return invoker::single::invokeVanillaVSA(spec, v, guard, config);
+        case SolverToken::POLYGEN:
+            return invoker::single::invokePolyGen(spec, v, guard, config);
+        case SolverToken::MAXFLASH:
+            return invoker::single::invokeMaxFlash(spec, v, guard, config);
         default:
             LOG(FATAL) << "Unknown solver token";
     }
 }
 
-std::pair<int, FunctionContext> invoker::getExampleNum(Specification *spec, Verifier *v, SolverToken solver_token, TimeGuard* guard) {
+std::pair<int, FunctionContext> invoker::getExampleNum(Specification *spec, Verifier *v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config) {
     auto* s = dynamic_cast<Selector*>(v);
     if (s) {
-        auto res = synthesis(spec, v, solver_token, guard);
+        auto res = synthesis(spec, v, solver_token, guard, config);
         return {s->example_count, res};
     }
     s = new DirectSelector(v);
-    auto res = synthesis(spec, v, solver_token, guard);
+    auto res = synthesis(spec, s, solver_token, guard, config);
     int num = s->example_count;
     delete s;
     return {num, res};
@@ -36,7 +53,10 @@ namespace {
     std::unordered_map<std::string, SolverToken> token_map {
             {"cbs", SolverToken::COMPONENT_BASED_SYNTHESIS},
             {"obe", SolverToken::OBSERVATIONAL_EQUIVALENCE},
-            {"eusolver", SolverToken::EUSOLVER}
+            {"eusolver", SolverToken::EUSOLVER},
+            {"maxflash", SolverToken::MAXFLASH},
+            {"vsa", SolverToken::VANILLA_VSA},
+            {"polygen", SolverToken::POLYGEN}
     };
 }
 

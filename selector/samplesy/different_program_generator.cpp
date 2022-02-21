@@ -154,7 +154,7 @@ bool VSADifferentProgramGenerator::extendResPool(int limit, ExecuteInfo* info) {
 ProgramList VSADifferentProgramGenerator::getDifferentProgram(const IOExample &example, int num) {
     int limit = num;
     auto* info = new ExecuteInfo(example.first, {});
-    builder->setter(builder->g, builder->env, example);
+    ext->prepareEnv(builder->g, example);
     res_pool.clear();
     for (int i = 0; i < node_list.size(); ++i) res_pool.emplace_back();
 

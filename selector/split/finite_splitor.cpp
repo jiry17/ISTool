@@ -15,46 +15,58 @@ FiniteSplitor::FiniteSplitor(ExampleSpace *_example_space): Splitor(_example_spa
     }
 }
 
-bool FiniteSplitor::getSplitExample(Program* cons_program, const FunctionContext &info,
-        const ProgramList &seed_list, Example *counter_example, TimeGuard *guard) {
-    /*static int num = 0;
-    std::vector<std::string> keys = {"Launa", "Brendan"};
-    num += 1;
-    if (num <= 2) {
-        for (auto& example: io_space->example_space) {
-            auto feature = data::dataList2String(example);
-            if (feature.find(keys[num - 1]) != std::string::npos) {
-                (*counter_example) = example;
-                return false;
-            }
-        }
-        assert(0);
-    }*/
+namespace {
+    std::string _getFeature(const std::string& x, const std::string& y) {
+        if (x > y) return y + "@" + x;
+        return x + "@" + y;
+    }
+}
 
-    int best_id = -1;
-    int best_cost = 1e9;
+bool FiniteSplitor::getExample(const std::function<bool (const IOExample &)> &filter, const ProgramList& seed_list, Example *counter_example, TimeGuard *guard) {
+    int best_id = -1, best_cost = 1e9;
     for (int i = 0; i < example_list.size(); ++i) {
         auto& example = example_list[i];
-        if (!env->run(cons_program, example::ioExample2Example(example), info).isTrue()) continue;
-        int cost = getCost(example.first, seed_list);
-        if (cost < best_cost) {
-            best_cost = cost; best_id = i;
+        if (!filter(example)) continue;
+        int current_cost = getCost(example.first, seed_list);
+        if (current_cost < best_cost) {
+            best_cost = current_cost;
+            best_id = i;
         }
     }
     if (best_id == -1) return true;
-    LOG(INFO) << "Best cost = " << best_cost << "; Sample num = " << seed_list.size();
-    if (counter_example) (*counter_example) = io_space->example_space[best_id];
+    if (counter_example) *counter_example = io_space->example_space[best_id];
     return false;
 }
 
+bool FiniteSplitor::getCounterExample(Program *p, const ProgramList &seed_list, Example *counter_example, TimeGuard *guard) {
+    auto filter = [this, p](const IOExample& example) {
+        return !(this->env->run(p, example.first) == example.second);
+    };
+    return getExample(filter, seed_list, counter_example, guard);
+}
+
+bool FiniteSplitor::getDistinguishExample(Program *x, Program *y, const ProgramList &seed_list, Example *counter_example, TimeGuard *guard) {
+    auto filter = [this, x, y](const IOExample& example) {
+        return !(this->env->run(x, example.first) == this->env->run(y, example.first));
+    };
+    return getExample(filter, seed_list, counter_example, guard);
+}
+
 int FiniteSplitor::getCost(const DataList &inp, const ProgramList &seed_list) {
-    std::unordered_map<std::string, int> result_map;
+    DataList oup_list;
+    std::vector<std::string> feature_list;
+    for (auto& seed: seed_list) {
+        oup_list.push_back(env->run(seed.get(), inp));
+        feature_list.push_back(seed->toString());
+    }
     int cost = 0;
-    for (const auto& p: seed_list) {
-        auto res = env->run(p.get(), inp);
-        auto feature = res.toString();
-        //cost = std::max(cost, result_map[feature]++);
-        cost += (result_map[feature]++);
+    for (int i = 0; i < seed_list.size(); ++i) {
+        for (int j = i + 1; j < seed_list.size(); ++j) {
+            if (!(oup_list[i] == oup_list[j])) continue;
+            auto feature = _getFeature(feature_list[i], feature_list[j]);
+            if (feature_cache.find(feature) != feature_cache.end()) continue;
+            ++cost;
+        }
     }
     return cost;
 }

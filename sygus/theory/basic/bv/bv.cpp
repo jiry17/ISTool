@@ -44,6 +44,7 @@ void theory::loadBVTheory(Env *env) {
     LoadBVSemantics("bvashr", BVAShr);
     LoadSemantics("ite", Ite);
     LoadSemantics("=", Eq);
+    LoadSemantics("!=", Neq);
 
     auto* ext = type::getTypeExtension(env);
     ext->registerTypeInfo(new BitVectorTypeInfo());

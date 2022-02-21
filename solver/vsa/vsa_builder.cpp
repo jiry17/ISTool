@@ -22,8 +22,8 @@ bool SizeLimitPruner::isPrune(VSANode *node) {
     return true;
 }
 
-VSABuilder::VSABuilder(Grammar *_g, VSAPruner *_pruner, Env* _env, const VSAEnvSetter& _setter):
-    g(_g), pruner(_pruner), ext(ext::vsa::getExtension(_env)), env(_env), setter(_setter) {
+VSABuilder::VSABuilder(Grammar *_g, VSAPruner *_pruner, Env* _env):
+    g(_g), pruner(_pruner), ext(ext::vsa::getExtension(_env)), env(_env) {
 }
 VSABuilder::~VSABuilder() {
     delete pruner;
@@ -36,7 +36,7 @@ VSANode * VSABuilder::buildVSA(const Data &oup, const DataList &inp_list, TimeGu
     if (single_build_cache.find(feature) != single_build_cache.end()) {
         return single_build_cache[feature];
     }
-    setter(g, env, {inp_list, oup});
+    ext->prepareEnv(g, {inp_list, oup});
     auto res = single_build_cache[feature] = _buildVSA(oup, inp_list, guard);
     LOG(INFO) << "Build single size " << ext::vsa::getEdgeSize(res);
     return res;
@@ -73,11 +73,11 @@ VSANode* VSABuilder::buildFullVSA() {
     return single_build_cache[""] = node_list[0];
 }
 
-DFSVSABuilder::DFSVSABuilder(Grammar *_g, VSAPruner *pruner, Env* env, const VSAEnvSetter& setter):
-    VSABuilder(_g, pruner, env, setter) {
+DFSVSABuilder::DFSVSABuilder(Grammar *_g, VSAPruner *pruner, Env* env):
+    VSABuilder(_g, pruner, env) {
 }
-BFSVSABuilder::BFSVSABuilder(Grammar *_g, VSAPruner *pruner, Env* env, const VSAEnvSetter& setter):
-    VSABuilder(_g, pruner, env, setter) {
+BFSVSABuilder::BFSVSABuilder(Grammar *_g, VSAPruner *pruner, Env* env):
+    VSABuilder(_g, pruner, env) {
 }
 
 VSANode* DFSVSABuilder::buildVSA(NonTerminal *nt, const WitnessData &oup, const DataList &inp_list, TimeGuard *guard, std::unordered_map<std::string, VSANode*> &cache) {

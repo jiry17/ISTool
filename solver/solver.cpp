@@ -8,7 +8,8 @@
 
 Solver::Solver(Specification *_spec): spec(_spec) {}
 VerifiedSolver::VerifiedSolver(Specification *spec, Verifier *_v): Solver(spec), v(_v) {}
-VerifiedSolver::~VerifiedSolver() {delete v;}
+//TODO: delete v;
+VerifiedSolver::~VerifiedSolver() {/*delete v;*/}
 PBESolver::PBESolver(Specification *_spec): spec(_spec) {}
 
 CEGISSolver::CEGISSolver(PBESolver *_pbe_solver, Verifier *_v):

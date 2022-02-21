@@ -22,10 +22,8 @@ SampleSy::SampleSy(Specification* _spec, Splitor *_splitor, SeedGenerator* _gen,
 Example SampleSy::getNextExample(const PProgram &x, const PProgram &y) {
     double time_limit = theory::clia::getIntValue(*KSampleTimeOut) / 1000.;
     auto seed_list = gen->getSeeds(theory::clia::getIntValue(*KSampleNum), time_limit);
-    seed_list.push_back(x); seed_list.push_back(y);
     Example example;
-    auto cons_program = program::buildConst(BuildData(Bool, true));
-    splitor->getSplitExample(cons_program.get(), {}, seed_list, &example);
+    splitor->getDistinguishExample(x.get(), y.get(), seed_list, &example);
     return example;
 }
 void SampleSy::addExample(const IOExample &example) {

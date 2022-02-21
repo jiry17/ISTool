@@ -65,11 +65,26 @@ def _print_result(row_names, col_names, result, number_size = 6):
         print()
 
 
+def _is_success(res_item):
+    for item in res_item:
+        if item["status"]: return True
+    return False
+
+
+def _apply_f(cared_val: CaredValue, res_item):
+    res = []
+    for item in res_item:
+        if item["status"]:
+            res.append(cared_val.f(item))
+    assert len(res) > 0
+    return sum(res) / len(res)
+
+
 def _calculate_all(cared_val: CaredValue, result):
     data = {}
     for name, res in result.items():
-        if res["status"]:
-            data[name] = cared_val.f(res)
+        if _is_success(res):
+            data[name] = _apply_f(cared_val, res)
     return data
 
 
@@ -107,13 +122,48 @@ def _set_axis(draw_type: DrawType):
         return
 
 
-def lis_tasks(result_map, prop=lambda x: not x["status"]):
+def list_tasks(result_map, prop=lambda x: not x["status"]):
     num = 0
     for name, res in result_map.items():
-        if prop(res):
-            print(name)
-            num += 1
+        for item in res:
+            if prop(item):
+                print(name)
+                num += 1
+                break
     print(num)
+
+def get_all_solved(result_map):
+    failed_set = {}
+    for solver, result in result_map.items():
+        for name, item in result.items():
+            if not _is_success(item):
+                failed_set[name] = 1
+    new_result_map = {}
+    for solver, result in result_map.items():
+        new_result = {}
+        for name, item in result.items():
+            if name not in failed_set: new_result[name] = item
+        new_result_map[solver] = new_result
+    return new_result_map
+
+def list_all_result(result_map, val: CaredValue):
+    row_list = {}
+    for solver_name, res in result_map.items():
+        for benchmark_name in res.keys():
+            row_list[benchmark_name] = 1
+    row_list = sorted(list(row_list.keys()))
+    col_list = sorted(list(result_map.keys()))
+    all_res = []
+    for row_name in row_list:
+        res = []
+        for col_name in col_list:
+            if row_name not in result_map[col_name] or not result_map[col_name][row_name]["status"]: 
+                res.append(-1)
+                continue
+            res.append(val.f(result_map[col_name][row_name]))
+        all_res.append(res)
+    _print_result(row_list, col_list, all_res, 4)
+    
 
 def draw_trend(result_map, val: CaredValue, fig_path, x_size=4, y_size=3, is_x_name=True,
          is_y_name=True, title=None, is_complete_x=True):

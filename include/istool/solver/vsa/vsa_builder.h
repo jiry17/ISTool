@@ -47,9 +47,8 @@ public:
     Grammar* g;
     VSAPruner* pruner;
     VSAExtension* ext;
-    VSAEnvSetter setter;
     Env* env;
-    VSABuilder(Grammar* _g, VSAPruner* _pruner, Env* _env, const VSAEnvSetter& _setter);
+    VSABuilder(Grammar* _g, VSAPruner* _pruner, Env* _env);
     VSANode* buildFullVSA();
     VSANode* buildVSA(const Data& oup, const DataList& inp_list, TimeGuard* guard);
     VSANode* mergeVSA(VSANode* l, VSANode* r, TimeGuard* guard);
@@ -65,7 +64,7 @@ protected:
     virtual VSANode* _buildVSA(const Data& oup, const DataList& inp_list, TimeGuard* guard);
     virtual VSANode* _mergeVSA(VSANode* l, VSANode* r, TimeGuard* guard);
 public:
-    DFSVSABuilder(Grammar* _g, VSAPruner* pruner, Env* env, const VSAEnvSetter& _setter);
+    DFSVSABuilder(Grammar* _g, VSAPruner* pruner, Env* env);
 };
 
 class BFSVSABuilder: public VSABuilder {
@@ -73,7 +72,7 @@ protected:
     virtual VSANode* _buildVSA(const Data& oup, const DataList& inp_list, TimeGuard* guard);
     virtual VSANode* _mergeVSA(VSANode* l, VSANode* r, TimeGuard* guard);
 public:
-    BFSVSABuilder(Grammar* _g, VSAPruner* pruner, Env* env, const VSAEnvSetter& _setter);
+    BFSVSABuilder(Grammar* _g, VSAPruner* pruner, Env* env);
 };
 
 #endif //ISTOOL_VSA_BUILDER_H

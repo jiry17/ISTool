@@ -50,19 +50,15 @@ public:
     virtual std::string getWitnessString();
 };
 
-typedef std::function<void(Grammar*, Env* env, const IOExample&)> VSAEnvSetter;
-
-namespace ext {
-    namespace vsa {
-        void cleanUpVSA(VSANode* root);
-        int indexVSANode(VSANode* root);
-        int indexVSANodeByTopoSort(VSANode* root);
-        int getEdgeSize(VSANode* root);
-        bool isAcyclic(VSANode* root, int n = -1);
-        void printVSA(VSANode* root);
-        void deleteVSA(VSANode* root);
-        double getProgramNum(VSANode* root);
-    }
+namespace ext::vsa {
+    void cleanUpVSA(VSANode *root);
+    int indexVSANode(VSANode *root);
+    int indexVSANodeByTopoSort(VSANode *root);
+    int getEdgeSize(VSANode *root);
+    bool isAcyclic(VSANode *root, int n = -1);
+    void printVSA(VSANode *root);
+    void deleteVSA(VSANode *root);
+    double getProgramNum(VSANode *root);
 }
 
 #endif //ISTOOL_VSA_H

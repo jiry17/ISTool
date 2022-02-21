@@ -107,9 +107,12 @@ SynthesisResult InvokeVanillaVSA(Specification* spec) {
         return false;
     });
 
-    auto builder = std::make_shared<BFSVSABuilder>(info->grammar, pruner, spec->env.get(), prepare);
+    auto* ext = ext::vsa::getExtension(spec->env.get());
+    ext->setEnvSetter(prepare);
+    auto builder = std::make_shared<BFSVSABuilder>(info->grammar, pruner, spec->env.get());
 
-    auto* solver = new BasicVSASolver(spec, builder, ext::vsa::getSizeModel());
+    auto* selector = new VSAMinimalProgramSelector(ext::vsa::getSizeModel());
+    auto* solver = new BasicVSASolver(spec, builder, selector);
     auto* verifier = sygus::getVerifier(spec);
     auto* sv = new DirectSelector(verifier);
     auto* cegis = new CEGISSolver(solver, sv);
@@ -154,9 +157,12 @@ SynthesisResult invokeSampleSy(Specification* spec) {
     samplesy::registerSampleSyWitness(spec->env.get());
     info->grammar = samplesy::rewriteGrammar(info->grammar, spec->env.get(), dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get()));
 
+    auto* ext = ext::vsa::getExtension(spec->env.get());
+    ext->setEnvSetter(prepare);
+
     auto* pruner = new TrivialPruner();
     auto* limited_g = grammar::generateHeightLimitedGrammar(info->grammar, 6);
-    auto builder = std::make_shared<DFSVSABuilder>(limited_g, pruner, spec->env.get(), prepare);
+    auto builder = std::make_shared<DFSVSABuilder>(limited_g, pruner, spec->env.get());
     auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
     assert(fio);
 
@@ -180,7 +186,9 @@ SynthesisResult invokeRandomSy(Specification* spec) {
 
     auto* pruner = new TrivialPruner();
     auto* limited_g = grammar::generateHeightLimitedGrammar(info->grammar, 6);
-    auto builder = std::make_shared<DFSVSABuilder>(limited_g, pruner, spec->env.get(), prepare);
+    auto* ext = ext::vsa::getExtension(spec->env.get());
+    ext->setEnvSetter(prepare);
+    auto builder = std::make_shared<DFSVSABuilder>(limited_g, pruner, spec->env.get());
     auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
     assert(fio);
     auto* diff_gen = new VSADifferentProgramGenerator(builder);
@@ -199,7 +207,9 @@ SynthesisResult invokeCompleteSplitor(Specification* spec) {
 
     auto* pruner = new TrivialPruner();
     auto* limited_g = grammar::generateHeightLimitedGrammar(info->grammar, 6);
-    auto builder = std::make_shared<DFSVSABuilder>(limited_g, pruner, spec->env.get(), prepare);
+    auto* ext = ext::vsa::getExtension(spec->env.get());
+    ext->setEnvSetter(prepare);
+    auto builder = std::make_shared<DFSVSABuilder>(limited_g, pruner, spec->env.get());
     auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
     assert(fio);
     auto* diff_gen = new VSADifferentProgramGenerator(builder);

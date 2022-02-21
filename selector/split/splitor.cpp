@@ -9,15 +9,22 @@ Splitor::Splitor(ExampleSpace *_example_space): example_space(_example_space) {
     KSplitTimeOut = selector::getSplitorTimeOut(example_space->env);
 }
 
-bool Splitor::getSplitExample(Program* cons_program, const FunctionContext &info, const ProgramList &seed_list, Example *counter_example) {
+bool Splitor::getCounterExample(Program *p, const ProgramList &seed_list, Example *counter_example) {
     auto* tmp_guard = new TimeGuard(theory::clia::getIntValue(*KSplitTimeOut) / 1000.);
-    auto res = getSplitExample(cons_program, info, seed_list, counter_example, tmp_guard);
+    auto res = getCounterExample(p, seed_list, counter_example, tmp_guard);
+    delete tmp_guard;
+    return res;
+}
+
+bool Splitor::getDistinguishExample(Program *x, Program *y, const ProgramList &seed_list, Example *counter_example) {
+    auto* tmp_guard = new TimeGuard(theory::clia::getIntValue(*KSplitTimeOut) / 1000.);
+    auto res = getDistinguishExample(x, y, seed_list, counter_example, tmp_guard);
     delete tmp_guard;
     return res;
 }
 
 namespace {
-    const int KDefaultTimeLimit = 1000;
+    const int KDefaultTimeLimit = 10000;
     const std::string KSplitorTimeLimitName = "Selector@TimeOut";
 }
 

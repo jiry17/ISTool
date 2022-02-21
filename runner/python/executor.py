@@ -34,12 +34,13 @@ def _deal_thread(thread_pool, pos, cache):
         output_file = thread_pool[pos]["output_file"]
         name = thread_pool[pos]["name"]
         result = _read_all_lines(output_file)
+        if name not in cache: cache[name] = []
         if len(result) == 0:
-            cache[name] = {"status": False}
+            cache[name].append({"status": False})
         else:
             res = result[:-1]
             time_cost = float(result[-1])
-            cache[name] = {"status": True, "result": res, "time": time_cost}
+            cache[name].append({"status": True, "result": res, "time": time_cost})
         os.system("rm %s" % output_file)
         thread_pool[pos] = None
 
@@ -84,7 +85,11 @@ def execute(config: RunnerConfig, benchmark_list: list, cache_path: str, thread_
         cache[config.name] = {}
     step_num = 0
 
-    benchmark_list = list(filter(lambda path: _get_benchmark_name(path) not in cache[config.name], benchmark_list))
+    benchmark_list = []
+    for path in benchmark_list:
+        benchmark_name = _get_benchmark_name(path)
+        existing_num = 0 if benchmark_name not in cache[config.name] else len(cache[config.name][benchmark_name])
+        benchmark_list.extend([path] * max(0, config.repeat_num - existing_num))
 
     for benchmark_file in tqdm(benchmark_list):
         benchmark_name = _get_benchmark_name(benchmark_file)

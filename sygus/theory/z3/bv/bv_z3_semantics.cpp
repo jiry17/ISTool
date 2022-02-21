@@ -51,5 +51,6 @@ void theory::bv::loadZ3Semantics(Env *env) {
     LoadZ3Semantics(z3_env, "bvand", BVAnd); LoadZ3Semantics(z3_env, "bvor", BVOr);
     LoadZ3Semantics(z3_env, "bvlshr", BVLShr); LoadZ3Semantics(z3_env, "bvshl", BVShl);
     LoadZ3Semantics(z3_env, "ite", Ite); LoadZ3Semantics(z3_env, "=", Eq);
+    LoadZ3Semantics(z3_env, "!=", Neq);
     LoadZ3Semantics(z3_env, "bvxor", BVXor); LoadZ3Semantics(z3_env, "bvashr", BVAShr);
 }

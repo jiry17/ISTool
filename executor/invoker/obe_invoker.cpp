@@ -5,9 +5,12 @@
 #include "istool/invoker/invoker.h"
 #include "istool/solver/enum/enum_solver.h"
 
-// TODO: support more kind of programs
-FunctionContext invoker::single::invokeOBE(Specification *spec, Verifier *v, TimeGuard *guard) {
-    ProgramChecker runnable = [](Program* p) {return true;};
+namespace {
+    ProgramChecker _default_runnable = [](Program* p) {return true;};
+}
+
+FunctionContext invoker::single::invokeOBE(Specification *spec, Verifier *v, TimeGuard *guard, const InvokeConfig& config) {
+    auto runnable = config.access("runnable", _default_runnable);
 
     auto* obe = new OBESolver(spec, v, runnable);
     auto* solver = new CEGISSolver(obe, v);
