@@ -2,6 +2,7 @@
 *.idea
 *__pycache__
 tests*
+CMakeLists.txt
 cmake-build-debug-remote-host
 cmake-build-debug-yifan
 runner/cache/* 
