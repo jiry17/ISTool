@@ -19,10 +19,15 @@ namespace {
     };
 }
 
-LiftingRes invoker::single::invokeAutoLifter(LiftingTask *task, TimeGuard *guard, const InvokeConfig& config) {
+AutoLifter* invoker::single::buildAutoLifter(LiftingTask *task, const InvokeConfig &config) {
     auto sf_builder = config.access("SfBuilder", KDefaultSFBuilder);
     auto sc_builder = config.access("ScBuilder", KDefaultSCBuilder);
     auto* solver = new AutoLifter(task, sf_builder, sc_builder);
+    return solver;
+}
+
+LiftingRes invoker::single::invokeAutoLifter(LiftingTask *task, TimeGuard *guard, const InvokeConfig &config) {
+    auto* solver = invoker::single::buildAutoLifter(task, config);
     auto res = solver->synthesis(guard);
     delete solver;
     return res;

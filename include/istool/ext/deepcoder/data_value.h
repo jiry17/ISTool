@@ -57,8 +57,6 @@ public:
 };
 
 class BTreeLeafValue: public BTreeValue {
-protected:
-    virtual PType constructType();
 public:
     Data value;
     BTreeLeafValue(const Data& _v);

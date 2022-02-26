@@ -111,6 +111,13 @@ public:
     virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo* info);
 };
 
+class AllowFailSemantics: public Semantics, public TypedSemantics {
+    Data d;
+public:
+    AllowFailSemantics(const PType& type, const Data& _d);
+    virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo* info);
+};
+
 #define LoadSemantics(name, sem) env->setSemantics(name, std::make_shared<sem ## Semantics>())
 
 namespace semantics {

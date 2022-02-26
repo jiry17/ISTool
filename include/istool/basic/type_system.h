@@ -13,6 +13,9 @@
 
 class TypeExtension;
 
+struct TypeError: public std::exception {
+};
+
 class ValueTypeInfo {
 public:
     virtual bool isMatch(Value* value) = 0;
@@ -63,7 +66,7 @@ public:
 
 namespace type {
     TypeExtension* getTypeExtension(Env* env);
-    void registerTypeSystem(TypeSystem* type_system, Env* env);
+    void registerTypeSystem(TypeSystem* type_system, TypeExtension* ext);
 }
 
 #endif //ISTOOL_TYPE_SYSTEM_H

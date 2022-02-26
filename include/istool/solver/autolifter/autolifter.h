@@ -15,7 +15,7 @@ class AutoLifter: public LiftingSolver {
     SFSolverBuilder sf_builder;
     SolverBuilder sc_builder;
 public:
-    AutoLifter(LiftingTask* task, const SFSolverBuilder& _sf_builder, const SolverBuilder _sc_builder);
+    AutoLifter(LiftingTask* task, const SFSolverBuilder& _sf_builder, const SolverBuilder& _sc_builder);
     virtual LiftingRes synthesis(TimeGuard* guard);
 };
 

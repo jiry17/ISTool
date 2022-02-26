@@ -4,6 +4,7 @@
 
 #include "istool/ext/deepcoder/higher_order_operator.h"
 #include "istool/ext/deepcoder/anonymous_function.h"
+#include "istool/ext/deepcoder/data_value.h"
 #include "istool/basic/env.h"
 #include "glog/logging.h"
 
@@ -33,7 +34,7 @@ Data TmpSemantics::run(DataList &&inp, ExecuteInfo *info) {
     if (!ti) {
         LOG(FATAL) << "TmpSemantics require TmpExecuteInfo";
     }
-    return ti->get(name);
+    return ti->get(name, true);
 }
 
 namespace {
@@ -53,23 +54,41 @@ Data LambdaSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     assert(sub_list.size() == 1);
     auto p = sub_list[0];
     auto tmp_list = name_list;
-    auto f = [p, tmp_list](const ProgramList& extra_sub_list, ExecuteInfo* _info) {
-        assert(extra_sub_list.size() == tmp_list.size());
+    auto f = [p, tmp_list](DataList&& tmp_values, ExecuteInfo* _info) {
+        assert(tmp_values.size() == tmp_list.size());
         auto* ti = dynamic_cast<TmpExecuteInfo*>(_info);
         if (!ti) {
             LOG(FATAL) << "TmpSemantics require TmpExecuteInfo";
         }
-        DataList tmp_values;
-        for (const auto& sub: extra_sub_list) tmp_values.push_back(sub->run(_info));
-        for (int i = 0; i < tmp_values.size(); ++i) ti->set(tmp_list[i], tmp_values[i]);
+        DataList pre_values;
+        for (int i = 0; i < tmp_values.size(); ++i) {
+            pre_values.push_back(ti->get(tmp_list[i], false));
+            ti->set(tmp_list[i], tmp_values[i]);
+        }
         auto res = p->run(ti);
-        for (int i = 0; i < tmp_values.size(); ++i) ti->clear(tmp_list[i]);
+        for (int i = 0; i < tmp_values.size(); ++i)
+            if (pre_values[i].isNull()) ti->clear(tmp_list[i]);
+            else ti->set(tmp_list[i], pre_values[i]);
         return res;
+    };
+    return ext::ho::buildAnonymousData(f);
+}
+
+TriangleSemantics::TriangleSemantics(): FullExecutedSemantics("tri") {}
+Data TriangleSemantics::run(DataList &&func_list, ExecuteInfo *info) {
+    auto f = [func_list](const ProgramList& sub_list, ExecuteInfo* info) {
+        DataList res;
+        for (auto& func: func_list) {
+            auto sem = ext::ho::getSemantics(func);
+            res.push_back(sem->run(sub_list, info));
+        }
+        return BuildData(Product, res);
     };
     return ext::ho::buildAnonymousData(f);
 }
 
 void ext::ho::loadHigherOrderOperators(Env *env) {
     LoadSemantics("apply", Apply); LoadSemantics("curry", Curry);
+    LoadSemantics("tri", Triangle);
     registerTmpExecuteInfo(env);
 }

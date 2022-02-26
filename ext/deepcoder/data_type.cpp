@@ -43,7 +43,7 @@ std::string TProduct::getName() {
         if (i) res += "*";
         res += sub_types[i]->getName();
     }
-    return res;
+    return "(" + res + ")";
 }
 bool TProduct::equal(Type *type) {
     auto* pt = dynamic_cast<TProduct*>(type);

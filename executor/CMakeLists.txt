@@ -11,3 +11,9 @@ target_link_libraries(run_cbs_icse10 ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
 
 add_executable(run_sygus run_sygus.cpp)
 target_link_libraries(run_sygus ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
+
+add_executable(run_splitor run_splitor.cpp)
+target_link_libraries(run_splitor ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
+
+add_executable(run_autolifter run_autolifter.cpp)
+target_link_libraries(run_autolifter ${ALL_LIBS} ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})

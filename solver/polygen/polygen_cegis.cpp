@@ -6,7 +6,8 @@
 #include "glog/logging.h"
 
 CEGISPolyGen::~CEGISPolyGen() {
-    delete term_solver; delete cond_solver;
+    delete term_solver;
+    delete cond_solver;
 }
 
 CEGISPolyGen::CEGISPolyGen(Specification *spec, const PSynthInfo &term_info, const PSynthInfo &unify_info,
@@ -46,6 +47,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
         return result;
     }
     example_list.push_back(counter_example);
+    LOG(INFO) << "counter " << example::ioExample2String(io_space->getIOExample(counter_example));
     io_example_list.push_back(io_space->getIOExample(counter_example));
     ProgramList term_list, condition_list;
 
@@ -106,15 +108,25 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             auto condition = condition_list[i];
             bool is_valid = true;
             for (const auto& example: positive_list) {
-                if (!env->run(condition.get(), example.first).isTrue()) {
-                    is_valid = false; break;
+                try {
+                    if (!env->run(condition.get(), example.first).isTrue()) {
+                        is_valid = false;
+                        break;
+                    }
+                } catch (SemanticsError& e) {
+                    is_valid = false;
                 }
             }
             if (is_valid) {
-                for (const auto& example: negative_list) {
-                    if (env->run(condition.get(), example.first).isTrue()) {
-                        is_valid = false; break;
+                try {
+                    for (const auto &example: negative_list) {
+                        if (env->run(condition.get(), example.first).isTrue()) {
+                            is_valid = false;
+                            break;
+                        }
                     }
+                } catch (SemanticsError& e) {
+                    is_valid = false;
                 }
             }
 
@@ -131,11 +143,10 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
         }
 
         result = semantics::buildSingleContext(info->name, _mergeIte(term_list, condition_list, spec->env.get()));
-        LOG(INFO) << result.toString().substr(0, 500);
         if (v->verify(result, &counter_example)) {
             return result;
         }
-        LOG(INFO) << "counter example " << data::dataList2String(counter_example) << std::endl;
+        // LOG(INFO) << data::dataList2String(counter_example);
         example_list.push_back(counter_example);
         io_example_list.push_back(io_space->getIOExample(counter_example));
     }

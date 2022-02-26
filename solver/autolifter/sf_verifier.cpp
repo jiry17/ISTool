@@ -11,10 +11,10 @@ namespace {
     int KDefaultExampleNum = 1000;
 }
 
-SFVerifier::SFVerifier(PartialLiftingTask *_task, bool _is_consider_h): task(_task), size_limit(5), is_consider_h(_is_consider_h) {
+SFVerifier::SFVerifier(PartialLiftingTask *_task): task(_task), size_limit(5) {
     auto* env = task->info->env;
     example_num = env->getConstRef(solver::autolifter::KOccamExampleNumName, BuildData(Int, KDefaultExampleNum));
-    p_list = ext::ho::splitTriangle(task->p);
+    p_list = ext::ho::splitProduct(task->p);
     for (const auto& p: p_list) {
         auto *cache = task->info->getModCache(p.get());
         if (!cache) {
@@ -23,7 +23,7 @@ SFVerifier::SFVerifier(PartialLiftingTask *_task, bool _is_consider_h): task(_ta
         p_cache_list.push_back(cache);
     }
 
-    h_list = ext::ho::splitTriangle(task->h);
+    h_list = ext::ho::splitProduct(task->h);
     for (const auto& h: h_list) {
         auto* cache = task->info->getFMapCache(h.get());
         if (!cache) {
@@ -39,7 +39,7 @@ namespace {
     DataList _shift(const DataList& x, int s) {
         DataList res(x.size());
         for (int i = 0; i < x.size(); ++i) {
-            res[i] = x[s];
+            res[s] = x[i];
             s = (s + 1) % x.size();
         }
         return res;
@@ -53,7 +53,7 @@ std::pair<int, int> SFVerifier::verify(const PProgram& f) {
     int target = num * size_limit;
     target = task->info->example_space->extendExampleList(target, nullptr);
 
-    ProgramList f_list = ext::ho::splitTriangle(f);
+    ProgramList f_list = ext::ho::splitProduct(f);
     DataStorage tmp_cache(f_list.size());
     std::vector<DataList*> f_cache_list(f_list.size(), nullptr);
     for (int i = 0; i < f_cache_list.size(); ++i) {
@@ -62,11 +62,6 @@ std::pair<int, int> SFVerifier::verify(const PProgram& f) {
 
     for (int i = 0; i < p_list.size(); ++i) {
         task->info->extendModCache(p_list[i].get(), p_cache_list[i], target);
-    }
-    if (is_consider_h) {
-        for (int i = 0; i < h_list.size(); ++i) {
-            task->info->extendFMapCache(h_list[i].get(), h_cache_list[i], target);
-        }
     }
     for (int i = 0; i < f_list.size(); ++i) {
         if (f_cache_list[i]) {
@@ -77,9 +72,6 @@ std::pair<int, int> SFVerifier::verify(const PProgram& f) {
     auto get_feature = [&](int id) -> std::pair<std::string, std::string> {
         DataList eq_part, test_part;
         for (auto* cache: p_cache_list) eq_part.push_back(cache->at(id));
-        if (is_consider_h) {
-            for (auto *cache: h_cache_list) eq_part.push_back(cache->at(id));
-        }
         for (int i = 0; i < f_cache_list.size(); ++i) {
             if (f_cache_list[i]) test_part.push_back(f_cache_list[i]->at(id));
             else {
@@ -94,10 +86,10 @@ std::pair<int, int> SFVerifier::verify(const PProgram& f) {
     std::unordered_map<std::string, std::pair<int, std::string>> feature_map;
     for (int i = 0; i < target; ++i) {
         auto feature = get_feature(example_pos);
-        auto it = feature_map.find(feature.first);
+        auto it = feature_map.find(feature.second);
         if (it == feature_map.end()) {
-            feature_map[feature.first] = {example_pos, feature.second};
-        } else if (it->second.second != feature.second) {
+            feature_map[feature.second] = {example_pos, feature.first};
+        } else if (it->second.second != feature.first) {
             return {example_pos, it->second.first};
         }
         example_pos = (example_pos + 1) % target;
@@ -105,6 +97,7 @@ std::pair<int, int> SFVerifier::verify(const PProgram& f) {
 
     for (int i = 0; i < f_list.size(); ++i) {
         if (!f_cache_list[i]) {
+            auto res = _shift(tmp_cache[i], example_pos);
             task->info->registerFMapCache(f_list[i].get(), _shift(tmp_cache[i], example_pos));
         }
     }

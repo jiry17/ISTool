@@ -35,7 +35,8 @@ PType IntValueTypeInfo::getType(Value *value) {
 int theory::clia::getIntValue(const Data &data) {
     auto* iv = dynamic_cast<IntValue*>(data.get());
     if (!iv) {
-        LOG(FATAL) << "Expected IntValue, but get " << data.toString();
+        throw SemanticsError();
+        // LOG(FATAL) << "Expected IntValue, but get " << data.toString();
     }
     return iv->w;
 }

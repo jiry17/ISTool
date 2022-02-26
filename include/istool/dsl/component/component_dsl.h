@@ -8,7 +8,7 @@
 #include "istool/basic/specification.h"
 #include "istool/basic/grammar.h"
 
-namespace component {
+namespace dsl::component {
     struct ComponentBenchmarkInfo {
     public:
         PEnv env;
@@ -22,7 +22,7 @@ namespace component {
     };
 
     Specification* getComponentSpecification(const ComponentBenchmarkInfo& info);
-    PEnv prepareEnv();
+    void prepareEnv(Env* env);
 }
 
 #endif //ISTOOL_COMPONENT_DSL_H

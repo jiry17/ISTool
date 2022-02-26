@@ -57,7 +57,7 @@ bool StreamedIOExampleSpace::satisfyExample(const FunctionContext &info, const E
     }
     auto res = it->second;
     auto io_example = getIOExample(example);
-    return env->run(res.get(), io_example.first) == io_example.second;
+    return example::satisfyIOExample(res.get(), io_example, env);
 }
 
 const std::string example::KExampleGenerateTimeOutName = "Streamed@ExampleGenerateTimeOut";

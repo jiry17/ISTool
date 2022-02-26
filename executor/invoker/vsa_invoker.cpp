@@ -70,7 +70,7 @@ namespace {
                 length_max = std::max(length_max, _getLength(io_example.second));
             }
         }
-        return new SizeLimitPruner(1e9, [length_max](VSANode *node) {
+        return new SizeLimitPruner(1e4, [length_max](VSANode *node) {
             auto *sn = dynamic_cast<SingleVSANode *>(node);
             if (sn) {
                 auto *oup = dynamic_cast<DirectWitnessValue *>(sn->oup.get());
@@ -84,10 +84,10 @@ namespace {
     }
 
     const std::string& KDefaultBuilderType = "bfs";
-    const int KDefaultHeight = 7;
+    const int KDefaultHeight = 5;
 }
 
-FunctionContext invoker::single::invokeVanillaVSA(Specification *spec, Verifier *v, TimeGuard *guard, const InvokeConfig& config) {
+Solver * invoker::single::buildVanillaVSA(Specification *spec, Verifier *v, const InvokeConfig &config) {
     sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
     ext::vsa::registerDefaultComposedManager(ext::vsa::getExtension(spec->env.get()));
 
@@ -100,10 +100,9 @@ FunctionContext invoker::single::invokeVanillaVSA(Specification *spec, Verifier 
     auto* ext = ext::vsa::getExtension(spec->env.get());
     ext->setEnvSetter(prepare);
     auto builder = config.access("builder",
-            (std::shared_ptr<VSABuilder>)(std::make_shared<BFSVSABuilder>(info->grammar, pruner, spec->env.get())));
-    auto* selector = config.access("selector", static_cast<VSAProgramSelector*>(new VSARandomProgramSelector(spec->env.get())));
+                                 (std::shared_ptr<VSABuilder>)(std::make_shared<BFSVSABuilder>(info->grammar, pruner, spec->env.get())));
+    auto* selector = config.access("selector", static_cast<VSAProgramSelector*>(new VSAMinimalProgramSelector(ext::vsa::getSizeModel())));
     auto* solver = new BasicVSASolver(spec, builder, selector);
     auto* cegis = new CEGISSolver(solver, v);
-    auto res = cegis->synthesis(guard);
-    return res;
+    return cegis;
 }

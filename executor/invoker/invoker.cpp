@@ -17,23 +17,29 @@ InvokeConfig::InvokeConfigItem::~InvokeConfigItem() {
     free_operator(data);
 }
 
+#define RegisterSolverBuilder(name) solver = invoker::single::build ## name(spec, v, config); break
+
 FunctionContext invoker::synthesis(Specification *spec, Verifier *v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config) {
+    Solver* solver = nullptr;
     switch (solver_token) {
         case SolverToken::COMPONENT_BASED_SYNTHESIS:
-            return invoker::single::invokeCBS(spec, v, guard, config);
+            RegisterSolverBuilder(CBS);
         case SolverToken::OBSERVATIONAL_EQUIVALENCE:
-            return invoker::single::invokeOBE(spec, v, guard, config);
+            RegisterSolverBuilder(OBE);
         case SolverToken::EUSOLVER:
-            return invoker::single::invokeEuSolver(spec, v, guard, config);
+            RegisterSolverBuilder(EuSolver);
         case SolverToken::VANILLA_VSA:
-            return invoker::single::invokeVanillaVSA(spec, v, guard, config);
+            RegisterSolverBuilder(VanillaVSA);
         case SolverToken::POLYGEN:
-            return invoker::single::invokePolyGen(spec, v, guard, config);
+            RegisterSolverBuilder(PolyGen);
         case SolverToken::MAXFLASH:
-            return invoker::single::invokeMaxFlash(spec, v, guard, config);
+            RegisterSolverBuilder(MaxFlash);
         default:
             LOG(FATAL) << "Unknown solver token";
     }
+    auto res = solver->synthesis(guard);
+    delete solver;
+    return res;
 }
 
 std::pair<int, FunctionContext> invoker::getExampleNum(Specification *spec, Verifier *v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config) {

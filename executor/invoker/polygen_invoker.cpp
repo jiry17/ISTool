@@ -8,10 +8,10 @@
 #include "istool/solver/polygen/polygen_cegis.h"
 #include "istool/solver/stun/stun.h"
 
-FunctionContext invoker::single::invokePolyGen(Specification *spec, Verifier *v, TimeGuard *guard, const InvokeConfig& config) {
+Solver * invoker::single::buildPolyGen(Specification *spec, Verifier *v, const InvokeConfig &config) {
     auto domain_builder = solver::lia::liaSolverBuilder;
     auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
     auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
     auto* solver = new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
-    return solver->synthesis(guard);
+    return solver;
 }

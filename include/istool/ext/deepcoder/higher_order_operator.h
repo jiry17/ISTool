@@ -37,6 +37,13 @@ public:
     virtual ~LambdaSemantics() = default;
 };
 
+class TriangleSemantics: public FullExecutedSemantics {
+public:
+    TriangleSemantics();
+    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
+    ~TriangleSemantics() = default;
+};
+
 namespace ext::ho {
     void loadHigherOrderOperators(Env* env);
 }

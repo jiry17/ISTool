@@ -6,10 +6,12 @@
 #define ISTOOL_LIFTING_INVOKER_H
 
 #include "istool/solver/autolifter/basic/lifting_solver.h"
+#include "istool/solver/autolifter/autolifter.h"
 #include "istool/invoker/invoker.h"
 
 namespace invoker::single {
-    LiftingRes invokeAutoLifter(LiftingTask* task, TimeGuard* guard, const InvokeConfig& config);
+     AutoLifter* buildAutoLifter(LiftingTask* task, const InvokeConfig& config);
+     LiftingRes invokeAutoLifter(LiftingTask* task, TimeGuard* guard, const InvokeConfig& config);
 }
 
 #endif //ISTOOL_LIFTING_INVOKER_H

@@ -44,11 +44,11 @@ DefineNormalSemantics(ListAppend)
 DefineNormalSemantics(ListCons)
 DefineNormalSemantics(ListNil)
 
-class TriangleSemantics: public FullExecutedSemantics {
+class ProductSemantics: public FullExecutedSemantics {
 public:
-    TriangleSemantics();
-    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
-    ~TriangleSemantics() = default;
+    ProductSemantics();
+    virtual Data run(DataList &&inp_list, ExecuteInfo* info);
+    ~ProductSemantics() = default;
 };
 
 class AccessSemantics: public FullExecutedSemantics {

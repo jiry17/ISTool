@@ -35,7 +35,7 @@ class Grammar {
 public:
     NonTerminal* start;
     NTList symbol_list;
-    Grammar(NonTerminal* _start, const NTList& _symbol_list);
+    Grammar(NonTerminal* _start, const NTList& _symbol_list, bool _is_remove_empty=true);
     void removeUseless();
     void indexSymbol() const;
     void print() const;

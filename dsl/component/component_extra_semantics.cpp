@@ -146,7 +146,7 @@ Z3EncodeRes Z3BVUShrKSemantics::encodeZ3Expr(const std::vector<Z3EncodeRes> &inp
     return {z3::lshr(inp_list[0].res, k), inp_list[0].cons_list};
 }
 
-void component::registerExtraComponent(Env *env) {
+void dsl::component::registerExtraComponent(Env *env) {
     int size = theory::bv::getBitVectorLength(env);
     env->setSemantics("bvinc", std::make_shared<BVIncSemantics>(size));
     env->setSemantics("bvdec", std::make_shared<BVDecSemantics>(size));

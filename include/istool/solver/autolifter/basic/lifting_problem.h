@@ -11,7 +11,7 @@
 
 class CombinatorGrammarBuilder {
 public:
-    virtual Grammar* buildProgram(Program* p, Program* m, Type* F, Program* h, Program* f) = 0;
+    virtual Grammar* buildProgram(Program* p, Program* m, const PType& F, Program* h, Program* f) = 0;
     virtual ~CombinatorGrammarBuilder() = default;
 };
 
@@ -46,6 +46,8 @@ public:
 
     LiftingModInfo(const PProgram& _m, const PType& _F, const PStreamedExampleSpace& _example_space, CombinatorGrammarBuilder* _c_builder);
     ~LiftingModInfo();
+
+    void print() const;
 };
 
 typedef std::shared_ptr<LiftingModInfo> PLiftingModInfo;
@@ -67,12 +69,14 @@ public:
     PSynthInfo f_info;
     PEnv env;
     PartialLiftingTask(const PLiftingModInfo& _info, const PProgram& _p, const PProgram& _h, const PSynthInfo& _f_info, const PEnv& _env);
+    void print() const;
     ~PartialLiftingTask() = default;
 };
 
 namespace solver::autolifter {
     PProgram rewriteCombinator(Type* F, const PProgram& pre_h, const PProgram& pre_f, const PProgram& pre_c,
             const PProgram& new_h, const PProgram& new_f);
+    PType getCInputType(const PType& F, Program* h, Program* f, Env* env);
 }
 
 #endif //ISTOOL_PAIRWISE_EXAMPLE_SPACE_H

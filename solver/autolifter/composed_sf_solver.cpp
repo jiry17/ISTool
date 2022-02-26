@@ -10,7 +10,7 @@
 #include <cassert>
 
 namespace {
-    int KDefaultComposedNum = 1;
+    int KDefaultComposedNum = 2;
     bool KDefaultFullH = false;
     int KDefaultExtraTurnNum = 100;
 
@@ -21,6 +21,14 @@ namespace {
         }
         return res + "}";
     }
+
+    std::string _programList2String(const ProgramList& p_list) {
+        std::string res("(");
+        for (int i = 0; i < p_list.size(); ++i) {
+            if (i) res += ","; res += p_list[i]->toString();
+        }
+        return res + ")";
+    }
 }
 
 using namespace solver::autolifter;
@@ -28,25 +36,43 @@ EnumerateInfo::EnumerateInfo(const std::vector<int> &_ind_list):
     ind_list(_ind_list) {
 }
 
+std::string EnumerateInfo::toString() const {
+    std::string res = "(";
+    for (int i = 0; i < ind_list.size(); ++i) {
+        if (i) res += ","; res += std::to_string(ind_list[i]);
+    }
+    return res + ")";
+}
+
 MaximalInfoList::MaximalInfoList(): size(0), info_list(100) {}
 void MaximalInfoList::clear() {size = 0;}
 bool MaximalInfoList::add(EnumerateInfo *info) {
-    size = 0;
-    bool is_cover = false;
-    for (auto* x: info_list) {
-        if (!is_cover && x->info.checkCover(info->info)) return false;
-        if (info->info.checkCover(x->info)) {
-            is_cover = true;
-        } else info_list[size++] = x;
+    int new_size = 0;
+    /*LOG(INFO) << "preinsert " << info->toString() << " " << info->info.toString();
+    for (int i = 0; i < size; ++i) {
+        LOG(INFO) << info_list[i]->toString() << " "<< info_list[i]->info.toString();
+    }*/
+    for (int i = 0; i < size; ++i) {
+        auto* x = info_list[i];
+        if (x->info.checkCover(info->info)) return false;
+        if (!info->info.checkCover(x->info)) info_list[new_size++] = x;
     }
+    size = new_size;
     if (size == info_list.size()) info_list.push_back(info);
     else info_list[size] = info;
     ++size;
+    /*LOG(INFO) << "res " << info->toString() << " " << info->info.toString();
+    for (int i = 0; i < size; ++i) {
+        LOG(INFO) << info_list[i]->toString() << " "<< info_list[i]->info.toString();
+    }*/
     return true;
 }
 bool MaximalInfoList::isExistResult(EnumerateInfo *info) {
-    for (auto* x: info_list) {
-        if ((x->info | info->info).count() == info->info.size()) return true;
+    for (int i = 0; i < size; ++i) {
+        auto* x = info_list[i];
+        if ((x->info | info->info).count() == info->info.size()) {
+            return true;
+        }
     }
     return false;
 }
@@ -58,7 +84,7 @@ ComposedSFSolver::ComposedSFSolver(PartialLiftingTask *task): SFSolver(task) {
     KExtraTurnNum = theory::clia::getIntValue(
             *(task->env->getConstRef(solver::autolifter::KExtraTurnNumName, BuildData(Int, KDefaultExtraTurnNum))));
     KEnumerateTimeOut = 1;
-    v = new SFVerifier(task, KIsFullH);
+    v = new SFVerifier(task);
     env = task->env.get();
 }
 ComposedSFSolver::~ComposedSFSolver() {
@@ -70,10 +96,10 @@ bool ComposedSFSolver::isSatisfyExample(Program *p, const std::pair<int, int> &e
 }
 
 PProgram ComposedSFSolver::synthesisFromH() {
-    ProgramList h_list = ext::ho::splitTriangle(task->h);
+    ProgramList h_list = ext::ho::splitProduct(task->h);
     ProgramList useful_list;
     while (1) {
-        auto current = ext::ho::buildTriangle(useful_list);
+        auto current = ext::ho::buildProduct(useful_list);
         auto example = v->verify(current);
         if (example.first == -1) return current;
         bool is_solved = false;
@@ -144,7 +170,7 @@ EnumerateInfo* ComposedSFSolver::getNextComposition(int k, TimeGuard* guard) {
         if (next_component_id == program_info_list.size()) {
             initNewProgram(guard);
         }
-        return new EnumerateInfo({next_component_id});
+        return new EnumerateInfo({next_component_id++});
     }
     auto* res = working_list[k].front(); working_list[k].pop();
     return res;
@@ -192,6 +218,9 @@ bool ComposedSFSolver::addUncoveredInfo(solver::autolifter::EnumerateInfo *info)
     if (!maximal_list[ind].add(info)) return false;
 
     global_maximal.add(info);
+    uncovered_info_set[_indList2String(info->ind_list)] = info;
+    info_storage[ind].push_back(info);
+
     return true;
 }
 
@@ -203,11 +232,19 @@ ProgramList ComposedSFSolver::synthesisFromExample(TimeGuard* guard) {
 
     for (int turn_id = 1;; ++turn_id) {
         TimeCheck(guard);
+        if (!best_result.empty()) {
+            ++extra_turn_num;
+            if (extra_turn_num >= KExtraTurnNum || current_limit == 0) {
+                return best_result;
+            }
+        }
         int k = (turn_id - 1) % ((current_limit + 1) / 2);
-        if (!best_result.empty()) ++extra_turn_num;
         auto* info = getNextComposition(k, guard);
 
-        if (!addUncoveredInfo(info)) continue;
+        if (!addUncoveredInfo(info)) {
+            delete info;
+            continue;
+        }
 
         auto res = constructResult(info, current_limit);
 
@@ -220,29 +257,63 @@ ProgramList ComposedSFSolver::synthesisFromExample(TimeGuard* guard) {
             extra_turn_num = 0;
             current_limit = int(best_result.size()) - 1;
         }
-        if (extra_turn_num == KExtraTurnNum || current_limit == 0) {
-            return best_result;
-        }
+    }
+}
+
+void ComposedSFSolver::addCounterExample(const std::pair<int, int> &counter_example) {
+    for (int i = 0; i < program_info_list.size(); ++i) {
+        program_info_list[i].append(isSatisfyExample(program_space[i].get(), counter_example));
+    }
+    example_list.push_back(counter_example);
+    for (auto& info_list: info_storage) {
+        for (auto* info: info_list) delete info;
+    }
+    info_storage.clear();
+    next_component_id = 0;
+    maximal_list.clear();
+    global_maximal.clear();
+    working_list.clear();
+    uncovered_info_set.clear();
+}
+
+namespace {
+    PProgram _mergeComponents(const PProgram& x, const PProgram& y) {
+        auto component_list = ext::ho::splitProduct(x);
+        for (const auto& comp: ext::ho::splitProduct(y)) component_list.push_back(comp);
+        return ext::ho::buildProduct(component_list);
     }
 }
 
 std::pair<PProgram, PProgram> ComposedSFSolver::synthesis(TimeGuard *guard) {
-    auto empty = ext::ho::buildTriangle({});
+    auto empty = ext::ho::buildProduct({});
+    auto used_h = empty;
+
     if (!KIsFullH) {
-        PProgram useful_h = synthesisFromH();
-        if (useful_h) return {useful_h, empty};
-    }
+        used_h = synthesisFromH();
+        if (used_h) return {used_h, empty};
+        for (auto h_comp: ext::ho::splitProduct(task->h)) {
+            if (h_comp->toString() == task->p->toString()) used_h = ext::ho::buildProduct({h_comp});
+        }
+    } else used_h = task->h;
 
     int turn_num = 0;
     while (true) {
         turn_num += 1;
-        auto candidate_result = ext::ho::buildTriangle(synthesisFromExample(guard));
-        auto example = v->verify(candidate_result);
-
+        auto candidate_result = ext::ho::buildProduct(synthesisFromExample(guard));
+        LOG(INFO) << "Candidate " << candidate_result->toString();
+        auto example = v->verify(_mergeComponents(used_h, candidate_result));
+        LOG(INFO) << "New example " << example.first << " " << example.second;
+        if (example.first != -1) {
+            LOG(INFO) << data::dataList2String(task->info->example_space->getExample(example.first));
+            LOG(INFO) << data::dataList2String(task->info->example_space->getExample(example.second));
+        }
         if (example.first != -1) addCounterExample(example);
         else if (KIsFullH) return {task->h, candidate_result};
-        else return {empty, candidate_result};
+        else return {used_h, candidate_result};
     }
 }
 
 
+const std::string solver::autolifter::KExtraTurnNumName = "AutoLifter@ExtraTurnNum";
+const std::string solver::autolifter::KIsFullHName = "AutoLifter@IsFullH";
+const std::string solver::autolifter::KComposedNumName = "AutoLifter@ComposedNum";

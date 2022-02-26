@@ -56,7 +56,7 @@ namespace {
 
 }
 
-FunctionContext invoker::single::invokeMaxFlash(Specification *spec, Verifier *v, TimeGuard *guard, const InvokeConfig& config) {
+Solver * invoker::single::buildMaxFlash(Specification *spec, Verifier *v, const InvokeConfig &config) {
     sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
     ext::vsa::registerDefaultComposedManager(ext::vsa::getExtension(spec->env.get()));
 
@@ -66,6 +66,5 @@ FunctionContext invoker::single::invokeMaxFlash(Specification *spec, Verifier *v
     model = config.access("model", model);
     if (!model) model = ext::vsa::getSizeModel();
     auto* solver = new MaxFlash(spec, v, model, prepare);
-    auto res = solver->synthesis(guard);
-    return res;
+    return solver;
 }

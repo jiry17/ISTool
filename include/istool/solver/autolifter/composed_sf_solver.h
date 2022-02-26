@@ -16,6 +16,7 @@ namespace solver::autolifter {
         std::vector<int> ind_list;
         Bitset info;
         EnumerateInfo(const std::vector<int> &_ind_list);
+        std::string toString() const;
         ~EnumerateInfo() = default;
     };
 

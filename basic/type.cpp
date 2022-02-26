@@ -3,6 +3,7 @@
 //
 
 #include "istool/basic/type.h"
+#include "glog/logging.h"
 
 std::string SimpleType::getBaseName() {
     return getName();

@@ -3,6 +3,7 @@
 //
 
 #include "istool/solver/autolifter/basic/lifting_solver.h"
+#include "glog/logging.h"
 
 LiftingResInfo::LiftingResInfo(const PType &_F, const PProgram &_c, const PProgram &_m): F(_F), c(_c), m(_m) {
 }

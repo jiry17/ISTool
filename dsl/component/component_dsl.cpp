@@ -23,7 +23,7 @@ namespace {
     const std::string KTargetName = "f";
 }
 
-using namespace component;
+using namespace dsl::component;
 
 ComponentBenchmarkInfo::ComponentBenchmarkInfo(const PEnv& _env, const PProgram &_target, int _inp_num,
         const std::vector<std::string> &_extra_list, const std::vector<unsigned int> &_const_list): env(_env),
@@ -98,18 +98,16 @@ namespace {
         return example::buildZ3ExampleSpace(cons_program, env, sig.first, sig_map);
     }
 }
-Specification * component::getComponentSpecification(const ComponentBenchmarkInfo &info) {
+Specification * dsl::component::getComponentSpecification(const ComponentBenchmarkInfo &info) {
     auto& env = info.env;
     auto synth_info = _getCompSynthInfo(env.get(), info);
     auto example_space = _buildExampleSpace(info.target, info.inp_num, env.get());
     return new Specification({synth_info}, env, example_space);
 }
 
-PEnv component::prepareEnv() {
-    auto env = std::make_shared<Env>();
-    theory::bv::setBitVectorLength(env.get(), KBVLength);
-    theory::loadBVTheory(env.get());
-    theory::loadZ3BV(env.get());
-    component::registerExtraComponent(env.get());
-    return env;
+void dsl::component::prepareEnv(Env* env) {
+    theory::bv::setBitVectorLength(env, KBVLength);
+    theory::loadBVTheory(env);
+    theory::loadZ3BV(env);
+    dsl::component::registerExtraComponent(env);
 }

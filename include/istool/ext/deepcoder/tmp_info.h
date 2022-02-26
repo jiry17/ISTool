@@ -14,7 +14,7 @@ public:
     TmpExecuteInfo(const DataList& param_value, const FunctionContext& ctx);
     void set(const std::string& name, const Data& value);
     void clear(const std::string& name);
-    Data get(const std::string& name);
+    Data get(const std::string& name, bool is_strict);
 };
 
 class TmpExecuteInfoBuilder: public ExecuteInfoBuilder {

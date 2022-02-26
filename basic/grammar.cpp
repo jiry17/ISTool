@@ -31,7 +31,7 @@ PProgram Rule::buildProgram(const ProgramList &sub_list) {
     return std::make_shared<Program>(semantics, sub_list);
 }
 
-Grammar::Grammar(NonTerminal *_start, const NTList &_symbol_list): start(_start), symbol_list(_symbol_list) {
+Grammar::Grammar(NonTerminal *_start, const NTList &_symbol_list, bool is_remove_empty): start(_start), symbol_list(_symbol_list) {
     int pos = -1;
     for (int i = 0; i < symbol_list.size(); ++i) {
         if (symbol_list[i]->name == start->name) {
@@ -42,7 +42,7 @@ Grammar::Grammar(NonTerminal *_start, const NTList &_symbol_list): start(_start)
         LOG(FATAL) << "Start symbol (" << start->name << ") not found";
     }
     std::swap(symbol_list[0], symbol_list[pos]);
-    removeUseless();
+    if (is_remove_empty) removeUseless();
 }
 Grammar::~Grammar() {
     for (auto* symbol: symbol_list) delete symbol;
@@ -253,7 +253,6 @@ PProgram grammar::getMinimalProgram(Grammar *grammar) {
     while (!Q.empty()) {
         auto k = Q.top(); Q.pop();
         if (d[k.second] != k.first) continue;
-        auto* symbol = grammar->symbol_list[k.second];
         for (auto& [node, edge]: reversed_edge[k.second]) {
             ProgramList sub_list;
             int size = 1;
@@ -262,12 +261,11 @@ PProgram grammar::getMinimalProgram(Grammar *grammar) {
                 sub_list.push_back(res[sub->id]);
             }
             if (size < d[node->id]) {
-                Q.push({d[node->id], node->id});
-                d[node->id] = node->id;
+                d[node->id] = size;
                 res[node->id] = std::make_shared<Program>(edge->semantics, sub_list);
+                Q.push({d[node->id], node->id});
             }
         }
     }
-    LOG(INFO) << "min program " << res[0]->toString();
     return res[0];
 }

@@ -8,8 +8,9 @@
 #include "glog/logging.h"
 
 #define InfoStart(id) \
-component::ComponentBenchmarkInfo _getTaskInfo## id() { \
-    auto env = component::prepareEnv(); \
+dsl::component::ComponentBenchmarkInfo _getTaskInfo## id() { \
+    auto env = std::make_shared<Env>(); \
+    dsl::component::prepareEnv(env.get()); \
     auto bv_size = theory::bv::getBitVectorLength(env.get()); \
     auto bv_type = theory::bv::getTBitVector(bv_size); \
     auto x = program::buildParam(0, bv_type);
@@ -194,8 +195,8 @@ namespace {
 }
 
 #define RegisterID(w) case w: {info = _getTaskInfo ## w(); break;}
-Specification * component::getTask(int id) {
-    component::ComponentBenchmarkInfo info;
+Specification * dsl::component::getTask(int id) {
+    dsl::component::ComponentBenchmarkInfo info;
     switch (id) {
         RegisterID(1) RegisterID(2) RegisterID(3)
         RegisterID(4) RegisterID(5) RegisterID(6)
@@ -208,5 +209,5 @@ Specification * component::getTask(int id) {
             LOG(FATAL) << "Component task with id " << id << " does not exist";
     }
     LOG(INFO) << "Target: " << info.target->toString();
-    return component::getComponentSpecification(info);
+    return dsl::component::getComponentSpecification(info);
 }

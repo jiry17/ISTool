@@ -105,6 +105,16 @@ Data ImplySemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     return sub_list[1]->run(info);
 }
 
+AllowFailSemantics::AllowFailSemantics(const PType& t, const Data &_d): Semantics("error->" + _d.toString()), TypedSemantics(t, {t, t}), d(_d) {
+}
+Data AllowFailSemantics::run(const std::vector<std::shared_ptr<Program> > &sub_list, ExecuteInfo *info) {
+    try {
+        return sub_list[0]->run(info);
+    } catch (SemanticsError& e) {
+        return d;
+    }
+}
+
 void semantics::loadLogicSemantics(Env* env) {
     LoadSemantics("=>", Imply); LoadSemantics("!", Not);
     LoadSemantics("&&", And); LoadSemantics("||", Or);

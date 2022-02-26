@@ -60,7 +60,7 @@ namespace {
 }
 
 LIASolver::LIASolver(Specification *_spec, const ProgramList &_program_list):
-    PBESolver(_spec), ext(ext::z3::getExtension(_spec->env.get())),  program_list(_program_list),
+    PBESolver(_spec), ext(ext::z3::getExtension(_spec->env.get())), program_list(_program_list),
     env(true) {
     if (spec->info_list.size() > 1) {
         LOG(FATAL) << "LIA Solver can only synthesize a single program";
@@ -70,11 +70,6 @@ LIASolver::LIASolver(Specification *_spec, const ProgramList &_program_list):
         LOG(FATAL) << "LIA solver supports only IOExampleSpace";
     }
     auto term_info = spec->info_list[0];
-    for (const auto& type: term_info->inp_type_list) {
-        if (!dynamic_cast<TInt*>(type.get())) {
-            LOG(FATAL) << "LIA solver supports only integers";
-        }
-    }
     if (!dynamic_cast<TInt*>(term_info->oup_type.get())) {
         LOG(FATAL) << "LIA solver supports only integers";
     }
@@ -133,6 +128,7 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
     for (const auto& example: example_list) {
         io_example_list.push_back(io_example_space->getIOExample(example));
     }
+
     std::unordered_set<std::string> cache;
     ProgramList considered_program_list;
     IOExampleList wrapped_example_list;
@@ -141,9 +137,19 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
     }
     for (const auto& program: program_list) {
         DataList output_list;
+        bool is_invalid = false;
         for (const auto& io_example: io_example_list) {
-            output_list.push_back(spec->env->run(program.get(), io_example.first));
+            try {
+                auto res = spec->env->run(program.get(), io_example.first);
+                if (res.isNull()) {
+                    is_invalid = true; break;
+                }
+                output_list.push_back(res);
+            } catch (SemanticsError& e) {
+                is_invalid = true; break;
+            }
         }
+        if (is_invalid) continue;
         auto feature = data::dataList2String(output_list);
         if (cache.find(feature) == cache.end()) {
             cache.insert(feature);
@@ -153,6 +159,9 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
             considered_program_list.push_back(program);
         }
     }
+
+    // LOG(INFO) << "Wrapped space";
+    // for (auto& example: wrapped_example_list) LOG(INFO) << example::ioExample2String(example);
 
     auto solve_res = solver::lia::solveLIA(env, wrapped_example_list, ext, KTermIntMax, KConstIntMax, guard);
     if (!solve_res.status) return {};
@@ -309,12 +318,15 @@ namespace {
 }
 
 void* LIASolver::relax(TimeGuard* guard) {
-    int next_num = std::max(1, int(program_list.size()) * 2);
+    LOG(INFO) << "relax " << std::endl;
+    int next_num = int(program_list.size()) * 2;
     double time_out = KRelaxTimeLimit;
     if (guard) time_out = std::min(time_out, guard->getRemainTime());
     double next_time_limit = KRelaxTimeLimit;
 
     auto next_program_list = _getConsideredTerms(info, next_num, time_out);
+    LOG(INFO) << "Next program list";
+    for (auto p: next_program_list) LOG(INFO) << p->toString();
     if (next_program_list.size() == program_list.size()) {
         next_time_limit *= 2;
         return nullptr;
@@ -324,9 +336,8 @@ void* LIASolver::relax(TimeGuard* guard) {
 }
 
 LIASolver * solver::lia::liaSolverBuilder(Specification *spec) {
-    auto* env = spec->env.get();
     double KRelaxTimeLimit = 0.1;
     auto info = spec->info_list[0];
-    ProgramList program_list = _getConsideredTerms(info, info->inp_type_list.size(), KRelaxTimeLimit);
+    ProgramList program_list = _getConsideredTerms(info, std::max(4, int(info->inp_type_list.size())), KRelaxTimeLimit);
     return new LIASolver(spec, program_list);
 }

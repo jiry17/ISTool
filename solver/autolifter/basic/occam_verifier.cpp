@@ -29,3 +29,5 @@ bool OccamVerifier::verify(const FunctionContext &info, Example *counter_example
     }
     return true;
 }
+
+const std::string solver::autolifter::KOccamExampleNumName = "OccamVerifier@ExampleNum";

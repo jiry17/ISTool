@@ -9,11 +9,12 @@
 
 namespace ext::ho {
     Data polyFMap(Program* p, Type* type, const Data& data, Env* env);
-    ProgramList splitTriangle(const PProgram& p);
-    PProgram removeTriAccess(const PProgram& p);
+    ProgramList splitProduct(const PProgram& p);
+    bool isProductProgram(Program* p);
+    PProgram removeAccessProd(const PProgram& p);
     PProgram buildAccess(const PProgram& p, const std::vector<int>& trace);
-    PProgram buildTriangle(const ProgramList& sub_list);
-    PProgram mergeTriangle(const ProgramList& p_list);
+    PProgram buildProduct(const ProgramList& sub_list);
+    PProgram mergeProduct(const ProgramList& p_list);
 }
 
 #endif //ISTOOL_DATA_UTIL_H

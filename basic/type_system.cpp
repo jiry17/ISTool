@@ -42,7 +42,7 @@ PType BasicTypeSystem::getType(Program *p) {
         return info->getType(cs->w.get());
     }
     auto* ts = dynamic_cast<TypedSemantics*>(p->semantics.get());
-    if (!ts) return nullptr; else return ts->oup_type;
+    if (!ts) throw TypeError(); else return ts->oup_type;
 }
 
 TypeExtension::TypeExtension() {
@@ -79,7 +79,6 @@ TypeExtension * type::getTypeExtension(Env *env) {
     }
     return dynamic_cast<TypeExtension*>(type_system);
 }
-void type::registerTypeSystem(TypeSystem *type_system, Env* env) {
-    auto* ext = getTypeExtension(env);
+void type::registerTypeSystem(TypeSystem *type_system, TypeExtension* ext) {
     ext->registerTypeSystem(type_system);
 }

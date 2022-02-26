@@ -114,12 +114,17 @@ std::vector<PCmpInfo> DNFLearner::getNextInfoList() {
     if (pred_pos == pred_pool.size()) relax();
     std::vector<PCmpInfo> pred_list;
     std::vector<bool> is_duplicated;
-    int n = pred_pool[pred_pos].size();
     for (const auto& res: pred_pool[pred_pos]) {
-        auto info = buildInfo(res);
+        PCmpInfo info;
+        try {
+            info = buildInfo(res);
+        } catch (SemanticsError& e) {
+            continue;
+        }
         pred_list.push_back(info);
         is_duplicated.push_back(false);
     }
+    int n = pred_list.size();
     /*LOG(INFO) << "Get next info";
     for (int i = 0; i < 10 && i < pred_list.size(); ++i) {
         std::cout << "  " << pred_list[i]->toString() << std::endl;

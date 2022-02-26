@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <queue>
 #include "istool/solver/vsa/vsa_builder.h"
-#include "debug_tool/vsa.h"
 #include "glog/logging.h"
 
 bool TrivialPruner::isPrune(VSANode *node) {return false;}

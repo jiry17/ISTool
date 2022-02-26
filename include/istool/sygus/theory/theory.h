@@ -9,7 +9,7 @@
 #include "istool/basic/env.h"
 
 enum class TheoryToken {
-    CLIA, BV, STRING
+    CLIA, BV, STRING, NONE
 };
 
 typedef std::function<void(Env*, TheoryToken)> TheoryLoader;

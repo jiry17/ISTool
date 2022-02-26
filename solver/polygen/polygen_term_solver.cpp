@@ -88,7 +88,6 @@ PSampleInfo TermPlan::generateSampleInfoWithUpperBound(int lim) {
 
 TermSolverCache::~TermSolverCache() {
     for (const auto& info: info_map) {
-        std::cout << info.second << std::endl;
         delete info.second;
     }
     for (auto* info: plan_set) delete info;
@@ -365,7 +364,7 @@ ProgramList PolyGenTermSolver::getTerms() {
                 }
             }
         }
-        if (domain_solver_list.size() == si_limit) si_limit += 1;
+        if (domain_solver_list.size() >= si_limit) si_limit += 1;
     }
 }
 
@@ -393,7 +392,9 @@ ProgramList PolyGenTermSolver::synthesisTerms(const ExampleList &new_example_lis
 }
 
 PolyGenTermSolver::~PolyGenTermSolver() {
-    for (auto* c: cache) delete c;
+    for (auto* c: cache) {
+        delete c;
+    }
     delete term_spec;
 }
 

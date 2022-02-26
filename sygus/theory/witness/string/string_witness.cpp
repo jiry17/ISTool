@@ -355,7 +355,7 @@ WitnessList StrToIntWitnessFunction::witness(const WitnessData &oup) {
     auto range = theory::clia::extractRange(oup);
     int l = std::max(-1, range.first), r = range.second;
     WitnessList res;
-    if (l == -1) {
+    if (l == -1 && l <= r) {
         auto s_list = _getStringConstList(input_list);
         for (const auto& s: s_list) {
             if (!isPositiveInteger(s)) res.push_back({BuildDirectWData(String, s)});

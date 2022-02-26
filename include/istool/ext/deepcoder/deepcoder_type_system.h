@@ -9,6 +9,7 @@
 
 class DeepCoderTypeSystem: public TypeSystem {
 public:
+    DeepCoderTypeSystem(TypeExtension* ext);
     virtual PType intersect(const PType& x, const PType& y);
     virtual PType getType(Program* p);
     virtual ~DeepCoderTypeSystem() = default;

@@ -10,7 +10,6 @@
 
 class SFVerifier: public Verifier {
     int size_limit, example_pos;
-    bool is_consider_h;
 public:
     PartialLiftingTask* task;
     Data* example_num;
@@ -19,7 +18,7 @@ public:
     std::pair<int, int> verify(const PProgram& f);
     virtual bool verify(const FunctionContext& info, Example* counter_example);
     ~SFVerifier() = default;
-    SFVerifier(PartialLiftingTask* _task, bool _is_consider_h);
+    SFVerifier(PartialLiftingTask* _task);
 };
 
 

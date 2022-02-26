@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
         verifier_name = "splitor200";
     }
 
-    auto* spec = component::getTask(benchmark_id);
+    auto* spec = dsl::component::getTask(benchmark_id);
 
     auto* example_space = dynamic_cast<Z3ExampleSpace*>(spec->example_space.get());
     Verifier* v = new Z3Verifier(dynamic_cast<Z3ExampleSpace*>(spec->example_space.get()));

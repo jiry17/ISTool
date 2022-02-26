@@ -25,6 +25,14 @@ TypedAnonymousSemantics::TypedAnonymousSemantics(const FullSemanticsFunction &f,
     TypedSemantics(oup, inp_list), AnonymousSemantics(f, name) {
 }
 
+SemanticsValue::SemanticsValue(const PSemantics &_sem): sem(_sem) {}
+std::string SemanticsValue::toString() const {
+    return sem->getName();
+}
+bool SemanticsValue::equal(Value *value) const {
+    LOG(FATAL) << "Method equal of SemanticsValue should not be invoked";
+}
+
 Data ext::ho::buildAnonymousData(const SemanticsFunction &f, const std::string &name) {
     auto as = std::make_shared<AnonymousSemantics>(f, name);
     return Data(std::make_shared<SemanticsValue>(as));

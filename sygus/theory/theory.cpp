@@ -36,7 +36,7 @@ TheoryToken sygus::getSyGuSTheory(Env *env) {
         }
         return sygus_ext->theory;
     }
-    LOG(FATAL) << "Uninitialized extension " << KSyGuSName;
+    return TheoryToken::NONE;
 }
 
 void sygus::setTheory(Env *env, TheoryToken theory) {

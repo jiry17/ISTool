@@ -45,7 +45,7 @@ public:
     virtual ~Z3BVUShrKSemantics() = default;
 };
 
-namespace component {
+namespace dsl::component {
     void registerExtraComponent(Env* env);
 }
 

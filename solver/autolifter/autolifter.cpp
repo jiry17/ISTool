@@ -10,7 +10,7 @@
 #include "glog/logging.h"
 #include <queue>
 
-AutoLifter::AutoLifter(LiftingTask *task, const SFSolverBuilder &_sf_builder, const SolverBuilder _sc_builder):
+AutoLifter::AutoLifter(LiftingTask *task, const SFSolverBuilder &_sf_builder, const SolverBuilder& _sc_builder):
     LiftingSolver(task), sf_builder(_sf_builder), sc_builder(_sc_builder) {
 }
 
@@ -84,12 +84,12 @@ namespace {
         _SCExampleGenerator(PartialLiftingTask* _task, const PProgram& f): task(_task) {
             oup_cache = task->info->getModCache(task->p.get());
             if (!oup_cache) _missCacheError(task->p.get());
-            for (const auto& h_comp: ext::ho::splitTriangle(task->h)) {
+            for (const auto& h_comp: ext::ho::splitProduct(task->h)) {
                 auto cache = task->info->getFMapCache(h_comp.get());
                 if (!cache) _missCacheError(h_comp.get());
                 h_inp_list.emplace_back(h_comp.get(), cache);
             }
-            for (const auto& f_comp: ext::ho::splitTriangle(f)) {
+            for (const auto& f_comp: ext::ho::splitProduct(f)) {
                 auto cache = task->info->getFMapCache(f_comp.get());
                 if (!cache) _missCacheError(f_comp.get());
                 f_inp_list.emplace_back(f_comp.get(), cache);
@@ -108,37 +108,35 @@ namespace {
             }
             int pos = id - 1;
             auto oup = oup_cache->at(pos);
+            if (oup.isNull()) return {};
 
             DataList base_h_list, base_f_list;
             for (auto& info: h_inp_list) base_h_list.push_back(info.second->at(pos));
             for (auto& info: f_inp_list) base_f_list.push_back(info.second->at(pos));
             auto inp = _constructInp(task->info->F.get(), task->info->example_space->getExample(pos)[0],
                     base_h_list, base_f_list);
+//            LOG(INFO) << "Generate " << example::ioExample2String({{inp}, oup}) << " from " << data::dataList2String(task->info->example_space->getExample(pos));
             return {{inp, oup}};
         }
         virtual ~_SCExampleGenerator() = default;
     };
 
-    PSynthInfo _buildCombinatorInfo(Grammar* g) {
+    PSynthInfo _buildCombinatorInfo(Grammar* g, const PType& inp_type) {
         auto oup_type = g->start->type;
-        PType inp_type;
         for (auto* symbol: g->symbol_list) {
             for (auto* rule: symbol->rule_list) {
                 auto* ps = dynamic_cast<ParamSemantics*>(rule->semantics.get());
-                assert(ps->id == 0);
-                if (!inp_type) assert(type::equal(ps->oup_type, inp_type));
-                inp_type = ps->oup_type;
+                if (!ps) continue;
+                assert(ps->id == 0 && type::equal(ps->oup_type, inp_type));
             }
         }
-        assert(inp_type);
-        TypeList inp_type_list({inp_type});
-        return std::make_shared<SynthInfo>("c", inp_type_list, oup_type, g);
+        return std::make_shared<SynthInfo>("c", (TypeList){inp_type}, oup_type, g);
     }
 
     PStreamedExampleSpace _buildCombinatorExampleSpace(const PExampleGenerator& g, SynthInfo* info, Env* env) {
-        auto inp = program::buildParam(0, info->inp_type_list[0]);
-        auto oup = program::buildParam(1, info->oup_type);
-        ProgramList inp_list({inp});
+        ProgramList inp_list;
+        for (int i = 0; i < info->inp_type_list.size(); ++i) inp_list.push_back(program::buildParam(i, info->inp_type_list[i]));
+        auto oup = program::buildParam(info->inp_type_list.size(), info->oup_type);
 
         auto l = std::make_shared<Program>(std::make_shared<InvokeSemantics>(info->name, env), inp_list);
         ProgramList sub_list({l, oup});
@@ -154,8 +152,9 @@ SingleLiftingRes AutoLifter::synthesisSinglePartial(PartialLiftingTask *task, Ti
     delete sf_solver;
 
     task->h = res.first;
-    auto* g = task->info->c_builder->buildProgram(task->p.get(), task->info->m.get(), task->info->F.get(), task->h.get(), f.get());
-    auto info = _buildCombinatorInfo(g);
+    auto* g = task->info->c_builder->buildProgram(task->p.get(), task->info->m.get(), task->info->F, task->h.get(), f.get());
+    auto inp_type = solver::autolifter::getCInputType(task->info->F, task->h.get(), f.get(), task->env.get());
+    auto info = _buildCombinatorInfo(g, inp_type);
 
     auto example_generator = std::make_shared<_SCExampleGenerator>(task, f);
     auto example_space = _buildCombinatorExampleSpace(example_generator, info.get(), task->env.get());
@@ -163,7 +162,9 @@ SingleLiftingRes AutoLifter::synthesisSinglePartial(PartialLiftingTask *task, Ti
     auto* v = new OccamVerifier(example_space.get());
     auto* sc_solver = sc_builder(spec, v);
     auto c = sc_solver->synthesis(guard)["c"];
-    delete spec; delete v; delete sc_solver;
+    delete spec;
+    delete v;
+    delete sc_solver;
 
     LiftingResInfo res_info(task->info->F, c, task->info->m);
     return {task->p, task->h, f, res_info};
@@ -171,61 +172,71 @@ SingleLiftingRes AutoLifter::synthesisSinglePartial(PartialLiftingTask *task, Ti
 
 LiftingRes AutoLifter::synthesisPartial(const PProgram &p, const PProgram &h, TimeGuard *guard) {
     std::vector<SingleLiftingRes> sub_res_list;
-    ProgramList pool = ext::ho::splitTriangle(h), f_comp_list;
+    ProgramList pool = ext::ho::splitProduct(h), f_comp_list;
     for (const auto& info: task->info_list) {
         TimeCheck(guard);
-        auto* partial_task = new PartialLiftingTask(info, p, ext::ho::buildTriangle(pool), task->f_info, task->env);
+        auto* partial_task = new PartialLiftingTask(info, p, ext::ho::buildProduct(pool), task->f_info, task->env);
         auto sub_res = synthesisSinglePartial(partial_task, guard);
-        for (auto& f_comp: ext::ho::splitTriangle(sub_res.f)) {
+        for (auto& f_comp: ext::ho::splitProduct(sub_res.f)) {
             if (!isOccur(f_comp, pool)) {
                 pool.push_back(f_comp); f_comp_list.push_back(f_comp);
             }
         }
         sub_res_list.push_back(sub_res);
-        delete partial_task;
+        // todo: Figure out why cannot delete partial task;
+        // delete partial_task;
     }
 
-    auto f = ext::ho::mergeTriangle(f_comp_list);
+    auto f = ext::ho::mergeProduct(f_comp_list);
     std::vector<LiftingResInfo> res_info;
     for (const auto& sub_res: sub_res_list) {
         auto new_c = solver::autolifter::rewriteCombinator(sub_res.info.F.get(), sub_res.h, sub_res.f, sub_res.info.c, h, f);
-        res_info.emplace_back(sub_res.info.F, sub_res.info.m, new_c);
+        res_info.emplace_back(sub_res.info.F, new_c, sub_res.info.m);
     }
     return {p, h, f, res_info};
 }
 
 LiftingRes AutoLifter::synthesis(TimeGuard *guard) {
     ProgramList f_component, target_list, pool;
-    target_list = ext::ho::splitTriangle(task->p);
+    target_list = ext::ho::splitProduct(task->p);
     int p_component_num = target_list.size();
-    pool = ext::ho::splitTriangle(task->h);
+    pool = ext::ho::splitProduct(task->h);
 
     std::vector<LiftingRes> sub_res_list;
 
     for (int i = 0; i < target_list.size(); ++i) {
         TimeCheck(guard);
-        auto partial_res = synthesisPartial(target_list[i], ext::ho::buildTriangle(pool), guard);
-        for (auto& f_comp: ext::ho::splitTriangle(partial_res.f)) {
+        auto partial_res = synthesisPartial(target_list[i], ext::ho::buildProduct(pool), guard);
+        LOG(INFO) << "partial res " << i << ": " << partial_res.toString();
+        for (auto& f_comp: ext::ho::splitProduct(partial_res.f)) {
             if (!isOccur(f_comp, pool)) {
                 f_component.push_back(f_comp);
                 target_list.push_back(f_comp);
                 pool.push_back(f_comp);
             }
         }
+        sub_res_list.push_back(partial_res);
     }
 
-    auto construct_c = [&](const ProgramList& comp_list) -> PProgram {
-        ProgramList sub_list;
-        for (int i = 0; i < p_component_num; ++i) sub_list.push_back(comp_list[i]);
-        auto l = ext::ho::buildTriangle(sub_list);
-        sub_list.clear();
-        for (int i = p_component_num; i < comp_list.size(); ++i) sub_list.push_back(comp_list[i]);
-        auto r = ext::ho::buildTriangle(sub_list);
-        sub_list = {l, r};
-        return ext::ho::buildTriangle(sub_list);
-    };
+    auto f = f_component.size() != 1 ? ext::ho::buildProduct(f_component) : f_component[0];
 
-    auto f = ext::ho::buildTriangle(f_component);
+    auto construct_c = [&](const ProgramList& comp_list) -> PProgram {
+        PProgram l;
+        if (!ext::ho::isProductProgram(task->p.get())) l = comp_list[0];
+        else {
+            ProgramList sub_list;
+            for (int i = 0; i < p_component_num; ++i) sub_list.push_back(comp_list[i]);
+            l = ext::ho::buildProduct(sub_list);
+        }
+        PProgram r;
+        if (!ext::ho::isProductProgram(f.get())) r = comp_list[p_component_num];
+        else {
+            ProgramList sub_list;
+            for (int i = p_component_num; i < comp_list.size(); ++i) sub_list.push_back(comp_list[i]);
+            r = ext::ho::buildProduct(sub_list);
+        }
+        return ext::ho::buildProduct({l, r});
+    };
 
     std::vector<LiftingResInfo> info_list;
     for (int i = 0; i < task->info_list.size(); ++i) {
@@ -237,7 +248,7 @@ LiftingRes AutoLifter::synthesis(TimeGuard *guard) {
                     sub_res.f, info.c, task->h, f);
             comp_list.push_back(c_comp);
         }
-        info_list.emplace_back(task->info_list[i]->F, task->info_list[i]->m, construct_c(comp_list));
+        info_list.emplace_back(task->info_list[i]->F, construct_c(comp_list), task->info_list[i]->m);
     }
 
     return {task->p, task->h, f, info_list};

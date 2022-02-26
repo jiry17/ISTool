@@ -3,6 +3,7 @@
 //
 
 #include "istool/basic/data.h"
+#include "istool/basic/semantics.h"
 #include <cassert>
 #include "glog/logging.h"
 
@@ -27,9 +28,7 @@ bool Data::operator < (const Data& d) const {
 bool Data::operator <= (const Data& d) const {
     auto* cv1 = dynamic_cast<ComparableValue*>(value.get());
     auto* cv2 = dynamic_cast<ComparableValue*>(d.value.get());
-#ifdef DEBUG
-    if (!cv1 || !cv2) assert(0);
-#endif
+    if (!cv1 || !cv2) throw SemanticsError();
     return cv1->leq(d.value.get());
 }
 

@@ -29,7 +29,11 @@ namespace {
             // todo: handle SemanticsError
             DataList term_results;
             for (const auto& term: term_list) {
-                term_results.push_back(env->run(term.get(), example_list[i].first));
+                try {
+                    term_results.push_back(env->run(term.get(), example_list[i].first));
+                } catch (SemanticsError& e) {
+                    term_results.emplace_back();
+                }
             }
             for (auto& d: term_results) {
                 example_list[i].first.push_back(d);

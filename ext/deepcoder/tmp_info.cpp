@@ -10,9 +10,12 @@ void TmpExecuteInfo::clear(const std::string &name) {
     assert(it != tmp_value_map.end());
     tmp_value_map.erase(it);
 }
-Data TmpExecuteInfo::get(const std::string &name) {
+Data TmpExecuteInfo::get(const std::string &name, bool is_strict) {
     auto it = tmp_value_map.find(name);
-    assert(it != tmp_value_map.end());
+    if (it == tmp_value_map.end()) {
+        if (is_strict) assert(0);
+        return {};
+    }
     return it->second;
 }
 void TmpExecuteInfo::set(const std::string &name, const Data &value) {

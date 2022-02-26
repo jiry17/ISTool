@@ -111,7 +111,7 @@ namespace {
 
     Data _invoke(Semantics* semantics, const DataList& inp, ExecuteInfo* info) {
         ProgramList tmp_sub_list(inp.size());
-        for (int i = 0; i < inp.size(); ++i) tmp_sub_list.push_back(program::buildConst(inp[i]));
+        for (int i = 0; i < inp.size(); ++i) tmp_sub_list[i] = program::buildConst(inp[i]);
         return semantics->run(tmp_sub_list, info);
     }
 }
@@ -228,22 +228,27 @@ ListScanlSemantics::ListScanlSemantics(): NormalSemantics("scanl", TLISTA, {_get
 Data ListScanlSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto* sem = getSemantics(inp_list[0]).get(); auto* lv = _getList(inp_list[1]);
     if (lv->value.empty()) throw SemanticsError();
-    auto res = lv->value[0];
+    auto current = lv->value[0];
+    DataList res = {current};
     for (int i = 1; i < lv->value.size(); ++i) {
-        res = _invoke(sem, {res, lv->value[i]}, info);
+        current = _invoke(sem, {current, lv->value[i]}, info);
+        res.push_back(current);
     }
-    return res;
+    return BuildData(List, res);
 }
 
 ListScanrSemantics::ListScanrSemantics(): NormalSemantics("scanr", TLISTA, {_getArrowType({TVARA, TVARA}, TVARA), TLISTA}) {}
 Data ListScanrSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto* sem = getSemantics(inp_list[0]).get(); auto* lv = _getList(inp_list[1]);
     if (lv->value.empty()) throw SemanticsError();
-    int n = lv->value.size(); auto res = lv->value[n - 1];
+    int n = lv->value.size(); auto current = lv->value[n - 1];
+    DataList res = {current};
     for (int i = n - 2; i >= 0; --i) {
-        res = _invoke(sem, {lv->value[i], res}, info);
+        current = _invoke(sem, {lv->value[i], current}, info);
+        res.push_back(current);
     }
-    return res;
+    std::reverse(res.begin(), res.end());
+    return BuildData(List, res);
 }
 
 ListRevSemantics::ListRevSemantics(): NormalSemantics("rev", TLISTA, {TLISTA}) {}
@@ -282,6 +287,16 @@ Data ListCatSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return buildList(res);
 }
 
+ListFoldSemantics::ListFoldSemantics(): NormalSemantics("fold", TVARB, {_getArrowType({TVARA, TVARB}, TVARB), TVARB, TLISTA}) {}
+Data ListFoldSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    auto* f = ext::ho::getSemantics(inp_list[0]).get();
+    Data s = inp_list[1]; auto* lv = _getList(inp_list[2]);
+    for (int i = lv->value.size(); i; --i) {
+        s = _invoke(f, {lv->value[i - 1], s}, info);
+    }
+    return s;
+}
+
 ListAppendSemantics::ListAppendSemantics(): NormalSemantics("append", TLISTA, {TLISTA, TVARA}) {}
 Data ListAppendSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto* x = _getList(inp_list[0]);
@@ -302,8 +317,8 @@ Data ListNilSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return buildList({});
 }
 
-TriangleSemantics::TriangleSemantics(): FullExecutedSemantics("tri") {}
-Data TriangleSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+ProductSemantics::ProductSemantics(): FullExecutedSemantics("prod") {}
+Data ProductSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return BuildData(Product, inp_list);
 }
 
@@ -336,4 +351,5 @@ void ext::ho::loadDeepCoderSemantics(Env *env) {
     LoadSemantics("even", IntEven); LoadSemantics("++", ListCat);
     LoadSemantics("fold", ListFold); LoadSemantics("append", ListAppend);
     LoadSemantics("cons", ListCons); LoadSemantics("nil", ListNil);
+    LoadSemantics("prod", Product);
 }

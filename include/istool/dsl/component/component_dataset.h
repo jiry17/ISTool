@@ -7,7 +7,7 @@
 
 #include "istool/basic/specification.h"
 
-namespace component {
+namespace dsl::component {
     Specification* getTask(int id);
 }
 

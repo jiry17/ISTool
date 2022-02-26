@@ -8,6 +8,7 @@
 #include "istool/basic/specification.h"
 #include "istool/basic/time_guard.h"
 #include "istool/basic/verifier.h"
+#include "istool/solver/solver.h"
 #include "glog/logging.h"
 
 enum class SolverToken {
@@ -51,7 +52,7 @@ public:
 
 namespace invoker {
     namespace single {
-        FunctionContext invokeCBS(Specification* spec, Verifier* v, TimeGuard* guard, const InvokeConfig& config);
+        Solver* buildCBS(Specification* spec, Verifier* v, const InvokeConfig& config);
 
         /**
          * @config "runnable"
@@ -59,8 +60,8 @@ namespace invoker {
          *   Check whether a program is runnable.
          *   Default: Always true
          */
-        FunctionContext invokeOBE(Specification* spec, Verifier* v, TimeGuard* guard, const InvokeConfig& config);
-        FunctionContext invokeEuSolver(Specification* spec, Verifier* v, TimeGuard* guard, const InvokeConfig& config);
+        Solver* buildOBE(Specification* spec, Verifier* v, const InvokeConfig& config);
+        Solver* buildEuSolver(Specification* spec, Verifier* v, const InvokeConfig& config);
 
         /**
          * @config "prepare"
@@ -88,7 +89,7 @@ namespace invoker {
          *   The largest height of programs considered by the solver.
          *   Default: 7
          */
-        FunctionContext invokeVanillaVSA(Specification* spec, Verifier* v, TimeGuard* guard, const InvokeConfig& config);
+        Solver* buildVanillaVSA(Specification* spec, Verifier* v, const InvokeConfig& config);
 
         /**
          * @config "prepare"
@@ -99,8 +100,8 @@ namespace invoker {
          *   A cost model for programs in the program space. MaxFlash always returns the solution with the minimum cost.
          *   Default: ext::vsa::getSizeModel()
          */
-        FunctionContext invokeMaxFlash(Specification* spec, Verifier* v, TimeGuard* guard, const InvokeConfig& config);
-        FunctionContext invokePolyGen(Specification* spec, Verifier* v, TimeGuard *guard, const InvokeConfig& config);
+        Solver* buildMaxFlash(Specification* spec, Verifier* v, const InvokeConfig& config);
+        Solver* buildPolyGen(Specification* spec, Verifier* v, const InvokeConfig& config);
     }
 
     FunctionContext synthesis(Specification* spec, Verifier* v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config={});
