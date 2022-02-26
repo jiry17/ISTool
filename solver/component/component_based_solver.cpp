@@ -59,7 +59,6 @@ Z3EncodeRes ComponentBasedSynthesizer::encodeExample(Program *program, const Exa
 }
 
 FunctionContext ComponentBasedSynthesizer::synthesis(const ExampleList& example_list, TimeGuard* guard) {
-    auto* space = dynamic_cast<Z3ExampleSpace*>(spec->example_space.get());
     while (1) {
         TimeCheck(guard);
         z3::solver solver(ext->ctx);
@@ -69,7 +68,7 @@ FunctionContext ComponentBasedSynthesizer::synthesis(const ExampleList& example_
             solver.add(z3::mk_and(encoder->encodeStructure(info->name + "@structure")));
         }
         for (int i = 0; i < example_list.size(); ++i) {
-            auto res = encodeExample(space->cons_program.get(), example_list[i], "val@" + std::to_string(i) + "@");
+            auto res = encodeExample(spec->example_space->cons_program.get(), example_list[i], "val@" + std::to_string(i) + "@");
             solver.add(res.res);
             solver.add(z3::mk_and(res.cons_list));
         }

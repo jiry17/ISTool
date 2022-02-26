@@ -22,8 +22,10 @@ FunctionContext CEGISSolver::synthesis(TimeGuard* guard) {
     std::vector<Example> example_list;
     while (1) {
         auto res = pbe_solver->synthesis(example_list, guard);
-        LOG(INFO) << "Find " << res.toString();
-        for (auto example: example_list) LOG(INFO) << "res " << data::dataList2String(example) << " " << spec->env->run(res.begin()->second.get(), example).toString();
+        LOG(INFO) << "Candidate result " << res.toString();
+#ifdef DEBUG
+        for (auto& example: example_list) assert(spec->example_space->satisfyExample(res, example));
+#endif
         Example counter_example;
         if (v->verify(res, &counter_example)) {
             return res;

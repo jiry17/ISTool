@@ -3,7 +3,7 @@ project(ISTool)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/)
-#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast")
 add_definitions(-DDEBUG)
 INCLUDE(FindPkgConfig)
 include_directories(include)

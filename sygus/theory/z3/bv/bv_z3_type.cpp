@@ -5,6 +5,7 @@
 #include "istool/sygus/theory/z3/bv/bv_z3_type.h"
 #include "istool/sygus/theory/basic/bv/bv.h"
 #include "istool/ext/z3/z3_extension.h"
+#include "glog/logging.h"
 
 bool Z3BitVectorType::matchType(Type *type) const {
     return dynamic_cast<TBitVector*>(type);
