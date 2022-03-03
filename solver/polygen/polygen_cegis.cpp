@@ -47,8 +47,7 @@ namespace {
             }
         }
         if (!is_exist_error) return c;
-        auto error = std::make_shared<Program>(std::make_shared<AllowFailSemantics>(type::getTBool(), BuildData(Bool, true)), (ProgramList){c});
-        return std::make_shared<Program>(env->getSemantics("||"), (ProgramList){error, c});
+        return std::make_shared<Program>(std::make_shared<AllowFailSemantics>(type::getTBool(), BuildData(Bool, true)), (ProgramList){c});
     }
 }
 
