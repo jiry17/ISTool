@@ -22,15 +22,15 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        solver_name = "obe";
-        benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/bv/PRE_icfp_gen_1.1.sl";
+        solver_name = "vsa";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/x.sl";
         output_name = "/tmp/629453237.out";
     }
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
     auto* v = sygus::getVerifier(spec);
     spec->env->random_engine.seed(time(0));
     auto solver_token = invoker::string2TheoryToken(solver_name);
-    auto* guard = new TimeGuard(1e9);
+    auto* guard = new TimeGuard(300);
 
     if (solver_name == "cbs" && sygus::getSyGuSTheory(spec->env.get()) == TheoryToken::BV) {
         theory::loadZ3BV(spec->env.get());
