@@ -3,6 +3,7 @@
 //
 
 #include "istool/solver/polygen/polygen_cegis.h"
+#include "istool/basic/semantics.h"
 #include "glog/logging.h"
 
 CEGISPolyGen::~CEGISPolyGen() {
@@ -33,6 +34,21 @@ namespace {
             res = std::make_shared<Program>(ite_semantics, sub_list);
         }
         return res;
+    }
+
+    PProgram _handleSemanticsErrorInMid(const PProgram& c, const IOExampleList& example_list, Env* env) {
+        bool is_exist_error = false;
+        for (auto& example: example_list) {
+            try {
+                env->run(c.get(), example.first);
+            } catch (SemanticsError& e) {
+                is_exist_error = true;
+                break;
+            }
+        }
+        if (!is_exist_error) return c;
+        auto error = std::make_shared<Program>(std::make_shared<AllowFailSemantics>(type::getTBool(), BuildData(Bool, true)), (ProgramList){c});
+        return std::make_shared<Program>(env->getSemantics("||"), (ProgramList){error, c});
     }
 }
 
@@ -133,6 +149,8 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             if (!is_valid) {
                 condition = cond_solver->getCondition(term_list, positive_list, negative_list, guard);
             }
+            condition = _handleSemanticsErrorInMid(condition, mid_list, env);
+
             condition_list[i] = condition;
             rem_example = negative_list;
             for (const auto& example: mid_list) {

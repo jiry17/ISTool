@@ -22,6 +22,7 @@ namespace {
     ListValue* _getList(const Data& d) {
         auto* lv = dynamic_cast<ListValue*>(d.get());
         if (!lv) LOG(FATAL) << "Expect ListValue but get " << d.toString();
+        return lv;
     }
 }
 
