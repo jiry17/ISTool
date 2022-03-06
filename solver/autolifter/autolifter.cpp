@@ -7,6 +7,7 @@
 #include "istool/ext/deepcoder/data_util.h"
 #include "istool/ext/deepcoder/data_type.h"
 #include "istool/ext/deepcoder/data_value.h"
+#include "istool/ext/deepcoder/deepcoder_semantics.h"
 #include "glog/logging.h"
 #include <queue>
 
@@ -75,6 +76,19 @@ namespace {
         return base;
     }
 
+    DataList _getAllComponent(const Data& d) {
+        auto* pv = dynamic_cast<ProductValue*>(d.get());
+        if (!pv) return {d};
+        DataList res;
+        assert(pv);
+        for (auto& sub_d: pv->elements) {
+            for (const auto& sub_res: _getAllComponent(sub_d)) {
+                res.push_back(sub_res);
+            }
+        }
+        return res;
+    }
+
     class _SCExampleGenerator: public ExampleGenerator {
     public:
         PartialLiftingTask* task;
@@ -115,19 +129,20 @@ namespace {
             for (auto& info: f_inp_list) base_f_list.push_back(info.second->at(pos));
             auto inp = _constructInp(task->info->F.get(), task->info->example_space->getExample(pos)[0],
                     base_h_list, base_f_list);
-//            LOG(INFO) << "Generate " << example::ioExample2String({{inp}, oup}) << " from " << data::dataList2String(task->info->example_space->getExample(pos));
-            return {{inp, oup}};
+            auto example = _getAllComponent(inp);
+            example.push_back(oup);
+            return {example};
         }
         virtual ~_SCExampleGenerator() = default;
     };
 
-    PSynthInfo _buildCombinatorInfo(Grammar* g, const PType& inp_type) {
+    PSynthInfo _buildCombinatorInfo(Grammar* g, const TypeList& inp_type) {
         auto oup_type = g->start->type;
         for (auto* symbol: g->symbol_list) {
             for (auto* rule: symbol->rule_list) {
                 auto* ps = dynamic_cast<ParamSemantics*>(rule->semantics.get());
                 if (!ps) continue;
-                assert(ps->id == 0 && type::equal(ps->oup_type, inp_type));
+                assert(ps->id < inp_type.size() && type::equal(ps->oup_type, inp_type[ps->id]));
             }
         }
         return std::make_shared<SynthInfo>("c", (TypeList){inp_type}, oup_type, g);
@@ -143,6 +158,47 @@ namespace {
         auto cons_program = std::make_shared<Program>(env->getSemantics("="), sub_list);
         return std::make_shared<StreamedIOExampleSpace>(cons_program, info->name, inp_list, oup, g, env);
     }
+
+    std::pair<TypeList, ProgramList> _splitType(const PType& type, const PProgram& root) {
+        auto* pt = dynamic_cast<TProduct*>(type.get());
+        if (!pt) return {{type}, {root}};
+        TypeList res_type; ProgramList res_prog;
+        for (int i = 0; i < pt->sub_types.size(); ++i) {
+            auto sub_prog = std::make_shared<Program>(std::make_shared<AccessSemantics>(i), (ProgramList){root});
+            auto sub_res = _splitType(pt->sub_types[i], sub_prog);
+            for (auto& t: sub_res.first) res_type.push_back(t);
+            for (auto& p: sub_res.second) res_prog.push_back(p);
+        }
+        return {res_type, res_prog};
+    }
+
+    std::pair<TypeList, ProgramList> _splitType(const PType& type) {
+        PProgram root = program::buildParam(0, type);
+        return _splitType(type, root);
+    }
+}
+
+PProgram AutoLifter::synthesisCombinatorForPartial(PartialLiftingTask *task, const PProgram& f, TimeGuard *guard) {
+    LOG(INFO) << "Merge for " << task->p->toString() <<"  "<< task->h->toString() << " " << f->toString();
+    auto inp_type = solver::autolifter::getCInputType(task->info->F, task->h.get(), f.get(), task->env.get());
+
+    auto split_info = _splitType(inp_type);
+    auto component_type_list = split_info.first; auto component_prog_list = split_info.second;
+
+    auto* g = task->info->c_builder->buildGrammar(task->p.get(), component_type_list);
+    auto info = _buildCombinatorInfo(g, component_type_list);
+
+    auto example_generator = std::make_shared<_SCExampleGenerator>(task, f);
+    auto example_space = _buildCombinatorExampleSpace(example_generator, info.get(), task->env.get());
+    auto* spec = new Specification({info}, task->env, example_space);
+    auto* v = new OccamVerifier(example_space.get());
+    auto* sc_solver = sc_builder(spec, v);
+    auto c = sc_solver->synthesis(guard)["c"];
+    c = ext::ho::removeAccessProd(program::rewriteParam(c, component_prog_list));
+    delete spec;
+    delete v;
+    delete sc_solver;
+    return c;
 }
 
 SingleLiftingRes AutoLifter::synthesisSinglePartial(PartialLiftingTask *task, TimeGuard* guard) {
@@ -152,20 +208,7 @@ SingleLiftingRes AutoLifter::synthesisSinglePartial(PartialLiftingTask *task, Ti
     delete sf_solver;
 
     task->h = res.first;
-    auto* g = task->info->c_builder->buildProgram(task->p.get(), task->info->m.get(), task->info->F, task->h.get(), f.get());
-    auto inp_type = solver::autolifter::getCInputType(task->info->F, task->h.get(), f.get(), task->env.get());
-    auto info = _buildCombinatorInfo(g, inp_type);
-
-    auto example_generator = std::make_shared<_SCExampleGenerator>(task, f);
-    auto example_space = _buildCombinatorExampleSpace(example_generator, info.get(), task->env.get());
-    auto* spec = new Specification({info}, task->env, example_space);
-    auto* v = new OccamVerifier(example_space.get());
-    auto* sc_solver = sc_builder(spec, v);
-    auto c = sc_solver->synthesis(guard)["c"];
-    delete spec;
-    delete v;
-    delete sc_solver;
-
+    auto c = synthesisCombinatorForPartial(task, f, guard);
     LiftingResInfo res_info(task->info->F, c, task->info->m);
     return {task->p, task->h, f, res_info};
 }

@@ -6,8 +6,8 @@
 #include "glog/logging.h"
 #include <algorithm>
 
-PolyGenUnifier::PolyGenUnifier(Specification *spec, const PSynthInfo& info, const PBESolverBuilder &_builder):
-    Unifier(spec, info), solver(new PolyGenConditionSolver(spec, info, _builder)) {
+PolyGenUnifier::PolyGenUnifier(Specification *spec, const PSynthInfo& info, const PBESolverBuilder &builder):
+    Unifier(spec, info), solver(new PolyGenConditionSolver(spec, info, builder)) {
     if (spec->info_list.size() > 1) {
         LOG(FATAL) << "PolyGenTermSolver require the number of target programs to be 1";
     }
@@ -18,7 +18,6 @@ PolyGenUnifier::PolyGenUnifier(Specification *spec, const PSynthInfo& info, cons
 }
 
 PolyGenUnifier::~PolyGenUnifier() {
-    delete solver;
 }
 
 namespace {
@@ -85,7 +84,7 @@ PProgram PolyGenUnifier::unify(const ProgramList &raw_term_list, const ExampleLi
             }
         }
     }
-
+    delete solver;
     return _buildIte(term_list, condition_list, spec->env.get());
 }
 

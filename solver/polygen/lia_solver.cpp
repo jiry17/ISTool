@@ -128,7 +128,6 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
     for (const auto& example: example_list) {
         io_example_list.push_back(io_example_space->getIOExample(example));
     }
-
     std::unordered_set<std::string> cache;
     ProgramList considered_program_list;
     IOExampleList wrapped_example_list;
@@ -159,9 +158,6 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
             considered_program_list.push_back(program);
         }
     }
-
-    // LOG(INFO) << "Wrapped space";
-    // for (auto& example: wrapped_example_list) LOG(INFO) << example::ioExample2String(example);
 
     auto solve_res = solver::lia::solveLIA(env, wrapped_example_list, ext, KTermIntMax, KConstIntMax, guard);
     if (!solve_res.status) return {};
@@ -325,8 +321,8 @@ void* LIASolver::relax(TimeGuard* guard) {
     double next_time_limit = KRelaxTimeLimit;
 
     auto next_program_list = _getConsideredTerms(info, next_num, time_out);
-    LOG(INFO) << "Next program list";
-    for (auto p: next_program_list) LOG(INFO) << p->toString();
+    // LOG(INFO) << "Next program list";
+    // for (auto p: next_program_list) LOG(INFO) << p->toString();
     if (next_program_list.size() == program_list.size()) {
         next_time_limit *= 2;
         return nullptr;

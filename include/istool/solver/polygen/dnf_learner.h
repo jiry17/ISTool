@@ -41,6 +41,7 @@ namespace polygen {
 class DNFLearner: public PBESolver {
     // Parameters for enumerating possible predicates
     double KRelaxTimeLimit;
+    bool KIsAllowError;
     int size_limit = 0;
     ProgramStorage pred_pool;
 
@@ -74,7 +75,8 @@ public:
 
 namespace solver {
     namespace polygen {
-        const std::string KMaxClauseNumName;
+        extern const std::string KMaxClauseNumName;
+        extern const std::string KIsAllowErrorName;
     }
 }
 

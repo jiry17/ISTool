@@ -86,7 +86,8 @@ namespace {
 }
 
 PType type::substituteVar(const PType &type, const std::unordered_map<std::string, PType> &type_map) {
-    return _substituteName(type, type_map).second;
+    auto res = _substituteName(type, type_map).second;
+    return res;
 }
 
 namespace {

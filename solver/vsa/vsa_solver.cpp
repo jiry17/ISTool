@@ -52,7 +52,6 @@ VSANode* BasicVSASolver::buildVSA(const ExampleList &example_list, TimeGuard *gu
         }
         auto io_example = io_space->getIOExample(example_list[0]);
         res = builder->buildVSA(io_example.second, io_example.first, guard);
-        LOG(INFO) << "Program num " << ext::vsa::getProgramNum(res);
         feature = "@" + data::dataList2String(example_list[0]);
         return cache[feature] = res;
     }

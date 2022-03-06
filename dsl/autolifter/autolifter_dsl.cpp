@@ -42,6 +42,8 @@ namespace {
             for (auto& sub: pt->sub_types) content.push_back(_generateData(env, sub.get(), guard));
             return BuildData(Product, content);
         }
+        auto* bt = dynamic_cast<TBool*>(type);
+        if (bt) return BuildData(Bool, rand() & 1);
         auto* it = dynamic_cast<LimitedTInt*>(type);
         if (it) {
             return BuildData(Int, _getRandInt(env, it->l, it->r));
@@ -122,7 +124,7 @@ namespace {
         if (symbol_map.find(feature) != symbol_map.end()) return symbol_map[feature];
         auto* pt = dynamic_cast<TProduct*>(type.get());
         if (!pt) {
-            LOG(FATAL) << "AutoLifter: Unsupported base type" << type->getName();
+            LOG(FATAL) << "AutoLifter: Unsupported base type " << type->getName();
         }
         auto* symbol = new NonTerminal("Symbol@" + feature, type);
         symbol_map[feature] = symbol;
@@ -154,18 +156,12 @@ namespace {
         std::vector<PSemantics> extra_semantics;
         _DefaultCombinatorGrammarBuilder(Env* _env, const std::vector<int>& _const_list, const std::vector<PSemantics>& _extra_semantics):
             env(_env), const_list(_const_list), extra_semantics(_extra_semantics) {
-            extra_semantics.push_back(std::make_shared<AllowFailSemantics>(type::getTBool(), BuildData(Bool, true)));
-            extra_semantics.push_back(std::make_shared<AllowFailSemantics>(type::getTBool(), BuildData(Bool, false)));
         }
-        virtual Grammar* buildProgram(Program* p, Program* m, const PType& F, Program* h, Program* f) {
+        virtual Grammar* buildGrammar(Program* p, const TypeList& type_list) {
             auto* type_system = type::getTypeExtension(env);
-            auto p_oup_type = type_system->getType(p);
-            assert(dynamic_cast<TBool*>(p_oup_type.get()) || dynamic_cast<TInt*>(p_oup_type.get()));
-            dsl::clia::CLIAGrammarInfo clia_info({}, p_oup_type, const_list, extra_semantics);
+            dsl::clia::CLIAGrammarInfo clia_info({}, type_system->getType(p), const_list, extra_semantics);
             auto* grammar = dsl::clia::getDefaultCLIAGrammar(env, clia_info, false);
-
-            auto full_type = solver::autolifter::getCInputType(F, h, f, env);
-            return _insertParam(grammar, {ext::ltype::getBaseType(full_type.get())});
+            return _insertParam(grammar, {type_list});
         }
         virtual ~_DefaultCombinatorGrammarBuilder() {
         }
@@ -173,6 +169,7 @@ namespace {
 
     PLiftingModInfo _buildLiftingModInfo(const PProgram& p, const LiftingModConfigInfo& info, Env* env, const PType& inp_type) {
         auto name_list = _getVarList(info.F.get());
+        LOG(INFO) << name_list.size();
         if (name_list.size() > 1) {
             LOG(INFO) << "AutoLifter supports endofunctor only";
         }
@@ -181,7 +178,7 @@ namespace {
         auto cons_program = _buildAutoLifterConsProgram(p, info.m, info.F, env);
         auto example_space = std::make_shared<StreamedExampleSpace>(cons_program, g, env);
         auto* grammar_builder = new _DefaultCombinatorGrammarBuilder(env, info.extra_consts, info.extra_semantics);
-        return std::make_shared<LiftingModInfo>(info.m, info.F, example_space, grammar_builder);
+        return std::make_shared<LiftingModInfo>(info.m, ext::ltype::getBaseType(info.F.get()), example_space, grammar_builder);
     }
 
     PSynthInfo _buildFInfo(const std::vector<std::string>& extra_semantics, const PType& inp_type, Env* env) {

@@ -54,7 +54,9 @@ bool MaximalInfoList::add(EnumerateInfo *info) {
     }*/
     for (int i = 0; i < size; ++i) {
         auto* x = info_list[i];
-        if (x->info.checkCover(info->info)) return false;
+        if (x->info.checkCover(info->info)) {
+            return false;
+        }
         if (!info->info.checkCover(x->info)) info_list[new_size++] = x;
     }
     size = new_size;
@@ -188,12 +190,22 @@ std::pair<EnumerateInfo *, EnumerateInfo*> ComposedSFSolver::constructResult(Enu
     int rem = limit - int(info->ind_list.size());
     if (info->info.count() == example_list.size()) return {info, nullptr};
     if (!global_maximal.isExistResult(info)) return {nullptr, nullptr};
-    for (int i = 0; i < rem; ++i) {
+    for (int i = 0; i < rem && i < maximal_list.size(); ++i) {
         if (maximal_list[i].isExistResult(info)) {
             return recoverResult(i, info);
         }
     }
     return {nullptr, nullptr};
+}
+
+void ComposedSFSolver::constructMoreInfo(solver::autolifter::EnumerateInfo *info) {
+    int pos = info->ind_list.size();
+    for (auto* prog_info: info_storage[0]) {
+        if (prog_info->ind_list[0] >= info->ind_list[0]) continue;
+        std::vector<int> ind_list = prog_info->ind_list;
+        for (auto id: info->ind_list) ind_list.push_back(id);
+        working_list[pos].push(new EnumerateInfo(ind_list));
+    }
 }
 
 bool ComposedSFSolver::addUncoveredInfo(solver::autolifter::EnumerateInfo *info) {
@@ -209,15 +221,15 @@ bool ComposedSFSolver::addUncoveredInfo(solver::autolifter::EnumerateInfo *info)
             if (it == uncovered_info_set.end()) return false;
             last_sub_info = it->second;
         }
-        info->info = last_sub_info->info | program_info_list[info->ind_list[0]];
+        info->info = last_sub_info->info | program_info_list[info->ind_list[info->ind_list.size() - 1]];
     } else {
         info->info = program_info_list[info->ind_list[0]];
     }
 
     int ind = int(info->ind_list.size()) - 1;
-    if (!maximal_list[ind].add(info)) return false;
+    if (!global_maximal.add(info)) return false;
 
-    global_maximal.add(info);
+    maximal_list[ind].add(info);
     uncovered_info_set[_indList2String(info->ind_list)] = info;
     info_storage[ind].push_back(info);
 
@@ -257,6 +269,9 @@ ProgramList ComposedSFSolver::synthesisFromExample(TimeGuard* guard) {
             extra_turn_num = 0;
             current_limit = int(best_result.size()) - 1;
         }
+        if (info->ind_list.size() < (current_limit + 1) / 2) {
+            constructMoreInfo(info);
+        }
     }
 }
 
@@ -271,8 +286,12 @@ void ComposedSFSolver::addCounterExample(const std::pair<int, int> &counter_exam
     info_storage.clear();
     next_component_id = 0;
     maximal_list.clear();
+    for (auto& q: working_list) {
+        while (!q.empty()) {
+            delete q.front(); q.pop();
+        }
+    }
     global_maximal.clear();
-    working_list.clear();
     uncovered_info_set.clear();
 }
 

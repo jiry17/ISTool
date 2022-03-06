@@ -12,6 +12,7 @@ class Optimizer {
 public:
     virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p) = 0;
     virtual void clear() = 0;
+    virtual ~Optimizer() = default;
 };
 
 struct EnumConfig {

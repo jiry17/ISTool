@@ -23,6 +23,8 @@ void CmpPlan::print() const {
         std::cout << "  " << info->toString() << std::endl;
     }
 }
+const std::string solver::polygen::KIsAllowErrorName = "DNF@AllowError";
+const std::string solver::polygen::KMaxClauseNumName = "DNF@MaxClauseName";
 
 namespace {
     const std::set<std::string> ignored_set = {
@@ -32,13 +34,19 @@ namespace {
     PSynthInfo _buildPredInfo(const PSynthInfo& info) {
         auto* g = grammar::copyGrammar(info->grammar);
         int now = 0;
+        std::vector<int> bool_param_list;
         for (auto* rule: g->start->rule_list) {
             auto name = rule->semantics->getName();
             if (ignored_set.find(name) != ignored_set.end()) {
                 delete rule;
             } else g->start->rule_list[now++] = rule;
+            auto* ps = dynamic_cast<ParamSemantics*>(rule->semantics.get());
+            if (ps) bool_param_list.push_back(ps->id);
         }
         g->start->rule_list.resize(now);
+        auto ps = new NonTerminal("param@bool", type::getTBool());
+        for (auto id: bool_param_list) ps->rule_list.push_back(new Rule(semantics::buildParamSemantics(id, type::getTBool()), {}));
+        g->start->rule_list.push_back(new Rule(std::make_shared<NotSemantics>(), {ps}));
         g->removeUseless();
         return std::make_shared<SynthInfo>(info->name, info->inp_type_list, info->oup_type, g);
     }
@@ -70,6 +78,11 @@ DNFLearner::DNFLearner(Specification *spec): PBESolver(spec) {
     if (val->isNull()) KMaxClauseNum = _getDefaultClauseNum(spec->info_list[0]);
     else KMaxClauseNum = theory::clia::getIntValue(*val);
     KRelaxTimeLimit = 0.1;
+
+    val = spec->env->getConstRef(solver::polygen::KIsAllowErrorName);
+    if (val->isNull()) KIsAllowError = false;
+    else KIsAllowError = val->isTrue();
+
 }
 
 PCmpInfo DNFLearner::buildInfo(const PProgram& program) {
@@ -85,8 +98,13 @@ void DNFLearner::relax() {
     double time_limit = KRelaxTimeLimit;
     if (guard) time_limit = std::min(time_limit, guard->getRemainTime());
     auto* tmp_guard = new TimeGuard(time_limit);
+
+    ExampleList inp_list = negative_list;
+    for (auto& example: positive_list) inp_list.push_back(example);
     auto is_timeout = solver::collectAccordingSize({pred_info}, size_limit, result, EnumConfig(nullptr, nullptr, tmp_guard));
-    if (is_timeout) KRelaxTimeLimit *= 2;
+    if (is_timeout) {
+        KRelaxTimeLimit *= 2; size_limit -= 1;
+    }
     delete tmp_guard;
 
     ProgramList pred_list;
@@ -118,17 +136,18 @@ std::vector<PCmpInfo> DNFLearner::getNextInfoList() {
         PCmpInfo info;
         try {
             info = buildInfo(res);
+            pred_list.push_back(info);
+            is_duplicated.push_back(false);
         } catch (SemanticsError& e) {
-            continue;
+            if (!KIsAllowError) continue;
+            for (auto default_value: {true, false}) {
+                auto f = std::make_shared<Program>(std::make_shared<AllowFailSemantics>(type::getTBool(), BuildData(Bool, default_value)), (ProgramList) {res});
+                pred_list.push_back(buildInfo(f));
+                is_duplicated.push_back(false);
+            }
         }
-        pred_list.push_back(info);
-        is_duplicated.push_back(false);
     }
     int n = pred_list.size();
-    /*LOG(INFO) << "Get next info";
-    for (int i = 0; i < 10 && i < pred_list.size(); ++i) {
-        std::cout << "  " << pred_list[i]->toString() << std::endl;
-    }*/
     for (int i = n - 1; i >= 0; --i) {
         for (int j = 0; j < n; ++j) {
             if (i != j && !is_duplicated[j] && pred_list[j]->P.checkCover(pred_list[i]->P) &&
@@ -155,7 +174,7 @@ std::vector<PCmpInfo> DNFLearner::getNextInfoList() {
 
 void DNFLearner::clear() {
     negative_list.clear(); positive_list.clear();
-    pred_pos = -1; pred_list_set.clear();
+    pred_pos = -1; pred_list_set.clear(); pred_pool.clear();
 }
 
 DNFLearner::~DNFLearner() {

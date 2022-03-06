@@ -63,6 +63,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
     }
     example_list.push_back(counter_example);
     LOG(INFO) << "counter " << example::ioExample2String(io_space->getIOExample(counter_example));
+    info->grammar->print();
     io_example_list.push_back(io_space->getIOExample(counter_example));
     ProgramList term_list, condition_list;
 

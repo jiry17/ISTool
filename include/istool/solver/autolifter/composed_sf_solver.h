@@ -51,6 +51,7 @@ class ComposedSFSolver: public SFSolver {
     void initNewProgram(TimeGuard* guard);
     ProgramList synthesisFromExample(TimeGuard* guard);
     void addCounterExample(const std::pair<int, int>& counter_example);
+    void constructMoreInfo(solver::autolifter::EnumerateInfo* info);
     bool addUncoveredInfo(solver::autolifter::EnumerateInfo* info);
     solver::autolifter::EnumerateInfo* getNextComposition(int k, TimeGuard* guard);
     ProgramList getProgramListFromInfo(solver::autolifter::EnumerateInfo* info);

@@ -43,12 +43,12 @@ namespace {
 }
 
 PolyGenConditionSolver::PolyGenConditionSolver(Specification *_spec, const PSynthInfo &cond_info,
-        const PBESolverBuilder &_builder):
+                                               const PBESolverBuilder &_builder):
         builder(_builder), KIsUseTerm(_isUseTerm(_spec->env.get())), spec(_spec), info(cond_info) {
 }
 
 PProgram PolyGenConditionSolver::getCondition(const ProgramList &term_list, const IOExampleList &pos_list,
-        const IOExampleList& neg_list, TimeGuard* guard) {
+                                              const IOExampleList& neg_list, TimeGuard* guard) {
     PSynthInfo cond_info;
     if (!KIsUseTerm) cond_info = info;
     else {

@@ -16,7 +16,7 @@ public:
     PolyGenConditionSolver(Specification *spec, const PSynthInfo &_info, const PBESolverBuilder &_builder);
     ~PolyGenConditionSolver() = default;
     PProgram getCondition(const ProgramList& term_list, const IOExampleList& pos_list,
-            const IOExampleList& neg_list, TimeGuard* guard);
+                          const IOExampleList& neg_list, TimeGuard* guard);
 };
 
 namespace solver {

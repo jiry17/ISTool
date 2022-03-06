@@ -9,6 +9,7 @@
 #include "istool/solver/solver.h"
 
 class AutoLifter: public LiftingSolver {
+    PProgram synthesisCombinatorForPartial(PartialLiftingTask* task, const PProgram& f, TimeGuard* guard);
     SingleLiftingRes synthesisSinglePartial(PartialLiftingTask* task, TimeGuard* guard);
     LiftingRes synthesisPartial(const PProgram& p, const PProgram& h, TimeGuard* guard);
     bool isOccur(const PProgram& p, const ProgramList& pool);

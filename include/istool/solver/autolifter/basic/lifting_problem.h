@@ -11,7 +11,7 @@
 
 class CombinatorGrammarBuilder {
 public:
-    virtual Grammar* buildProgram(Program* p, Program* m, const PType& F, Program* h, Program* f) = 0;
+    virtual Grammar* buildGrammar(Program* p, const TypeList& inp_list) = 0;
     virtual ~CombinatorGrammarBuilder() = default;
 };
 
