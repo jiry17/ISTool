@@ -25,7 +25,7 @@ dsl::autolifter::LiftingModConfigInfo::LiftingModConfigInfo(const PProgram &_m, 
 }
 
 dsl::autolifter::LiftingConfigInfo::LiftingConfigInfo(const PProgram &_p, const PType &_inp_type, const PEnv& _env, const std::vector<LiftingModConfigInfo> &_mod_list,
-                                                      const std::vector<std::string> &_extra_semantics): env(_env), p(_p), inp_type(_inp_type),
+                                                      const std::vector<PSemantics> &_extra_semantics): env(_env), p(_p), inp_type(_inp_type),
                                                       mod_list(_mod_list), extra_semantics(_extra_semantics) {
 }
 
@@ -181,7 +181,7 @@ namespace {
         return std::make_shared<LiftingModInfo>(info.m, ext::ltype::getBaseType(info.F.get()), example_space, grammar_builder);
     }
 
-    PSynthInfo _buildFInfo(const std::vector<std::string>& extra_semantics, const PType& inp_type, Env* env) {
+    PSynthInfo _buildFInfo(const std::vector<PSemantics>& extra_semantics, const PType& inp_type, Env* env) {
         dsl::deepcoder::DeepCoderGrammarInfo info({}, theory::clia::getTInt(), extra_semantics);
         auto* base_grammar = dsl::deepcoder::getDefaultDeepCoderGrammar(env, info, false);
         auto* grammar = _insertParam(base_grammar, {ext::ltype::getBaseType(inp_type.get())});

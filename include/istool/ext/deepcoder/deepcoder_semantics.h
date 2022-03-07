@@ -48,6 +48,7 @@ class ProductSemantics: public FullExecutedSemantics {
 public:
     ProductSemantics();
     virtual Data run(DataList &&inp_list, ExecuteInfo* info);
+    virtual std::string buildProgramString(const std::vector<std::string>& sub_exp);
     ~ProductSemantics() = default;
 };
 
@@ -56,6 +57,7 @@ public:
     int id;
     AccessSemantics(int _id);
     virtual Data run(DataList &&inp_list, ExecuteInfo *info);
+    virtual std::string buildProgramString(const std::vector<std::string>& sub_exp);
     ~AccessSemantics() = default;
 };
 

@@ -17,7 +17,7 @@ using namespace dsl::deepcoder;
 #define TINT theory::clia::getTInt()
 #define TBOOL type::getTBool()
 
-dsl::deepcoder::DeepCoderGrammarInfo::DeepCoderGrammarInfo(const TypeList &_param_list, const PType &_oup_type, const std::vector<std::string> &_extra_semantics):
+dsl::deepcoder::DeepCoderGrammarInfo::DeepCoderGrammarInfo(const TypeList &_param_list, const PType &_oup_type, const std::vector<PSemantics> &_extra_semantics):
     param_list(_param_list), oup_type(_oup_type), extra_semantics(_extra_semantics) {
     if (!oup_type) oup_type = theory::clia::getTInt();
 }
@@ -66,11 +66,10 @@ Grammar * dsl::deepcoder::getDefaultDeepCoderGrammar(Env* env, const DeepCoderGr
     std::unordered_map<std::string, NonTerminal*> nt_map;
     for (auto* symbol: symbol_list) nt_map[symbol->name] = symbol;
 
-    auto semantics_list = KDeepCoderBasicSemantics;
-    for (const auto& extra_name: info.extra_semantics) semantics_list.push_back(extra_name);
+    std::vector<PSemantics> semantics_list = info.extra_semantics;
+    for (const auto& name: KDeepCoderBasicSemantics) semantics_list.push_back(env->getSemantics(name));
 
-    for (const auto& op: semantics_list) {
-        auto sem = env->getSemantics(op);
+    for (const auto& sem: semantics_list) {
         auto* ts = dynamic_cast<TypedSemantics*>(sem.get());
         auto* source = nt_map[_getSymbolName(ts->oup_type.get())];
         NTList param_list;

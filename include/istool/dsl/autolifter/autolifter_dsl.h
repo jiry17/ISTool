@@ -24,9 +24,9 @@ namespace dsl::autolifter {
         PProgram p;
         PEnv env;
         std::vector<LiftingModConfigInfo> mod_list;
-        std::vector<std::string> extra_semantics;
+        std::vector<PSemantics> extra_semantics;
         LiftingConfigInfo(const PProgram& _p, const PType& _inp_type, const PEnv& _env,
-                const std::vector<LiftingModConfigInfo>& _mod_list, const std::vector<std::string>& _extra_semantics={});
+                const std::vector<LiftingModConfigInfo>& _mod_list, const std::vector<PSemantics>& _extra_semantics={});
     };
 
     LiftingTask* buildLiftingTask(const LiftingConfigInfo& info);

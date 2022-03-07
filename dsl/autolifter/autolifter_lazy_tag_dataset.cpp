@@ -77,8 +77,68 @@ namespace {
         return p;
     }
 
-    InfoStart(SumPlus, "sum@+")
-        auto plus_f = [](DataList&& inp_list, ExecuteInfo* info) -> Data{
+    FullSemanticsFunction _getSumSemanticsFunction() {
+        return [](DataList&& inp_list, ExecuteInfo* info) -> Data {
+            auto* x = _getListValue(inp_list[0]);
+            int sum = 0;
+            for (auto& d: x->value) sum += getIntValue(d);
+            return BuildData(Int, sum);
+        };
+    }
+
+    FullSemanticsFunction _getSqrSumSemanticsFunction() {
+        return [](DataList&& inp_list, ExecuteInfo* info) -> Data {
+            auto* x = _getListValue(inp_list[0]);
+            int res = 0;
+            for (auto& d: x->value) {
+                int k = getIntValue(d); res += k * k;
+            }
+            return BuildData(Int, res);
+        };
+    }
+
+    FullSemanticsFunction _getMpsSemanticsFunction() {
+        return [](DataList&& inp_list, ExecuteInfo* info) -> Data {
+            auto* x = _getListValue(inp_list[0]);
+            if (x->value.empty()) throw SemanticsError();
+            int res = getIntValue(x->value[0]), sum = res;
+            for (int i = 1; i < x->value.size(); ++i) {
+                sum += getIntValue(x->value[i]);
+                if (sum > res) res = sum;
+            }
+            return BuildData(Int, res);
+        };
+    }
+
+    FullSemanticsFunction _getMtsSemanticsFunction() {
+        return [](DataList&& inp_list, ExecuteInfo* info) -> Data {
+            auto* x = _getListValue(inp_list[0]);
+            if (x->value.empty()) throw SemanticsError();
+            int last = int(x->value.size()) - 1;
+            int res = getIntValue(x->value[last]), sum = res;
+            for (int i = last - 1; i >= 0; --i) {
+                sum += getIntValue(x->value[i]);
+                if (sum > res) res = sum;
+            }
+            return BuildData(Int, res);
+        };
+    }
+
+    FullSemanticsFunction _getMssSemanticsFunction() {
+        return [](DataList&& inp_list, ExecuteInfo* info) -> Data {
+            auto* x = _getListValue(inp_list[0]);
+            if (x->value.empty()) throw SemanticsError();
+            int mts = getIntValue(x->value[0]), res = mts;
+            for (int i = 1; i < x->value.size(); ++i) {
+                mts = std::max(mts, 0) + getIntValue(x->value[i]);
+                if (mts > res) res = mts;
+            }
+            return BuildData(Int, res);
+        };
+    }
+
+    FullSemanticsFunction _getPlusSemanticsFunction() {
+        return [](DataList&& inp_list, ExecuteInfo* info) -> Data{
             int x = getIntValue(inp_list[0]);
             auto* y = _getListValue(inp_list[1]);
             DataList res;
@@ -87,37 +147,106 @@ namespace {
             }
             return BuildData(List, res);
         };
-        auto lazy_tag_config = _getModConfigInfoTag(env.get(), _getLimitedInt(type_config), std::make_shared<AnonymousSemantics>(plus_f, "plus"));
-        lazy_tag_config.extra_semantics.push_back(env->getSemantics("*"));
-        auto ps = [](DataList&& inp_list, ExecuteInfo* info) -> Data {
-            auto* x = _getListValue(inp_list[0]);
-            int sum = 0;
-            for (auto& d: x->value) sum += getIntValue(d);
-            return BuildData(Int, sum);
-        };
-    InfoEnd(SumPlus, "sum@+")
+    }
 
-    InfoStart(SumNeg, "sum@neg")
-        auto neg_f = [](DataList&& inp_list, ExecuteInfo* info) ->Data {
+    FullSemanticsFunction _getNegAllSemanticsFunction() {
+        return [](DataList&& inp_list, ExecuteInfo* info) ->Data {
             if (!inp_list[0].isTrue()) return inp_list[1];
             auto* x = _getListValue(inp_list[1]);
             DataList res;
             for (auto& d: x->value) res.push_back(BuildData(Int, -getIntValue(d)));
             return BuildData(List, res);
         };
-        auto lazy_tag_config = _getModConfigInfoTag(env.get(), type::getTBool(), std::make_shared<AnonymousSemantics>(neg_f, "neg-all"));
-        auto ps = [](DataList&& inp_list, ExecuteInfo* info) -> Data {
-            auto* x = _getListValue(inp_list[0]);
-            int sum = 0;
-            for (auto& d: x->value) sum += getIntValue(d);
-            return BuildData(Int, sum);
+    }
+
+    FullSemanticsFunction _getCoverSemanticsFunction() {
+        return [](DataList&& inp_list, ExecuteInfo* info) -> Data {
+            auto* y = _getListValue(inp_list[1]);
+            DataList res(y->value.size(), inp_list[0]);
+            return BuildData(List, res);
         };
+    }
+
+    InfoStart(SumPlus, "sum@+")
+        auto plus_f = _getPlusSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), _getLimitedInt(type_config), std::make_shared<AnonymousSemantics>(plus_f, "plus"));
+        lazy_tag_config.extra_semantics.push_back(env->getSemantics("*"));
+        auto ps = _getSumSemanticsFunction();
+    InfoEnd(SumPlus, "sum@+")
+
+    InfoStart(SumNeg, "sum@neg")
+        auto neg_f = _getNegAllSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), type::getTBool(), std::make_shared<AnonymousSemantics>(neg_f, "neg-all"));
+        auto ps = _getSumSemanticsFunction();
     InfoEnd(SumNeg, "sum@neg")
+
+    InfoStart(SqrSumPlus, "sqrsum@+")
+        auto plus_f = _getPlusSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), _getLimitedInt(type_config), std::make_shared<AnonymousSemantics>(plus_f, "plus"));
+        lazy_tag_config.extra_semantics.push_back(env->getSemantics("*"));
+        env->setConst(theory::clia::KINFName, BuildData(Int, 2000));
+        auto ps = _getSqrSumSemanticsFunction();
+    InfoEnd(SqrSumPlus, "sqrsum@+")
+
+    InfoStart(SqrSumNeg, "sqrsum@neg")
+        auto neg_f = _getNegAllSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), type::getTBool(), std::make_shared<AnonymousSemantics>(neg_f, "neg-all"));
+        auto ps = _getSqrSumSemanticsFunction();
+    InfoEnd(SqrSumNeg, "sqrsum@neg")
+
+    InfoStart(MpsNeg, "mps@neg")
+        auto neg_f = _getNegAllSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), type::getTBool(), std::make_shared<AnonymousSemantics>(neg_f, "neg-all"));
+        auto ps = _getMpsSemanticsFunction();
+    InfoEnd(MpsNeg, "mps@neg")
+
+    InfoStart(MpsCover, "mps@cover")
+        auto cover_f = _getCoverSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), _getLimitedInt(type_config), std::make_shared<AnonymousSemantics>(cover_f, "cover"));
+        lazy_tag_config.extra_semantics.push_back(env->getSemantics("*"));
+        auto ps = _getMpsSemanticsFunction();
+    InfoEnd(MpsCover, "mps@cover")
+
+    InfoStart(MtsNeg, "mts@neg")
+        auto neg_f = _getNegAllSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), type::getTBool(), std::make_shared<AnonymousSemantics>(neg_f, "neg-all"));
+        auto ps = _getMtsSemanticsFunction();
+    InfoEnd(MtsNeg, "mts@neg")
+
+    InfoStart(MtsCover, "mts@cover")
+        auto cover_f = _getCoverSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), _getLimitedInt(type_config), std::make_shared<AnonymousSemantics>(cover_f, "cover"));
+        lazy_tag_config.extra_semantics.push_back(env->getSemantics("*"));
+        auto ps = _getMtsSemanticsFunction();
+    InfoEnd(MtsCover, "mts@cover")
+
+    InfoStart(MssNeg, "mss@neg")
+        auto neg_f = _getNegAllSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), type::getTBool(), std::make_shared<AnonymousSemantics>(neg_f, "neg-all"));
+        auto ps = _getMssSemanticsFunction();
+        auto mss_semantics = std::make_shared<TypedAnonymousSemantics>(ps, (TypeList){TLISTINT}, TINT, "mss");
+        return {_buildListProgram(ps, "mss@neg"), inp_type, env, {lazy_tag_config, dad_mod_config}, {mss_semantics}};
+    }//InfoEnd(MssNeg, "mss@neg")
+
+    InfoStart(MssCover, "mss@cover")
+        auto cover_f = _getCoverSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), _getLimitedInt(type_config), std::make_shared<AnonymousSemantics>(cover_f, "cover"));
+        lazy_tag_config.extra_semantics.push_back(env->getSemantics("*"));
+        auto ps = _getMssSemanticsFunction();
+    InfoEnd(MssCover, "mss@cover")
 
 #define RegisterName(task_name, func_name) if (name == task_name) return _getConfigInfo ## func_name()
     dsl::autolifter::LiftingConfigInfo _getConfigInfo(const std::string& name) {
         RegisterName("sum@+", SumPlus);
         RegisterName("sum@neg", SumNeg);
+        RegisterName("sqrsum@+", SqrSumPlus);
+        RegisterName("sqrsum@neg", SqrSumNeg);
+        RegisterName("mps@neg", MpsNeg);
+        RegisterName("mps@cover", MpsCover);
+        RegisterName("mts@neg", MtsNeg);
+        RegisterName("mts@cover", MtsCover);
+        RegisterName("mss@neg", MssNeg);
+        RegisterName("mss@cover", MssCover);
         LOG(FATAL) << "AutoLifter: Unknown task " << name;
     }
 }

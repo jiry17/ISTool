@@ -13,6 +13,13 @@ Semantics::Semantics(const std::string &_name): name(_name) {
 std::string Semantics::getName() {
     return name;
 }
+std::string Semantics::buildProgramString(const std::vector<std::string> &sub_list) {
+    std::string res = name + "(";
+    for (int i = 0; i < sub_list.size(); ++i) {
+        if (i) res += ","; res += sub_list[i];
+    }
+    return res + ")";
+}
 
 FullExecutedSemantics::FullExecutedSemantics(const std::string &name): Semantics(name) {}
 Data FullExecutedSemantics::run(const std::vector<std::shared_ptr<Program>> &sub_list, ExecuteInfo *info) {
@@ -31,11 +38,17 @@ ParamSemantics::ParamSemantics(PType &&type, int _id):
 Data ParamSemantics::run(DataList&& inp_list, ExecuteInfo *info) {
     return info->param_value[id];
 }
+std::string ParamSemantics::buildProgramString(const std::vector<std::string> &sub_exp) {
+    return name;
+}
 
 ConstSemantics::ConstSemantics(const Data &_w): FullExecutedSemantics(_w.toString()), w(_w) {
 }
 Data ConstSemantics::run(DataList&& inp_list, ExecuteInfo *info) {
     return w;
+}
+std::string ConstSemantics::buildProgramString(const std::vector<std::string> &sub_exp) {
+    return name;
 }
 
 PSemantics semantics::buildConstSemantics(const Data &w) {
@@ -68,6 +81,7 @@ Data InvokeSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     if (!p) throw SemanticsError();
     return env->run(p.get(), inp_list);
 }
+
 
 TypedInvokeSemantics::TypedInvokeSemantics(const std::string &_func_name, const PType &oup_type, const TypeList &inp_list, Env* _env):
     InvokeSemantics(_func_name, _env), TypedSemantics(oup_type, inp_list) {

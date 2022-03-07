@@ -21,7 +21,7 @@ public:
     virtual void* relax(TimeGuard* guard);
 
     // configure
-    int KTermIntMax, KConstIntMax;
+    int KTermIntMax, KConstIntMax, KMaxCost;
     double KRelaxTimeLimit = 0.1;
 };
 
@@ -40,7 +40,8 @@ namespace solver {
     namespace lia {
         extern const std::string KTermIntMaxName;
         extern const std::string KConstIntMaxName;
-        LIAResult solveLIA(GRBEnv& env, const std::vector<IOExample>& example_list, Z3Extension* ext, int t_max, int c_max, TimeGuard* guard = nullptr);
+        extern const std::string KMaxCostName;
+        LIAResult solveLIA(GRBEnv& env, const std::vector<IOExample>& example_list, Z3Extension* ext, int t_max, int c_max, int cost_limit, TimeGuard* guard = nullptr);
         LIASolver* liaSolverBuilder(Specification* spec);
     }
 }

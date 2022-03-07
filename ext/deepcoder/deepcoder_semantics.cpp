@@ -322,12 +322,22 @@ ProductSemantics::ProductSemantics(): FullExecutedSemantics("prod") {}
 Data ProductSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return BuildData(Product, inp_list);
 }
+std::string ProductSemantics::buildProgramString(const std::vector<std::string> &sub_list) {
+    std::string res = "(";
+    for (int i = 0; i < sub_list.size(); ++i) {
+        if (i) res += ","; res += sub_list[i];
+    }
+    return res + ")";
+}
 
 AccessSemantics::AccessSemantics(int _id): id(_id), FullExecutedSemantics("access" + std::to_string(_id)) {}
 Data AccessSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto* pv = dynamic_cast<ProductValue*>(inp_list[0].get());
     assert(id >= 0 && id < pv->elements.size());
     return pv->elements[id];
+}
+std::string AccessSemantics::buildProgramString(const std::vector<std::string> &sub_exp) {
+    return sub_exp[0] + "." + std::to_string(id);
 }
 
 

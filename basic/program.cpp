@@ -19,13 +19,9 @@ Data Program::run(ExecuteInfo *info) const {
     return semantics->run(sub_list, info);
 }
 std::string Program::toString() const {
-    auto res = semantics->getName();
-    if (sub_list.empty()) return res;
-    for (int i = 0; i < sub_list.size(); ++i) {
-        if (i) res += ","; else res += "(";
-        res += sub_list[i]->toString();
-    }
-    return res + ")";
+    std::vector<std::string> sub_expr_list;
+    for (auto& sub: sub_list) sub_expr_list.push_back(sub->toString());
+    return semantics->buildProgramString(sub_expr_list);
 }
 
 PProgram program::buildConst(const Data &w) {

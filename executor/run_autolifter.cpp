@@ -6,7 +6,7 @@
 #include "istool/invoker/lifting_invoker.h"
 
 int main(int argv, char** argc) {
-    auto* task = dsl::autolifter::getLiftingTask("lazy-tag", "sum@neg");
+    auto* task = dsl::autolifter::getLiftingTask("lazy-tag", "mss@cover");
     auto res = invoker::single::invokeAutoLifter(task, nullptr, {});
     std::cout << res.toString() << std::endl;
     return 0;

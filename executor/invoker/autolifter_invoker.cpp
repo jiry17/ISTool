@@ -35,6 +35,7 @@ namespace {
         spec->env->setConst(solver::polygen::KMaxTermNumName, BuildData(Int, std::min(4, total_component_num)));
         spec->env->setConst(solver::lia::KConstIntMaxName, BuildData(Int, 1));
         spec->env->setConst(solver::lia::KTermIntMaxName, BuildData(Int, 2));
+        spec->env->setConst(solver::lia::KMaxCostName, BuildData(Int, 4));
         spec->env->setConst(solver::polygen::KMaxClauseNumName, BuildData(Int, 3));
         spec->env->setConst(solver::polygen::KIsAllowErrorName, BuildData(Bool, true));
         return new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);

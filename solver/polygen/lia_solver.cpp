@@ -13,10 +13,12 @@
 
 const std::string solver::lia::KConstIntMaxName = "LIA@ConstIntMax";
 const std::string solver::lia::KTermIntMaxName = "LIA@TermIntMax";
+const std::string solver::lia::KMaxCostName = "LIA@MaxCost";
 
 namespace {
     const int KDefaultConstValue = 3;
     const int KDefaultTermValue = 2;
+    const int KDefaultMaxCost = 1e9;
 
     int _getDefaultConstMax(const PSynthInfo& info) {
         int c_max = KDefaultConstValue;
@@ -86,6 +88,8 @@ LIASolver::LIASolver(Specification *_spec, const ProgramList &_program_list):
                 BuildData(Int, _getDefaultTermMax(spec->info_list[0])));
     }
     KTermIntMax = theory::clia::getIntValue(*t_max_data);
+    auto* cost_data = spec->env->getConstRef(solver::lia::KMaxCostName);
+    if (cost_data->isNull()) KMaxCost = KDefaultMaxCost; else KMaxCost = theory::clia::getIntValue(*cost_data);
     KRelaxTimeLimit = 0.1;
 
     info = _buildLIAInfo(term_info);
@@ -159,7 +163,7 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
         }
     }
 
-    auto solve_res = solver::lia::solveLIA(env, wrapped_example_list, ext, KTermIntMax, KConstIntMax, guard);
+    auto solve_res = solver::lia::solveLIA(env, wrapped_example_list, ext, KTermIntMax, KConstIntMax, KMaxCost, guard);
     if (!solve_res.status) return {};
 
     PProgram res = _buildProgram(solve_res, considered_program_list, spec->env.get());
@@ -203,7 +207,15 @@ std::string LIAResult::toString() const {
     return res;
 }
 
-LIAResult solver::lia::solveLIA(GRBEnv& env, const std::vector<IOExample> &example_list, Z3Extension *ext, int t_max, int c_max, TimeGuard *guard) {
+namespace {
+    int _getCost(const std::vector<int>& A, int c) {
+        int sum = std::abs(c);
+        for (int i = 0; i < A.size(); ++i) if (A[i]) ++sum;
+        return sum;
+    }
+}
+
+LIAResult solver::lia::solveLIA(GRBEnv& env, const std::vector<IOExample> &example_list, Z3Extension *ext, int t_max, int c_max, int cost_max, TimeGuard *guard) {
     int n = example_list[0].first.size();
     GRBModel model = GRBModel(env);
     model.set(GRB_IntParam_OutputFlag, 0);
@@ -242,6 +254,9 @@ LIAResult solver::lia::solveLIA(GRBEnv& env, const std::vector<IOExample> &examp
     std::vector<int> t_val_list;
     for (int i = 0; i < n; ++i) {
         t_val_list.push_back(_getIntValue(var_list[i]));
+    }
+    if (_getCost(t_val_list, c_val) > cost_max) {
+        return {};
     }
     LIAResult res(t_val_list, c_val);
 #ifdef DEBUG
@@ -321,8 +336,8 @@ void* LIASolver::relax(TimeGuard* guard) {
     double next_time_limit = KRelaxTimeLimit;
 
     auto next_program_list = _getConsideredTerms(info, next_num, time_out);
-    // LOG(INFO) << "Next program list";
-    // for (auto p: next_program_list) LOG(INFO) << p->toString();
+    LOG(INFO) << "Next program list";
+    for (auto p: next_program_list) LOG(INFO) << p->toString();
     if (next_program_list.size() == program_list.size()) {
         next_time_limit *= 2;
         return nullptr;
