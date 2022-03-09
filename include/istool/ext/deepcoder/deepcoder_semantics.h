@@ -43,6 +43,7 @@ DefineNormalSemantics(ListFold)
 DefineNormalSemantics(ListAppend)
 DefineNormalSemantics(ListCons)
 DefineNormalSemantics(ListNil)
+DefineNormalSemantics(ListTail)
 
 class ProductSemantics: public FullExecutedSemantics {
 public:

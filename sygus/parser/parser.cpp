@@ -220,6 +220,15 @@ Json::Value parser::getJsonForSyGuSFile(const std::string &file_name) {
 
 Specification * parser::getSyGuSSpecFromFile(const std::string &file_name) {
     auto root = getJsonForSyGuSFile(file_name);
+    auto extensions = getEntriesViaName(root, "extension");
+    if (!extensions.empty()) {
+        assert(extensions.size() == 1);
+        auto ext_name = extensions[0][1].asString();
+        if (ext_name == "depth-limit") {
+            return parser::getDepthLimitedSyGuSSpecFromJson(root);
+        }
+        LOG(FATAL) << "Unknown extension " << ext_name;
+    }
     return getSyGuSSpecFromJson(root);
 }
 

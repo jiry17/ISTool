@@ -341,6 +341,7 @@ ProgramList PolyGenTermSolver::getTerms() {
     std::vector<int> progress(1, 0);
     int si_limit = 1;
     while (1) {
+        bool is_progress = false;
         for (int si = 0; si < si_limit; ++si){
             if (si == domain_solver_list.size()) {
                 auto* relaxed_solver = solver::relaxSolver(domain_solver_list[si - 1]);
@@ -357,6 +358,7 @@ ProgramList PolyGenTermSolver::getTerms() {
                 for (int k = 1; k <= k_limit; ++k) {
                     TimeCheck(guard);
                     if (calculated_set.find({si, n, k}) != calculated_set.end()) continue;
+                    is_progress = true;
                     calculated_set.insert({si, n, k});
                     solver_id = si;
                     auto result = getTerms(n, k);
@@ -365,6 +367,7 @@ ProgramList PolyGenTermSolver::getTerms() {
             }
         }
         if (domain_solver_list.size() >= si_limit) si_limit += 1;
+        if (!is_progress) KMaxExampleNum += 1;
     }
 }
 

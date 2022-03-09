@@ -98,7 +98,7 @@ simpleString = base64_ | raw | decimal | token | hexadecimal | qString
 # extended definitions
 
 real = Regex(r"[+-]?\d+\.\d*([eE][+-]?\d+)?").setParseAction(lambda tokens: float(tokens[0]))
-token = Word(alphanums + "-./_:*+=!<>").setParseAction(lambda t: ('Bool', 'true') if t[0] == 'true' else \
+token = Word(alphanums + "-./_:*+=!<>@").setParseAction(lambda t: ('Bool', 'true') if t[0] == 'true' else \
   ('Bool', 'false') if t[0] == 'false' else t)
 
 simpleString = real | base64_ | raw | decimal | token | hexadecimal | qString 

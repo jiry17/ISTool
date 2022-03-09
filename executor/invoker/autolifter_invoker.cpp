@@ -23,28 +23,43 @@ namespace {
     }
 
     const SFSolverBuilder KDefaultSFBuilder = [](PartialLiftingTask* task) {return new ComposedSFSolver(task);};
-    const SolverBuilder KDefaultSCBuilder = [](Specification* spec, Verifier* v) -> Solver* {
-        auto domain_builder = solver::lia::liaSolverBuilder;
-        auto dnf_builder = [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);};
-        auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
 
-        int total_component_num = 0;
-        for (const auto& type: spec->info_list[0]->inp_type_list) {
-            total_component_num += _getComponentNum(type.get());
-        }
-        spec->env->setConst(solver::polygen::KMaxTermNumName, BuildData(Int, std::min(4, total_component_num)));
-        spec->env->setConst(solver::lia::KConstIntMaxName, BuildData(Int, 1));
-        spec->env->setConst(solver::lia::KTermIntMaxName, BuildData(Int, 2));
-        spec->env->setConst(solver::lia::KMaxCostName, BuildData(Int, 4));
-        spec->env->setConst(solver::polygen::KMaxClauseNumName, BuildData(Int, 3));
-        spec->env->setConst(solver::polygen::KIsAllowErrorName, BuildData(Bool, true));
-        return new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
-    };
+    int _accessIntConfig(Env* env, const std::string& name, int default_value) {
+        auto* v = env->getConstRef(name);
+        if (v->isNull()) return default_value;
+        return theory::clia::getIntValue(*v);
+    }
+
+    SolverBuilder _buildDefaultSCBuilder(Env* env) {
+        int KMaxTermNum = _accessIntConfig(env, solver::polygen::KMaxTermNumName, 4);
+        int KConstIntMax = _accessIntConfig(env, solver::lia::KConstIntMaxName, 1);
+        int KTermIntMax = _accessIntConfig(env, solver::lia::KTermIntMaxName, 2);
+        int KMaxCost = _accessIntConfig(env, solver::lia::KMaxCostName, 4);
+        int KMaxClauseNum = _accessIntConfig(env, solver::polygen::KMaxClauseNumName, 3);
+
+        return [=](Specification *spec, Verifier *v) -> Solver * {
+            auto domain_builder = solver::lia::liaSolverBuilder;
+            auto dnf_builder = [](Specification *spec) -> PBESolver * { return new DNFLearner(spec); };
+            auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
+
+            int total_component_num = 0;
+            for (const auto &type: spec->info_list[0]->inp_type_list) {
+                total_component_num += _getComponentNum(type.get());
+            }
+            spec->env->setConst(solver::polygen::KMaxTermNumName, BuildData(Int, std::min(KMaxTermNum, total_component_num)));
+            spec->env->setConst(solver::lia::KConstIntMaxName, BuildData(Int, KConstIntMax));
+            spec->env->setConst(solver::lia::KTermIntMaxName, BuildData(Int, KTermIntMax));
+            spec->env->setConst(solver::lia::KMaxCostName, BuildData(Int, KMaxCost));
+            spec->env->setConst(solver::polygen::KMaxClauseNumName, BuildData(Int, KMaxClauseNum));
+            spec->env->setConst(solver::polygen::KIsAllowErrorName, BuildData(Bool, true));
+            return new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
+        };
+    }
 }
 
 AutoLifter* invoker::single::buildAutoLifter(LiftingTask *task, const InvokeConfig &config) {
     auto sf_builder = config.access("SfBuilder", KDefaultSFBuilder);
-    auto sc_builder = config.access("ScBuilder", KDefaultSCBuilder);
+    auto sc_builder = config.access("ScBuilder", _buildDefaultSCBuilder(task->env.get()));
     auto* solver = new AutoLifter(task, sf_builder, sc_builder);
     return solver;
 }

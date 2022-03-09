@@ -11,6 +11,7 @@
 namespace parser {
     Json::Value getJsonForSyGuSFile(const std::string& file_name);
     Specification* getSyGuSSpecFromJson(const Json::Value& value);
+    Specification* getDepthLimitedSyGuSSpecFromJson(const Json::Value& value);
     Specification* getSyGuSSpecFromFile(const std::string& file_name);
 }
 

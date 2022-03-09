@@ -11,6 +11,7 @@ namespace dsl::autolifter {
     namespace track {
         LiftingTask* getDaDLiftingTask(const std::string& name);
         LiftingTask* getLazyTagLiftingTask(const std::string& name);
+        LiftingTask* getLSPLiftingTask(const std::string& name);
     }
     LiftingTask* getLiftingTask(const std::string& track_name, const std::string& task_name);
 }

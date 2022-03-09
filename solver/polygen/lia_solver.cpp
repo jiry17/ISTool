@@ -336,8 +336,7 @@ void* LIASolver::relax(TimeGuard* guard) {
     double next_time_limit = KRelaxTimeLimit;
 
     auto next_program_list = _getConsideredTerms(info, next_num, time_out);
-    LOG(INFO) << "Next program list";
-    for (auto p: next_program_list) LOG(INFO) << p->toString();
+    LOG(INFO) << "Next program list " << next_program_list.size() << " " << next_program_list[next_program_list.size() - 1]->toString();
     if (next_program_list.size() == program_list.size()) {
         next_time_limit *= 2;
         return nullptr;

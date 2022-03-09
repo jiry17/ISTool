@@ -12,6 +12,7 @@
 #include "istool/ext/limited_type/limited_int.h"
 #include "istool/ext/limited_type/limited_ds.h"
 #include "istool/ext/deepcoder/anonymous_function.h"
+#include "istool/solver/polygen/polygen_term_solver.h"
 #include "glog/logging.h"
 
 using namespace dsl::autolifter;
@@ -137,6 +138,60 @@ namespace {
         };
     }
 
+    FullSemanticsFunction _getSecondMinSemanticsFunction() {
+        return [](DataList &&inp_list, ExecuteInfo *info) -> Data {
+            auto *x = _getListValue(inp_list[0]);
+            if (x->value.size() < 2) throw SemanticsError();
+            std::vector<int> l(x->value.size());
+            for (int i = 0; i < x->value.size(); ++i) l[i] = getIntValue(x->value[i]);
+            std::sort(l.begin(), l.end());
+            return BuildData(Int, l[1]);
+        };
+    }
+
+    FullSemanticsFunction _getThirdMinSemanticsFunction() {
+        return [](DataList &&inp_list, ExecuteInfo *info) -> Data {
+            auto *x = _getListValue(inp_list[0]);
+            if (x->value.size() < 3) throw SemanticsError();
+            std::vector<int> l(x->value.size());
+            for (int i = 0; i < x->value.size(); ++i) l[i] = getIntValue(x->value[i]);
+            std::sort(l.begin(), l.end());
+            return BuildData(Int, l[2]);
+        };
+    }
+
+    FullSemanticsFunction _getMax1sSemanticsFunction() {
+        return [](DataList &&inp_list, ExecuteInfo* info) -> Data {
+            auto *x = _getListValue(inp_list[0]);
+            int pre = 0, result = 0;
+            for (int i = 0; i <= x->value.size(); ++i) {
+                if (i == x->value.size() || !getIntValue(x->value[i])) {
+                    result = std::max(result, i - pre);
+                    pre = i + 1;
+                }
+            }
+            return BuildData(Int, result);
+        };
+    }
+
+    FullSemanticsFunction _getMax1sPosSemanticsFunction() {
+        return [](DataList &&inp_list, ExecuteInfo* info) -> Data {
+            auto *x = _getListValue(inp_list[0]);
+            int pre = 0, result = 0, pos = 0;
+            for (int i = 0; i <= x->value.size(); ++i) {
+                if (i == x->value.size() || !getIntValue(x->value[i])) {
+                    if (i - pre > result) {
+                        result = i - pre;
+                        pos = pre;
+                    }
+                    pre = i + 1;
+                }
+            }
+            return BuildData(Int, pos);
+        };
+    }
+
+
     FullSemanticsFunction _getPlusSemanticsFunction() {
         return [](DataList&& inp_list, ExecuteInfo* info) -> Data{
             int x = getIntValue(inp_list[0]);
@@ -235,6 +290,39 @@ namespace {
         auto ps = _getMssSemanticsFunction();
     InfoEnd(MssCover, "mss@cover")
 
+    InfoStart(SecondMinNeg, "2nd-min@neg")
+        auto neg_f = _getNegAllSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), type::getTBool(), std::make_shared<AnonymousSemantics>(neg_f, "neg-all"));
+        auto ps = _getSecondMinSemanticsFunction();
+    InfoEnd(SecondMinNeg, "2nd-min@neg")
+
+    InfoStart(ThirdMinNeg, "3rd-min@neg")
+        auto neg_f = _getNegAllSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), type::getTBool(), std::make_shared<AnonymousSemantics>(neg_f, "neg-all"));
+        auto ps = _getThirdMinSemanticsFunction();
+        env->setConst(solver::polygen::KMaxTermNumName, BuildData(Int, 6));
+    InfoEnd(ThirdMinNeg, "3rd-min@neg")
+
+    InfoStart(Max1sCover, "max1s@cover")
+        type_config.int_min = 0; type_config.int_max = 1; type_config.length_max = 15;
+        inp_type = _getLimitedListInt(type_config);
+        auto cover_f = _getCoverSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), _getLimitedInt(type_config), std::make_shared<AnonymousSemantics>(cover_f, "cover"));
+        auto ps = _getMax1sSemanticsFunction();
+    InfoEnd(Max1sCover, "max1s@cover")
+
+    InfoStart(Max1sPosCover, "max1s-pos@cover")
+        type_config.int_min = 0; type_config.int_max = 1; type_config.length_max = 15;
+        inp_type = _getLimitedListInt(type_config);
+        auto cover_f = _getCoverSemanticsFunction();
+        auto lazy_tag_config = _getModConfigInfoTag(env.get(), _getLimitedInt(type_config), std::make_shared<AnonymousSemantics>(cover_f, "cover"));
+        auto ps = _getMax1sPosSemanticsFunction();
+        auto max1s_semantics = std::make_shared<TypedAnonymousSemantics>(_getMax1sSemanticsFunction(), (TypeList){TLISTINT}, TINT, "max1s");
+        env->setConst(solver::autolifter::KComposedNumName, BuildData(Int, 4));
+        env->setConst(solver::autolifter::KOccamExampleNumName, BuildData(Int, 10000));
+        return {_buildListProgram(ps, "max1s-pos@cover"), inp_type, env, {lazy_tag_config, dad_mod_config}, {max1s_semantics}};
+    }//InfoEnd(Max1sCover, "max1s@cover")
+
 #define RegisterName(task_name, func_name) if (name == task_name) return _getConfigInfo ## func_name()
     dsl::autolifter::LiftingConfigInfo _getConfigInfo(const std::string& name) {
         RegisterName("sum@+", SumPlus);
@@ -247,6 +335,10 @@ namespace {
         RegisterName("mts@cover", MtsCover);
         RegisterName("mss@neg", MssNeg);
         RegisterName("mss@cover", MssCover);
+        RegisterName("2nd-min@neg", SecondMinNeg);
+        RegisterName("3rd-min@neg", ThirdMinNeg);
+        RegisterName("max1s@cover", Max1sCover);
+        RegisterName("max1s-pos@cover", Max1sPosCover);
         LOG(FATAL) << "AutoLifter: Unknown task " << name;
     }
 }

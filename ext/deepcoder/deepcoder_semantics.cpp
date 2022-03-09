@@ -318,6 +318,14 @@ Data ListNilSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return buildList({});
 }
 
+ListTailSemantics::ListTailSemantics(): NormalSemantics("tail", TLISTA, {}) {}
+Data ListTailSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    auto* x = _getList(inp_list[0]);
+    DataList res;
+    for (int i = 1; i < x->value.size(); ++i) res.push_back(x->value[i]);
+    return buildList(res);
+}
+
 ProductSemantics::ProductSemantics(): FullExecutedSemantics("prod") {}
 Data ProductSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return BuildData(Product, inp_list);
@@ -361,6 +369,6 @@ void ext::ho::loadDeepCoderSemantics(Env *env) {
     LoadSemantics("sort", ListSort); LoadSemantics("odd", IntOdd);
     LoadSemantics("even", IntEven); LoadSemantics("++", ListCat);
     LoadSemantics("fold", ListFold); LoadSemantics("append", ListAppend);
-    LoadSemantics("cons", ListCons); LoadSemantics("nil", ListNil);
-    LoadSemantics("prod", Product);
+    LoadSemantics("cons", ListCons); LoadSemantics("tail", ListTail);
+    LoadSemantics("nil", ListNil); LoadSemantics("prod", Product);
 }

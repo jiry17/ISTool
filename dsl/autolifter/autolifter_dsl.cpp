@@ -169,7 +169,6 @@ namespace {
 
     PLiftingModInfo _buildLiftingModInfo(const PProgram& p, const LiftingModConfigInfo& info, Env* env, const PType& inp_type) {
         auto name_list = _getVarList(info.F.get());
-        LOG(INFO) << name_list.size();
         if (name_list.size() > 1) {
             LOG(INFO) << "AutoLifter supports endofunctor only";
         }
