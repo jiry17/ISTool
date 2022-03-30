@@ -72,13 +72,21 @@ namespace {
             Json::Value rule_list;
             std::vector<std::vector<int>> rule_depth_list;
             for (const auto& rule: nt_node[2]) {
+                if (rule.isString()) {
+                    auto rule_name = rule.asString();
+                    auto sub_symbol_info = _getDepthLimitedSymbol(rule_name);
+                    if (symbol_set.find(sub_symbol_info.first) != symbol_set.end()) {
+                        rule_list.append(sub_symbol_info.first);
+                        rule_depth_list.push_back({sub_symbol_info.second});
+                        continue;
+                    }
+                }
+
                 if (!_isOperatorRule(rule, symbol_set)) {
                     rule_list.append(rule);
                     rule_depth_list.emplace_back();
                     continue;
                 }
-                auto op = rule[0].asString();
-                auto feature = node_info.first + "@" + op;
 
                 Json::Value new_rule; new_rule.append(rule[0]);
                 std::vector<int> depth_limit_list;

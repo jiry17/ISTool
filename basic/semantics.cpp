@@ -74,6 +74,14 @@ std::string FunctionContext::toString() const {
     return res;
 }
 
+DirectSemantics::DirectSemantics(): NormalSemantics("", type::getTVarA(), {type::getTVarA()}) {}
+Data DirectSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    return inp_list[0];
+}
+std::string DirectSemantics::buildProgramString(const std::vector<std::string> &sub_exp) {
+    return sub_exp[0];
+}
+
 InvokeSemantics::InvokeSemantics(const std::string &_func_name, Env *_env): FullExecutedSemantics(_func_name), env(_env) {
 }
 Data InvokeSemantics::run(DataList &&inp_list, ExecuteInfo *info) {

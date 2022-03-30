@@ -68,6 +68,14 @@ public:
     ~ConstSemantics() = default;
 };
 
+class DirectSemantics: public NormalSemantics {
+public:
+    DirectSemantics();
+    virtual Data run(DataList&&, ExecuteInfo* info);
+    virtual std::string buildProgramString(const std::vector<std::string>& sub_exp);
+    ~DirectSemantics() = default;
+};
+
 class InvokeSemantics: public FullExecutedSemantics {
 public:
     Env* env;
@@ -75,7 +83,6 @@ public:
     virtual Data run(DataList&&, ExecuteInfo* info);
     virtual ~InvokeSemantics() = default;
 };
-
 
 class TypedInvokeSemantics: public InvokeSemantics, public TypedSemantics {
 public:

@@ -100,7 +100,6 @@ namespace {
                 is_start_dummy = true;
             }
         }
-
         if (is_start_dummy) {
             TEST_PARSER(!is_used_start);
             int pos = -1;
@@ -126,14 +125,19 @@ namespace {
             }
             auto* symbol = nt_map[symbol_name];
             for (auto& rule_node: nt_node[2]) {
-                // try inp
+                // try inp or direct symbol
                 if (rule_node.isString()) {
-                    int inp_id = get_inp_id(rule_node.asString());
-                    if (inp_id == -1) LOG(FATAL) << "Cannot find " << rule_node << std::endl;
-                    TEST_PARSER(inp_id >= 0)
-                    PType inp_type = inp_type_list[inp_id];
-                    auto s = semantics::buildParamSemantics(inp_id, std::move(inp_type));
-                    symbol->rule_list.push_back(new Rule(std::move(s), {}));
+                    std::string rule_name = rule_node.asString();
+                    if (nt_map.find(rule_name) != nt_map.end()) {
+                        symbol->rule_list.push_back(new Rule(std::make_shared<DirectSemantics>(), {nt_map[rule_name]}));
+                    } else {
+                        int inp_id = get_inp_id(rule_name);
+                        if (inp_id == -1) LOG(FATAL) << "Cannot find " << rule_node << std::endl;
+                        TEST_PARSER(inp_id >= 0)
+                        PType inp_type = inp_type_list[inp_id];
+                        auto s = semantics::buildParamSemantics(inp_id, std::move(inp_type));
+                        symbol->rule_list.push_back(new Rule(std::move(s), {}));
+                    }
                 } else {
                     TEST_PARSER(rule_node.isArray())
                     try {

@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        solver_name = "vsa";
+        solver_name = "obe";
         benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/x.sl";
         output_name = "/tmp/629453237.out";
     }

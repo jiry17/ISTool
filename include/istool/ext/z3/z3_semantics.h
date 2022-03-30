@@ -36,6 +36,7 @@ DefineZ3Semantics(Not)
 DefineZ3Semantics(And)
 DefineZ3Semantics(Or)
 DefineZ3Semantics(Imply)
+DefineZ3Semantics(Direct)
 
 #define LoadZ3Semantics(ext, name, sem) ext->registerOperator(name, new Z3 ## sem ## Semantics())
 

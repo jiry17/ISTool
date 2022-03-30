@@ -47,8 +47,6 @@ namespace samplesy {
         virtual WitnessList witness(const WitnessData& oup);
         virtual ~IndexMoveWitnessFunction() = default;
     };
-
-    DefineWitnessFunction(Direct);
 }
 
 #endif //ISTOOL_SAMPLESY_WITNESS_H

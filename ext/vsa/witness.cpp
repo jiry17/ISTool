@@ -50,6 +50,10 @@ WitnessList ImplyWitnessFunction::witness(const WitnessData &oup) {
     return {{BuildDirectWData(Bool, false), total}, {oup, oup}};
 }
 
+WitnessList DirectWitnessFunction::witness(const WitnessData &oup) {
+    return {{oup}};
+}
+
 void ext::vsa::loadLogicWitness(VSAExtension *ext) {
     LoadWitness(ext, "and", And);
     LoadWitness(ext, "&&", And);
@@ -58,4 +62,5 @@ void ext::vsa::loadLogicWitness(VSAExtension *ext) {
     LoadWitness(ext, "!", Not);
     LoadWitness(ext, "not", Not);
     LoadWitness(ext, "=>", Imply);
+    LoadWitness(ext, "", Direct);
 }

@@ -36,11 +36,6 @@ Data StringDeleteSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return BuildData(String, x.replace(pos, s.length(), ""));
 }
 
-DirectSemantics::DirectSemantics(): NormalSemantics("", TVARA, {TVARA}) {}
-Data DirectSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
-    return inp_list[0];
-}
-
 StringAbsSubstrSemantics::StringAbsSubstrSemantics(): NormalSemantics("substr", TSTRING, {TSTRING, TINT, TINT}) {}
 Data StringAbsSubstrSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto s = getStringValue(inp_list[0]);

@@ -158,7 +158,7 @@ Grammar * samplesy::rewriteGrammar(Grammar *g, Env* env, FiniteIOExampleSpace* i
 void samplesy::registerSampleSyBasic(Env *env) {
     sygus::setTheory(env, TheoryToken::STRING);
     sygus::loadSyGuSTheories(env, theory::loadBasicSemantics);
-    env->setSemantics("", std::make_shared<samplesy::DirectSemantics>());
+    env->setSemantics("", std::make_shared<DirectSemantics>());
     env->setSemantics("replace", std::make_shared<samplesy::StringReplaceAllSemantics>());
     env->setSemantics("delete", std::make_shared<samplesy::StringDeleteSemantics>());
     env->setSemantics("substr", std::make_shared<samplesy::StringAbsSubstrSemantics>());
@@ -173,7 +173,6 @@ void samplesy::registerSampleSyWitness(Env *env) {
     auto* int_max = env->getConstRef(theory::clia::KWitnessIntMaxName);
     auto* ext = ext::vsa::getExtension(env);
 
-    ext->registerWitnessFunction("", new samplesy::DirectWitnessFunction());
     ext->registerWitnessFunction("replace", new samplesy::StringReplaceAllWitnessFunction(const_list, input_list));
     ext->registerWitnessFunction("delete", new samplesy::StringDeleteWitnessFunction(const_list, input_list));
     ext->registerWitnessFunction("substr", new samplesy::StringAbsSubstrWitnessFunction(input_list));

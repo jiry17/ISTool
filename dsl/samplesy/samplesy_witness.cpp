@@ -119,10 +119,6 @@ WitnessList StringDeleteWitnessFunction::witness(const WitnessData &oup) {
     return res;
 }
 
-WitnessList DirectWitnessFunction::witness(const WitnessData &oup) {
-    return {{oup}};
-}
-
 StringAbsSubstrWitnessFunction::StringAbsSubstrWitnessFunction(DataList *_inp_list): inp_list(_inp_list) {}
 WitnessList StringAbsSubstrWitnessFunction::witness(const WitnessData &oup) {
     if (dynamic_cast<TotalWitnessValue*>(oup.get())) return {{oup, oup, oup}};

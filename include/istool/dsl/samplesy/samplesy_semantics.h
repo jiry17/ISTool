@@ -12,7 +12,6 @@ namespace samplesy {
     DefineNormalSemantics(StringDelete)
     DefineNormalSemantics(StringAbsSubstr)
     DefineNormalSemantics(StringIndexOf)
-    DefineNormalSemantics(Direct)
     DefineNormalSemantics(IndexMove)
 }
 

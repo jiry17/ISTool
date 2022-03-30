@@ -25,6 +25,7 @@ DefineWitnessFunction(Not)
 DefineWitnessFunction(And)
 DefineWitnessFunction(Or)
 DefineWitnessFunction(Imply)
+DefineWitnessFunction(Direct)
 
 class VSAExtension;
 #define LoadWitness(ext, name, sem) ext->registerWitnessFunction(name, new sem ## WitnessFunction())
