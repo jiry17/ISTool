@@ -34,6 +34,45 @@ namespace {
         LOG(FATAL) << "Unknown Theory " << name;
     }
 
+    class _PartiallyKnownRule: public Rule {
+    public:
+        ProgramList known_list;
+        _PartiallyKnownRule(const PSemantics& _sem, ProgramList&& _known_list, NTList&& _nt_list):
+            Rule(_sem, std::move(_nt_list)), known_list(_known_list) {
+#ifdef DEBUG
+            int unknown_num = 0;
+            for (auto& p: known_list) if (!p) ++unknown_num;
+            assert(unknown_num == param_list.size());
+#endif
+        }
+        virtual std::string toString() const {
+            std::string res = semantics->getName();
+            if (known_list.empty()) return res;
+            int pos = 0;
+            for (int i = 0; i < known_list.size(); ++i) {
+                if (i) res += ","; else res += "(";
+                if (known_list[i]) res += known_list[i]->toString();
+                else {
+                    res += param_list[pos]->name;
+                    ++pos;
+                }
+            }
+            return res + ")";
+        }
+        virtual PProgram buildProgram(const ProgramList &sub_list) {
+            ProgramList full_sub_list;
+            int pos = 0;
+            for (auto& sub: known_list) {
+                if (sub) full_sub_list.push_back(sub);
+                else {
+                    full_sub_list.push_back(sub_list[pos]);
+                    ++pos;
+                }
+            }
+            return std::make_shared<Program>(semantics, full_sub_list);
+        }
+    };
+
     PSynthInfo parseSynthInfo(const Json::Value& entry, Env* env) {
         if (entry.size() != 5 && entry.size() != 6) {
             LOG(FATAL) << "Unsupported format " << entry;
@@ -148,13 +187,31 @@ namespace {
                         TEST_PARSER(rule_node[0].isString())
                         auto s = env->getSemantics(rule_node[0].asString());
                         NTList param_list;
+                        ProgramList known_list;
                         for (int i = 1; i < rule_node.size(); ++i) {
-                            TEST_PARSER(rule_node[i].isString())
-                            std::string param_name = rule_node[i].asString();
-                            TEST_PARSER(nt_map.find(param_name) != nt_map.end())
-                            param_list.push_back(nt_map[param_name]);
+                            try {
+                                Data d = json::getDataFromJson(rule_node[i], env);
+                                known_list.push_back(program::buildConst(d));
+                                continue;
+                            } catch (ParseError& e) {
+                                TEST_PARSER(rule_node[i].isString())
+                                std::string param_name = rule_node[i].asString();
+                                if (nt_map.find(param_name) != nt_map.end()) {
+                                    param_list.push_back(nt_map[param_name]);
+                                    known_list.push_back(nullptr);
+                                } else {
+                                    int inp_id = get_inp_id(param_name);
+                                    TEST_PARSER(inp_id >= 0);
+                                    PType inp_type = inp_type_list[inp_id];
+                                    known_list.push_back(program::buildParam(inp_id, inp_type));
+                                }
+                            }
                         }
-                        symbol->rule_list.push_back(new Rule(std::move(s), std::move(param_list)));
+                        if (known_list.size() == param_list.size()) {
+                            symbol->rule_list.push_back(new Rule(std::move(s), std::move(param_list)));
+                        } else {
+                            symbol->rule_list.push_back(new _PartiallyKnownRule(s, std::move(known_list), std::move(param_list)));
+                        }
                     }
                 }
             }
