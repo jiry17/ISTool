@@ -29,6 +29,9 @@ Data CurrySemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
 }
 
 TmpSemantics::TmpSemantics(const std::string &_name): FullExecutedSemantics(_name) {}
+std::string TmpSemantics::buildProgramString(const std::vector<std::string> &sub_exp) {
+    return name;
+}
 Data TmpSemantics::run(DataList &&inp, ExecuteInfo *info) {
     auto* ti = dynamic_cast<TmpExecuteInfo*>(info);
     if (!ti) {

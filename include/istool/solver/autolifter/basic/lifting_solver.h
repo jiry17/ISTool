@@ -17,10 +17,12 @@ public:
 
 class LiftingRes {
 public:
+    PEnv env;
     PProgram p, h, f;
     std::vector<LiftingResInfo> info_list;
-    LiftingRes(const PProgram& _p, const PProgram& _h, const PProgram& _f, const std::vector<LiftingResInfo>& _info_list);
+    LiftingRes(const PProgram& _p, const PProgram& _h, const PProgram& _f, const std::vector<LiftingResInfo>& _info_list, const PEnv& _env);
     std::string toString() const;
+    void styledPrint() const;
 };
 
 class SingleLiftingRes {

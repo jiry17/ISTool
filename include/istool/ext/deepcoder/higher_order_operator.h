@@ -25,6 +25,7 @@ public:
 class TmpSemantics: public FullExecutedSemantics {
 public:
     TmpSemantics(const std::string& _name);
+    virtual std::string buildProgramString(const std::vector<std::string> &sub_exp);
     virtual Data run(DataList&& inp, ExecuteInfo* info);
     virtual ~TmpSemantics() = default;
 };

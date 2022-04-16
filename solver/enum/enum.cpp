@@ -3,7 +3,9 @@
 //
 
 #include "istool/solver/enum/enum.h"
+#include <queue>
 #include <unordered_set>
+#include "glog/logging.h"
 
 namespace {
     int indexAllNT(const std::vector<PSynthInfo>& info_list) {
@@ -69,6 +71,32 @@ namespace {
         }
         return res;
     }
+
+    std::vector<NonTerminal*> _getDirectOrder(Grammar* g) {
+        std::unordered_map<NonTerminal*, std::vector<NonTerminal*>> edge_map;
+        std::unordered_map<NonTerminal*, int> d;
+        for (auto* s: g->symbol_list) {
+            for (auto* r: s->rule_list) {
+                if (dynamic_cast<DirectSemantics*>(r->semantics.get())) {
+                    d[s]++; edge_map[r->param_list[0]].push_back(s);
+                }
+            }
+        }
+        std::vector<NonTerminal*> res;
+        std::queue<NonTerminal*> Q;
+        for (auto* s: g->symbol_list) if (!d[s]) Q.push(s);
+        while (!Q.empty()) {
+            auto* s = Q.front(); Q.pop();
+            res.push_back(s);
+            for (auto* t: edge_map[s]) {
+                --d[t]; if (d[t] == 0) Q.push(t);
+            }
+        }
+        if (res.size() != g->symbol_list.size()) {
+            LOG(FATAL) << "Cyclic direct relation in the grammar";
+        }
+        return res;
+    }
 }
 
 FunctionContext solver::enumerate(const std::vector<PSynthInfo> &info_list, const EnumConfig &c) {
@@ -77,12 +105,18 @@ FunctionContext solver::enumerate(const std::vector<PSynthInfo> &info_list, cons
     std::vector<ProgramStorage> storage_list(n);
     for (auto& ps: storage_list) ps.emplace_back();
     std::vector<FunctionContext> res;
+    std::vector<NTList> direct_order_list;
+    for (const auto& info: info_list) direct_order_list.push_back(_getDirectOrder(info->grammar));
+
+
     for (int size = 1;; ++size) {
         TimeCheck(c.guard);
-        for (const auto& info: info_list) {
+        for (int pos = 0; pos < info_list.size(); ++pos) {
+            auto& info = info_list[pos];
             for (auto* symbol: info->grammar->symbol_list) {
                 int id = symbol->id; storage_list[id].emplace_back();
                 for (auto* rule: symbol->rule_list) {
+                    if (dynamic_cast<DirectSemantics*>(rule->semantics.get())) continue;
                     std::vector<int> sub_id_list;
                     for (auto* sub_symbol: rule->param_list) sub_id_list.push_back(sub_symbol->id);
                     ProgramStorage tmp = merge(sub_id_list, size, storage_list);
@@ -92,6 +126,16 @@ FunctionContext solver::enumerate(const std::vector<PSynthInfo> &info_list, cons
                         if (o->isDuplicated(info->name, symbol, p))
                             continue;
                         storage_list[id][size].push_back(p);
+                    }
+                }
+            }
+            for (auto* s: direct_order_list[pos]) {
+                for (auto* rule: s->rule_list) {
+                    if (!dynamic_cast<DirectSemantics*>(rule->semantics.get())) continue;
+                    for (const auto& p: storage_list[rule->param_list[0]->id][size]) {
+                        if (!o->isDuplicated(info->name, s, p)) {
+                            storage_list[s->id][size].push_back(p);
+                        }
                     }
                 }
             }

@@ -236,7 +236,7 @@ LiftingRes AutoLifter::synthesisPartial(const PProgram &p, const PProgram &h, Ti
         auto new_c = solver::autolifter::rewriteCombinator(sub_res.info.F.get(), sub_res.h, sub_res.f, sub_res.info.c, h, f);
         res_info.emplace_back(sub_res.info.F, new_c, sub_res.info.m);
     }
-    return {p, h, f, res_info};
+    return {p, h, f, res_info, task->env};
 }
 
 LiftingRes AutoLifter::synthesis(TimeGuard *guard) {
@@ -294,5 +294,5 @@ LiftingRes AutoLifter::synthesis(TimeGuard *guard) {
         info_list.emplace_back(task->info_list[i]->F, construct_c(comp_list), task->info_list[i]->m);
     }
 
-    return {task->p, task->h, f, info_list};
+    return {task->p, task->h, f, info_list, task->env};
 }
