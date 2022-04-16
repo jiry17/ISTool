@@ -22,8 +22,8 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        solver_name = "obe";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/x.sl";
+        solver_name = "eusolver";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mps_mo.sl";
         output_name = "/tmp/629453237.out";
     }
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
 
     auto result = invoker::getExampleNum(spec, v, solver_token, guard);
     std::cout << result.first << " " << result.second.toString() << std::endl;
+    std::cout << guard->getPeriod() << std::endl;
     FILE* f = fopen(output_name.c_str(), "w");
     fprintf(f, "%d %s\n", result.first, result.second.toString().c_str());
     fprintf(f, "%.10lf\n", guard->getPeriod());

@@ -113,28 +113,25 @@ FunctionContext solver::enumerate(const std::vector<PSynthInfo> &info_list, cons
         TimeCheck(c.guard);
         for (int pos = 0; pos < info_list.size(); ++pos) {
             auto& info = info_list[pos];
-            for (auto* symbol: info->grammar->symbol_list) {
+            for (auto* symbol: direct_order_list[pos]) {
                 int id = symbol->id; storage_list[id].emplace_back();
                 for (auto* rule: symbol->rule_list) {
-                    if (dynamic_cast<DirectSemantics*>(rule->semantics.get())) continue;
-                    std::vector<int> sub_id_list;
-                    for (auto* sub_symbol: rule->param_list) sub_id_list.push_back(sub_symbol->id);
-                    ProgramStorage tmp = merge(sub_id_list, size, storage_list);
-                    for (const auto& sub_list: tmp) {
-                        TimeCheck(c.guard);
-                        auto p = rule->buildProgram(sub_list);
-                        if (o->isDuplicated(info->name, symbol, p))
-                            continue;
-                        storage_list[id][size].push_back(p);
-                    }
-                }
-            }
-            for (auto* s: direct_order_list[pos]) {
-                for (auto* rule: s->rule_list) {
-                    if (!dynamic_cast<DirectSemantics*>(rule->semantics.get())) continue;
-                    for (const auto& p: storage_list[rule->param_list[0]->id][size]) {
-                        if (!o->isDuplicated(info->name, s, p)) {
-                            storage_list[s->id][size].push_back(p);
+                    if (dynamic_cast<DirectSemantics*>(rule->semantics.get())) {
+                        for (const auto& p: storage_list[rule->param_list[0]->id][size]) {
+                            if (!o->isDuplicated(info->name, symbol, p)) {
+                                storage_list[symbol->id][size].push_back(p);
+                            }
+                        }
+                    } else {
+                        std::vector<int> sub_id_list;
+                        for (auto *sub_symbol: rule->param_list) sub_id_list.push_back(sub_symbol->id);
+                        ProgramStorage tmp = merge(sub_id_list, size, storage_list);
+                        for (const auto &sub_list: tmp) {
+                            TimeCheck(c.guard);
+                            auto p = rule->buildProgram(sub_list);
+                            if (o->isDuplicated(info->name, symbol, p))
+                                continue;
+                            storage_list[id][size].push_back(p);
                         }
                     }
                 }
