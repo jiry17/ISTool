@@ -111,7 +111,9 @@ namespace {
         std::string name = c > 0 ? "+" : "-";
         return std::make_shared<Program>(env->getSemantics(name), sub_list);
     }
+}
 
+namespace {
     PProgram _buildProgram(const LIAResult& solve_res, const ProgramList& program_list, Env* env) {
         PProgram res;
         auto plus = env->getSemantics("+"), times = env->getSemantics("*");

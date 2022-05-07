@@ -13,6 +13,7 @@ Env::Env(): random_engine(0) {
 
 int Env::setRandomSeed(int seed) {
     random_engine.seed(seed);
+    return seed;
 }
 
 Data * Env::getConstRef(const std::string &name, const Data& default_value) {

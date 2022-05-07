@@ -17,7 +17,7 @@ public:
 };
 
 namespace theory::bv {
-    PType getTBitVector(int size);
+    extern PType getTBitVector(int size);
 }
 
 #endif //ISTOOL_BV_TYPE_H

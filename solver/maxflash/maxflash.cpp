@@ -22,7 +22,7 @@ MaxFlash::MaxFlash(Specification *_spec, Verifier* _v, TopDownModel* model, cons
         LOG(FATAL) << "MaxFlash can only synthesize a single program";
     }
     // spec->info_list[0]->grammar->print();
-    graph = new TopDownContextGraph(spec->info_list[0]->grammar, model);
+    graph = new TopDownContextGraph(spec->info_list[0]->grammar, model, ProbModelType::NEG_LOG_PROB);
     auto* step_data = spec->env->getConstRef(solver::maxflash::KIterProbStepName);
     if (step_data->isNull()) {
         spec->env->setConst(solver::maxflash::KIterProbStepName, BuildData(Int, KDefaultIterStep));

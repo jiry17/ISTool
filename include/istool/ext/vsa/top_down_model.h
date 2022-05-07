@@ -16,20 +16,29 @@ public:
 
 typedef std::shared_ptr<TopDownContext> PTopDownContext;
 
+enum class ProbModelType {
+    NORMAL_PROB, NEG_LOG_PROB
+};
+
 class TopDownModel {
+protected:
+    virtual double getWeight(TopDownContext* ctx, Semantics* sem) const = 0;
 public:
     PTopDownContext start;
     double default_weight;
-    TopDownModel(const PTopDownContext& start, double _inf);
+    ProbModelType prob_type;
+    TopDownModel(const PTopDownContext& start, double _inf, ProbModelType model_type=ProbModelType::NEG_LOG_PROB);
     virtual PTopDownContext move(TopDownContext* ctx, Semantics* sem, int pos) const = 0;
-    virtual double getWeight(TopDownContext* ctx, Semantics* sem) const = 0;
-    double getWeight(Program* program) const;
+    double getWeight(TopDownContext* ctx, Semantics* sem, ProbModelType oup_type) const;
+    double getWeight(Program* program, ProbModelType oup_type) const;
     virtual ~TopDownModel() = default;
 };
 
 typedef std::function<std::string(Semantics*)> SemanticsAbstracter;
 
 class NGramModel: public TopDownModel {
+protected:
+    virtual double getWeight(TopDownContext* ctx, Semantics* sem) const;
 public:
     unsigned int depth;
     SemanticsAbstracter sa;
@@ -37,7 +46,6 @@ public:
     NGramModel(unsigned int _depth, const SemanticsAbstracter &_sa, double _default_weight = 1e90);
     void set(const std::vector<std::pair<std::string, double>>& weight_list);
     virtual PTopDownContext move(TopDownContext* ctx, Semantics* sem, int pos) const;
-    virtual double getWeight(TopDownContext* ctx, Semantics* sem) const;
     virtual ~NGramModel() = default;
 };
 
@@ -49,6 +57,10 @@ namespace ext {
         PProgram getBestProgram(VSANode* root, TopDownModel* model, TimeGuard* guard = nullptr);
         NGramModel* loadDefaultNGramModel(const std::string& model_file_path);
         void saveNGramModel(NGramModel* model, const std::string& model_file_path);
+        double changeProbModel(double prob, ProbModelType source_type, ProbModelType target_type);
+        double getTrueProb(double prob, ProbModelType type);
+        double getRepresentedProb(double prob, ProbModelType type);
+        double addProb(double prob_x, double prob_y, ProbModelType type);
     }
 }
 

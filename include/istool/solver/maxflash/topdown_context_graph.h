@@ -7,6 +7,15 @@
 
 #include "istool/ext/vsa/top_down_model.h"
 
+class TopDownGraphMatchStructure {
+public:
+    int edge_id;
+    PProgram program;
+    std::vector<TopDownGraphMatchStructure*> sub_list;
+    TopDownGraphMatchStructure(int _edge_id, const PProgram& _program, const std::vector<TopDownGraphMatchStructure*>& _sub_list);
+    ~TopDownGraphMatchStructure();
+};
+
 class TopDownContextGraph {
 public:
     struct Edge {
@@ -14,7 +23,7 @@ public:
         double weight;
         int u;
         PSemantics semantics;
-        Edge(int _u, const std::vector<int>& _v_list, double _weight, PSemantics& _semantics);
+        Edge(int _u, const std::vector<int>& _v_list, double _weight, const PSemantics& _semantics);
     };
 
     struct Node {
@@ -28,11 +37,14 @@ public:
     };
 
     std::vector<Node> node_list;
+    ProbModelType prob_type;
 
-    TopDownContextGraph(Grammar* g, TopDownModel* model);
+    void initNodeLowerBound();
+    TopDownContextGraph(Grammar* g, TopDownModel* model, ProbModelType _prob_type);
+    void normalizeProbability();
+    TopDownGraphMatchStructure* getProgramMatchStructure(const PProgram& p);
     ~TopDownContextGraph() = default;
     void print() const;
 };
-
 
 #endif //ISTOOL_TOPDOWN_CONTEXT_GRAPH_H

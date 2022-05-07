@@ -11,6 +11,10 @@
 #include "istool/sygus/theory/basic/bv/bv.h"
 #include "istool/selector/split/z3_splitor.h"
 #include "istool/selector/split/split_selector.h"
+#include "istool/solver/maxflash/topdown_context_graph.h"
+#include "istool/selector/random/grammar_flatter.h"
+#include "istool/selector/random/random_semantics_selector.h"
+#include "istool/ext/vsa/top_down_model.h"
 #include <unordered_set>
 
 const int KTryNum = 1000;
@@ -113,6 +117,19 @@ Verifier* getSplitVerifier(Specification* spec, int num) {
     return new SplitSelector(splitor, spec->info_list[0], num, spec->env.get(), new UniqueVerifier());
 }
 
+
+Verifier* getRandomSemanticsVerifier(Specification* spec, int num) {
+    auto* model = ext::vsa::getSizeModel();
+    auto* graph = new TopDownContextGraph(grammar::generateHeightLimitedGrammar(spec->info_list[0]->grammar, 10), model, ProbModelType::NORMAL_PROB);
+    auto* fg = selector::getFlattenGrammar(graph, num, [](Program *p) { return true; });
+    auto* scorer = new RandomSemanticsScorer(spec->env.get(), fg, 5);
+    if (dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get())) {
+        return new Z3RandomSemanticsSelector(spec, scorer, 10);
+    } else {
+        return new FiniteRandomSemanticsSelector(spec, scorer);
+    }
+}
+
 int main(int argc, char** argv) {
     assert(argc == 4 || argc == 1);
     int benchmark_id;
@@ -122,9 +139,9 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         verifier_name = argv[3];
     } else {
-        benchmark_id = 2;
+        benchmark_id = 6;
         output_name = "/tmp/629453237.out";
-        verifier_name = "splitor200";
+        verifier_name = "random200";
     }
 
     auto* spec = dsl::component::getTask(benchmark_id);
@@ -135,6 +152,8 @@ int main(int argc, char** argv) {
     else if (verifier_name == "prior") v = new BVPriorVerifier(v, example_space);
     else if (verifier_name == "splitor50") v = getSplitVerifier(spec, 50);
     else if (verifier_name == "splitor200") v = getSplitVerifier(spec, 200);
+    else if (verifier_name == "random200") v = getRandomSemanticsVerifier(spec, 200);
+    else if (verifier_name == "random2000") v = getRandomSemanticsVerifier(spec, 2000);
     auto* guard = new TimeGuard(1e9);
     auto res = invoker::getExampleNum(spec, v, SolverToken::COMPONENT_BASED_SYNTHESIS, guard);
 

@@ -78,7 +78,9 @@ namespace {
                 is_considered = true; break;
             }
         }
-        if (!is_considered) return false;
+        if (!is_considered) {
+            return false;
+        }
         for (int i = 0; i < p->sub_list.size(); ++i) {
             if (!_isConsideredByVSA(p->sub_list[i].get(), std::make_shared<DirectWitnessValue>(sub_oup[i]), ext, inp_list)) return false;
         }

@@ -3,6 +3,7 @@
 //
 
 #include "istool/selector/split/splitor.h"
+#include "istool/selector/random/random_semantics_scorer.h"
 #include "istool/selector/split/finite_splitor.h"
 #include "istool/selector/split/z3_splitor.h"
 #include "istool/selector/split/split_selector.h"
@@ -23,7 +24,7 @@ int main(int argc, char** argv) {
         solver_name = argv[3];
     } else {
         solver_name = "eusolver";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mps_mo.sl";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mpg_guard2.sl";
         output_name = "/tmp/629453237.out";
     }
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);

@@ -9,8 +9,8 @@
 #include <cmath>
 #include <queue>
 
-TopDownModel::TopDownModel(const PTopDownContext &_start, double _default_weight):
-    start(_start), default_weight(_default_weight) {
+TopDownModel::TopDownModel(const PTopDownContext &_start, double _default_weight, ProbModelType _type):
+    start(_start), default_weight(_default_weight), prob_type(_type) {
 }
 
 namespace {
@@ -29,13 +29,18 @@ namespace {
     }
 }
 
-double TopDownModel::getWeight(Program* program) const {
+double TopDownModel::getWeight(Program* program, ProbModelType type) const {
     auto res = _collectAllInfo(program, this);
-    double weight = 0.0;
-    for (auto& info: res) {
-        weight += getWeight(info.first.get(), info.second);
+    assert(res.size() > 0);
+    double weight = getWeight(res[0].first.get(), res[0].second, type);
+    for (int i = 1; i < res.size(); ++i) {
+        auto current = getWeight(res[i].first.get(), res[i].second, type);
+        weight = ext::vsa::addProb(weight, current, type);
     }
     return weight;
+}
+double TopDownModel::getWeight(TopDownContext *ctx, Semantics *sem, ProbModelType oup_type) const {
+    return ext::vsa::changeProbModel(getWeight(ctx, sem), prob_type, oup_type);
 }
 
 namespace {
@@ -148,7 +153,7 @@ namespace {
                 auto next_ctx = model->move(ctx.get(), edge.semantics.get(), i);
                 cnode_list.push_back(_buildCVSA(edge.node_list[i], next_ctx, model, guard, cache));
             }
-            now->edge_list.emplace_back(edge.semantics, cnode_list, model->getWeight(ctx.get(), edge.semantics.get()));
+            now->edge_list.emplace_back(edge.semantics, cnode_list, model->getWeight(ctx.get(), edge.semantics.get(), ProbModelType::NEG_LOG_PROB));
         }
         return now;
     }
@@ -267,6 +272,7 @@ namespace {
                 return std::make_shared<Program>(edge.semantics, sub_list);
             }
         }
+        LOG(FATAL) << "There is no matched program";
     }
 }
 
@@ -320,4 +326,34 @@ void ext::vsa::saveNGramModel(NGramModel *model, const std::string &model_file_p
     }
     root["weight"] = weight_node;
     json::saveJsonToFile(root, model_file_path);
+}
+
+double ext::vsa::getTrueProb(double prob, ProbModelType type) {
+    switch (type) {
+        case ProbModelType::NORMAL_PROB: return prob;
+        case ProbModelType::NEG_LOG_PROB: return std::exp(-prob);
+    }
+    LOG(FATAL) << "Unknown prob type";
+}
+
+double ext::vsa::getRepresentedProb(double prob, ProbModelType type) {
+    switch (type) {
+        case ProbModelType::NORMAL_PROB: return prob;
+        case ProbModelType::NEG_LOG_PROB: return -std::log(prob);
+    }
+    LOG(FATAL) << "Unknown prob type";
+}
+
+double ext::vsa::changeProbModel(double prob, ProbModelType source_type, ProbModelType target_type) {
+    if (source_type == target_type) return prob;
+    auto true_prob = ext::vsa::getTrueProb(prob, source_type);
+    return ext::vsa::getRepresentedProb(true_prob, target_type);
+}
+
+double ext::vsa::addProb(double prob_x, double prob_y, ProbModelType type) {
+    switch (type) {
+        case ProbModelType::NORMAL_PROB: return prob_x * prob_y;
+        case ProbModelType::NEG_LOG_PROB: return prob_x + prob_y;
+    }
+    LOG(FATAL) << "Unknown prob type";
 }

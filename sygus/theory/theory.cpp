@@ -25,6 +25,7 @@ std::string sygus::theoryToken2String(TheoryToken token) {
         AddTokenItem(BV);
         AddTokenItem(STRING);
     }
+    LOG(FATAL) << "Unknown token";
 }
 
 TheoryToken sygus::getSyGuSTheory(Env *env) {

@@ -47,6 +47,7 @@ namespace {
             }
             if (feature_set.find(feature) == feature_set.end()) {
                 term_list.push_back(info.begin()->second);
+                feature_set.insert(feature);
             }
             return is_finished;
         }
@@ -64,6 +65,7 @@ ProgramList EuTermSolver::synthesisTerms(const ExampleList &example_list, TimeGu
     }
     auto res = verifier->term_list;
     delete verifier; delete optimizer;
+    // for (const auto& term: res) LOG(INFO) << "term: " << term->toString();
     return res;
 }
 

@@ -10,6 +10,7 @@
 
 class Z3Verifier: public Verifier {
 public:
+    z3::expr_vector getParamVector();
     void prepareZ3Solver(z3::solver& solver, const FunctionContext& info);
     void getExample(const z3::model& model, Example* counter_example);
     Z3ExampleSpace* example_space;
