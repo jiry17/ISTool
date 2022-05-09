@@ -170,7 +170,7 @@ Verifier* _buildSplitVerifier(Specification* spec, int num, const std::string& s
 
 Verifier* _buildRandomsSemanticsVerifier(Specification* spec, int num, const std::string& name) {
     auto* model = ext::vsa::getSizeModel();
-    auto* graph = new TopDownContextGraph(grammar::generateHeightLimitedGrammar(spec->info_list[0]->grammar, 10), model, ProbModelType::NORMAL_PROB);
+    auto* graph = new TopDownContextGraph(grammar::generateHeightLimitedGrammar(spec->info_list[0]->grammar, 8), model, ProbModelType::NORMAL_PROB);
     FlattenGrammar* fg = nullptr;
     if (name == "maxflash" || name == "vsa") {
         auto* vsa_ext = ext::vsa::getExtension(spec->env.get());
@@ -188,6 +188,9 @@ Verifier* _buildRandomsSemanticsVerifier(Specification* spec, int num, const std
             return true;
         };
         fg = selector::getFlattenGrammar(graph, num, validator);
+        for (auto& param: fg->param_list) {
+            std::cout << param.second->toString() << std::endl;
+        }
     } else {
         fg = selector::getFlattenGrammar(graph, num, [](Program *p) { return true; });
     }
@@ -209,7 +212,7 @@ int main(int argc, char** argv) {
         verifier_name = argv[4];
     } else {
         solver_name = "maxflash";
-        benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/string/phone-1.sl";
+        benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/string/phone-10.sl";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/clia/array_search_5.sl";
         output_name = "/tmp/629453237.out";
         verifier_name = "random2000";

@@ -39,13 +39,13 @@ int main() {
     std::string benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/x.sl";
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
     auto* grammar = spec->info_list[0]->grammar;
-    grammar = grammar::generateHeightLimitedGrammar(grammar, 2);
+    grammar = grammar::generateHeightLimitedGrammar(grammar, 5);
     int param_num = getParamNum(grammar);
     LOG(INFO) << "Param num " << param_num;
     grammar->print();
     auto* model = ext::vsa::getSizeModel();
     auto* graph = new TopDownContextGraph(grammar, model, ProbModelType::NORMAL_PROB);
-    auto* fg = selector::getFlattenGrammar(graph, 500, [](Program* p) {return true;});
+    auto* fg = selector::getFlattenGrammar(graph, 200, [](Program* p) {return true;});
     fg->graph->print();
     double KO = 10.0;
     auto* scorer = new RandomSemanticsScorer(spec->env.get(), fg, KO);
@@ -54,7 +54,7 @@ int main() {
     auto inp_storage = readExample(param_num);
 
     // Verify Double Result
-    LOG(INFO) << "Standard pair res " << selector::test::getPairGroundTruth(spec->env.get(), fg, inp_storage, KO);
+    //LOG(INFO) << "Standard pair res " << selector::test::getPairGroundTruth(spec->env.get(), fg, inp_storage, KO);
     LOG(INFO) << "Selector pair res " << scorer->getPairScore(inp_storage);
 
 
@@ -63,9 +63,9 @@ int main() {
     auto y = program::buildParam(1, nullptr);
     auto plus = std::make_shared<Program>(spec->env->getSemantics("+"), (ProgramList){x, x});
     auto pplus = std::make_shared<Program>(spec->env->getSemantics("+"), (ProgramList){plus, x});
-    auto p = x;
+    auto p = plus;
 
-    LOG(INFO) << "Standard triple res " << selector::test::getTripleGroundTruth(spec->env.get(), fg, p, inp_storage, KO);
+    //LOG(INFO) << "Standard triple res " << selector::test::getTripleGroundTruth(spec->env.get(), fg, p, inp_storage, KO);
     LOG(INFO) << "Selector triple res " << scorer->getTripleScore(p, inp_storage);
     return 0;
 }

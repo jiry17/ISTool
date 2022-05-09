@@ -8,7 +8,10 @@
 #include "istool/selector/selector.h"
 #include "istool/selector/random/random_semantics_scorer.h"
 #include "istool/ext/z3/z3_verifier.h"
+#include "istool/selector/samplesy/different_program_generator.h"
 
+
+// TODO: BasicRandomSemanticsSelector should be used as a field instead of a base class.
 class BasicRandomSemanticsSelector {
 public:
     Env* env;
@@ -37,6 +40,17 @@ public:
     Z3RandomSemanticsSelector(Specification* spec, RandomSemanticsScorer* scorer, int _KExampleNum);
     virtual bool verify(const FunctionContext& info, Example* counter_example);
     ~Z3RandomSemanticsSelector() = default;
+};
+
+class FiniteCompleteRandomSemanticsSelector: public CompleteSelector, public BasicRandomSemanticsSelector {
+public:
+    FiniteIOExampleSpace* fio_space;
+    IOExampleList io_example_list;
+    DifferentProgramGenerator* g;
+    FiniteCompleteRandomSemanticsSelector(Specification* spec, EquivalenceChecker* _checker, RandomSemanticsScorer* scorer, DifferentProgramGenerator* g);
+    virtual Example getNextExample(const PProgram& x, const PProgram& y);
+    virtual void addExample(const IOExample& example);
+    ~FiniteCompleteRandomSemanticsSelector();
 };
 
 #endif //ISTOOL_RANDOM_SEMANTICS_SELECTOR_H

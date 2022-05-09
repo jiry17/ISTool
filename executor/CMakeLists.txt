@@ -17,5 +17,8 @@ target_link_libraries(run_splitor2 ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
 add_executable(run_autolifter run_autolifter.cpp)
 target_link_libraries(run_autolifter ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
 
+add_executable(run_question_selection run_question_selection.cpp)
+target_link_libraries(run_question_selection ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
+
 add_executable(test test.cpp)
 target_link_libraries(test ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})

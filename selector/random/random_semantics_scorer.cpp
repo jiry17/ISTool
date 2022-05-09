@@ -15,8 +15,11 @@ RandomSemanticsScorer::RandomSemanticsScorer(Env *_env, FlattenGrammar *_fg, dou
 namespace {
     const int KStateWeight = 5;
     const DOUBLE KEPS = 1e-9;
-    const std::vector<std::vector<int>> _KSubStatusList = {
-            {0}, {0, 1}, {0, 2}, {0, 3}, {0, 1, 2, 3, 4}
+    const std::vector<std::vector<int>> KStrictSubStatusList = {
+            {}, {0}, {0}, {0}, {0, 1, 2, 3}
+    };
+    const std::vector<std::vector<int>> KStrictSuperStateList = {
+            {1, 2, 3, 4}, {4}, {4}, {4}, {}
     };
     const std::vector<int> _KFreeNum = {0, 1, 1, 1, 2};
     bool _isEmptyCache(DOUBLE* A) {
@@ -54,23 +57,17 @@ namespace {
         return res;
     }
 
-    struct _SubStateInfo {
-        int T;
-        DOUBLE weight;
-        _SubStateInfo(int _T, DOUBLE _weight): T(_T), weight(_weight) {}
-    };
-
     class _DPHolder {
     public:
         DOUBLE KOutputSize;
         TopDownContextGraph* graph;
         TopDownGraphMatchStructure* match;
+        std::vector<std::vector<DOUBLE>> status_weight_matrix;
         std::vector<DataList> inp_list;
         std::vector<DOUBLE> KOPowList, KNegOPowList;
         int n, five_state_num;
         std::vector<std::pair<int, int>> masked_five_state_info_list[4];
         std::vector<int> five_weight_list, two2five[4], five_state_eq_num_list;
-        std::vector<std::vector<_SubStateInfo>> five_sub_state_list;
         std::vector<DOUBLE*> cache_list;
         std::unordered_map<std::string, DOUBLE*> cache_map_with_p;
         _DPHolder(TopDownContextGraph* _graph, TopDownGraphMatchStructure* _match, const std::vector<DataList>& _inp_list, DOUBLE _KOutputSize):
@@ -108,21 +105,7 @@ namespace {
                 five_state_eq_num_list[i] = five_state_eq_num_list[i / 5] + (tag > 0) + (tag == 4);
             }
 
-            int subset_num = 0;
-            five_sub_state_list.resize(five_state_num);
-            auto weight_matrix = _getViolateWeightMatrix(KOutputSize);
-            five_sub_state_list[0].emplace_back(0, 1.0);
-            for (int i = 1; i < five_state_num; ++i) {
-                int pre_state = i / KStateWeight;
-                int current_status = i % KStateWeight;
-                for (int w: _KSubStatusList[current_status]) {
-                    auto cost = weight_matrix[current_status][w];
-                    for (auto &info: five_sub_state_list[pre_state]) {
-                        five_sub_state_list[i].emplace_back(info.T * KStateWeight + w, info.weight * cost);
-                    }
-                }
-                subset_num += five_sub_state_list[i].size();
-            }
+            status_weight_matrix = _getViolateWeightMatrix(KOutputSize);
 
             for (int mask = 1; mask < 4; ++mask) {
                 masked_five_state_info_list[mask].resize(five_state_num);
@@ -249,11 +232,6 @@ namespace {
             }
         }
 
-        void updateFiveStateSub(int S, DOUBLE w, DOUBLE* res) {
-            for (auto& info: five_sub_state_list[S]) {
-                res[info.T] += w;
-            }
-        }
         void getNDimensionalSuffixSum(DOUBLE* res) {
             for (int i = 1; i <= n; ++i) {
                 int key = (1 << i - 1);
@@ -312,6 +290,7 @@ namespace {
                 if (isTerminateSemantics(p_edge.semantics.get())) {
                     DataList p_oup = getTerminateOutputList(p_edge.semantics.get());
                     // Both f and g are terminate
+                    for (int i = 0; i < five_state_num; ++i) tmp_five[i] = 0;
                     for (auto &f_info: terminate_info) {
                         for (auto &g_info: terminate_info) {
                             double weight = f_info.first * g_info.first;
@@ -326,9 +305,26 @@ namespace {
                                 state = state * KStateWeight + status;
                             }
                             assert(state < five_state_num);
-                            updateFiveStateSub(state, weight, cache);
+                            tmp_five[state] += weight;
                         }
                     }
+
+                    int state_weight = 1;
+                    for (int pos = 1; pos <= n; ++pos) {
+                        if (pos == n) {
+                            for (int i = 0; i < state_weight; ++i) tmp_five[i] += tmp_five[i + state_weight];
+                            break;
+                        }
+                        for (int i = 0; i < five_state_num; ++i) {
+                            int status = i / state_weight % KStateWeight;
+                            for (int sub_state: KStrictSuperStateList[status]) {
+                                tmp_five[i] += tmp_five[i + (sub_state - status) * state_weight];
+                            }
+                        }
+                        state_weight *= KStateWeight;
+                    }
+                    for (int i = 0; i < five_state_num; ++i) cache[i] += tmp_five[i];
+
                     // Exactly one of f/g is terminate
                     for (int i = 0; i < (1 << n); ++i) tmp_two[i] = 0;
                     for (auto &f_info: terminate_info) {
@@ -368,11 +364,20 @@ namespace {
             if (!isTerminateSemantics(p_edge.semantics.get())) {
                 auto current_weight = p_edge.weight * p_edge.weight;
                 rem_prob -= current_weight;
-                for (int S = five_state_num - 1; S >= 0; --S) {
-                    for (auto& info: five_sub_state_list[S]) {
-                        cache[S] += info.weight * p_sub_res[info.T] * current_weight;
-                    }
+                for (int i = 0; i < five_state_num; ++i) {
+                    tmp_five[i] = p_sub_res[i] * current_weight;
                 }
+                int state_weight = 1;
+                for (int pos = 0; pos < n; ++pos) {
+                    for (int i = five_state_num - 1; i >= 0; --i) {
+                        int status = i / state_weight % KStateWeight;
+                        tmp_five[i] *= status_weight_matrix[status][status];
+                        for (auto sub_status: KStrictSubStatusList[status])
+                            tmp_five[i] += tmp_five[i + (sub_status - status) * state_weight] * status_weight_matrix[status][sub_status];
+                    }
+                    state_weight *= KStateWeight;
+                }
+                for (int i = 0; i < five_state_num; ++i) cache[i] += tmp_five[i];
             }
 
             { // solve F = G <> P, F must not be terminate

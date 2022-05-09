@@ -174,7 +174,14 @@ ProgramList VSADifferentProgramGenerator::getDifferentProgram(const IOExample &e
         limit *= 2;
     }
     assert(!res_pool[0].empty());
-    ProgramList res_list;
-    for (auto& res: res_pool[0]) res_list.push_back(res.p);
+    // todo: make this more flexible
+    auto min_valid = ext::vsa::getBestProgram(root, ext::vsa::getSizeModel());
+    ProgramList res_list = {min_valid};
+    auto min_output = builder->env->run(min_valid.get(), example.first);
+    for (auto& res: res_pool[0]) {
+        if (builder->env->run(res.p.get(), example.first) == min_output) continue;
+        res_list.push_back(res.p);
+    }
+    if (res_list.size() > num) res_list.resize(num);
     return res_list;
 }

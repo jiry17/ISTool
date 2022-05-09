@@ -119,7 +119,7 @@ Grammar * samplesy::rewriteGrammar(Grammar *g, Env* env, FiniteIOExampleSpace* i
         }
     }
 
-    const int KLengthLimit = 3, KOccurLimit = 2, KMaxNum = 3;
+    const int KLengthLimit = 1, KOccurLimit = 2, KMaxNum = 3;
     for (int l = 1; l <= KLengthLimit; ++l) {
         std::unordered_map<std::string, int> occur_map;
         for (const auto& example: io_space->example_space) {

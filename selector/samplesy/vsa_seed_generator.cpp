@@ -107,6 +107,10 @@ void VSASizeBasedSampler::setRoot(VSANode *new_root) {
     std::vector<bool> is_visited(n, false);
     edge_size_pool.clear(); edge_size_pool.resize(n);
     calculateNodeSize(root, is_visited);
+    /*std::cout << "calculate node size" << std::endl;
+    for (auto& size_list: size_list) {
+        for (auto& w: size_list) std::cout << w << " "; std::cout << std::endl;
+    }*/
 }
 PProgram VSASizeBasedSampler::sampleProgram(const VSAEdge &edge, int target_size) {
     std::vector<std::vector<int>> size_pool;
@@ -157,6 +161,7 @@ PProgram VSASizeBasedSampler::sampleNext() {
         if (w > 0.5) size_weight.push_back(1.0); else size_weight.push_back(0.0);
     }
     int target_size = _getSample(size_weight, env);
+
     return sampleProgram(root, target_size);
 }
 
