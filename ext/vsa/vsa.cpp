@@ -20,7 +20,7 @@ std::string VSAEdge::toString() const {
 VSANode::VSANode(NonTerminal *_symbol, int _example_num): symbol(_symbol), example_num(_example_num), id(0) {
 }
 std::string VSANode::toString() {
-    return symbol->name + "@" + getWitnessString();
+    return /*symbol->name + "@" + */ getWitnessString();
 }
 
 
@@ -29,7 +29,7 @@ SingleVSANode::SingleVSANode(NonTerminal *_symbol, const WitnessData &_oup): VSA
 MultiExampleVSANode::MultiExampleVSANode(VSANode* _l, VSANode* _r):
     l(_l), r(_r), VSANode(_l->symbol, _l->example_num + _r->example_num) {
     if (l->symbol->name != r->symbol->name) {
-        LOG(INFO) << "Two subnodes of a MultiExampleVSANode should come from the same symbol";
+        LOG(FATAL) << "Two subnodes of a MultiExampleVSANode should come from the same symbol";
     }
 }
 

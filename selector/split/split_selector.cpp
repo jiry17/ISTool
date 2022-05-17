@@ -39,7 +39,7 @@ SplitSelector::~SplitSelector() {
     delete splitor;
 }
 
-CompleteSplitSelector::CompleteSplitSelector(Specification *_spec, Splitor *_splitor, EquivalenceChecker *_checker, int n, Verifier* v, Optimizer* o):
+CompleteSplitSelector::CompleteSplitSelector(Specification *_spec, Splitor *_splitor, GrammarEquivalenceChecker *_checker, int n, Verifier* v, Optimizer* o):
     CompleteSelector(_spec, _checker), splitor(_splitor) {
     std::vector<FunctionContext> info_list;
     auto* tmp_guard = new TimeGuard(0.1);

@@ -45,7 +45,7 @@ void sygus::setTheory(Env *env, TheoryToken theory) {
     if (!ext) {
         ext = new SyGuSExtension(theory);
         env->registerExtension(KSyGuSName, ext);
-    }
+    } else assert(getSyGuSTheory(env) == theory);
     auto* se = dynamic_cast<SyGuSExtension*>(ext);
     se->theory = theory;
 }

@@ -7,6 +7,7 @@
 
 #include "istool/basic/specification.h"
 #include "istool/solver/vsa/vsa_solver.h"
+#include <unordered_set>
 
 class DifferentProgramGenerator {
 public:
@@ -36,6 +37,7 @@ class VSADifferentProgramGenerator: public DifferentProgramGenerator {
 public:
     PVSABuilder builder;
     VSANode* root;
+    std::unordered_set<std::string> added_example_set;
     VSADifferentProgramGenerator(const PVSABuilder& _builder);
     virtual void addExample(const IOExample& example);
     virtual ProgramList getDifferentProgram(const IOExample& example, int num);

@@ -29,6 +29,7 @@ DefineIntWitnessFunction(IntGeq)
 DefineIntWitnessFunction(IntEq)
 DefineIntWitnessFunction(IntNeq)
 DefineWitnessFunction(Ite)
+DefineWitnessFunction(BoolEq)
 
 namespace theory {
     namespace clia {

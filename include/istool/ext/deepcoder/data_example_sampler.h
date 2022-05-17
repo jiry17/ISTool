@@ -1,16 +1,14 @@
 //
-// Created by pro on 2022/1/20.
+// Created by pro on 2022/5/12.
 //
 
-#ifndef ISTOOL_EXAMPLE_SAMPLER_H
-#define ISTOOL_EXAMPLE_SAMPLER_H
+#ifndef ISTOOL_DATA_EXAMPLE_SAMPLER_H
+#define ISTOOL_DATA_EXAMPLE_SAMPLER_H
 
-#include <functional>
-#include "streamed_example_space.h"
-#include "istool/ext/deepcoder/data_value.h"
+#include "data_value.h"
+#include "istool/basic/example_sampler.h"
 
 typedef std::function<bool(const Example&)> ExampleChecker;
-
 class BasicRandomSampler: public ExampleGenerator {
     void initConst();
     Data sampleWithType(Type* type);
@@ -26,10 +24,8 @@ public:
     virtual ~BasicRandomSampler() = default;
 };
 
-namespace solver::autolifter {
-    extern const std::string KSampleIntMaxName;
-    extern const std::string KSampleIntMinName;
+namespace ext::ho {
     extern const std::string KSampleDSSizeName;
 }
 
-#endif //ISTOOL_EXAMPLE_SAMPLER_H
+#endif //ISTOOL_DATA_EXAMPLE_SAMPLER_H

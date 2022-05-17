@@ -10,10 +10,12 @@
 #include "istool/solver/maxflash/topdown_context_graph.h"
 #include "istool/ext/vsa/top_down_model.h"
 
+typedef long double RandomSemanticsScore;
+
 class RandomSemanticsScorer {
 public:
-    double getTripleScore(const PProgram& p, const DataStorage& inp_list);
-    double getPairScore(const DataStorage& inp_list);
+    RandomSemanticsScore getTripleScore(const PProgram& p, const DataStorage& inp_list);
+    RandomSemanticsScore getPairScore(const DataStorage& inp_list);
     DataStorage getFlattenInpStorage(const DataStorage& inp_list);
     double KOutputSize;
     FlattenGrammar* fg;

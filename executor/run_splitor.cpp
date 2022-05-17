@@ -187,12 +187,12 @@ Verifier* _buildRandomsSemanticsVerifier(Specification* spec, int num, const std
             }
             return true;
         };
-        fg = selector::getFlattenGrammar(graph, num, validator);
-        for (auto& param: fg->param_list) {
-            std::cout << param.second->toString() << std::endl;
+        fg = new TrivialFlattenGrammar(graph, spec->env.get(), num, validator); //selector::getFlattenGrammar(graph, num, validator);
+        for (auto& param: fg->param_info_list) {
+            std::cout << param.program->toString() << std::endl;
         }
     } else {
-        fg = selector::getFlattenGrammar(graph, num, [](Program *p) { return true; });
+        fg = new TrivialFlattenGrammar(graph, spec->env.get(), num, [](Program* p) {return true;});
     }
     auto* scorer = new RandomSemanticsScorer(spec->env.get(), fg, 5);
     if (dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get())) {
@@ -212,10 +212,10 @@ int main(int argc, char** argv) {
         verifier_name = argv[4];
     } else {
         solver_name = "maxflash";
-        benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/string/phone-10.sl";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string/exceljet3.sl";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/clia/array_search_5.sl";
         output_name = "/tmp/629453237.out";
-        verifier_name = "random2000";
+        verifier_name = "default";
     }
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
     if (sygus::getSyGuSTheory(spec->env.get()) == TheoryToken::STRING) {

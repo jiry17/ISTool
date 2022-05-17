@@ -20,18 +20,18 @@ public:
     virtual ~Selector() = default;
 };
 
-class EquivalenceChecker {
+class GrammarEquivalenceChecker {
 public:
     virtual void addExample(const IOExample& example) = 0;
     virtual ProgramList getTwoDifferentPrograms() = 0;
-    virtual ~EquivalenceChecker() = default;
+    virtual ~GrammarEquivalenceChecker() = default;
 };
 
 class CompleteSelector: public ExampleCounter, public Solver {
 public:
     IOExampleSpace* io_space;
-    EquivalenceChecker* checker;
-    CompleteSelector(Specification* spec, EquivalenceChecker* _checker);
+    GrammarEquivalenceChecker* checker;
+    CompleteSelector(Specification* spec, GrammarEquivalenceChecker* _checker);
     virtual Example getNextExample(const PProgram& x, const PProgram& y) = 0;
     virtual void addExample(const IOExample& example) = 0;
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr);

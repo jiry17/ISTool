@@ -8,6 +8,8 @@
 #include "samplesy.h"
 #include "different_program_generator.h"
 #include "istool/solver/vsa/vsa_builder.h"
+#include "istool/solver/component/grammar_encoder.h"
+#include "istool/ext/z3/z3_example_space.h"
 #include <stack>
 #include <unordered_set>
 
@@ -57,6 +59,24 @@ public:
     virtual void addExample(const IOExample& example);
     virtual ProgramList getSeeds(int num, double time_limit);
     virtual ~FiniteVSASeedGenerator() = default;
+};
+
+class Z3VSASeedGenerator: public SeedGenerator {
+    bool checkEquivalent(Program* x, Program* y);
+public:
+    Z3Extension* ext;
+    Z3IOExampleSpace* io_space;
+    PVSABuilder builder;
+    VSANode* root;
+    VSASampler* sampler;
+    Z3GrammarEncoder* encoder;
+    z3::expr_vector cons_list, param_list;
+    z3::expr encode_output;
+    int example_count = 0;
+    Z3VSASeedGenerator(Specification* spec, const PVSABuilder& _builder, VSASampler* _sampler);
+    virtual void addExample(const IOExample& example);
+    virtual ProgramList getSeeds(int num, double time_limit);
+    virtual ~Z3VSASeedGenerator() = default;
 };
 
 #endif //ISTOOL_VSA_SEED_GENERATOR_H

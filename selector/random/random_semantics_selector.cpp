@@ -12,7 +12,7 @@ BasicRandomSemanticsSelector::~BasicRandomSemanticsSelector() noexcept {
     delete scorer;
 }
 namespace {
-    const int KMaxExampleNum = 9;
+    const int KMaxExampleNum = 5;
 }
 void BasicRandomSemanticsSelector::addHistoryExample(const Example &inp) {
     if (history_inp_list.size() == KMaxExampleNum) {
@@ -20,8 +20,9 @@ void BasicRandomSemanticsSelector::addHistoryExample(const Example &inp) {
         history_inp_list[KMaxExampleNum - 1] = inp;
     } else history_inp_list.push_back(inp);
 }
+#include "istool/sygus/theory/basic/clia/clia.h"
 int BasicRandomSemanticsSelector::getBestExampleId(const PProgram& program, const ExampleList &candidate_list) {
-    int best_id = -1; double best_cost = 1e9;
+    int best_id = -1; RandomSemanticsScore best_cost = 1e9;
     auto p = selector::adaptor::programAdaptorWithLIARules(program.get(), g);
 #ifdef DEBUG
     assert(p);
@@ -35,7 +36,7 @@ int BasicRandomSemanticsSelector::getBestExampleId(const PProgram& program, cons
     for (int id = 0; id < candidate_list.size(); ++id) {
         auto& inp = candidate_list[id];
         history_inp_list.push_back(inp);
-        double cost = scorer->getTripleScore(p, history_inp_list);
+        RandomSemanticsScore cost = scorer->getTripleScore(p, history_inp_list);
         std::cout << std::setprecision(15) << data::dataList2String(inp) << " " << cost << std::endl;
         history_inp_list.pop_back();
         if (cost < best_cost) {
@@ -116,44 +117,4 @@ bool Z3RandomSemanticsSelector::verify(const FunctionContext &info, Example *cou
     addHistoryExample(inp_list[best_id]);
     *counter_example = example_list[best_id];
     return false;
-}
-
-FiniteCompleteRandomSemanticsSelector::FiniteCompleteRandomSemanticsSelector(Specification *spec,
-        EquivalenceChecker *checker, RandomSemanticsScorer *scorer, DifferentProgramGenerator* _g):
-    CompleteSelector(spec, checker), BasicRandomSemanticsSelector(spec->env.get(), spec->info_list[0]->grammar, scorer), g(_g) {
-    fio_space = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
-    if (!fio_space) {
-        LOG(FATAL) << "FiniteCompleteRandomSemanticsSelector require FiniteIOExampleSpace";
-    }
-    for (auto& example: fio_space->example_space) {
-        io_example_list.push_back(fio_space->getIOExample(example));
-    }
-}
-FiniteCompleteRandomSemanticsSelector::~FiniteCompleteRandomSemanticsSelector() noexcept {
-    delete g;
-}
-void FiniteCompleteRandomSemanticsSelector::addExample(const IOExample &example) {
-    addHistoryExample(example.first);
-    checker->addExample(example);
-    g->addExample(example);
-}
-Example FiniteCompleteRandomSemanticsSelector::getNextExample(const PProgram &x, const PProgram &y) {
-    LOG(INFO) << x->toString() << std::endl;
-    std::vector<int> id_list;
-    ExampleList candidate_inp_list;
-    for ( int i = 0; i < io_example_list.size(); ++i) {
-        auto& io_example = io_example_list[i];
-        auto program_list = g->getDifferentProgram(io_example, 2);
-        if (program_list.size() == 1) continue;
-        id_list.push_back(i);
-        candidate_inp_list.push_back(io_example.first);
-    }
-    int best_id = getBestExampleId(x, candidate_inp_list);
-    best_id = id_list[best_id];
-    auto res = fio_space->example_space[best_id];
-#ifdef DEBUG
-    auto res_io = fio_space->getIOExample(res);
-    assert(!(env->run(x.get(), res_io.first) == env->run(y.get(), res_io.first)));
-#endif
-    return res;
 }

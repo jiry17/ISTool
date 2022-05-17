@@ -354,7 +354,6 @@ namespace {
 
 Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     auto env = std::make_shared<Env>();
-
     auto theory_list = getEntriesViaName(root, "set-logic");
     assert(theory_list.size() == 1);
     auto theory = getTheory(theory_list[0][1].asString());

@@ -85,4 +85,5 @@ void theory::clia::loadZ3Semantics(Env *env) {
     LoadZ3Semantics(z3_env, "<=", Leq); LoadZ3Semantics(z3_env, ">", Gq);
     LoadZ3Semantics(z3_env, ">=", Geq); LoadZ3Semantics(z3_env, "=", Eq);
     LoadZ3Semantics(z3_env, "!=", Neq); LoadZ3Semantics(z3_env, "ite", Ite);
+    LoadZ3Semantics(z3_env, "=b", Eq);
 }

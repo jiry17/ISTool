@@ -121,7 +121,7 @@ Verifier* getSplitVerifier(Specification* spec, int num) {
 Verifier* getRandomSemanticsVerifier(Specification* spec, int num) {
     auto* model = ext::vsa::getSizeModel();
     auto* graph = new TopDownContextGraph(grammar::generateHeightLimitedGrammar(spec->info_list[0]->grammar, 10), model, ProbModelType::NORMAL_PROB);
-    auto* fg = selector::getFlattenGrammar(graph, num, [](Program *p) { return true; });
+    auto* fg = new TrivialFlattenGrammar(graph, spec->env.get(), num, [](Program *p) { return true; });
     auto* scorer = new RandomSemanticsScorer(spec->env.get(), fg, 5);
     if (dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get())) {
         return new Z3RandomSemanticsSelector(spec, scorer, 10);

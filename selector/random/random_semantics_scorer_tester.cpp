@@ -127,15 +127,9 @@ namespace {
         return 1.0 / KO / KO;
     }
 
-    DataStorage _getFullInpList(Env* env, const DataStorage& raw_inp, const std::vector<std::pair<PType, PProgram>>& param_list) {
+    DataStorage _getFullInpList(FlattenGrammar* fg, const DataStorage& raw_inp) {
         DataStorage res;
-        for (auto& inp: raw_inp) {
-            DataList new_inp;
-            for (auto& param_info: param_list) {
-                new_inp.push_back(env->run(param_info.second.get(), inp));
-            }
-            res.push_back(new_inp);
-        }
+        for (auto& inp: raw_inp) res.push_back(fg->getFlattenInput(inp));
         return res;
     }
 }
@@ -146,7 +140,7 @@ double selector::test::getPairGroundTruth(Env* env, FlattenGrammar *fg, const Da
     for (auto& info: info_list) {
         LOG(INFO) << "  " << info.prob << ": " << info.program->toString() << std::endl;
     }*/
-    auto inp_list = _getFullInpList(env, raw_inp, fg->param_list);
+    auto inp_list = _getFullInpList(fg, raw_inp);
     double res = 0.0;
     for (auto& f_info: info_list) {
         auto* fs = fg->graph->getProgramMatchStructure(f_info.program); assert(fs);
@@ -164,12 +158,7 @@ double selector::test::getPairGroundTruth(Env* env, FlattenGrammar *fg, const Da
 
 double selector::test::getTripleGroundTruth(Env* env, FlattenGrammar *fg, const PProgram& p, const DataStorage &raw_inp, double KO) {
     _ProgramInfoList info_list = _collectAllProgramInfo(fg->graph);
-    LOG(INFO) << "prog size " << info_list.size();
-    /*LOG(INFO) << "Program Infos:";
-    for (auto& info: info_list) {
-        LOG(INFO) << "  " << info.prob << ": " << info.program->toString() << std::endl;
-    }*/
-    auto inp_list = _getFullInpList(env, raw_inp, fg->param_list);
+    auto inp_list = _getFullInpList(fg, raw_inp);
     auto* ps = fg->getMatchStructure(p); assert(ps);
     double res = 0.0;
     for (auto& f_info: info_list) {
@@ -181,10 +170,7 @@ double selector::test::getTripleGroundTruth(Env* env, FlattenGrammar *fg, const 
                 cur *= _getRandomMatchProb({fs, gs, ps}, inp_list[i], KO);
             // std::cout << f_info.program->toString() << " " << g_info.program->toString() << " " << cur << std::endl;
             res += cur * f_info.prob * g_info.prob;
-            delete gs;
         }
-        delete fs;
     }
-    delete ps;
     return res;
 }

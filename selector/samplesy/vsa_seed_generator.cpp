@@ -2,6 +2,7 @@
 // Created by pro on 2022/1/27.
 //
 
+#include "istool/solver/component/tree_encoder.h"
 #include "istool/selector/samplesy/vsa_seed_generator.h"
 #include "glog/logging.h"
 
@@ -236,6 +237,123 @@ ProgramList FiniteVSASeedGenerator::getSeeds(int num, double time_limit) {
         LOG(INFO) << "Start enhance from " << res.size() << " samples";
         for (auto& example: io_examples) {
             for (auto& p: g->getDifferentProgram(example, 10)) res.push_back(p);
+        }
+        LOG(INFO) << "Finish with " << res.size() << " samples";
+    }
+    return res;
+}
+
+namespace {
+    int _getGrammarDepth(NonTerminal* symbol, std::vector<int>& depth) {
+        int id = symbol->id;
+        if (depth[id] == -2) LOG(FATAL) << "The grammar should be acyclic";
+        if (depth[id] != -1) return depth[id];
+        depth[id] = -2;
+        int res = 0;
+        for (auto* rule: symbol->rule_list) {
+            for (auto* node: rule->param_list) {
+                res = std::max(res, _getGrammarDepth(node, depth));
+            }
+        }
+        return depth[id] = res + 1;
+    }
+
+    int _getGrammarDepth(Grammar* g) {
+        g->indexSymbol();
+        std::vector<int> depth(g->symbol_list.size(), -1);
+        return _getGrammarDepth(g->start, depth);
+    }
+
+    TypeList _getParamTypeList(Grammar* g) {
+        TypeList res;
+        for (auto* symbol: g->symbol_list) {
+            for (auto* rule: symbol->rule_list) {
+                auto* ps = dynamic_cast<ParamSemantics*>(rule->semantics.get());
+                if (ps) {
+                    while (res.size() <= ps->id) res.emplace_back();
+                    res[ps->id] = ps->oup_type;
+                }
+            }
+        }
+        for (int i = 0; i < res.size(); ++i) {
+            if (!res[i]) LOG(FATAL) << "Param" << i << " is not used in the grammar";
+        }
+        return res;
+    }
+}
+
+Z3VSASeedGenerator::Z3VSASeedGenerator(Specification* spec, const PVSABuilder &_builder, VSASampler *_sampler):
+    builder(_builder), sampler(_sampler), ext(ext::z3::getExtension(spec->env.get())), cons_list(ext->ctx),
+    param_list(ext->ctx), encode_output(ext->ctx) {
+    root = builder->buildFullVSA();
+    auto* g = spec->info_list[0]->grammar;
+    encoder = new TreeEncoder(g, ext, _getGrammarDepth(g));
+    cons_list = encoder->encodeStructure("x");
+    io_space = dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get());
+    if (!io_space) {
+        LOG(FATAL) << "Z3VSASeedGenerator requires Z3IOExampleSpace";
+    }
+    auto param_type_list = _getParamTypeList(g);
+    for (int i = 0; i < param_type_list.size(); ++i) {
+        param_list.push_back(ext->buildVar(param_type_list[i].get(), "Param" + std::to_string(i)));
+    }
+    auto encode_res = encoder->encodeExample(ext::z3::z3Vector2EncodeList(param_list), "x@var");
+    for (const auto& cons: encode_res.cons_list) cons_list.push_back(cons);
+    encode_output = encode_res.res;
+}
+
+void Z3VSASeedGenerator::addExample(const IOExample &example) {
+    auto next_root = builder->buildVSA(example.second, example.first, nullptr);
+    root = builder->mergeVSA(root, next_root, nullptr);
+
+    z3::expr_vector inp_list(ext->ctx);
+    for (auto& data: example.first) inp_list.push_back(ext->buildConst(data));
+    auto oup = ext->buildConst(example.second);
+    auto encode_res = encoder->encodeExample(ext::z3::z3Vector2EncodeList(inp_list), "v" + std::to_string(++example_count));
+    cons_list.push_back(encode_res.res == oup);
+    for (const auto& cons: encode_res.cons_list) cons_list.push_back(cons);
+}
+
+bool Z3VSASeedGenerator::checkEquivalent(Program* x, Program* y) {
+    z3::solver s(ext->ctx);
+    auto x_encode_res = ext->encodeZ3ExprForProgram(x, ext::z3::z3Vector2EncodeList(param_list));
+    auto y_encode_res = ext->encodeZ3ExprForProgram(y, ext::z3::z3Vector2EncodeList(param_list));
+    s.add(x_encode_res.cons_list);
+    s.add(y_encode_res.cons_list);
+    s.add(x_encode_res.res != y_encode_res.res);
+    return s.check() == z3::unsat;
+}
+
+ProgramList Z3VSASeedGenerator::getSeeds(int num, double time_limit) {
+    auto* guard = new TimeGuard(time_limit);
+    sampler->setRoot(root);
+    ProgramList res;
+    while (guard->getRemainTime() >= 0. && res.size() < num) {
+        res.push_back(sampler->sampleNext());
+    }
+    PProgram now = res[0]; int count = 0;
+    for (const auto& p: res) {
+        if (checkEquivalent(now.get(), p.get())) count++;
+        else {
+            count--;
+            if (count == 0) count = 1, now = p;
+        }
+    }
+    if (count + 100 > res.size()) {
+        LOG(INFO) << "Start enhance from " << res.size() << " samples for " << now->toString();
+        z3::solver s(ext->ctx); s.add(cons_list);
+        auto now_encode = ext->encodeZ3ExprForProgram(now.get(), ext::z3::z3Vector2EncodeList(param_list));
+        s.add(now_encode.cons_list); s.add(now_encode.res != encode_output);
+        for (int _ = 0; _ < 100; ++_) {
+            auto rem = guard->getRemainTime();
+            if (rem < 0) break;
+            ext->setTimeOut(s, guard);
+            auto check_res = s.check();
+            if (check_res != z3::sat) break;
+            auto model = s.get_model();
+            auto new_p = encoder->programBuilder(model);
+            res.push_back(new_p);
+
         }
         LOG(INFO) << "Finish with " << res.size() << " samples";
     }

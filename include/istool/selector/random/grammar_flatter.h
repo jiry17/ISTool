@@ -9,22 +9,52 @@
 #include "istool/solver/maxflash/topdown_context_graph.h"
 
 class FlattenGrammar {
-    TopDownGraphMatchStructure* getMatchStructure(int node_id, const PProgram& program) const;
+protected:
+    virtual TopDownGraphMatchStructure* getMatchStructure(int node_id, const PProgram& program) const = 0;
 public:
-    std::vector<std::pair<PType, PProgram>> param_list;
+    struct ParamInfo {
+        PType type;
+        PProgram program;
+        ParamInfo(const PType& _type, const PProgram& _program);
+        ParamInfo() = default;
+    };
     TopDownContextGraph* graph;
-    std::unordered_map<std::string, int> param_map;
-    std::vector<std::vector<int>> param_index_list;
-    bool is_indexed;
-    void buildParamIndex();
-
+    std::unordered_map<std::string, TopDownGraphMatchStructure*> match_cache;
+    std::vector<ParamInfo> param_info_list;
+    Env* env;
+    void print() const;
     TopDownGraphMatchStructure* getMatchStructure(const PProgram& program);
-    FlattenGrammar(const std::vector<std::pair<PType, PProgram>>& _param_list, TopDownContextGraph* _grammar);
+    Example getFlattenInput(const Example& input) const;
+    FlattenGrammar(TopDownContextGraph* _graph, Env* _env);
     ~FlattenGrammar();
 };
 
-namespace selector {
-    FlattenGrammar* getFlattenGrammar(TopDownContextGraph* g, int size_limit, const std::function<bool(Program*)>& validator);
-}
+class TrivialFlattenGrammar: public FlattenGrammar {
+protected:
+    virtual TopDownGraphMatchStructure* getMatchStructure(int node_id, const PProgram& program) const;
+public:
+    std::unordered_map<std::string, int> param_map;
+    Env* env;
+    TrivialFlattenGrammar(TopDownContextGraph* _g, Env* env, int flatten_num, const std::function<bool(Program*)>& validator);
+    ~TrivialFlattenGrammar() = default;
+};
+
+class EquivalenceCheckTool {
+public:
+    virtual PProgram insertProgram(const PProgram& p) = 0;
+    virtual PProgram queryProgram(const PProgram& p) = 0;
+    virtual Data getConst(Program* p) = 0;
+};
+
+class MergedFlattenGrammar: public FlattenGrammar {
+protected:
+    virtual TopDownGraphMatchStructure* getMatchStructure(int node_id, const PProgram& program) const;
+public:
+    std::unordered_map<std::string, int> param_map;
+    Env* env;
+    EquivalenceCheckTool* tool;
+    MergedFlattenGrammar(TopDownContextGraph* _g, Env* env, int flatten_num, const std::function<bool(Program*)>& validator, ExampleSpace* example_space);
+    ~MergedFlattenGrammar();
+};
 
 #endif //ISTOOL_GRAMMAR_FLATTER_H

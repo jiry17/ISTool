@@ -22,7 +22,7 @@ void theory::loadCLIATheory(Env *env) {
     LoadSemantics("<", Lq); LoadSemantics("<=", Leq);
     LoadSemantics(">", Gq); LoadSemantics(">=", Geq);
     LoadSemantics("=", Eq); LoadSemantics("ite", Ite);
-    LoadSemantics("!=", Neq);
+    LoadSemantics("!=", Neq); LoadSemantics("=b", EqBool);
 
     auto* ext = type::getTypeExtension(env);
     ext->registerTypeInfo(new IntValueTypeInfo());

@@ -24,7 +24,7 @@ public:
     Splitor* splitor;
     ProgramList seed_list;
     Data* KSampleTimeOut, *KSampleNum;
-    CompleteSplitSelector(Specification* _spec, Splitor* _splitor, EquivalenceChecker* _checker, int n, Verifier* v = nullptr, Optimizer* o = nullptr);
+    CompleteSplitSelector(Specification* _spec, Splitor* _splitor, GrammarEquivalenceChecker* _checker, int n, Verifier* v = nullptr, Optimizer* o = nullptr);
     virtual Example getNextExample(const PProgram& x, const PProgram& y);
     virtual void addExample(const IOExample& example);
     virtual ~CompleteSplitSelector();

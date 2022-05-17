@@ -10,7 +10,7 @@ void ExampleCounter::addExampleCount() {
     example_count += 1;
 }
 
-CompleteSelector::CompleteSelector(Specification *spec, EquivalenceChecker* _checker): Solver(spec), checker(_checker) {
+CompleteSelector::CompleteSelector(Specification *spec, GrammarEquivalenceChecker* _checker): Solver(spec), checker(_checker) {
     if (spec->info_list.size() > 1) {
         LOG(FATAL) << "CompleteSelector can synthesize only a single program";
     }
@@ -25,7 +25,9 @@ FunctionContext CompleteSelector::synthesis(TimeGuard *guard) {
         if (programs.size() == 1) {
             return semantics::buildSingleContext(io_space->func_name, programs[0]);
         }
+        std::cout << programs.size() << std::endl;
         assert(programs.size() == 2);
+        LOG(INFO) << "program " << programs[0]->toString() << " " << programs[1]->toString();
         auto example = getNextExample(programs[0], programs[1]);
         addExampleCount();
         auto io_example = io_space->getIOExample(example);

@@ -13,8 +13,12 @@ CollectRes::CollectRes(const PProgram &_p, const Data &_oup): p(_p), oup(_oup) {
 VSADifferentProgramGenerator::VSADifferentProgramGenerator(const PVSABuilder& _builder): builder(_builder) {
     ext = builder->ext;
     setRoot(builder->buildFullVSA());
+    LOG(INFO) << "VSA Different Root " << root;
 }
 void VSADifferentProgramGenerator::addExample(const IOExample &example) {
+    auto feature = example::ioExample2String(example);
+    if (added_example_set.find(feature) != added_example_set.end()) return;
+    added_example_set.insert(feature);
     auto next_root = builder->buildVSA(example.second, example.first, nullptr);
     setRoot(builder->mergeVSA(root, next_root, nullptr));
     LOG(INFO) << "Remain program: " << ext::vsa::getProgramNum(root);
@@ -173,13 +177,25 @@ ProgramList VSADifferentProgramGenerator::getDifferentProgram(const IOExample &e
         if (res_pool[0].size() >= num || is_finished) break;
         limit *= 2;
     }
+    if (res_pool[0].empty()) {
+        int cared_id = 0;
+        auto* node = node_list[cared_id];
+        std::cout << "Cared id: " << cared_id << " " << node_list[cared_id]->toString() << std::endl;
+        for (const auto& edge: node->edge_list) {
+            std::cout << "  " << edge.toString() << std::endl;
+            for (auto* sub_node: edge.node_list) {
+                std::cout << "    " << sub_node->toString() << " ";
+                for (auto& res_info: res_pool[sub_node->id]) {
+                    std::cout << res_info.oup.toString() << "@" << res_info.p->toString() << " ";
+                }
+                std::cout << std::endl;
+            }
+        }
+        LOG(FATAL) << "No valid program";
+    }
     assert(!res_pool[0].empty());
-    // todo: make this more flexible
-    auto min_valid = ext::vsa::getBestProgram(root, ext::vsa::getSizeModel());
-    ProgramList res_list = {min_valid};
-    auto min_output = builder->env->run(min_valid.get(), example.first);
+    ProgramList res_list;
     for (auto& res: res_pool[0]) {
-        if (builder->env->run(res.p.get(), example.first) == min_output) continue;
         res_list.push_back(res.p);
     }
     if (res_list.size() > num) res_list.resize(num);

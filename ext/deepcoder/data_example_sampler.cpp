@@ -1,18 +1,14 @@
 //
-// Created by pro on 2022/1/20.
+// Created by pro on 2022/5/12.
 //
 
-#include "istool/solver/autolifter/basic/example_sampler.h"
+#include "istool/ext/deepcoder/data_example_sampler.h"
+#include "istool/basic/example_sampler.h"
 #include "istool/ext/deepcoder/anonymous_function.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
+#include "istool/sygus/theory/basic/clia/clia_example_sampler.h"
 #include "istool/ext/deepcoder/data_type.h"
 #include "glog/logging.h"
-
-namespace {
-    int KDefaultIntMin = -3;
-    int KDefaultIntMax = 3;
-    int KDefaultSizeMax = 10;
-}
 
 namespace {
     PProgram _buildChecker(const ExampleChecker& checker) {
@@ -24,6 +20,9 @@ namespace {
         ProgramList sub_list;
         return std::make_shared<Program>(as, sub_list);
     }
+    int KDefaultIntMin = -3;
+    int KDefaultIntMax = 3;
+    int KDefaultSizeMax = 10;
 }
 
 BasicRandomSampler::BasicRandomSampler(const TypeList &_type_list, PProgram &_chk, Env *_env): type_list(_type_list),
@@ -35,9 +34,9 @@ BasicRandomSampler::BasicRandomSampler(const TypeList &_type_list, const Example
     initConst();
 }
 void BasicRandomSampler::initConst() {
-    int_min = env->getConstRef(solver::autolifter::KSampleIntMinName, BuildData(Int, KDefaultIntMin));
-    int_max = env->getConstRef(solver::autolifter::KSampleIntMaxName, BuildData(Int, KDefaultIntMax));
-    size_max = env->getConstRef(solver::autolifter::KSampleDSSizeName, BuildData(Int, KDefaultSizeMax));
+    int_min = env->getConstRef(theory::clia::KSampleIntMinName, BuildData(Int, KDefaultIntMin));
+    int_max = env->getConstRef(theory::clia::KSampleIntMaxName, BuildData(Int, KDefaultIntMax));
+    size_max = env->getConstRef(ext::ho::KSampleDSSizeName, BuildData(Int, KDefaultSizeMax));
 }
 
 BTreeNode BasicRandomSampler::sampleTree(Type *node_type, Type *leaf_type, int size) {
@@ -45,7 +44,7 @@ BTreeNode BasicRandomSampler::sampleTree(Type *node_type, Type *leaf_type, int s
     std::uniform_int_distribution<int> d(0, size - 1);
     int l_size = d(env->random_engine), r_size = size - 1 - l_size;
     return std::make_shared<BTreeInternalValue>(sampleTree(node_type, leaf_type, l_size),
-            sampleTree(node_type, leaf_type, r_size), sampleWithType(node_type));
+                                                sampleTree(node_type, leaf_type, r_size), sampleWithType(node_type));
 }
 
 Data BasicRandomSampler::sampleWithType(Type *type) {
@@ -93,7 +92,4 @@ ExampleList BasicRandomSampler::generateExamples(TimeGuard *guard) {
     }
     return {res};
 }
-
-const std::string solver::autolifter::KSampleIntMinName = "AutoLifter@IntMin";
-const std::string solver::autolifter::KSampleIntMaxName = "AutoLifter@IntMax";
-const std::string solver::autolifter::KSampleDSSizeName = "AutoLifter@SizeMax";
+const std::string ext::ho::KSampleDSSizeName = "Sample@DataSizeMax";

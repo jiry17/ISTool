@@ -7,14 +7,7 @@
 
 #include "istool/basic/example_space.h"
 #include "istool/basic/time_guard.h"
-
-class ExampleGenerator {
-public:
-    virtual ExampleList generateExamples(TimeGuard* guard) = 0;
-    virtual ~ExampleGenerator() = default;
-};
-
-typedef std::shared_ptr<ExampleGenerator> PExampleGenerator;
+#include "istool/basic/example_sampler.h"
 
 class StreamedExampleSpace: public ExampleSpace {
 public:

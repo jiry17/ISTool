@@ -8,6 +8,7 @@
 #include "istool/sygus/parser/parser.h"
 #include "istool/selector/samplesy/samplesy.h"
 #include "istool/selector/split/finite_splitor.h"
+#include "istool/selector/split/z3_splitor.h"
 #include "istool/dsl/samplesy/samplesy_dsl.h"
 #include "istool/solver/vsa/vsa_builder.h"
 #include "istool/sygus/theory/basic/string/str.h"
@@ -15,32 +16,99 @@
 #include "istool/sygus/theory/witness/string/string_witness.h"
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
 #include <unordered_set>
-#include "istool/selector/finite_random_selector.h"
+#include "istool/selector/random_selector.h"
 #include "istool/selector/samplesy/finite_equivalence_checker.h"
 #include "istool/selector/samplesy/vsa_seed_generator.h"
 #include "istool/selector/samplesy/different_program_generator.h"
+#include "istool/selector/samplesy/z3_equivalence_checker.h"
 #include "istool/selector/random/random_semantics_selector.h"
+#include "istool/selector/random/complete_random_semantics_selector.h"
+#include "istool/sygus/theory/basic/clia/clia_example_sampler.h"
 
 typedef std::pair<int, FunctionContext> SynthesisResult;
 
-int getGrammarDepth(Specification* spec) {
+const int KIntMax = 5;
+
+std::string getTaskName(const std::string& path) {
+    int last = 0;
+    for (auto i = path.find("/"); i != std::string::npos; i = path.find("/", i + 1)) last = i;
+    return path.substr(last + 1);
+}
+
+// The depth is the same as the evaluation in PLDI20 "Question Selection for Interactive Program Synthesis"
+const std::unordered_map<std::string, int> KSpecialDepth = {
+        {"t8.sl", 2}, {"t10.sl", 3}, {"t17.sl", 3}, {"t20.sl", 3}, {"t3.sl", 3}, {"t7.sl", 3},
+        {"dr-name.sl", 7}, {"dr-name-long.sl", 7}, {"dr-name-long-repeat.sl", 7}, {"dr-name_small.sl", 7},
+        {"2171308.sl", 7}, {"exceljet1.sl", 7}, {"get-domain-name-from-url.sl", 7}, {"get-last-name-from-name-with-comma.sl", 8},
+        {"initials.sl", 8}, {"initials-long.sl", 8}, {"initials-long-repeat.sl", 8}, {"initials_small.sl", 8},
+        {"stackoverflow10.sl", 8}, {"stackoverflow11.sl", 7}
+};
+int KDefaultStringDepth;
+int getGrammarDepth(Specification* spec, const std::string& task_name) {
+    auto it = KSpecialDepth.find(task_name);
+    if (it != KSpecialDepth.end()) {
+        return it->second;
+    }
     auto theory = sygus::getSyGuSTheory(spec->env.get());
-    if (theory == TheoryToken::STRING) return 6;
+    if (theory == TheoryToken::STRING) return KDefaultStringDepth;
     else if (theory == TheoryToken::CLIA) return 4;
     LOG(FATAL) << "GrammarDepth undefined for the current theory";
 }
 
-void prepareSampleSy(Specification* spec) {
-    int depth = getGrammarDepth(spec);
+namespace {
+    void _collectIntParam(const PProgram& p, std::unordered_map<int, PProgram>& res) {
+        auto* ps = dynamic_cast<ParamSemantics*>(p->semantics.get());
+        if (ps && dynamic_cast<TInt*>(ps->oup_type.get())) res[ps->id] = p;
+        for (auto& sub: p->sub_list) {
+            _collectIntParam(sub, res);
+        }
+    }
+
+    PProgram _buildIntRangeCons(const PProgram& p, Env* env) {
+        auto upper_bound = program::buildConst(BuildData(Int, KIntMax));
+        auto lower_bound = program::buildConst(BuildData(Int, -KIntMax));
+        auto upper_cons = std::make_shared<Program>(env->getSemantics(">="), (ProgramList){upper_bound, p});
+        auto lower_cons = std::make_shared<Program>(env->getSemantics(">="), (ProgramList){p, lower_bound});
+        return std::make_shared<Program>(env->getSemantics("&&"), (ProgramList){upper_cons, lower_cons});
+    }
+}
+
+void prepareSampleSy(Specification* spec, const std::string& task_name) {
+    int depth = getGrammarDepth(spec, task_name);
     auto& info = spec->info_list[0];
-    samplesy::registerSampleSyBasic(spec->env.get());
-    samplesy::registerSampleSyWitness(spec->env.get());
-    if (sygus::getSyGuSTheory(spec->env.get()) == TheoryToken::STRING) {
+    auto theory = sygus::getSyGuSTheory(spec->env.get());
+    if (theory == TheoryToken::STRING) {
+        samplesy::registerSampleSyBasic(spec->env.get());
+        samplesy::registerSampleSyWitness(spec->env.get());
         info->grammar = samplesy::rewriteGrammar(info->grammar, spec->env.get(),
                                                  dynamic_cast<FiniteIOExampleSpace *>(spec->example_space.get()));
+    } else if (theory == TheoryToken::CLIA) {
+        theory::clia::loadWitnessFunction(spec->env.get());
+        auto* example_space = dynamic_cast<ExampleSpace*>(spec->example_space.get());
+        std::unordered_map<int, PProgram> int_params;
+        _collectIntParam(example_space->cons_program, int_params);
+        for (auto& info: int_params) {
+            auto range_cons = _buildIntRangeCons(info.second, spec->env.get());
+            example_space->cons_program = std::make_shared<Program>(spec->env->getSemantics("=>"),
+                    (ProgramList){range_cons, example_space->cons_program});
+        }
     }
+    LOG(INFO) << "grammar "; info->grammar->print();
     info->grammar = grammar::generateHeightLimitedGrammar(info->grammar, depth);
 }
+
+
+auto KIntPrepare = [](Grammar* g, Env* env, const IOExample& io_example) {
+    int tmp_int_limit = KIntMax;
+    auto* ov = dynamic_cast<IntValue*>(io_example.second.get());
+    if (ov) tmp_int_limit = std::max(tmp_int_limit, ov->w);
+    for (auto& data: io_example.first) {
+        auto* iv = dynamic_cast<IntValue*>(data.get());
+        if (iv) tmp_int_limit = std::max(tmp_int_limit, std::abs(iv->w));
+    }
+    env->setConst(theory::clia::KWitnessIntMinName, BuildData(Int, -tmp_int_limit * 2));
+    env->setConst(theory::clia::KWitnessIntMaxName, BuildData(Int, tmp_int_limit * 2));
+};
 
 auto KStringPrepare = [](Grammar* g, Env* env, const IOExample& io_example) {
     DataList string_const_list, string_input_list;
@@ -84,14 +152,46 @@ auto KStringPrepare = [](Grammar* g, Env* env, const IOExample& io_example) {
 Splitor* getSplitor(Specification* spec) {
     auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
     if (fio) return new FiniteSplitor(fio);
+    auto* zio = dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get());
+    if (zio) {
+        auto sig = zio->sig_map.begin()->second;
+        return new Z3Splitor(spec->example_space.get(), sig.second, sig.first);
+    }
     LOG(FATAL) << "Unsupported type of ExampleSpace for the Splitor";
 }
 
-EquivalenceChecker* getEquivalenceChecker(Specification* spec, const PVSABuilder& builder) {
+namespace {
+    PProgram _getIntRangeCons(SynthInfo* info, Env* env) {
+        TypeList type_list = info->inp_type_list;
+        ProgramList cons_list;
+        for (int i = 0; i < type_list.size(); ++i) {
+            if (dynamic_cast<TInt*>(type_list[i].get())) {
+                auto p = program::buildParam(i, type_list[i]);
+                cons_list.push_back(_buildIntRangeCons(p, env));
+            }
+        }
+        if (cons_list.empty()) return program::buildConst(BuildData(Bool, true));
+        auto res = cons_list[0];
+        for (int i = 1; i < cons_list.size(); ++i) {
+            res = std::make_shared<Program>(env->getSemantics("&&"), (ProgramList){res, cons_list[i]});
+        }
+        return res;
+    }
+}
+
+GrammarEquivalenceChecker* getEquivalenceChecker(Specification* spec, const PVSABuilder& builder) {
     auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
     if (fio) {
         auto* diff_gen = new VSADifferentProgramGenerator(builder);
-        return new FiniteEquivalenceChecker(diff_gen, fio);
+        return new FiniteGrammarEquivalenceChecker(diff_gen, fio);
+    }
+    auto* zio = dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get());
+    if (zio) {
+        auto* ext = ext::z3::getExtension(spec->env.get());
+        auto* g = spec->info_list[0]->grammar;
+        auto* env = spec->env.get();
+        auto range_limit = _getIntRangeCons(spec->info_list[0].get(), env);
+        return new Z3GrammarEquivalenceChecker(g, ext, spec->info_list[0]->inp_type_list, range_limit);
     }
     LOG(FATAL) << "Unsupported type of ExampleSpace for the EquivalenceChecker";
 }
@@ -102,6 +202,11 @@ SeedGenerator* getSeedGenerator(Specification* spec, const PVSABuilder& builder)
         auto* diff_gen = new VSADifferentProgramGenerator(builder);
         return new FiniteVSASeedGenerator(builder, new VSASizeBasedSampler(spec->env.get()), diff_gen, fio);
     }
+    auto* zio = dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get());
+    if (zio) {
+        return new Z3VSASeedGenerator(spec, builder, new VSASizeBasedSampler(spec->env.get()));
+        //Z3VSASeedGenerator(Specification* spec, const PVSABuilder& _builder, VSASampler* _sampler);
+    }
     LOG(FATAL) << "Unsupported type of ExampleSpace for the SeedGenerator";
 }
 
@@ -109,9 +214,16 @@ SynthesisResult invokeSampleSy(Specification* spec, TimeGuard* guard) {
     auto* pruner = new TrivialPruner();
     auto& info = spec->info_list[0];
     auto* vsa_ext = ext::vsa::getExtension(spec->env.get());
-    vsa_ext->setEnvSetter(KStringPrepare);
+
+    auto theory = sygus::getSyGuSTheory(spec->env.get());
+    if (theory == TheoryToken::STRING) vsa_ext->setEnvSetter(KStringPrepare);
+    else if (theory == TheoryToken::CLIA) {
+        spec->env->setConst(selector::samplesy::KSampleNumLimit, BuildData(Int, 300));
+        vsa_ext->setEnvSetter(KIntPrepare);
+    }
+    else LOG(FATAL) << "Unknosn theory " << sygus::theoryToken2String(theory);
     auto builder = std::make_shared<DFSVSABuilder>(info->grammar, pruner, spec->env.get());
-    info->grammar->print();
+
     auto* splitor = getSplitor(spec);
     auto* checker = getEquivalenceChecker(spec, builder);
     auto* gen = getSeedGenerator(spec, builder);
@@ -124,12 +236,29 @@ SynthesisResult invokeRandomSy(Specification* spec, TimeGuard* guard) {
     auto* pruner = new TrivialPruner();
     auto& info = spec->info_list[0];
     auto* vsa_ext = ext::vsa::getExtension(spec->env.get());
-    vsa_ext->setEnvSetter(KStringPrepare);
+    auto theory = sygus::getSyGuSTheory(spec->env.get());
+    if (theory == TheoryToken::STRING) vsa_ext->setEnvSetter(KStringPrepare);
+    else if (theory == TheoryToken::CLIA) vsa_ext->setEnvSetter(KIntPrepare);
+
     auto builder = std::make_shared<DFSVSABuilder>(info->grammar, pruner, spec->env.get());
     auto* checker = getEquivalenceChecker(spec, builder);
-    auto* solver = new FiniteRandomSelector(spec, checker);
-    auto res = solver->synthesis(nullptr);
-    return {solver->example_count, res};
+
+    auto* example_space = spec->example_space.get();
+    if (dynamic_cast<FiniteIOExampleSpace*>(example_space)) {
+        auto *solver = new FiniteRandomSelector(spec, checker);
+        auto res = solver->synthesis(nullptr);
+        return {solver->example_count, res};
+    }
+    auto* zio = dynamic_cast<Z3IOExampleSpace*>(example_space);
+    if (zio) {
+        spec->env->setConst(theory::clia::KSampleIntMinName, BuildData(Int, -KIntMax));
+        spec->env->setConst(theory::clia::KSampleIntMaxName, BuildData(Int, KIntMax));
+        auto* gen = new IntExampleGenerator(spec->env.get(), zio->type_list);
+        auto* z3_verifier = new Z3Verifier(zio);
+        auto* solver = new Z3RandomSelector(spec, checker, z3_verifier, gen);
+        auto res = solver->synthesis(nullptr);
+        return {solver->example_count, res};
+    }
 }
 
 FlattenGrammar* getFlattenGrammar(Specification* spec, TopDownContextGraph* graph, int num) {
@@ -145,13 +274,14 @@ FlattenGrammar* getFlattenGrammar(Specification* spec, TopDownContextGraph* grap
         auto* g = spec->info_list[0]->grammar;
         auto validator = [vsa_ext, io_list, g](Program* p) -> bool {
             for (auto& example: io_list) {
-                if (!ext::vsa::isConsideredByVSA(p, vsa_ext, g, example)) return false;
+                if (ext::vsa::isConsideredByVSA(p, vsa_ext, g, example)) return true;
             }
-            return true;
+            return false;
         };
-        return selector::getFlattenGrammar(graph, num, validator);
+        return new MergedFlattenGrammar(graph, spec->env.get(), num, validator, spec->example_space.get()); //selector::getFlattenGrammar(graph, num, validator);
     } else {
-        return selector::getFlattenGrammar(graph, num, [](Program *p) { return true; });
+        return new TrivialFlattenGrammar(graph, spec->env.get(), num, [](Program *p) { return true; });
+        // return selector::getFlattenGrammar(graph, num, [](Program *p) { return true; });
     }
 }
 
@@ -159,19 +289,36 @@ SynthesisResult invokeRandomSemanticsSelector(Specification* spec, int num, Time
     auto* pruner = new TrivialPruner();
     auto& info = spec->info_list[0];
     auto* vsa_ext = ext::vsa::getExtension(spec->env.get());
-    vsa_ext->setEnvSetter(KStringPrepare);
+    auto theory = sygus::getSyGuSTheory(spec->env.get());
+    if (theory == TheoryToken::STRING) vsa_ext->setEnvSetter(KStringPrepare);
+    else if (theory == TheoryToken::CLIA) vsa_ext->setEnvSetter(KIntPrepare);
     auto builder = std::make_shared<DFSVSABuilder>(info->grammar, pruner, spec->env.get());
     auto* checker = getEquivalenceChecker(spec, builder);
 
     auto model = ext::vsa::getSizeModel();
     auto* graph = new TopDownContextGraph(info->grammar, model, ProbModelType::NORMAL_PROB);
     auto* fg = getFlattenGrammar(spec, graph, num);
-    auto* scorer = new RandomSemanticsScorer(spec->env.get(), fg, 5);
+    // fg->graph->print();
+    for (auto& info: fg->param_info_list) std::cout << "  " << info.program->toString() << std::endl;
+    auto* scorer = new RandomSemanticsScorer(spec->env.get(), fg, 20);
 
-    auto* diff_gen = new VSADifferentProgramGenerator(builder);
-    auto* solver = new FiniteCompleteRandomSemanticsSelector(spec, checker, scorer, diff_gen);
-    auto res = solver->synthesis(guard);
-    return {solver->example_count, res};
+
+    auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
+    if (fio) {
+        auto* diff_gen = new VSADifferentProgramGenerator(builder);
+        auto *solver = new FiniteCompleteRandomSemanticsSelector(spec, checker, scorer, diff_gen);
+        auto res = solver->synthesis(guard);
+        return {solver->example_count, res};
+    }
+
+    auto* zio = dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get());
+    if (zio) {
+        auto range_cons = _getIntRangeCons(spec->info_list[0].get(), spec->env.get());
+        auto* solver = new Z3CompleteRandomSemanticsSelector(spec, checker, scorer, range_cons.get(), 20);
+        auto res = solver->synthesis(guard);
+        return {solver->example_count, res};
+    }
+    LOG(FATAL) << "Unsupported example space";
 }
 
 int main(int argc, char** argv) {
@@ -183,12 +330,16 @@ int main(int argc, char** argv) {
         solver_name = argv[3];
     } else {
         solver_name = "random2000";
-        benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/string/phone-3.sl";
+        //benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/repair/t13.sl";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string-interactive/phone-5_short.sl";
         output_name = "/tmp/629453237.out";
     }
+    KDefaultStringDepth = 6;
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
+    std::string task_name = getTaskName(benchmark_name);
+    std::cout << task_name << std::endl;
     spec->env->random_engine.seed(time(0));
-    prepareSampleSy(spec);
+    prepareSampleSy(spec, task_name);
     SynthesisResult result;
     auto* guard = new TimeGuard(1e9);
     if (solver_name == "samplesy") {
@@ -198,7 +349,7 @@ int main(int argc, char** argv) {
     } else if (solver_name == "random200") {
         result = invokeRandomSemanticsSelector(spec, 200, guard);
     } else if (solver_name == "random2000") {
-        result = invokeRandomSemanticsSelector(spec, 2000, guard);
+        result = invokeRandomSemanticsSelector(spec, 1000, guard);
     }
     std::cout << result.first << " " << result.second.toString() << std::endl;
     FILE* f = fopen(output_name.c_str(), "w");

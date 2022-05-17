@@ -52,6 +52,12 @@ public:
 
 namespace invoker {
     namespace single {
+        /**
+         * @config "encoder"
+         *  Type: std::string
+         *  Set the grammar encoder for the target programs. ("Linear" or "Tree")
+         *  Default: "Linear"
+         */
         Solver* buildCBS(Specification* spec, Verifier* v, const InvokeConfig& config);
 
         /**

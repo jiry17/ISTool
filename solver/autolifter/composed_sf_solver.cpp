@@ -304,7 +304,7 @@ namespace {
 }
 
 std::pair<PProgram, PProgram> ComposedSFSolver::synthesis(TimeGuard *guard) {
-    auto empty = ext::ho::buildProduct({});
+    auto empty = ext::ho::buildProduct((ProgramList){});
     auto used_h = empty;
 
     if (!KIsFullH) {

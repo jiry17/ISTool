@@ -20,7 +20,7 @@ public:
     Splitor* splitor;
     SeedGenerator* gen;
     Data* KSampleTimeOut, *KSampleNum;
-    SampleSy(Specification* _spec, Splitor* _splitor, SeedGenerator* _gen, EquivalenceChecker* checker);
+    SampleSy(Specification* _spec, Splitor* _splitor, SeedGenerator* _gen, GrammarEquivalenceChecker* checker);
     virtual Example getNextExample(const PProgram& x, const PProgram& y);
     virtual void addExample(const IOExample& example);
     virtual ~SampleSy();

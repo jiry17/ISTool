@@ -39,6 +39,7 @@ DefineNormalSemantics(Gq)
 DefineNormalSemantics(Leq)
 DefineNormalSemantics(Geq)
 DefineNormalSemantics(Eq)
+DefineNormalSemantics(EqBool)
 DefineNormalSemantics(Neq)
 
 class IteSemantics : public Semantics, public TypedSemantics {

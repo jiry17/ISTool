@@ -13,7 +13,7 @@ namespace {
 const std::string selector::samplesy::KSampleTimeOutLimit = "SampleSy@TimeOut";
 const std::string selector::samplesy::KSampleNumLimit = "SampleSy@SampleNum";
 
-SampleSy::SampleSy(Specification* _spec, Splitor *_splitor, SeedGenerator* _gen, EquivalenceChecker* _checker):
+SampleSy::SampleSy(Specification* _spec, Splitor *_splitor, SeedGenerator* _gen, GrammarEquivalenceChecker* _checker):
     CompleteSelector(_spec, _checker), splitor(_splitor), gen(_gen) {
     auto* env = splitor->example_space->env;
     KSampleTimeOut = env->getConstRef(selector::samplesy::KSampleTimeOutLimit, BuildData(Int, KDefaultTimeOut * 1000));

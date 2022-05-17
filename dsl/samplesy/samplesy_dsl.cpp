@@ -45,12 +45,19 @@ Grammar * samplesy::getSampleSyGrammar(const TypeList &inp_types, const PType &o
     auto* p_symbol = new NonTerminal("p", TSTRING);
     auto* ic_symbol = new NonTerminal("ic", TINT);
     auto* i_symbol = new NonTerminal("i", TINT);
+
+    auto* s_symbol = new NonTerminal("s", TSTRING);
+    auto* sub_symbol = new NonTerminal("sub", TSTRING);
+    auto* ind_symbol = new NonTerminal("ind", TINT);
     for (int i = 0; i < inp_types.size(); ++i) {
         auto type = inp_types[i];
         auto* rule = new Rule(semantics::buildParamSemantics(i, type), {});
         if (dynamic_cast<TString*>(type.get())) {
             p_symbol->rule_list.push_back(rule);
-        } else i_symbol->rule_list.push_back(rule);
+        } else {
+            i_symbol->rule_list.push_back(rule);
+            ind_symbol->rule_list.push_back(rule);
+        }
     }
     for (auto& c: const_list) {
         auto* rule = new Rule(semantics::buildConstSemantics(c), {});
@@ -63,10 +70,6 @@ Grammar * samplesy::getSampleSyGrammar(const TypeList &inp_types, const PType &o
     for (int i = -index_max; i <= index_max;++i) {
         ic_symbol->rule_list.push_back(new Rule(semantics::buildConstSemantics(BuildData(Int, i)), {}));
     }
-
-    auto* s_symbol = new NonTerminal("s", TSTRING);
-    auto* sub_symbol = new NonTerminal("sub", TSTRING);
-    auto* ind_symbol = new NonTerminal("ind", TINT);
     s_symbol->rule_list.push_back(new Rule(env->getSemantics("str.++"), {s_symbol, s_symbol}));
     s_symbol->rule_list.push_back(new Rule(env->getSemantics("replace"), {sub_symbol, sc_symbol, sc_symbol}));
     s_symbol->rule_list.push_back(new Rule(env->getSemantics("delete"), {sub_symbol, sc_symbol}));
@@ -119,7 +122,7 @@ Grammar * samplesy::rewriteGrammar(Grammar *g, Env* env, FiniteIOExampleSpace* i
         }
     }
 
-    const int KLengthLimit = 1, KOccurLimit = 2, KMaxNum = 3;
+    /*const int KLengthLimit = 1, KOccurLimit = 2, KMaxNum = 3;
     for (int l = 1; l <= KLengthLimit; ++l) {
         std::unordered_map<std::string, int> occur_map;
         for (const auto& example: io_space->example_space) {
@@ -151,7 +154,7 @@ Grammar * samplesy::rewriteGrammar(Grammar *g, Env* env, FiniteIOExampleSpace* i
                 const_list.push_back(d);
             }
         }
-    }
+    }*/
     return getSampleSyGrammar(inp_types, oup_type, const_list, env);
 }
 

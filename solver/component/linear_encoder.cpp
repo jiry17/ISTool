@@ -5,8 +5,8 @@
 #include "istool/solver/component/linear_encoder.h"
 #include "glog/logging.h"
 
-LinearEncoder::LinearEncoder(Grammar *_grammar, Env *_env, int _factor, const std::map<std::string, int> &_special_usage):
-        Z3GrammarEncoder(_grammar, _env), factor(_factor), special_usage(_special_usage) {
+LinearEncoder::LinearEncoder(Grammar *_grammar, Z3Extension *_ext, int _factor, const std::map<std::string, int> &_special_usage):
+        Z3GrammarEncoder(_grammar, _ext), factor(_factor), special_usage(_special_usage) {
 }
 void LinearEncoder::enlarge() {
     factor += 1;
@@ -165,4 +165,29 @@ PProgram LinearEncoder::programBuilder(int id, const z3::model &model) const {
 
 PProgram LinearEncoder::programBuilder(const z3::model &model) const {
     return programBuilder(component_list.size(), model);
+}
+
+void LinearEncoder::getBlockCons(int id, const z3::model &model, std::vector<bool> &cache, z3::expr_vector &res) const {
+    if (cache[id]) return; cache[id] = true;
+    int pos = -1;
+    for (int i = 0; i < component_list.size(); ++i) {
+        int oup_data = getIntValue(component_list[i].oup, model);
+        if (oup_data == id) {
+            assert(pos == -1); pos = i;
+        }
+    }
+    assert(pos != -1);
+    auto& c = component_list[pos];
+    res.push_back(c.oup != id);
+    for (auto& inp_var: c.inp_list) {
+        int inp_id = getIntValue(inp_var, model);
+        assert(inp_id != -1);
+        getBlockCons(inp_id, model, cache, res);
+    }
+}
+
+z3::expr LinearEncoder::getBlockCons(const z3::model &model) const {
+    std::vector<bool> cache(component_list.size() + 1, false);
+    z3::expr_vector res(ext->ctx);
+    getBlockCons(component_list.size(), model, cache, res);
 }

@@ -9,14 +9,14 @@
 #include "different_program_generator.h"
 #include <stack>
 
-class FiniteEquivalenceChecker: public EquivalenceChecker{
+class FiniteGrammarEquivalenceChecker: public GrammarEquivalenceChecker{
 public:
     DifferentProgramGenerator* g;
     IOExampleList example_list;
-    FiniteEquivalenceChecker(DifferentProgramGenerator* _g, FiniteIOExampleSpace* io_space);
+    FiniteGrammarEquivalenceChecker(DifferentProgramGenerator* _g, FiniteIOExampleSpace* io_space);
     virtual void addExample(const IOExample& example);
     virtual ProgramList getTwoDifferentPrograms();
-    virtual ~FiniteEquivalenceChecker() = default;
+    virtual ~FiniteGrammarEquivalenceChecker() = default;
 };
 
 #endif //ISTOOL_FINITE_EQUIVALENCE_CHECKER_H

@@ -11,10 +11,8 @@ RandomSemanticsScorer::RandomSemanticsScorer(Env *_env, FlattenGrammar *_fg, dou
     env(_env), fg(_fg), KOutputSize(_KOutputSize) {
 }
 
-#define DOUBLE double
 namespace {
     const int KStateWeight = 5;
-    const DOUBLE KEPS = 1e-9;
     const std::vector<std::vector<int>> KStrictSubStatusList = {
             {}, {0}, {0}, {0}, {0, 1, 2, 3}
     };
@@ -22,7 +20,7 @@ namespace {
             {1, 2, 3, 4}, {4}, {4}, {4}, {}
     };
     const std::vector<int> _KFreeNum = {0, 1, 1, 1, 2};
-    bool _isEmptyCache(DOUBLE* A) {
+    bool _isEmptyCache(RandomSemanticsScore* A) {
         return A[0] < -0.5;
     }
     int _getMask(int status, int mask) {
@@ -30,8 +28,8 @@ namespace {
         if (mask == 4) return status;
         if (status == mask) return status; else return 0;
     }
-    std::vector<std::vector<DOUBLE>> _getViolateWeightMatrix(DOUBLE KO) {
-        std::vector<std::vector<DOUBLE>> res(5, std::vector<DOUBLE>(5, -1));
+    std::vector<std::vector<RandomSemanticsScore>> _getViolateWeightMatrix(RandomSemanticsScore KO) {
+        std::vector<std::vector<RandomSemanticsScore>> res(5, std::vector<RandomSemanticsScore>(5, -1));
         res[0][0] = 1;
         for (int i = 1; i <= 3; ++i) {
             res[i][0] = 1 / KO;
@@ -59,22 +57,22 @@ namespace {
 
     class _DPHolder {
     public:
-        DOUBLE KOutputSize;
+        RandomSemanticsScore KOutputSize;
         TopDownContextGraph* graph;
         TopDownGraphMatchStructure* match;
-        std::vector<std::vector<DOUBLE>> status_weight_matrix;
+        std::vector<std::vector<RandomSemanticsScore>> status_weight_matrix;
         std::vector<DataList> inp_list;
-        std::vector<DOUBLE> KOPowList, KNegOPowList;
+        std::vector<RandomSemanticsScore> KOPowList, KNegOPowList;
         int n, five_state_num;
         std::vector<std::pair<int, int>> masked_five_state_info_list[4];
         std::vector<int> five_weight_list, two2five[4], five_state_eq_num_list;
-        std::vector<DOUBLE*> cache_list;
-        std::unordered_map<std::string, DOUBLE*> cache_map_with_p;
-        _DPHolder(TopDownContextGraph* _graph, TopDownGraphMatchStructure* _match, const std::vector<DataList>& _inp_list, DOUBLE _KOutputSize):
+        std::vector<RandomSemanticsScore*> cache_list;
+        std::unordered_map<std::string, RandomSemanticsScore*> cache_map_with_p;
+        _DPHolder(TopDownContextGraph* _graph, TopDownGraphMatchStructure* _match, const std::vector<DataList>& _inp_list, RandomSemanticsScore _KOutputSize):
             graph(_graph), inp_list(_inp_list), KOutputSize(_KOutputSize), n(_inp_list.size()), match(_match) {
             cache_list.resize(graph->node_list.size());
             for (int i = 0; i < cache_list.size(); ++i) {
-                cache_list[i] = new DOUBLE[1 << n];
+                cache_list[i] = new RandomSemanticsScore[1 << n];
                 for (int j = 0; j < (1 << n); ++j) cache_list[i][j] = -1;
             }
             KOPowList.resize(inp_list.size() << 1);
@@ -153,7 +151,7 @@ namespace {
             }
             return res;
         }
-        void getTwoSubRes(const std::vector<int>& v_list, DOUBLE* res) {
+        void getTwoSubRes(const std::vector<int>& v_list, RandomSemanticsScore* res) {
             for (int i = 0; i < (1 << n); ++i) res[i] = 1.0;
             for (auto& v: v_list) {
                 auto* sub_res = solveFGMatch(v);
@@ -161,7 +159,7 @@ namespace {
             }
         }
 
-        void updateViolateProb(DOUBLE* res) {
+        void updateViolateProb(RandomSemanticsScore* res) {
             for (int S = (1 << n) - 1; S; --S) {
                 int size_s = __builtin_popcount(S);
                 res[S] *= KNegOPowList[size_s];
@@ -172,16 +170,17 @@ namespace {
                 }
             }
         }
-        DOUBLE* solveFGMatch(int node_id) {
+        RandomSemanticsScore* solveFGMatch(int node_id) {
             auto* cache = cache_list[node_id];
             auto& node = graph->node_list[node_id];
             if (!_isEmptyCache(cache)) return cache;
             for (int i = 0; i < (1 << n); ++i) cache[i] = 0;
             // LOG(INFO) << "solve match " << node_id << std::endl;
-            DOUBLE rem_prob = 1.0;
+            RandomSemanticsScore rem_prob = 1.0;
+            auto* tmp = new RandomSemanticsScore[1 << n];
 
             { // solve terminal case
-                std::vector<std::pair<DataList, DOUBLE>> terminate_info_list;
+                std::vector<std::pair<DataList, RandomSemanticsScore>> terminate_info_list;
                 for (const auto &f_edge: node.edge_list) {
                     if (isTerminateSemantics(f_edge.semantics.get())) {
                         terminate_info_list.emplace_back(getTerminateOutputList(f_edge.semantics.get()), f_edge.weight);
@@ -190,7 +189,7 @@ namespace {
                 for (auto& f_info: terminate_info_list) {
                     for (auto& g_info: terminate_info_list) {
                         int S = getMatchedExampleSet(f_info.first, g_info.first);
-                        DOUBLE weight = f_info.second * g_info.second;
+                        RandomSemanticsScore weight = f_info.second * g_info.second;
                         rem_prob -= weight;
                         for (auto T = S;; T = (T - 1) & S) {
                             cache[T] += weight;
@@ -201,7 +200,6 @@ namespace {
             }
 
             { // solve matched case, can be potentially improved by FWT
-                auto* tmp = new DOUBLE[1 << n];
                 for (int edge_id = 0; edge_id < node.edge_list.size(); ++edge_id) {
                     auto& edge = node.edge_list[edge_id];
                     if (isTerminateSemantics(edge.semantics.get())) continue;
@@ -211,7 +209,6 @@ namespace {
                     updateViolateProb(tmp);
                     for (int i = 0; i < (1 << n); ++i) cache[i] += tmp[i] * weight;
                 }
-                delete[] tmp;
                // LOG(INFO) << "Matched case " << node_id << " " << cache[(1 << n) - 1];
             }
 
@@ -220,10 +217,11 @@ namespace {
                 for (int i = 0; i < (1 << n); ++i)
                     cache[i] += KOPowList[__builtin_popcount(i)] * rem_prob;
             }
+            delete tmp;
             return cache;
         }
 
-        void getFiveSubRes(const std::vector<int>& v_list, TopDownGraphMatchStructure* s, DOUBLE* res) {
+        void getFiveSubRes(const std::vector<int>& v_list, TopDownGraphMatchStructure* s, RandomSemanticsScore* res) {
             for (int i = 0; i < five_state_num; ++i) res[i] = 1.0;
             assert(v_list.size() == s->sub_list.size());
             for (int i = 0; i < v_list.size(); ++i) {
@@ -232,7 +230,7 @@ namespace {
             }
         }
 
-        void getNDimensionalSuffixSum(DOUBLE* res) {
+        void getNDimensionalSuffixSum(RandomSemanticsScore* res) {
             for (int i = 1; i <= n; ++i) {
                 int key = (1 << i - 1);
                 for (int j = 0; j < (1 << n); ++j) {
@@ -242,7 +240,7 @@ namespace {
                 }
             }
         }
-        void updateTwoTerminateToFiveState(DOUBLE* two, DOUBLE* res, DOUBLE* tmp, int key) {
+        void updateTwoTerminateToFiveState(RandomSemanticsScore* two, RandomSemanticsScore* res, RandomSemanticsScore* tmp, int key) {
             for (int i = 0; i < (1 << n); ++i) {
                 int S = two2five[key][i];
                 if (S < five_state_num) tmp[S] = two[i];
@@ -254,11 +252,11 @@ namespace {
             }
         }
 
-        DOUBLE* solveFGMatchWithP(int node_id, TopDownGraphMatchStructure* s) {
+        RandomSemanticsScore* solveFGMatchWithP(int node_id, TopDownGraphMatchStructure* s) {
             std::string feature = std::to_string(node_id);
             if (s) feature += "@" + s->program->toString();
             if (cache_map_with_p.count(feature)) return cache_map_with_p[feature];
-            auto* cache = new DOUBLE[five_state_num];
+            auto* cache = new RandomSemanticsScore[five_state_num];
             cache_map_with_p[feature] = cache;
             for (int i = 0; i < five_state_num; ++i) cache[i] = 0;
             if (!s) {
@@ -268,17 +266,17 @@ namespace {
             }
             int p_edge_id = s->edge_id; auto& node = graph->node_list[node_id];
             auto& p_edge = node.edge_list[p_edge_id];
-            DOUBLE rem_prob = 1.0;
+            RandomSemanticsScore rem_prob = 1.0;
 
-            auto* p_sub_res = new DOUBLE[five_state_num];
+            auto* p_sub_res = new RandomSemanticsScore[five_state_num];
             getFiveSubRes(p_edge.v_list, s, p_sub_res);
-            auto* tmp_two = new DOUBLE[(1 << n)];
-            auto* tmp_five = new DOUBLE[five_state_num];
+            auto* tmp_two = new RandomSemanticsScore[(1 << n)];
+            auto* tmp_five = new RandomSemanticsScore[five_state_num];
 
             // solve at least two terminate case
             {
-                std::vector<std::pair<DOUBLE, DataList>> terminate_info;
-                DOUBLE nt_prob = 0.0;
+                std::vector<std::pair<RandomSemanticsScore, DataList>> terminate_info;
+                RandomSemanticsScore nt_prob = 0.0;
                 for (int edge_id = 0; edge_id < node.edge_list.size(); ++edge_id) {
                     auto &edge = node.edge_list[edge_id];
                     if (isTerminateSemantics(edge.semantics.get())) {
@@ -304,6 +302,8 @@ namespace {
                                 else if (f_info.second[i] == g_info.second[i]) status = 1;
                                 state = state * KStateWeight + status;
                             }
+                            if (state >= five_state_num)
+                                std::cout << n << " " << five_state_num << " " << state << std::endl;
                             assert(state < five_state_num);
                             tmp_five[state] += weight;
                         }
@@ -381,14 +381,14 @@ namespace {
             }
 
             { // solve F = G <> P, F must not be terminate
-                auto* tmp = new DOUBLE[(1 << n)];
+                auto* tmp = new RandomSemanticsScore[(1 << n)];
                 for (int i = 0; i < (1 << n); ++i) tmp[i] = 0;
                 for (int edge_id = 0; edge_id < node.edge_list.size(); ++ edge_id) {
                     auto& edge = node.edge_list[edge_id];
                     if (edge_id == p_edge_id || isTerminateSemantics(edge.semantics.get())) continue;
                     getTwoSubRes(edge.v_list, tmp_two);
                     updateViolateProb(tmp_two);
-                    DOUBLE weight = edge.weight * edge.weight; rem_prob -= weight;
+                    RandomSemanticsScore weight = edge.weight * edge.weight; rem_prob -= weight;
                     for (int i = 0; i < (1 << n); ++i) tmp[i] += tmp_two[i] * weight;
                 }
                 updateTwoTerminateToFiveState(tmp, cache, tmp_five, 1);
@@ -398,10 +398,12 @@ namespace {
 
             // solve F = P <> G or G = P <> F, P must not be terminate
             if (!isTerminateSemantics(p_edge.semantics.get())) {
-                DOUBLE current_weight = p_edge.weight * (1 - p_edge.weight);
+                RandomSemanticsScore current_weight = p_edge.weight * (1 - p_edge.weight);
                 for (int mask = 2; mask <= 3; ++mask) {
                     rem_prob -= current_weight;
-                    for (int i = 0; i < (1 << n); ++i) tmp_two[i] = p_sub_res[two2five[mask][i]] * current_weight;
+                    for (int i = 0; i < (1 << n); ++i) {
+                        if (two2five[mask][i] < five_state_num) tmp_two[i] = p_sub_res[two2five[mask][i]] * current_weight;
+                    }
                     updateViolateProb(tmp_two);
                     updateTwoTerminateToFiveState(tmp_two, cache, tmp_five, mask);
                 }
@@ -430,22 +432,16 @@ namespace {
 
 DataStorage RandomSemanticsScorer::getFlattenInpStorage(const DataStorage &inp_list) {
     DataStorage res;
-    for (auto& inp: inp_list) {
-        DataList new_inp;
-        for (auto& param_info: fg->param_list) {
-            new_inp.push_back(env->run(param_info.second.get(), inp));
-        }
-        res.push_back(new_inp);
-    }
+    for (auto& inp: inp_list) res.push_back(fg->getFlattenInput(inp));
     return res;
 }
-double RandomSemanticsScorer::getPairScore(const DataStorage &inp) {
+RandomSemanticsScore RandomSemanticsScorer::getPairScore(const DataStorage &inp) {
     auto* holder = new _DPHolder(fg->graph, nullptr, getFlattenInpStorage(inp), KOutputSize);
     auto res = holder->_getPairScore();
     delete holder;
     return res;
 }
-double RandomSemanticsScorer::getTripleScore(const PProgram& p, const DataStorage &inp) {
+RandomSemanticsScore RandomSemanticsScorer::getTripleScore(const PProgram& p, const DataStorage &inp) {
     auto* match = fg->getMatchStructure(p); assert(match);
     auto* holder = new _DPHolder(fg->graph, match, getFlattenInpStorage(inp), KOutputSize);
     auto res = holder->_getTripleScore();

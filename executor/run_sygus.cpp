@@ -23,8 +23,8 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        solver_name = "eusolver";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mpg_guard2.sl";
+        solver_name = "cbs";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/clia/array_search_3.sl";
         output_name = "/tmp/629453237.out";
     }
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
@@ -38,7 +38,9 @@ int main(int argc, char** argv) {
         ext::z3::registerComposedManager(ext::z3::getExtension(spec->env.get()));
     }
 
-    auto result = invoker::getExampleNum(spec, v, solver_token, guard);
+    InvokeConfig config;
+    if (solver_name == "cbs") config.set("encoder", std::string("Tree"));
+    auto result = invoker::getExampleNum(spec, v, solver_token, guard, config);
     std::cout << result.first << " " << result.second.toString() << std::endl;
     std::cout << guard->getPeriod() << std::endl;
     FILE* f = fopen(output_name.c_str(), "w");
