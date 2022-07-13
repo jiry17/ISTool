@@ -27,7 +27,21 @@ bool ExampleSpace::satisfyExample(const FunctionContext &info, const Example &ex
 
 IOExampleSpace::IOExampleSpace(const std::string &_func_name): func_name(_func_name) {
 }
+DataList IOExampleSpace::getInput(const Example &example) {
+    return getIOExample(example).first;
+}
 
+#include "unordered_set"
+void FiniteExampleSpace::removeDuplicate() {
+    std::unordered_set<std::string> cache;
+    int now = 0;
+    for (auto& example: example_space) {
+        auto feature = data::dataList2String(example);
+        if (cache.count(feature)) continue;
+        cache.insert(feature); example_space[now++] = example;
+    }
+    example_space.resize(now);
+}
 FiniteExampleSpace::FiniteExampleSpace(const PProgram &_cons_program, const ExampleList &_example_space, Env* env):
     ExampleSpace(_cons_program, env), example_space(_example_space) {
 }
@@ -59,6 +73,8 @@ bool example::satisfyIOExample(Program *program, const IOExample &example, Env* 
         return false;
     }
 }
+
+#include <unordered_set>
 
 PExampleSpace example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env) {
     if (examples.empty()) {

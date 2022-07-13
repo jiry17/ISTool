@@ -153,14 +153,21 @@ def list_all_result(result_map, val: CaredValue):
             row_list[benchmark_name] = 1
     row_list = sorted(list(row_list.keys()))
     col_list = sorted(list(result_map.keys()))
+
+    summarized_result = {}
+    for solver_name, res in result_map.items():
+        summarized_result[solver_name] = _calculate_all(val, res)
+    print(summarized_result)
+
     all_res = []
     for row_name in row_list:
         res = []
         for col_name in col_list:
-            if row_name not in result_map[col_name] or not result_map[col_name][row_name]["status"]: 
+            print(row_name, col_name)
+            if row_name not in summarized_result[col_name]: 
                 res.append(-1)
                 continue
-            res.append(val.f(result_map[col_name][row_name]))
+            res.append(summarized_result[col_name][row_name])
         all_res.append(res)
     _print_result(row_list, col_list, all_res, 4)
     

@@ -23,6 +23,18 @@ public:
     virtual ~Program() = default;
 };
 
+class ProgramChecker {
+public:
+    virtual bool isValid(Program* p) = 0;
+    virtual ~ProgramChecker() = default;
+};
+
+class AllValidProgramChecker: public ProgramChecker {
+public:
+    virtual bool isValid(Program* p);
+    virtual ~AllValidProgramChecker() = default;
+};
+
 typedef std::function<PProgram(const PSemantics&, const ProgramList&)> ProgramConstructor;
 
 namespace program {

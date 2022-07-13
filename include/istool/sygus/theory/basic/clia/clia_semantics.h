@@ -42,9 +42,10 @@ DefineNormalSemantics(Eq)
 DefineNormalSemantics(EqBool)
 DefineNormalSemantics(Neq)
 
-class IteSemantics : public Semantics, public TypedSemantics {
+class IteSemantics : public NormalSemantics {
 public:
     IteSemantics();
+    virtual Data run(DataList &&inp_list, ExecuteInfo *info);
     virtual Data run(const ProgramList &sub_list, ExecuteInfo *info);
     ~IteSemantics() = default;
 };

@@ -6,7 +6,7 @@
 #include "glog/logging.h"
 
 FiniteCompleteRandomSemanticsSelector::FiniteCompleteRandomSemanticsSelector(Specification *spec,
-                                                                             GrammarEquivalenceChecker *checker, RandomSemanticsScorer *scorer, DifferentProgramGenerator* _g, int _KExampleNum):
+                                                                             GrammarEquivalenceChecker *checker, LearnedScorer *scorer, DifferentProgramGenerator* _g, int _KExampleNum):
         CompleteSelector(spec, checker), BasicRandomSemanticsSelector(spec->env.get(), spec->info_list[0]->grammar, scorer), g(_g), KExampleNum(_KExampleNum) {
     fio_space = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
     if (!fio_space) {
@@ -50,10 +50,10 @@ Example FiniteCompleteRandomSemanticsSelector::getNextExample(const PProgram &x,
     return res;
 }
 
-Z3CompleteRandomSemanticsSelector::Z3CompleteRandomSemanticsSelector(Specification *spec, GrammarEquivalenceChecker *_checker, RandomSemanticsScorer *scorer,
+Z3CompleteRandomSemanticsSelector::Z3CompleteRandomSemanticsSelector(Specification *spec, GrammarEquivalenceChecker *_checker, LearnedScorer *scorer,
                                                                      Program* example_cons, int _KExampleNum):
-    ext(ext::z3::getExtension(spec->env.get())), CompleteSelector(spec, _checker), BasicRandomSemanticsSelector(spec->env.get(), spec->info_list[0]->grammar, scorer),
-    KExampleNum(_KExampleNum), param_list(ext->ctx), inp_var_list(ext->ctx), cons_list(ext->ctx) {
+        ext(ext::z3::getExtension(spec->env.get())), CompleteSelector(spec, _checker), BasicRandomSemanticsSelector(spec->env.get(), spec->info_list[0]->grammar, scorer),
+        KExampleNum(_KExampleNum), param_list(ext->ctx), inp_var_list(ext->ctx), cons_list(ext->ctx) {
     zio_space = dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get());
     if (!zio_space) {
         LOG(FATAL) << "Z3CompleteRandomSemanticsSelector requires Z3IOExampleSpace";

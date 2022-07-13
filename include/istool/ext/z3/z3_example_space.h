@@ -26,6 +26,7 @@ public:
     Z3IOExampleSpace(const PProgram& _cons_prog, Env* _env, const TypeList& _type_list, const Signature& sig,
             const std::string& name, const ProgramList& _inp_list, const PProgram& _oup_cons);
     virtual IOExample getIOExample(const Example& example);
+    virtual Example getInput(const Example& example);
     virtual bool satisfyExample(const FunctionContext& info, const Example& example);
 };
 

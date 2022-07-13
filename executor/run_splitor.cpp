@@ -3,6 +3,7 @@
 //
 
 #include "istool/selector/split/splitor.h"
+#include "istool/basic/config.h"
 #include "istool/selector/split/finite_splitor.h"
 #include "istool/selector/split/z3_splitor.h"
 #include "istool/selector/split/split_selector.h"
@@ -10,6 +11,8 @@
 #include "istool/sygus/sygus.h"
 #include "istool/sygus/parser/parser.h"
 #include "istool/ext/z3/z3_example_space.h"
+#include "istool/selector/baseline/biased_bitvector_selector.h"
+#include "istool/ext/vsa/vsa_inside_checker.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/dsl/samplesy/samplesy_dsl.h"
 #include "istool/ext/vsa/vsa_extension.h"
@@ -18,7 +21,10 @@
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
 #include "istool/sygus/theory/witness/string/string_witness.h"
 #include "istool/selector/random/random_semantics_selector.h"
+#include "istool/selector/random/learned_scorer.h"
+#include "istool/selector/baseline/significant_input.h"
 #include <ctime>
+#include <sys/time.h>
 
 int KTryNum = 1000, KIntMax = 20;
 
@@ -167,11 +173,14 @@ Verifier* _buildSplitVerifier(Specification* spec, int num, const std::string& s
     return new SplitSelector(splitor, spec->info_list[0], num, spec->env.get(), v, o);
 }
 
+RandomSemanticsScore KOutputSize = 5.0;
+int KExampleNum = 5;
 
-Verifier* _buildRandomsSemanticsVerifier(Specification* spec, int num, const std::string& name) {
-    auto* model = ext::vsa::getSizeModel();
-    auto* graph = new TopDownContextGraph(grammar::generateHeightLimitedGrammar(spec->info_list[0]->grammar, 8), model, ProbModelType::NORMAL_PROB);
-    FlattenGrammar* fg = nullptr;
+Verifier* _buildRandomsSemanticsVerifier(Specification* spec, int num, const std::string& name, TopDownModel* model, LearnedScorerType type) {
+    FlattenGrammarBuilder* builder;
+    auto* g = spec->info_list[0]->grammar;
+    selector::random::setLearnedExampleLimit(type, spec->env.get());
+
     if (name == "maxflash" || name == "vsa") {
         auto* vsa_ext = ext::vsa::getExtension(spec->env.get());
         vsa_ext->setEnvSetter(KStringPrepare);
@@ -180,69 +189,118 @@ Verifier* _buildRandomsSemanticsVerifier(Specification* spec, int num, const std
         for (auto& example: example_space->example_space) {
             io_list.push_back(example_space->getIOExample(example));
         }
-        auto* g = spec->info_list[0]->grammar;
-        auto validator = [vsa_ext, io_list, g](Program* p) -> bool {
-            for (auto& example: io_list) {
-                if (!ext::vsa::isConsideredByVSA(p, vsa_ext, g, example)) return false;
-            }
-            return true;
-        };
-        fg = new TrivialFlattenGrammar(graph, spec->env.get(), num, validator); //selector::getFlattenGrammar(graph, num, validator);
-        for (auto& param: fg->param_info_list) {
-            std::cout << param.program->toString() << std::endl;
-        }
+        auto tool = std::make_shared<FiniteEquivalenceCheckerTool>(spec->env.get(), example_space);
+        //auto* validator = new ProgramInsideVSAChecker(spec->env.get(), g, spec->example_space.get());
+        auto* validator = new AllValidProgramChecker();
+        builder = new MergedFlattenGrammarBuilder(g, model, spec->env.get(), num, validator, tool);
     } else {
-        fg = new TrivialFlattenGrammar(graph, spec->env.get(), num, [](Program* p) {return true;});
+        builder = new TrivialFlattenGrammarBuilder(g, model, spec->env.get(), num, new AllValidProgramChecker());
     }
-    auto* scorer = new RandomSemanticsScorer(spec->env.get(), fg, 5);
+    LearnedScorerBuilder scorer_builder = [type](Env* env, FlattenGrammar* fg)->LearnedScorer* {
+        return selector::random::buildDefaultScorer(type, env, fg);
+    };
     if (dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get())) {
-        return new Z3RandomSemanticsSelector(spec, scorer, 10);
+        return new Z3RandomSemanticsSelector(spec, builder, scorer_builder, KExampleNum);
     } else {
-        return new FiniteRandomSemanticsSelector(spec, scorer);
+        return new FiniteRandomSemanticsSelector(spec, builder, scorer_builder);
     }
 }
 
+#include "istool/sygus/theory/basic/bv/bv.h"
+// train bv model
+
+
+const std::string KBVBenchmarkNewStyleHead = "(define-fun ehad ((x (_ BitVec 64))) (_ BitVec 64)"
+                                             "(bvlshr x #x0000000000000001))"
+                                             "(define-fun arba ((x (_ BitVec 64))) (_ BitVec 64)"
+                                             "(bvlshr x #x0000000000000004))"
+                                             "(define-fun shesh ((x (_ BitVec 64))) (_ BitVec 64)"
+                                             "(bvlshr x #x0000000000000010))"
+                                             "(define-fun smol ((x (_ BitVec 64))) (_ BitVec 64)"
+                                             "(bvshl x #x0000000000000001))"
+                                             "(define-fun if0 ((x (_ BitVec 64)) (y (_ BitVec 64)) (z (_ BitVec 64))) (_ BitVec 64)"
+                                             "(ite (= x #x0000000000000001) y z));\n";
+
+const std::string KBVBenchmarkHead = "(define-fun ehad ((x (BitVec 64))) (BitVec 64)"
+                                     "(bvlshr x #x0000000000000001))"
+                                     "(define-fun arba ((x (BitVec 64))) (BitVec 64)"
+                                     "(bvlshr x #x0000000000000004))"
+                                     "(define-fun shesh ((x (BitVec 64))) (BitVec 64)"
+                                     "(bvlshr x #x0000000000000010))"
+                                     "(define-fun smol ((x (BitVec 64))) (BitVec 64)"
+                                     "(bvshl x #x0000000000000001))"
+                                     "(define-fun if0 ((x (BitVec 64)) (y (BitVec 64)) (z (BitVec 64))) (BitVec 64)"
+                                     "(ite (= x #x0000000000000001) y z));\n";
+
+std::string getTaskName(const std::string& task_file) {
+    int pos = task_file.length() - 1;
+    while (task_file[pos] != '/') --pos;
+    auto name = task_file.substr(pos + 1);
+    if (name.length() > 3 && name.substr(name.length() - 3) == ".sl") {
+        name = name.substr(0, name.length() - 3);
+    }
+    std::cout << task_file << " " << name << std::endl;
+    return name;
+}
+
 int main(int argc, char** argv) {
-    assert(argc == 5 || argc == 1);
-    std::string benchmark_name, output_name, solver_name, verifier_name;
-    if (argc == 5) {
+    assert(argc == 5 || argc == 6 || argc == 1);
+    std::string benchmark_name, output_name, solver_name, verifier_name, model_path;
+    auto* guard = new TimeGuard(1e9);
+    if (argc != 1) {
         benchmark_name = argv[1];
         output_name = argv[2];
         solver_name = argv[3];
         verifier_name = argv[4];
+        if (argc == 6) model_path = argv[5];
     } else {
-        solver_name = "maxflash";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string/exceljet3.sl";
-        //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/clia/array_search_5.sl";
+        solver_name = "ext-eusolver";
+        //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/clia/LspPage9_2.sl";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string/phone-7-long.sl";
+        //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv-large/PRE_icfp_gen_14.14.sl";
         output_name = "/tmp/629453237.out";
         verifier_name = "default";
+        model_path = "/tmp/tmp.wHOuYKwdWN/runner/model/ext-eusolver_string";
     }
+
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
-    if (sygus::getSyGuSTheory(spec->env.get()) == TheoryToken::STRING) {
-        samplesy::registerSampleSyBasic(spec->env.get());
-        samplesy::registerSampleSyWitness(spec->env.get());
-        auto& info = spec->info_list[0];
-        info->grammar = samplesy::rewriteGrammar(info->grammar, spec->env.get(), dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get()));
+    /*ext::vsa::learnNFoldModel(spec->env.get(), config::KSourcePath + "/runner/model/ext-cvc5_string.json",
+            config::KSourcePath + "/runner/model/ext-cvc5_string", 2);
+    exit(0);*/
+    spec->env->setRandomSeed(1);
+    if (sygus::getSyGuSTheory(spec->env.get()) == TheoryToken::BV) {
+        if (solver_name == "ext-eusolver") sygus::setSyGuSHeader(spec->env.get(), KBVBenchmarkHead);
+        else if (solver_name == "ext-cvc5") sygus::setSyGuSHeader(spec->env.get(), KBVBenchmarkNewStyleHead);
     }
     auto* v = sygus::getVerifier(spec);
+
     if (verifier_name == "default") ;
-    else if (verifier_name == "random") {
-        v = _buildRandomVerifier(spec, v);
-    } else if (verifier_name == "splitor50") {
-        v = _buildSplitVerifier(spec, 500, solver_name);
-    } else if (verifier_name == "splitor200") {
-        v = _buildSplitVerifier(spec, 200, solver_name);
-    } else if (verifier_name == "random200") {
-        v = _buildRandomsSemanticsVerifier(spec, 200, solver_name);
-    } else if (verifier_name == "random2000") {
-        v = _buildRandomsSemanticsVerifier(spec, 2000, solver_name);
+    else if (verifier_name == "significant")
+        v = new SignificantInputSelector(dynamic_cast<FiniteExampleSpace*>(spec->example_space.get()), getTaskName(benchmark_name));
+    else if (verifier_name == "biased")
+        v = new BiasedBitVectorSelector(dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get()));
+    else {
+        auto info = selector::random::splitScorerName(verifier_name, spec->env.get());
+        auto* model = ext::vsa::getSizeModel();
+        if (model_path.length()) model = ext::vsa::loadNFoldModel(model_path, getTaskName(benchmark_name));
+        v = _buildRandomsSemanticsVerifier(spec, info.second, solver_name, model, info.first);
     }
-    spec->env->random_engine.seed(time(0));
+    env::setTimeSeed(spec->env.get());
     auto solver_token = invoker::string2TheoryToken(solver_name);
-    auto* guard = new TimeGuard(1e9);
+    InvokeConfig config;
+    if (solver_token == SolverToken::VANILLA_VSA) {
+        config.set("height", 5);
+        VSAProgramSelector* selector = new VSARandomProgramSelector(spec->env.get());
+        config.set("selector", selector);
+    }
     auto result = invoker::getExampleNum(spec, v, solver_token, guard);
+    auto pure = guard->getPeriod() - global::recorder.query("verify");
     std::cout << result.first << " " << result.second.toString() << std::endl;
+    std::cout << guard->getPeriod() << std::endl;
+    std::cout << "pure " << guard->getPeriod() - global::recorder.query("verify") << std::endl;
+    global::recorder.printAll();
     FILE* f = fopen(output_name.c_str(), "w");
     fprintf(f, "%d %s\n", result.first, result.second.toString().c_str());
+    fprintf(f, "%.10lf\n", global::recorder.query("verify"));
     fprintf(f, "%.10lf\n", guard->getPeriod());
 }

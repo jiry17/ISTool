@@ -101,24 +101,28 @@ public: \
 // basic logic semantics
 DefineNormalSemantics(Not)
 
-class AndSemantics : public Semantics, public TypedSemantics {
+class AndSemantics : public NormalSemantics {
 public:
     AndSemantics();
+    virtual Data run(DataList &&inp_list, ExecuteInfo* info);
     virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo *info);
     ~AndSemantics() = default;
 };
 
-class OrSemantics : public Semantics, public TypedSemantics {
+class OrSemantics : public NormalSemantics {
 public:
     OrSemantics();
+    virtual Data run(DataList &&inp_list, ExecuteInfo* info);
     virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo *info);
     ~OrSemantics() = default;
 };
 
-class ImplySemantics: public Semantics, public TypedSemantics {
+class ImplySemantics: public NormalSemantics {
 public:
     ImplySemantics();
-    virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo* info);
+    virtual Data run(DataList &&inp_list, ExecuteInfo* info);
+    virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo *info);
+    ~ImplySemantics() = default;
 };
 
 class AllowFailSemantics: public Semantics, public TypedSemantics {

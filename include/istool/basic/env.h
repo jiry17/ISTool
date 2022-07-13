@@ -45,5 +45,8 @@ public:
 
 typedef std::shared_ptr<Env> PEnv;
 
+namespace env {
+    void setTimeSeed(Env* env);
+}
 
 #endif //ISTOOL_ENV_H

@@ -14,7 +14,7 @@ public:
     IOExampleList io_example_list;
     DifferentProgramGenerator* g;
     int KExampleNum;
-    FiniteCompleteRandomSemanticsSelector(Specification* spec, GrammarEquivalenceChecker* _checker, RandomSemanticsScorer* scorer, DifferentProgramGenerator* g, int _KExampleSum=1000);
+    FiniteCompleteRandomSemanticsSelector(Specification* spec, GrammarEquivalenceChecker* _checker, LearnedScorer* scorer, DifferentProgramGenerator* g, int _KExampleSum=1000);
     virtual Example getNextExample(const PProgram& x, const PProgram& y);
     virtual void addExample(const IOExample& example);
     ~FiniteCompleteRandomSemanticsSelector();
@@ -29,7 +29,7 @@ public:
     z3::expr_vector param_list, inp_var_list;
     z3::expr_vector cons_list;
     int KExampleNum;
-    Z3CompleteRandomSemanticsSelector(Specification* spec, GrammarEquivalenceChecker* _checker, RandomSemanticsScorer* scorer, Program* example_cons, int _KExampleNum);
+    Z3CompleteRandomSemanticsSelector(Specification* spec, GrammarEquivalenceChecker* _checker, LearnedScorer* scorer, Program* example_cons, int _KExampleNum);
     virtual Example getNextExample(const PProgram& x, const PProgram& y);
     virtual void addExample(const IOExample& example);
     ~Z3CompleteRandomSemanticsSelector() = default;

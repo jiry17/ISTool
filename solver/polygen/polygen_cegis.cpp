@@ -181,7 +181,8 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             }
         }
 
-        result = semantics::buildSingleContext(info->name, _mergeIte(term_list, condition_list, spec->env.get()));
+        auto merge = _mergeIte(term_list, condition_list, spec->env.get());
+        result = semantics::buildSingleContext(info->name, merge);
         if (v->verify(result, &counter_example)) {
             return result;
         }

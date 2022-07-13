@@ -16,7 +16,8 @@ int Program::size() const {
     return res;
 }
 Data Program::run(ExecuteInfo *info) const {
-    return semantics->run(sub_list, info);
+    auto res = semantics->run(sub_list, info);
+    return res;
 }
 std::string Program::toString() const {
     std::vector<std::string> sub_expr_list;
@@ -59,4 +60,8 @@ PProgram program::rewriteParam(const PProgram &p, const ProgramList &param_list)
         sub_list.push_back(rewriteParam(sub, param_list));
     }
     return std::make_shared<Program>(p->semantics, sub_list);
+}
+
+bool AllValidProgramChecker::isValid(Program *p) {
+    return true;
 }

@@ -5,6 +5,7 @@
 #include "istool/basic/env.h"
 #include "istool/basic/program.h"
 #include "glog/logging.h"
+#include <sys/time.h>
 
 Env::Env(): random_engine(0) {
     semantics::loadLogicSemantics(this);
@@ -87,4 +88,9 @@ Data Env::run(Program *program, const DataList &param_list, const FunctionContex
     auto* info = info_builder->buildInfo(param_list, ctx);
     auto res = program->run(info);
     delete info; return res;
+}
+
+void env::setTimeSeed(Env* env) {
+    timeval now; gettimeofday(&now, NULL);
+    env->setRandomSeed(now.tv_usec);
 }

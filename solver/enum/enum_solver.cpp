@@ -35,7 +35,7 @@ namespace {
     }
 }
 
-OBESolver::OBESolver(Specification *_spec, Verifier* _v, const ProgramChecker &_is_runnable): PBESolver(_spec), v(_v), is_runnable(_is_runnable) {
+OBESolver::OBESolver(Specification *_spec, Verifier* _v, ProgramChecker* _is_runnable): PBESolver(_spec), v(_v), is_runnable(_is_runnable) {
     std::unordered_map<std::string, ProgramList> raw_invoke_map;
     collectAllInvocation(spec->example_space->cons_program, raw_invoke_map);
     for (auto& collect_info: raw_invoke_map) {
@@ -43,7 +43,7 @@ OBESolver::OBESolver(Specification *_spec, Verifier* _v, const ProgramChecker &_
         bool is_grounded = true;
         for (auto& p: collect_info.second) {
             for (auto& sub: p->sub_list) {
-                if (!isGrounded(sub) || !is_runnable(sub.get())) {
+                if (!isGrounded(sub) || !is_runnable->isValid(sub.get())) {
                     is_grounded = false;
                     LOG(WARNING) << "Observational equivalence cannot be applied to function " << name <<
                                     " because invocation " << p->toString() << " is not grounded";
@@ -94,4 +94,8 @@ FunctionContext OBESolver::synthesis(const std::vector<Example> &example_list, T
     delete finite_example_space;
     delete finite_verifier;
     return res;
+}
+
+OBESolver::~OBESolver() noexcept {
+    delete is_runnable;
 }

@@ -6,9 +6,16 @@
 #define ISTOOL_CONFIG_H
 
 #include <string>
+#include "time_guard.h"
 
 namespace config {
     extern const std::string KSourcePath;
+    extern const std::string KEuSolverPath;
+    extern const std::string KCVC5Path;
+}
+
+namespace global {
+    extern TimeRecorder recorder;
 }
 
 

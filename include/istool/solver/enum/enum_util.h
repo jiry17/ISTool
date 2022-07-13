@@ -20,18 +20,16 @@ public:
     virtual ~TrivialVerifier() = default;
 };
 
-typedef std::function<bool(Program*)> ProgramChecker;
-
 class OBEOptimizer: public Optimizer {
 public:
-    ProgramChecker is_runnable;
+    ProgramChecker* is_runnable;
     std::unordered_map<std::string, ExampleList> example_pool;
     std::unordered_set<std::string> visited_set;
     Env* env;
-    OBEOptimizer(const ProgramChecker & _is_runnable, const std::unordered_map<std::string, ExampleList>& _pool, Env* _env);
+    OBEOptimizer(ProgramChecker* _is_runnable, const std::unordered_map<std::string, ExampleList>& _pool, Env* _env);
     virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p);
     virtual void clear();
-    virtual ~OBEOptimizer() = default;
+    virtual ~OBEOptimizer();
 };
 
 // Collect the first n programs

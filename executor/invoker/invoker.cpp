@@ -34,6 +34,10 @@ FunctionContext invoker::synthesis(Specification *spec, Verifier *v, SolverToken
             RegisterSolverBuilder(PolyGen);
         case SolverToken::MAXFLASH:
             RegisterSolverBuilder(MaxFlash);
+        case SolverToken::EXTERNAL_EUSOLVER:
+            RegisterSolverBuilder(ExternalEuSolver);
+        case SolverToken::EXTERNAL_CVC5:
+            RegisterSolverBuilder(ExternalCVC5);
         default:
             LOG(FATAL) << "Unknown solver token";
     }
@@ -43,12 +47,12 @@ FunctionContext invoker::synthesis(Specification *spec, Verifier *v, SolverToken
 }
 
 std::pair<int, FunctionContext> invoker::getExampleNum(Specification *spec, Verifier *v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config) {
-    auto* s = dynamic_cast<Selector*>(v);
+    /*auto* s = dynamic_cast<Selector*>(v);
     if (s) {
         auto res = synthesis(spec, v, solver_token, guard, config);
         return {s->example_count, res};
-    }
-    s = new DirectSelector(v);
+    }*/
+    auto* s = new DirectSelector(v);
     auto res = synthesis(spec, s, solver_token, guard, config);
     int num = s->example_count;
     delete s;
@@ -62,7 +66,9 @@ namespace {
             {"eusolver", SolverToken::EUSOLVER},
             {"maxflash", SolverToken::MAXFLASH},
             {"vsa", SolverToken::VANILLA_VSA},
-            {"polygen", SolverToken::POLYGEN}
+            {"polygen", SolverToken::POLYGEN},
+            {"ext-eusolver", SolverToken::EXTERNAL_EUSOLVER},
+            {"ext-cvc5", SolverToken::EXTERNAL_CVC5}
     };
 }
 

@@ -103,7 +103,10 @@ Data NotSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return Data(std::make_shared<BoolValue>(!inp_list[0].isTrue()));
 }
 
-AndSemantics::AndSemantics(): Semantics("&&"), TypedSemantics(TBOOL, {TBOOL, TBOOL}) {
+AndSemantics::AndSemantics(): NormalSemantics("&&", TBOOL, {TBOOL, TBOOL}) {
+}
+Data AndSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    return BuildData(Bool, inp_list[0].isTrue() && inp_list[1].isTrue());
 }
 Data AndSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     auto x = sub_list[0]->run(info);
@@ -111,7 +114,10 @@ Data AndSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     return sub_list[1]->run(info);
 }
 
-OrSemantics::OrSemantics(): Semantics("||"), TypedSemantics(TBOOL, {TBOOL, TBOOL}) {
+OrSemantics::OrSemantics(): NormalSemantics("||", TBOOL, {TBOOL, TBOOL}) {
+}
+Data OrSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    return BuildData(Bool, inp_list[0].isTrue() || inp_list[1].isTrue());
 }
 Data OrSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     auto x = sub_list[0]->run(info);
@@ -119,7 +125,10 @@ Data OrSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     return sub_list[1]->run(info);
 }
 
-ImplySemantics::ImplySemantics(): Semantics("=>"), TypedSemantics(TBOOL, {TBOOL, TBOOL}) {
+ImplySemantics::ImplySemantics(): NormalSemantics("=>", TBOOL, {TBOOL, TBOOL}) {
+}
+Data ImplySemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    return BuildData(Bool, !inp_list[0].isTrue() || inp_list[1].isTrue());
 }
 Data ImplySemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     auto x = sub_list[0]->run(info);

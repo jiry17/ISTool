@@ -5,7 +5,8 @@
 #include "istool/selector/random_selector.h"
 #include "glog/logging.h"
 
-FiniteRandomSelector::FiniteRandomSelector(Specification *spec, GrammarEquivalenceChecker *_checker): CompleteSelector(spec, _checker) {
+FiniteRandomSelector::FiniteRandomSelector(Specification *spec, GrammarEquivalenceChecker *_checker, DifferentProgramGenerator* _g):
+    CompleteSelector(spec, _checker) , g(_g) {
     finite_io_space = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
     if (!finite_io_space) {
         LOG(FATAL) << "FiniteRandomSelector supports only FiniteIOSpace";
@@ -13,18 +14,24 @@ FiniteRandomSelector::FiniteRandomSelector(Specification *spec, GrammarEquivalen
     env = spec->env.get();
 }
 
-void FiniteRandomSelector::addExample(const IOExample &example) {}
+void FiniteRandomSelector::addExample(const IOExample &example) {
+    g->addExample(example);
+}
 Example FiniteRandomSelector::getNextExample(const PProgram &x, const PProgram &y) {
     std::vector<int> id_list(finite_io_space->example_space.size());
     for (int i = 0; i < id_list.size(); ++i) id_list[i] = i;
     auto info_x = semantics::buildSingleContext(finite_io_space->func_name, x);
     auto info_y = semantics::buildSingleContext(finite_io_space->func_name, y);
     std::shuffle(id_list.begin(), id_list.end(), env->random_engine);
+    int best_id = 0;
     for (auto& id: id_list) {
         auto& example = finite_io_space->example_space[id];
-        if (finite_io_space->satisfyExample(info_x, example) && finite_io_space->satisfyExample(info_y, example)) continue;
-        return example;
+        auto program_list = g->getDifferentProgram(finite_io_space->getIOExample(example), 2);
+        if (program_list.size() == 1) continue;
+        // if (finite_io_space->satisfyExample(info_x, example) && finite_io_space->satisfyExample(info_y, example)) continue;
+        best_id = id;
     }
+    return finite_io_space->example_space[best_id];
     assert(0);
 }
 

@@ -23,6 +23,7 @@ enum class ProbModelType {
 class TopDownModel {
 protected:
     virtual double getWeight(TopDownContext* ctx, Semantics* sem) const = 0;
+    virtual std::vector<double> getWeightList(TopDownContext* ctx, const std::vector<Semantics*>& sem) const = 0;
 public:
     PTopDownContext start;
     double default_weight;
@@ -30,6 +31,7 @@ public:
     TopDownModel(const PTopDownContext& start, double _inf, ProbModelType model_type=ProbModelType::NEG_LOG_PROB);
     virtual PTopDownContext move(TopDownContext* ctx, Semantics* sem, int pos) const = 0;
     double getWeight(TopDownContext* ctx, Semantics* sem, ProbModelType oup_type) const;
+    std::vector<double> getWeightList(TopDownContext* ctx, const std::vector<Semantics*>& sem, ProbModelType) const;
     double getWeight(Program* program, ProbModelType oup_type) const;
     virtual ~TopDownModel() = default;
 };
@@ -39,6 +41,7 @@ typedef std::function<std::string(Semantics*)> SemanticsAbstracter;
 class NGramModel: public TopDownModel {
 protected:
     virtual double getWeight(TopDownContext* ctx, Semantics* sem) const;
+    virtual std::vector<double> getWeightList(TopDownContext* ctx, const std::vector<Semantics*>& sem) const;
 public:
     unsigned int depth;
     SemanticsAbstracter sa;
@@ -61,6 +64,8 @@ namespace ext {
         double getTrueProb(double prob, ProbModelType type);
         double getRepresentedProb(double prob, ProbModelType type);
         double addProb(double prob_x, double prob_y, ProbModelType type);
+        void learnNFoldModel(Env* env, const std::string& cache_path, const std::string& save_folder, int fold_num, const std::string& main_name="default");
+        NGramModel* loadNFoldModel(const std::string& model_folder, const std::string& task_name);
     }
 }
 

@@ -23,8 +23,9 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        solver_name = "cbs";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/clia/array_search_3.sl";
+        solver_name = "ext-cvc5";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv/PRE_icfp_gen_14.10.sl";
+        //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mps_mo.sl";
         output_name = "/tmp/629453237.out";
     }
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);

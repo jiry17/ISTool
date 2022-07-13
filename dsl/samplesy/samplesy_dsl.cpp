@@ -122,40 +122,20 @@ Grammar * samplesy::rewriteGrammar(Grammar *g, Env* env, FiniteIOExampleSpace* i
         }
     }
 
-    /*const int KLengthLimit = 1, KOccurLimit = 2, KMaxNum = 3;
-    for (int l = 1; l <= KLengthLimit; ++l) {
-        std::unordered_map<std::string, int> occur_map;
-        for (const auto& example: io_space->example_space) {
-            auto io_example = io_space->getIOExample(example);
-            std::unordered_set<std::string> occur_set;
-            for (const auto& inp: io_example.first) {
-                auto* sv = dynamic_cast<StringValue*>(inp.get());
-                if (sv) {
-                    for (int i = 0; i + l <= sv->s.length(); ++i) {
-                        occur_set.insert(sv->s.substr(i, l));
-                    }
-                }
-            }
-            for (auto& s: occur_set) occur_map[s] += 1;
+    int index_max = 1e9;
+    for (auto& example: io_space->example_space) {
+        int current = 0;
+        for (auto& data: example) {
+            auto* sv = dynamic_cast<StringValue*>(data.get());
+            if (sv) current = std::max(current, int(sv->s.length()));
         }
-        std::vector<std::pair<int, std::string>> possible_cons;
-        for (auto& [key, w]: occur_map) {
-            if (w * KOccurLimit >= io_space->example_space.size()) {
-                possible_cons.emplace_back(w, key);
-            }
-        }
+        index_max = std::min(index_max, current);
+    }
+    if (index_max > 1e8) index_max = 0;
+    env->setConst(KSampleSyIndexMaxName, BuildData(Int, index_max));
 
-        std::sort(possible_cons.begin(), possible_cons.end(), std::greater<>());
-        for (int i = 0; i < possible_cons.size() && i < KMaxNum; ++i) {
-            Data d = BuildData(String, possible_cons[i].second);
-            auto feature = d.toString();
-            if (const_set.find(feature) == const_set.end()) {
-                const_set.insert(feature);
-                const_list.push_back(d);
-            }
-        }
-    }*/
-    return getSampleSyGrammar(inp_types, oup_type, const_list, env);
+    auto* res = getSampleSyGrammar(inp_types, oup_type, const_list, env);
+    return res;
 }
 
 void samplesy::registerSampleSyBasic(Env *env) {

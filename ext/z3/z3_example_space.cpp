@@ -23,8 +23,16 @@ bool Z3IOExampleSpace::satisfyExample(const FunctionContext &info, const Example
      Data oup = env->run(p, example);
      auto full_inp = example; full_inp.push_back(oup);
      auto res = env->run(oup_cons.get(), full_inp);
+     // LOG(INFO) << oup.toString() << " " << env->run(p->sub_list[0].get(), full_inp).toString();
+     // LOG(INFO) << env->run(p->sub_list[0]->sub_list[0].get(), full_inp).toString();
      auto* bv = dynamic_cast<BoolValue*>(res.get());
      return bv->w;
+}
+
+Example Z3IOExampleSpace::getInput(const Example &example) {
+    Example res(inp_list.size());
+    for (int i = 0; i < inp_list.size(); ++i) res[i] = env->run(inp_list[i].get(), example);
+    return res;
 }
 
 IOExample Z3IOExampleSpace::getIOExample(const Example &example) {

@@ -113,12 +113,15 @@ Data NeqSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     return Data(std::make_shared<BoolValue>(!(inp_list[0] == inp_list[1])));
 }
 
-IteSemantics::IteSemantics(): Semantics("ite"), TypedSemantics(TVARA, {TBOOL, TVARA, TVARA}) {
+IteSemantics::IteSemantics(): NormalSemantics("ite", TVARA, {TBOOL, TVARA, TVARA}) {
 }
 Data IteSemantics::run(const ProgramList &sub_list, ExecuteInfo *info) {
     auto c = sub_list[0]->run(info);
     if (c.isTrue()) return sub_list[1]->run(info);
     return sub_list[2]->run(info);
+}
+Data IteSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    if (inp_list[0].isTrue()) return inp_list[1]; else return inp_list[2];
 }
 
 const std::string theory::clia::KINFName = "CLIA@INF";

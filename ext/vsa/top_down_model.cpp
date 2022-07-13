@@ -4,6 +4,7 @@
 
 #include "istool/ext/vsa/top_down_model.h"
 #include "istool/sygus/parser/json_util.h"
+#include "istool/sygus/parser/parser.h"
 #include "glog/logging.h"
 #include <unordered_set>
 #include <cmath>
@@ -43,6 +44,12 @@ double TopDownModel::getWeight(TopDownContext *ctx, Semantics *sem, ProbModelTyp
     return ext::vsa::changeProbModel(getWeight(ctx, sem), prob_type, oup_type);
 }
 
+std::vector<double> TopDownModel::getWeightList(TopDownContext *ctx, const std::vector<Semantics *> &sem, ProbModelType oup_type) const {
+    auto res = getWeightList(ctx, sem);
+    for (int i = 0; i < res.size(); ++i) res[i] = ext::vsa::changeProbModel(res[i], prob_type, oup_type);
+    return res;
+}
+
 namespace {
     class NGramContext: public TopDownContext {
     public:
@@ -73,6 +80,21 @@ double NGramModel::getWeight(TopDownContext *ctx, Semantics *sem) const {
     if (weight_map.find(feature) == weight_map.end()) return default_weight;
     return weight_map.find(feature)->second;
 }
+std::vector<double> NGramModel::getWeightList(TopDownContext *ctx, const std::vector<Semantics*>& sem_list) const {
+    std::unordered_map<std::string, int> key_map;
+    std::vector<double> prob_list;
+    for (auto* sem: sem_list) {
+        auto feature = ctx->toString() + "@" + sa(sem);
+        key_map[feature] = 1;
+    }
+    for (auto* sem: sem_list) {
+        auto feature = ctx->toString() + "@" + sa(sem);
+        if (weight_map.find(feature) == weight_map.end()) prob_list.push_back(ext::vsa::getTrueProb(default_weight, prob_type));
+        else prob_list.push_back(ext::vsa::getTrueProb(weight_map.find(feature)->second, prob_type) / key_map[feature]);
+    }
+    for (int i = 0; i < prob_list.size(); ++i) prob_list[i] = ext::vsa::getRepresentedProb(prob_list[i], prob_type);
+    return prob_list;
+}
 void NGramModel::set(const std::vector<std::pair<std::string, double> > &weight_list) {
     weight_map.clear();
     for (const auto& item: weight_list) {
@@ -100,6 +122,7 @@ NGramModel * ext::vsa::getSizeModel() {
 
 void ext::vsa::learn(NGramModel *model, const ProgramList &program_list) {
     std::unordered_map<std::string, std::unordered_map<std::string, int>> info_map;
+    model->prob_type = ProbModelType::NEG_LOG_PROB;
     for (const auto& program: program_list) {
         auto info_list = _collectAllInfo(program.get(), model);
         for (const auto& info: info_list) {
@@ -297,6 +320,8 @@ const SemanticsAbstracter ext::vsa::KDefaultAbstracter = [](Semantics* s) -> std
     if (cs) return "Const";
     auto* ps = dynamic_cast<ParamSemantics*>(s);
     if (ps) return "Param";
+    // todo: Generalize this part
+    if (s->getName() == "im") return "if0";
     return s->getName();
 };
 
@@ -305,6 +330,7 @@ NGramModel * ext::vsa::loadDefaultNGramModel(const std::string &model_file_path)
     int depth = root["depth"].asInt();
     double default_value = root["default"].asDouble();
     auto* model = new NGramModel(depth, KDefaultAbstracter, default_value);
+    model->prob_type = ProbModelType::NEG_LOG_PROB;
     std::vector<std::pair<std::string, double>> weight_list;
     for (const auto& sub_node: root["weight"]) {
         std::string name = sub_node["name"].asString();
@@ -321,7 +347,8 @@ void ext::vsa::saveNGramModel(NGramModel *model, const std::string &model_file_p
     Json::Value weight_node;
     for (const auto& info: model->weight_map) {
         Json::Value info_node;
-        info_node["name"] = info.first; info_node["weight"] = info.second;
+        info_node["name"] = info.first;
+        info_node["weight"] = ext::vsa::changeProbModel(info.second, model->prob_type, ProbModelType::NEG_LOG_PROB);
         weight_node.append(info_node);
     }
     root["weight"] = weight_node;
@@ -356,4 +383,130 @@ double ext::vsa::addProb(double prob_x, double prob_y, ProbModelType type) {
         case ProbModelType::NEG_LOG_PROB: return prob_x + prob_y;
     }
     LOG(FATAL) << "Unknown prob type";
+}
+
+#include "istool/sygus/theory/basic/string/str.h"
+#include "istool/sygus/theory/basic/bv/bv.h"
+#include "istool/sygus/theory/basic/clia/clia.h"
+
+namespace {
+    std::vector<std::string> _getKeyList() {
+        return {"_short", "-repeat", "-long", "_small", "-short"};
+    }
+
+    std::string _getClassName(std::string name) {
+        auto key_list = _getKeyList();
+        for (const auto& key: key_list) {
+            if (key.length() < name.length() && name.substr(name.length() - key.length()) == key) {
+                name = name.substr(0, name.length() - key.length());
+            }
+        }
+        return name;
+    }
+
+
+    PProgram parseProgram(Env *env, const std::string &s) {
+        assert(!s.empty() && s[0] != ' ' && s[s.length() - 1] != ' ');
+        if (s[s.length() - 1] != ')') {
+            if (s[0] == '#') {
+                Bitset x(64, false);
+                return program::buildConst(BuildData(BitVector, x));
+            }
+            if (s[0] == '\"') return program::buildConst(BuildData(String, ""));
+            if (s.substr(0, 5) == "Param") {
+                auto id = std::stoi(s.substr(5));
+                return program::buildParam(id, theory::bv::getTBitVector(64));
+            }
+            if (s[0] == '-' || (s[0] >= '0' && s[0] <= '9')) {
+                bool is_int = true;
+                for (int i = 1; i < s.length(); ++i) if (s[i] < '0' || s[i] > '9') is_int = false;
+                if (is_int) return program::buildConst(BuildData(Int, 0));
+            }
+            LOG(FATAL) << "fail terminate " << s;
+        }
+        int pos = 0;
+        while (s[pos] != '(') ++pos;
+        auto op = s.substr(0, pos);
+        auto sem = env->getSemantics(op);
+        ProgramList sub_list;
+        while (s[pos] != ')') {
+            pos++;
+            int c = 0;
+            std::string now;
+            while (c > 0 || (s[pos] != ',') && (s[pos] != ')')) {
+                now += s[pos];
+                if (s[pos] == '\"') {
+                    pos++;
+                    while (s[pos] != '\"') now += s[pos++];
+                    now += s[pos];
+                    pos++;
+                } else {
+                    if (s[pos] == '(') ++c;
+                    if (s[pos] == ')') --c;
+                    pos++;
+                }
+            }
+            sub_list.push_back(parseProgram(env, now));
+        }
+        pos++;
+        assert(pos == s.length());
+        return std::make_shared<Program>(sem, sub_list);
+    }
+}
+
+void ext::vsa::learnNFoldModel(Env* env, const std::string &cache_path, const std::string &save_folder, int fold_num, const std::string& main_name) {
+    auto cache = json::loadJsonFromFile(cache_path);
+    auto res_map = cache[main_name];
+    std::unordered_map<std::string, std::vector<std::string>> class_storage;
+    std::vector<std::string> class_list;
+    for (const auto& member: res_map.getMemberNames()) {
+        auto class_name = _getClassName(member);
+        if (class_name != member) std::cout << class_name << " " << member << std::endl;
+        class_list.push_back(class_name);
+        class_storage[class_name].push_back(member);
+    }
+    assert(class_list.size() > fold_num);
+    std::shuffle(class_list.begin(), class_list.end(), env->random_engine);
+    std::vector<std::vector<std::string>> member_storage(fold_num);
+    for (int i = 0; i < class_list.size(); ++i) {
+        for (const auto& member: class_storage[class_list[i]])
+            member_storage[i % fold_num].push_back(member);
+    }
+
+    Json::Value fold_root;
+    for (int i = 0; i < member_storage.size(); ++i) {
+        for (const auto& member: member_storage[i]) fold_root[member] = i;
+    }
+    json::saveJsonToFile(fold_root, save_folder + "/fold.json");
+
+    for (int id = 0; id < fold_num; ++id) {
+        ProgramList program_list;
+        for (int i = 0; i < fold_num; ++i) {
+            if (i == id) continue;
+            for (const auto &member: member_storage[id]) {
+                for (auto &res: res_map[member]) {
+                    if (res["status"].asBool()) {
+                        auto oup = res["result"][0].asString();
+                        int l = 0;
+                        while (oup[l] != ':') ++l;
+                        oup.pop_back();
+                        oup = oup.substr(l + 1);
+                        auto parse_res = parseProgram(env, oup);
+                        program_list.push_back(parse_res);
+                    }
+                }
+            }
+        }
+        auto* model = new NGramModel(0, ext::vsa::KDefaultAbstracter, 10);
+        ext::vsa::learn(model, program_list);
+        ext::vsa::saveNGramModel(model, save_folder + "/model_" + std::to_string(id) + ".json");
+    }
+}
+
+NGramModel * ext::vsa::loadNFoldModel(const std::string &model_folder, const std::string &task_name) {
+    auto fold_root = json::loadJsonFromFile(model_folder + "/fold.json");
+    assert(fold_root.isMember(task_name));
+    int id = fold_root[task_name].asInt();
+    auto model_root = model_folder + "/model_" + std::to_string(id) + ".json";
+    return loadDefaultNGramModel(model_root);
 }

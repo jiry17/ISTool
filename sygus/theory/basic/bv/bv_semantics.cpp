@@ -75,8 +75,10 @@ BVShlSemantics::BVShlSemantics(int _size): size(_size), NormalSemantics("bvshl",
 Data BVShlSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto x = getBitVectorValue(inp_list[0]); auto y = _bv2ull(getBitVectorValue(inp_list[1]));
     Bitset res(size, 0);
-    for (int i = y; i < size; ++i) {
-        res.set(i, x[i - y]);
+    if (y < size) {
+        for (int i = y; i < size; ++i) {
+            res.set(i, x[i - y]);
+        }
     }
     return BuildData(BitVector, res);
 }
@@ -85,8 +87,10 @@ BVLShrSemantics::BVLShrSemantics(int _size): size(_size), NormalSemantics("bvlsh
 Data BVLShrSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto x = getBitVectorValue(inp_list[0]); auto y = _bv2ull(getBitVectorValue(inp_list[1]));
     Bitset res(size, 0);
-    for (int i = y; i < size; ++i) {
-        res.set(i - y, x[i]);
+    if (y < size) {
+        for (int i = y; i < size; ++i) {
+            res.set(i - y, x[i]);
+        }
     }
     return BuildData(BitVector, res);
 }

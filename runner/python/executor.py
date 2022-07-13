@@ -85,8 +85,9 @@ def execute(config: RunnerConfig, benchmark_list: list, cache_path: str, thread_
         cache[config.name] = {}
     step_num = 0
 
+    pre_list = benchmark_list
     benchmark_list = []
-    for path in benchmark_list:
+    for path in pre_list:
         benchmark_name = _get_benchmark_name(path)
         existing_num = 0 if benchmark_name not in cache[config.name] else len(cache[config.name][benchmark_name])
         benchmark_list.extend([path] * max(0, config.repeat_num - existing_num))

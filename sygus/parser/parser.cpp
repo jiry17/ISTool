@@ -367,6 +367,8 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
         auto name = entry[1].asString();
         PProgram program = json::getProgramFromJson(entry, env.get());
         env->setSemantics(name, std::make_shared<ComposedSemantics>(program, entry[2].size(), name));
+        // TODO: remove this special treatment for bv
+        if (name == "im") env->setSemantics("if0", std::make_shared<ComposedSemantics>(program, entry[2].size(), name));
     }
 
     auto fun_list = getEntriesViaName(root, "synth-fun");

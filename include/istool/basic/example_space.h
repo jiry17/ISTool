@@ -31,12 +31,14 @@ public:
     std::string func_name;
     IOExampleSpace(const std::string& _func_name);
     virtual IOExample getIOExample(const Example& example) = 0;
+    virtual DataList getInput(const Example& example);
     virtual ~IOExampleSpace() = default;
 };
 
 class FiniteExampleSpace: public ExampleSpace {
 public:
     ExampleList example_space;
+    void removeDuplicate();
     FiniteExampleSpace(const PProgram& _cons_program, const ExampleList& _example_space, Env* env);
     virtual ~FiniteExampleSpace() = default;
 };

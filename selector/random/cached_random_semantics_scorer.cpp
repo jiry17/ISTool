@@ -3,18 +3,33 @@
 //
 
 #include "istool/selector/random/random_semantics_selector.h"
+#include "istool/basic/config.h"
+#include "glog/logging.h"
 
 using namespace selector::random;
 
-CachedRandomSemanticsScorer::CachedRandomSemanticsScorer(Env *_env, FlattenGrammar *_fg, RandomSemanticsScore _KOutputSize):
-    env(_env), fg(_fg), KOutputSize(_KOutputSize), example_num(0) {
+IncrementalRandomSemanticsScorer::IncrementalRandomSemanticsScorer(Env *_env, FlattenGrammar *_fg):
+    env(_env), fg(_fg), example_num(0) {
+}
+
+void IncrementalRandomSemanticsScorer::pushExample(const Example &inp) {
+    ++example_num;
+}
+void IncrementalRandomSemanticsScorer::popExample() {
+    --example_num;
+}
+IncrementalRandomSemanticsScorer::~IncrementalRandomSemanticsScorer() {
+}
+
+BasicCachedRandomSemanticsScorer::BasicCachedRandomSemanticsScorer(Env *env, FlattenGrammar *_fg, RandomSemanticsScore _KOutputSize):
+        IncrementalRandomSemanticsScorer(env, _fg), KOutputSize(_KOutputSize) {
     cache = new CachePool(_fg->graph);
 }
-void CachedRandomSemanticsScorer::pushExample(const Example &inp) {
-    cache->pushExample(inp); --example_num;
+void BasicCachedRandomSemanticsScorer::pushExample(const Example &inp) {
+    cache->pushExample(inp); ++example_num;
 }
-void CachedRandomSemanticsScorer::popExample() {
-    cache->popExample(); ++example_num;
+void BasicCachedRandomSemanticsScorer::popExample() {
+    cache->popExample(); --example_num;
 }
 
 namespace {
@@ -85,7 +100,7 @@ namespace {
             for (int weight = 1; weight < 4; ++weight) {
                 if (two2five[weight].empty()) two2five[weight].push_back(0);
                 for (int i = two2five[weight].size(); i < (1 << example_num); ++i) {
-                    two2five[weight][i] = two2five[weight][i >> 1] * KStateWeight + ((i & 1) ? weight : 0);
+                    two2five[weight].push_back(two2five[weight][i >> 1] * KStateWeight + ((i & 1) ? weight : 0));
                 }
             }
 
@@ -94,7 +109,7 @@ namespace {
             if (five_state_eq_num_list.empty()) five_state_eq_num_list.push_back(0);
             for (int i = five_state_eq_num_list.size(); i < state_num; ++i) {
                 int tag = i % 5;
-                five_state_eq_num_list[i] = five_state_eq_num_list[i / 5] + (tag > 0) + (tag == 4);
+                five_state_eq_num_list.push_back(five_state_eq_num_list[i / 5] + (tag > 0) + (tag == 4));
             }
 
             for (int mask = 1; mask < 4; ++mask) {
@@ -128,6 +143,7 @@ namespace {
                 KOPowList[i] = KOPowList[i - 1] / KOutputSize;
                 KNegOPowList[i] = KNegOPowList[i - 1] * (KOutputSize - 1) / KOutputSize;
             }
+            updateStaticInfo(n);
             five_state_num = five_weight_list[n - 1] * 2;
             status_weight_matrix = _getViolateWeightMatrix(KOutputSize);
         }
@@ -277,7 +293,6 @@ namespace {
                     match_info_cache->getOneSizePairMatchRes(node_id, p_edge.semantics.get(), tmp_two);
                     for (int i = 0; i < (1 << n - 1); ++i) tmp_two[i] *= nt_prob;
                     for (int i = (1 << n - 1); i < (1 << n); ++i) tmp_two[i] = 0;
-                    for (int i = 0; i < (1 << n); ++i) tmp_two[i] = 0;
                     getNDimensionalSuffixSum(tmp_two);
                     updateTwoTerminateToFiveState(tmp_two, cache, tmp_five, 2);
                     updateTwoTerminateToFiveState(tmp_two, cache, tmp_five, 3);
@@ -356,19 +371,25 @@ namespace {
             return w[(1 << n) - 1];
         }
     };
+    std::vector<std::pair<int, int>> _CachedDPHolder::masked_five_state_info_list[4];
+    std::vector<int> _CachedDPHolder::five_weight_list, _CachedDPHolder::two2five[4], _CachedDPHolder::five_state_eq_num_list;
 }
 
-RandomSemanticsScore CachedRandomSemanticsScorer::getPairScore(const Example& inp) {
+RandomSemanticsScore BasicCachedRandomSemanticsScorer::getPairScore(const Example& inp) {
+    global::recorder.start("score");
     auto* holder = new _CachedDPHolder(fg->graph, nullptr, example_num, fg->getFlattenInput(inp), KOutputSize, cache);
     auto res = holder->_getPairScore();
+    global::recorder.end("score");
     delete holder; return res;
 }
-RandomSemanticsScore CachedRandomSemanticsScorer::getTripleScore(const PProgram &p, const Example& inp) {
+RandomSemanticsScore BasicCachedRandomSemanticsScorer::getTripleScore(const PProgram &p, const Example& inp) {
+    global::recorder.start("score");
     auto* match = fg->getMatchStructure(p);
     auto* holder = new _CachedDPHolder(fg->graph, match, example_num, fg->getFlattenInput(inp), KOutputSize, cache);
-    auto res = holder->_getPairScore();
+    auto res = holder->_getTripleScore();
+    global::recorder.end("score");
     delete holder; return res;
 }
-CachedRandomSemanticsScorer::~CachedRandomSemanticsScorer() {
-    delete fg; delete cache;
+BasicCachedRandomSemanticsScorer::~BasicCachedRandomSemanticsScorer() {
+    // delete fg;
 }

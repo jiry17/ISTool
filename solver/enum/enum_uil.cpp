@@ -14,11 +14,11 @@ bool TrivialVerifier::verify(const FunctionContext &info, Example *counter_examp
     return true;
 }
 
-OBEOptimizer::OBEOptimizer(const ProgramChecker &_is_runnable, const std::unordered_map<std::string, ExampleList> &_pool, Env* _env):
+OBEOptimizer::OBEOptimizer(ProgramChecker* _is_runnable, const std::unordered_map<std::string, ExampleList> &_pool, Env* _env):
         is_runnable(_is_runnable), example_pool(_pool), env(_env) {
 }
 bool OBEOptimizer::isDuplicated(const std::string& name, NonTerminal *nt, const PProgram &p) {
-    if (!is_runnable(p.get()) || example_pool.find(name) == example_pool.end()) return false;
+    if (!is_runnable->isValid(p.get()) || example_pool.find(name) == example_pool.end()) return false;
     auto& example_list = example_pool[name];
     DataList res;
     for (auto& example: example_list) {
@@ -35,6 +35,10 @@ bool OBEOptimizer::isDuplicated(const std::string& name, NonTerminal *nt, const 
 }
 void OBEOptimizer::clear() {
     visited_set.clear();
+}
+// TODO: change the type of is_runnable to PProgramChecker to avoid memory leak;
+OBEOptimizer::~OBEOptimizer() noexcept {
+    // delete is_runnable;
 }
 
 NumberLimitedVerifier::NumberLimitedVerifier(int _n, Verifier* _v): n(_n), v(_v) {}

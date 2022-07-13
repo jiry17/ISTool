@@ -55,9 +55,12 @@ TopDownContextGraph::TopDownContextGraph(Grammar *g, TopDownModel *model, ProbMo
     for (int id = 0; id < node_list.size(); ++id) {
         auto* symbol = node_list[id].symbol;
         auto* ctx = node_list[id].context.get();
-        for (const auto& rule: symbol->rule_list) {
-            double weight = model->getWeight(ctx, rule->semantics.get(), prob_type);
-            std::vector<int> v_list;
+        std::vector<Semantics*> sem_list;
+        for (const auto& rule: symbol->rule_list) sem_list.push_back(rule->semantics.get());
+        auto prob_list = model->getWeightList(ctx, sem_list, prob_type);
+        for (int rule_id = 0; rule_id < symbol->rule_list.size(); ++rule_id) {
+            double weight = prob_list[rule_id]; std::vector<int> v_list;
+            auto& rule = symbol->rule_list[rule_id];
             for (int i = 0; i < rule->param_list.size(); ++i) {
                 auto next_context = model->move(ctx, rule->semantics.get(), i);
                 v_list.push_back(initialize_node(rule->param_list[i], next_context));

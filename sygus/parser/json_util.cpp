@@ -36,6 +36,10 @@ PType json::getTypeFromJson(const Json::Value &value) {
         int size = value[2][1].asInt();
         return theory::bv::getTBitVector(size);
     }
+    if (value.size() == 2 && value[0].isString() && value[0].asString() == "BitVec") {
+        int size = value[1][1].asInt();
+        return theory::bv::getTBitVector(size);
+    }
     TEST_PARSER(false)
 }
 
@@ -89,11 +93,50 @@ namespace {
         }
         return std::make_shared<Program>(semantics, sub_list);
     }
+
+    PProgram _parseProgramWithLet(const Json::Value& node, const std::unordered_map<std::string, PProgram>& var_map, std::unordered_map<std::string, PProgram>& let_map, Env* env) {
+        if (node.isString()) {
+            auto name = node.asString();
+            if (let_map.find(name) != let_map.end()) return let_map[name];
+            assert(var_map.find(node.asString()) != var_map.end());
+            return var_map.find(node.asString())->second;
+        }
+        try {
+            auto data = json::getDataFromJson(node, env);
+            return program::buildConst(data);
+        } catch (ParseError& e) {}
+        std::string op = node[0].asString();
+        if (op == "let") {
+            TEST_PARSER(node[1].isArray() && node.size() == 3)
+            std::vector<std::pair<std::string, PProgram>> let_list;
+            for (auto& sub_node: node[1]) {
+                TEST_PARSER(sub_node.isArray() && sub_node.size() == 2 && sub_node[0].isString())
+                auto name = sub_node[0].asString();
+                PProgram prog = _parseProgramWithLet(sub_node[1], var_map, let_map, env);
+                let_list.emplace_back(name, prog);
+            }
+            for (auto& info: let_list) {
+                TEST_PARSER(let_map.count(info.first) == 0);
+                let_map[info.first] = info.second;
+            }
+            auto res = _parseProgramWithLet(node[2], var_map, let_map, env);
+            for (auto& info: let_list) {
+                let_map.erase(info.first);
+            }
+            return res;
+        }
+        auto semantics = env->getSemantics(op);
+        ProgramList sub_list;
+        for (int i = 1; i < node.size(); ++i) {
+            sub_list.push_back(_parseProgramWithLet(node[i], var_map, let_map, env));
+        }
+        return std::make_shared<Program>(semantics, sub_list);
+    }
 }
 
 PProgram json::getProgramFromJson(const Json::Value& node, Env* env) {
     TEST_PARSER(node.isArray() && node.size() == 5);
-    TEST_PARSER(node[0].isString() && node[0].asString() == "define-fun");
+    TEST_PARSER(node[0].isString() && node[0].asString() == "define-fun")
 
     std::unordered_map<std::string, PProgram> var_map;
     int id = 0;
@@ -103,5 +146,20 @@ PProgram json::getProgramFromJson(const Json::Value& node, Env* env) {
         var_map[name] = program::buildParam(id++, type);
     }
     auto program = _parseProgram(node[4], var_map, env);
+    return program;
+}
+
+PProgram json::getProgramFromJsonWithLet(const Json::Value &node, Env *env) {
+    TEST_PARSER(node.isArray() && node.size() == 5);
+    TEST_PARSER(node[0].isString() && node[0].asString() == "define-fun")
+    std::unordered_map<std::string, PProgram> var_map;
+    int id = 0;
+    for (auto& var_info: node[2]) {
+        auto name = var_info[0].asString();
+        auto type = json::getTypeFromJson(var_info[1]);
+        var_map[name] = program::buildParam(id++, type);
+    }
+    std::unordered_map<std::string, PProgram> let_map;
+    auto program = _parseProgramWithLet(node[4], var_map, let_map, env);
     return program;
 }

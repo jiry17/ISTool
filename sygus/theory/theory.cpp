@@ -21,9 +21,9 @@ namespace {
 
 std::string sygus::theoryToken2String(TheoryToken token) {
     switch (token) {
-        AddTokenItem(CLIA);
-        AddTokenItem(BV);
-        AddTokenItem(STRING);
+        case TheoryToken::CLIA: return "LIA";
+        case TheoryToken::BV: return "BV";
+        case TheoryToken::STRING: return "SLIA";
     }
     LOG(FATAL) << "Unknown token";
 }
@@ -63,4 +63,18 @@ void sygus::loadSyGuSTheories(Env *env, const TheoryLoader &loader) {
     for (auto dep: theory_dependency.find(theory)->second) {
         loader(env, dep);
     }
+}
+
+void sygus::setSyGuSHeader(Env *env, const std::string &header) {
+    auto* ext = env->getExtension(KSyGuSName);
+    assert(ext);
+    auto* se = dynamic_cast<SyGuSExtension*>(ext);
+    se->sygus_header = header;
+}
+
+std::string sygus::getSyGuSHeader(Env *env) {
+    auto* ext = env->getExtension(KSyGuSName);
+    assert(ext);
+    auto* se = dynamic_cast<SyGuSExtension*>(ext);
+    return se->sygus_header;
 }

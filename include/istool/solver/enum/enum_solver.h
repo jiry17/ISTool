@@ -18,11 +18,12 @@ public:
 
 class OBESolver: public PBESolver {
 public:
-    ProgramChecker is_runnable;
+    ProgramChecker* is_runnable;
     Verifier* v;
     std::unordered_map<std::string, ProgramList> invoke_map;
-    OBESolver(Specification* _spec, Verifier* _v, const ProgramChecker& _is_runnable);
+    OBESolver(Specification* _spec, Verifier* _v, ProgramChecker* _is_runnable);
     virtual FunctionContext synthesis(const std::vector<Example>& example_list, TimeGuard* guard = nullptr);
+    virtual ~OBESolver();
 };
 
 #endif //ISTOOL_ENUM_SOLVER_H

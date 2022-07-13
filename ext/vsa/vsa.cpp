@@ -20,7 +20,7 @@ std::string VSAEdge::toString() const {
 VSANode::VSANode(NonTerminal *_symbol, int _example_num): symbol(_symbol), example_num(_example_num), id(0) {
 }
 std::string VSANode::toString() {
-    return /*symbol->name + "@" + */ getWitnessString();
+    return symbol->name + "@" + getWitnessString();
 }
 
 

@@ -15,9 +15,11 @@ enum class SolverToken {
     OBSERVATIONAL_EQUIVALENCE,
     COMPONENT_BASED_SYNTHESIS,
     EUSOLVER,
+    EXTERNAL_EUSOLVER,
     MAXFLASH,
     VANILLA_VSA,
-    POLYGEN
+    POLYGEN,
+    EXTERNAL_CVC5
 };
 
 class InvokeConfig {
@@ -108,6 +110,15 @@ namespace invoker {
          */
         Solver* buildMaxFlash(Specification* spec, Verifier* v, const InvokeConfig& config);
         Solver* buildPolyGen(Specification* spec, Verifier* v, const InvokeConfig& config);
+
+        /**
+         * @config "memory"
+         * Type: int
+         * The memory limit (GB) for external solvers
+         * Default: 4
+         */
+        Solver* buildExternalEuSolver(Specification* spec, Verifier* v, const InvokeConfig& config);
+        Solver* buildExternalCVC5(Specification* spec, Verifier* v, const InvokeConfig& config);
     }
 
     FunctionContext synthesis(Specification* spec, Verifier* v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config={});

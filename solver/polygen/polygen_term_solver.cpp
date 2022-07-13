@@ -15,6 +15,7 @@ using namespace polygen;
 namespace {
     const int KDefaultMaxTermNum = 3;
     const int KDefaultExampleNum = 5;
+    const int KDefaultRandomFactor = 5;
 
     int _getMaxTermNum(const PSynthInfo& info) {
         return std::max(KDefaultMaxTermNum, int(info->inp_type_list.size()));
@@ -22,6 +23,10 @@ namespace {
 
     int _getMaxExampleNum(const PSynthInfo& info) {
         if (info->inp_type_list.size() > 5) return 2; else return KDefaultExampleNum;
+    }
+
+    int _getRandomFactor(const PSynthInfo& info) {
+        return info->inp_type_list.size() * 3;
     }
 }
 
@@ -40,7 +45,9 @@ PolyGenTermSolver::PolyGenTermSolver(Specification *spec, const PSynthInfo& info
     val = spec->env->getConstRef(solver::polygen::KMaxExampleNumName);
     if (!val->isNull()) KMaxExampleNum = theory::clia::getIntValue(*val);
     else KMaxExampleNum = _getMaxExampleNum(spec->info_list[0]);
-
+    val = spec->env->getConstRef(solver::polygen::KRandomFactorName);
+    if (!val->isNull()) KRandomFactor = theory::clia::getIntValue(*val);
+    else KRandomFactor = _getRandomFactor(spec->info_list[0]);
 }
 
 namespace {
@@ -136,12 +143,10 @@ void PolyGenTermSolver::performSample(polygen::SampleInfo *sample) {
     cache[solver_id]->solved_sample[sample->example_list] = sample->result;
 }
 
-namespace {
-    int _calculateRandomTime(int branch_num, int example_num) {
-        int ti = 5;
-        for (int i = 1; i <= example_num; ++i) ti *= branch_num;
-        return ti;
-    }
+int PolyGenTermSolver::calculateRandomTime(int branch_num, int example_num) {
+    int ti = KRandomFactor;
+    for (int i = 1; i <= example_num; ++i) ti *= branch_num;
+    return ti;
 }
 
 void PolyGenTermSolver::extendStart(polygen::TermPlan *plan, int sample_num) {
@@ -249,7 +254,7 @@ polygen::TermPlan * PolyGenTermSolver::buildTermPlan(polygen::TermPlan *father, 
 }
 
 std::vector<AssignmentInfo*> PolyGenTermSolver::getNextAssignment(TermPlan* plan, int n, int rem_branch) {
-    int ti = _calculateRandomTime(rem_branch, n);
+    int ti = calculateRandomTime(rem_branch, n);
     int limit = (int(plan->rem_example.size()) - 1) / rem_branch + 1;
     while (plan->sample_list.size() < ti) {
         plan->sample_list.push_back(plan->generateSampleInfoWithUpperBound(plan->rem_example.size()));
@@ -298,7 +303,7 @@ bool PolyGenTermSolver::search(polygen::TermPlan *plan, ProgramList &result, int
     auto next_assignment = getNextAssignment(plan, n, rem_branch);
     std::sort(next_assignment.begin(), next_assignment.end(), AssignmentCmp(plan->info));
     for (auto* info: next_assignment) {
-        int next_size = _calculateRandomTime(rem_branch - 1, n);
+        int next_size = calculateRandomTime(rem_branch - 1, n);
         auto* next_plan = buildTermPlan(plan, info, next_size);
         if (visited_plan.find(next_plan) == visited_plan.end()) {
             visited_plan.insert(next_plan);
@@ -312,7 +317,7 @@ ProgramList PolyGenTermSolver::getTerms(int n, int k) {
     visited_plan.clear();
     std::vector<int> full_example;
     auto* start = cache[solver_id]->buildTermPlan(n, {});
-    extendStart(start, _calculateRandomTime(k, n));
+    extendStart(start, calculateRandomTime(k, n));
     ProgramList result;
     search(start, result, n, k);
     return result;
@@ -403,3 +408,4 @@ PolyGenTermSolver::~PolyGenTermSolver() {
 
 const std::string solver::polygen::KMaxExampleNumName = "PolyGen@MaxExample";
 const std::string solver::polygen::KMaxTermNumName = "PolyGen@MaxTermNum";
+const std::string solver::polygen::KRandomFactorName = "PolyGen@RandomFactor";

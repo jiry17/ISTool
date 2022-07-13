@@ -36,6 +36,6 @@ add_subdirectory(solver)
 add_subdirectory(selector)
 add_subdirectory(dsl)
  
-set(SRC_LIBS solver_lib basic_lib ext_lib ${SyGuS_LIBS} selector_lib dsl_lib)
+set(SRC_LIBS solver_lib  ${SyGuS_LIBS} ext_lib selector_lib basic_lib  dsl_lib)
 
 add_subdirectory(executor)

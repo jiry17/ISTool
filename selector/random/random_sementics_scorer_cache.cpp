@@ -3,6 +3,7 @@
 //
 
 #include "istool/selector/random/random_semantics_scorer.h"
+#include "istool/basic/config.h"
 #include "glog/logging.h"
 
 using namespace selector::random;
@@ -34,12 +35,15 @@ PairMatchInfoCache::PairMatchInfoCache(const TopDownContextGraph::Node &node): e
     initRes();
 }
 PairMatchInfoCache::~PairMatchInfoCache() {
-    for (auto* info: edge_list) delete info;
+    for (auto* info: edge_list) {
+        delete info;
+    }
     delete[] res;
 }
 void PairMatchInfoCache::initRes() {
     int n = (1 << example_num);
-    delete[] res; res = new RandomSemanticsScore[n];
+    delete[] res;
+    res = new RandomSemanticsScore[n];
     for (int i = 0; i < n; ++i) res[i] = 0;
     for (int i = 0; i < edge_list.size(); ++i) {
         for (int j = 0; j < edge_list.size(); ++j) res[match_info[i][j]] += edge_list[i]->weight * edge_list[j]->weight;
@@ -67,22 +71,25 @@ void PairMatchInfoCache::popExample() {
     initRes();
 }
 void PairMatchInfoCache::getTmpPairStateWeight(const DataList &inp, RandomSemanticsScore *tmp) {
+    global::recorder.start("terminate-info");
     int n = (1 << example_num);
     for (int i = 0; i < (n << 1); ++i) tmp[i] = 0.0;
     for (int i = 0; i < n; ++i) tmp[i] = res[i];
     std::unordered_map<std::string, std::vector<int>> oup_class;
     for (int i = 0; i < edge_list.size(); ++i) {
-        oup_class[edge_list[i]->getOutput(inp).toString()].push_back(i);
+        auto oup = edge_list[i]->getOutput(inp);
+        oup_class[oup.toString()].push_back(i);
     }
     for (auto& info: oup_class) {
         for (int x_id: info.second) {
             for (int y_id: info.second) {
                 double weight = edge_list[x_id]->weight * edge_list[y_id]->weight;
                 int status = match_info[x_id][y_id];
-                res[status] -= weight; res[status + n] += weight;
+                tmp[status] -= weight; tmp[status + n] += weight;
             }
         }
     }
+    global::recorder.end("terminate-info");
 }
 
 namespace {
@@ -114,17 +121,18 @@ void PairMatchInfoCache::getOneSideMatchWeight(Semantics *sem, RandomSemanticsSc
     }
 }
 
+
+std::vector<int> TripleMatchInfoCache::K2T5[5];
+std::vector<int> TripleMatchInfoCache::K5Size;
+
 void TripleMatchInfoCache::prepare2T5(int example_num) {
     int n = (1 << example_num);
-    if (K5Size.size() > n) return;
-    if (K5Size.empty()) {
-        K5Size.push_back(1);
-        for (int i = 0; i < 5; ++i) K2T5[i].push_back(0);
-    }
-    for (int i = K5Size.size(); i < example_num; ++i) {
-        K5Size[i] = K5Size[i - 1] * 5;
+    if (K5Size.empty()) K5Size.push_back(1);
+    for (int i = K5Size.size(); i <= example_num; ++i) {
+        K5Size.push_back(K5Size[i - 1] * 5);
     }
     for (int x = 0; x < 5; ++x) {
+        if (K2T5[x].empty()) K2T5[x].push_back(0);
         for (int i = K2T5[x].size(); i < n; ++i) {
             int now = K2T5[x][i >> 1] * 5;
             if (i & 1) now += x;
@@ -142,7 +150,7 @@ int TripleMatchInfoCache::get5State(int fg, int fp, int gp) const {
 
 TripleMatchInfoCache::TripleMatchInfoCache(PairMatchInfoCache *two_cache, Semantics *s): edge_list(two_cache->edge_list),
     example_num(two_cache->example_num) {
-    prepare2T5(two_cache->example_num);
+    prepare2T5(two_cache->example_num + 1);
     p_id = two_cache->getEdgeIdForSemantics(s);
     int n = K5Size[two_cache->example_num];
     res = new RandomSemanticsScore[n];
@@ -161,6 +169,7 @@ TripleMatchInfoCache::TripleMatchInfoCache(PairMatchInfoCache *two_cache, Semant
     }
 }
 void TripleMatchInfoCache::getTmpTripleStateWeight(const DataList &inp, RandomSemanticsScore *tmp) {
+    global::recorder.start("terminate-info");
     int n = K5Size[example_num];
     for (int i = 0; i < (n << 1); ++i) tmp[i] = 0.0;
     for (int i = 0; i < n; ++i) tmp[i] = res[i];
@@ -173,10 +182,11 @@ void TripleMatchInfoCache::getTmpTripleStateWeight(const DataList &inp, RandomSe
             for (int y_id: info.second) {
                 double weight = edge_list[x_id]->weight * edge_list[y_id]->weight;
                 int status = match_info[x_id][y_id];
-                res[status] -= weight; res[status + n] += weight;
+                tmp[status] -= weight; tmp[status + n] += weight;
             }
         }
     }
+    global::recorder.end("terminate-info");
 }
 TripleMatchInfoCache::~TripleMatchInfoCache() {
     delete[] res;
@@ -214,6 +224,9 @@ void CachePool::getTripleMatchRes(int node_id, Semantics *s, const Example &inp,
     auto feature = std::to_string(node_id) + "@" + s->getName();
     TripleMatchInfoCache* cache;
     if (triple_cache_map.count(feature)) cache = triple_cache_map[feature];
-    else cache = triple_cache_map[feature] = new TripleMatchInfoCache(pair_cache_list[node_id], s);
+    else {
+        cache = new TripleMatchInfoCache(pair_cache_list[node_id], s);
+        triple_cache_map[feature] = cache;
+    }
     cache->getTmpTripleStateWeight(inp, res);
 }

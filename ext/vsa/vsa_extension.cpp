@@ -10,7 +10,6 @@ VSAExtension::VSAExtension(Env* _env): env(_env), env_setter([](Grammar*, Env*, 
     manager_list.push_back(new BasicWitnessManager());
 }
 void VSAExtension::setEnvSetter(const VSAEnvSetter &_setter) {
-    LOG(INFO) << "Set setter";
     env_setter = _setter;
 }
 void VSAExtension::prepareEnv(Grammar *grammar, const IOExample &example) {

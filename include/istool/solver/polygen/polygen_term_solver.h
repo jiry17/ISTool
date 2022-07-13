@@ -67,6 +67,7 @@ class PolyGenTermSolver: public TermSolver {
     polygen::AssignmentInfo* buildAssignmentInfo(const FunctionContext& term);
     void performSample(polygen::SampleInfo* sample);
     void extendStart(polygen::TermPlan* plan, int sample_num);
+    int calculateRandomTime(int branch_num, int example_num);
     void extendPlan(polygen::TermPlan* plan, polygen::AssignmentInfo* info, polygen::TermPlan* father,  int sample_num);
     polygen::TermPlan* buildTermPlan(polygen::TermPlan* father, polygen::AssignmentInfo* info, int sample_num);
     std::vector<polygen::AssignmentInfo*> getNextAssignment(polygen::TermPlan* plan, int n, int rem_branch);
@@ -74,7 +75,7 @@ class PolyGenTermSolver: public TermSolver {
     ProgramList getTerms(int n, int k);
     ProgramList getTerms();
 
-    int KMaxTermNum, KMaxExampleNum;
+    int KMaxTermNum, KMaxExampleNum, KRandomFactor;
     std::vector<PBESolver*> domain_solver_list;
 public:
     ProgramList synthesisTerms(const ExampleList& new_example_list, TimeGuard* guard = nullptr);
@@ -86,6 +87,7 @@ namespace solver {
     namespace polygen {
         extern const std::string KMaxTermNumName;
         extern const std::string KMaxExampleNumName;
+        extern const std::string KRandomFactorName;
     }
 }
 

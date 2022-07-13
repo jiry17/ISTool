@@ -3,6 +3,7 @@
 //
 
 #include "istool/dsl/component/component_dsl.h"
+#include "istool/sygus/theory/theory.h"
 #include "istool/dsl/component/component_dataset.h"
 #include "istool/sygus/theory/basic/bv/bv.h"
 #include "glog/logging.h"
@@ -10,6 +11,7 @@
 #define InfoStart(id) \
 dsl::component::ComponentBenchmarkInfo _getTaskInfo## id() { \
     auto env = std::make_shared<Env>(); \
+    sygus::setTheory(env.get(), TheoryToken::BV); \
     dsl::component::prepareEnv(env.get()); \
     auto bv_size = theory::bv::getBitVectorLength(env.get()); \
     auto bv_type = theory::bv::getTBitVector(bv_size); \

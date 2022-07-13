@@ -88,7 +88,7 @@ Data BVEqSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     if (inp_list[0] == inp_list[1]) res.set(0, 1);
     return BuildData(BitVector, res);
 }
-BVUShrKSemantics::BVUShrKSemantics(int _size, int _k): size(size), NormalSemantics("bvushr" + std::to_string(_k), TBV(_size), {TBV(_size)}) {}
+BVUShrKSemantics::BVUShrKSemantics(int _size, int _k): size(_size), k(_k), NormalSemantics("bvushr" + std::to_string(_k), TBV(_size), {TBV(_size)}) {}
 Data BVUShrKSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
     auto x = getBitVectorValue(inp_list[0]);
     auto res = Bitset(size, 0);
@@ -131,7 +131,7 @@ Z3BVULqSemantics::Z3BVULqSemantics(Data *_size_data): size_data(_size_data) {}
 Z3EncodeRes Z3BVULqSemantics::encodeZ3Expr(const std::vector<Z3EncodeRes> &inp_list) {
     int size = theory::clia::getIntValue(*size_data);
     auto& ctx = inp_list[0].res.ctx();
-    return {z3::ite(z3::ult(inp_list[0].res, inp_list[1].res), ctx.bv_val(0, size), ctx.bv_val(1, size)),
+    return {z3::ite(z3::ult(inp_list[0].res, inp_list[1].res), ctx.bv_val(1, size), ctx.bv_val(0, size)),
             _mergeConsList(inp_list[0].cons_list, inp_list[1].cons_list)};
 }
 Z3BVEqSemantics::Z3BVEqSemantics(Data *_size_data): size_data(_size_data) {}

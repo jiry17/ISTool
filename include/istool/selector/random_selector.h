@@ -5,6 +5,7 @@
 #ifndef ISTOOL_RANDOM_SELECTOR_H
 #define ISTOOL_RANDOM_SELECTOR_H
 
+#include "istool/selector/samplesy/different_program_generator.h"
 #include "selector.h"
 #include "istool/basic/example_sampler.h"
 #include "istool/ext/z3/z3_verifier.h"
@@ -13,7 +14,8 @@ class FiniteRandomSelector: public CompleteSelector {
 public:
     FiniteIOExampleSpace* finite_io_space;
     Env* env;
-    FiniteRandomSelector(Specification* spec, GrammarEquivalenceChecker* _checker);
+    DifferentProgramGenerator* g;
+    FiniteRandomSelector(Specification* spec, GrammarEquivalenceChecker* _checker, DifferentProgramGenerator* _g);
     virtual Example getNextExample(const PProgram& x, const PProgram& y);
     virtual void addExample(const IOExample& example);
     ~FiniteRandomSelector() = default;

@@ -17,6 +17,7 @@ typedef std::function<void(Env*, TheoryToken)> TheoryLoader;
 class SyGuSExtension: public Extension {
 public:
     TheoryToken theory;
+    std::string sygus_header;
     SyGuSExtension(TheoryToken _theory);
     ~SyGuSExtension() = default;
 };
@@ -26,6 +27,8 @@ namespace sygus {
     TheoryToken getSyGuSTheory(Env* env);
     void setTheory(Env* env, TheoryToken theory);
     void loadSyGuSTheories(Env* env, const TheoryLoader& loader);
+    std::string getSyGuSHeader(Env* env);
+    void setSyGuSHeader(Env* env, const std::string& header);
 }
 
 #endif //ISTOOL_THEORY_H

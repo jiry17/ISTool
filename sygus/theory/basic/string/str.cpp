@@ -6,6 +6,7 @@
 #include "istool/sygus/theory/basic/clia/clia_semantics.h"
 #include "istool/sygus/theory/basic/string/string_semantics.h"
 #include "istool/basic/type_system.h"
+#include "glog/logging.h"
 
 void theory::loadStringTheory(Env *env) {
     auto* inf = env->getConstRef(theory::clia::KINFName);

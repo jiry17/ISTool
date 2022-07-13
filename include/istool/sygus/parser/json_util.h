@@ -21,6 +21,7 @@ namespace json {
     Data getDataFromJson(const Json::Value& value, Env* env);
     void saveJsonToFile(const Json::Value& value, const std::string& file_path);
     PProgram getProgramFromJson(const Json::Value& value, Env* env);
+    PProgram getProgramFromJsonWithLet(const Json::Value& value, Env* env);
 }
 
 

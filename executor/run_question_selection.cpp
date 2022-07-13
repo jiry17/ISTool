@@ -17,13 +17,17 @@
 #include "istool/sygus/theory/witness/clia/clia_witness.h"
 #include <unordered_set>
 #include "istool/selector/random_selector.h"
+#include "istool/basic/config.h"
 #include "istool/selector/samplesy/finite_equivalence_checker.h"
 #include "istool/selector/samplesy/vsa_seed_generator.h"
 #include "istool/selector/samplesy/different_program_generator.h"
 #include "istool/selector/samplesy/z3_equivalence_checker.h"
 #include "istool/selector/random/random_semantics_selector.h"
+#include "istool/selector/random/learned_scorer.h"
 #include "istool/selector/random/complete_random_semantics_selector.h"
 #include "istool/sygus/theory/basic/clia/clia_example_sampler.h"
+#include "istool/ext/vsa/vsa_inside_checker.h"
+#include "istool/basic/config.h"
 
 typedef std::pair<int, FunctionContext> SynthesisResult;
 
@@ -96,7 +100,6 @@ void prepareSampleSy(Specification* spec, const std::string& task_name) {
     LOG(INFO) << "grammar "; info->grammar->print();
     info->grammar = grammar::generateHeightLimitedGrammar(info->grammar, depth);
 }
-
 
 auto KIntPrepare = [](Grammar* g, Env* env, const IOExample& io_example) {
     int tmp_int_limit = KIntMax;
@@ -245,7 +248,8 @@ SynthesisResult invokeRandomSy(Specification* spec, TimeGuard* guard) {
 
     auto* example_space = spec->example_space.get();
     if (dynamic_cast<FiniteIOExampleSpace*>(example_space)) {
-        auto *solver = new FiniteRandomSelector(spec, checker);
+        auto* diff_gen = new VSADifferentProgramGenerator(builder);
+        auto *solver = new FiniteRandomSelector(spec, checker, diff_gen);
         auto res = solver->synthesis(nullptr);
         return {solver->example_count, res};
     }
@@ -259,6 +263,7 @@ SynthesisResult invokeRandomSy(Specification* spec, TimeGuard* guard) {
         auto res = solver->synthesis(nullptr);
         return {solver->example_count, res};
     }
+    assert(0);
 }
 
 FlattenGrammar* getFlattenGrammar(Specification* spec, TopDownContextGraph* graph, int num) {
@@ -267,25 +272,29 @@ FlattenGrammar* getFlattenGrammar(Specification* spec, TopDownContextGraph* grap
         auto* vsa_ext = ext::vsa::getExtension(spec->env.get());
         vsa_ext->setEnvSetter(KStringPrepare);
         auto* example_space = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
+        example_space->removeDuplicate();
         IOExampleList io_list;
         for (auto& example: example_space->example_space) {
             io_list.push_back(example_space->getIOExample(example));
         }
         auto* g = spec->info_list[0]->grammar;
-        auto validator = [vsa_ext, io_list, g](Program* p) -> bool {
-            for (auto& example: io_list) {
-                if (ext::vsa::isConsideredByVSA(p, vsa_ext, g, example)) return true;
-            }
-            return false;
-        };
-        return new MergedFlattenGrammar(graph, spec->env.get(), num, validator, spec->example_space.get()); //selector::getFlattenGrammar(graph, num, validator);
+        auto* validator = new ProgramInsideVSAChecker(spec->env.get(), g, spec->example_space.get());
+        auto tool = std::make_shared<FiniteEquivalenceCheckerTool>(spec->env.get(), example_space);
+        return new MergedFlattenGrammar(graph, spec->env.get(), num, validator, tool); //selector::getFlattenGrammar(graph, num, validator);
     } else {
-        return new TrivialFlattenGrammar(graph, spec->env.get(), num, [](Program *p) { return true; });
+        return new TrivialFlattenGrammar(graph, spec->env.get(), num, new AllValidProgramChecker());
         // return selector::getFlattenGrammar(graph, num, [](Program *p) { return true; });
     }
 }
 
-SynthesisResult invokeRandomSemanticsSelector(Specification* spec, int num, TimeGuard* guard) {
+std::string getName(FlattenGrammar* fg, const TopDownContextGraph::Edge& edge) {
+    auto* sem = edge.semantics.get(); auto* ps = dynamic_cast<ParamSemantics*>(sem);
+    if (ps) return fg->param_info_list[ps->id].program->toString();
+    return sem->getName();
+}
+
+SynthesisResult invokeRandomSemanticsSelector(Specification* spec, int num, LearnedScorerType type, TimeGuard* guard, TopDownModel* model) {
+    selector::random::setLearnedExampleLimit(type, spec->env.get());
     auto* pruner = new TrivialPruner();
     auto& info = spec->info_list[0];
     auto* vsa_ext = ext::vsa::getExtension(spec->env.get());
@@ -295,13 +304,17 @@ SynthesisResult invokeRandomSemanticsSelector(Specification* spec, int num, Time
     auto builder = std::make_shared<DFSVSABuilder>(info->grammar, pruner, spec->env.get());
     auto* checker = getEquivalenceChecker(spec, builder);
 
-    auto model = ext::vsa::getSizeModel();
     auto* graph = new TopDownContextGraph(info->grammar, model, ProbModelType::NORMAL_PROB);
+    global::recorder.start("verify");
     auto* fg = getFlattenGrammar(spec, graph, num);
-    // fg->graph->print();
-    for (auto& info: fg->param_info_list) std::cout << "  " << info.program->toString() << std::endl;
-    auto* scorer = new RandomSemanticsScorer(spec->env.get(), fg, 20);
+    global::recorder.end("verify");
 
+    LearnedScorer* scorer;
+    if (sygus::getSyGuSTheory(spec->env.get()) == TheoryToken::STRING) {
+        scorer = selector::random::buildVSAScorer(type, spec, fg, KStringPrepare);
+    } else {
+        scorer = selector::random::buildDefaultScorer(type, spec->env.get(), fg);
+    }
 
     auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
     if (fio) {
@@ -314,7 +327,7 @@ SynthesisResult invokeRandomSemanticsSelector(Specification* spec, int num, Time
     auto* zio = dynamic_cast<Z3IOExampleSpace*>(spec->example_space.get());
     if (zio) {
         auto range_cons = _getIntRangeCons(spec->info_list[0].get(), spec->env.get());
-        auto* solver = new Z3CompleteRandomSemanticsSelector(spec, checker, scorer, range_cons.get(), 20);
+        auto* solver = new Z3CompleteRandomSemanticsSelector(spec, checker, scorer, range_cons.get(), 5);
         auto res = solver->synthesis(guard);
         return {solver->example_count, res};
     }
@@ -322,37 +335,49 @@ SynthesisResult invokeRandomSemanticsSelector(Specification* spec, int num, Time
 }
 
 int main(int argc, char** argv) {
-    assert(argc == 4 || argc == 1);
-    std::string benchmark_name, output_name, solver_name;
-    if (argc == 4) {
+    assert(argc == 4 || argc == 5 || argc == 1);
+    std::string benchmark_name, output_name, solver_name, model_name;
+    if (argc >= 4) {
         benchmark_name = argv[1];
         output_name = argv[2];
         solver_name = argv[3];
+        if (argc == 5) model_name = argv[4];
     } else {
-        solver_name = "random2000";
-        //benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/repair/t13.sl";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string-interactive/phone-5_short.sl";
-        output_name = "/tmp/629453237.out";
+        solver_name = "diff100@3";
+        //benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/repair/t3.sl";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string-interactive/phone-2-long-repeat.sl";
+        //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/x.sl";
+        output_name = "/tmp/712015926.out";
+        model_name = "/tmp/tmp.wHOuYKwdWN//runner/model/intsy_string";
     }
     KDefaultStringDepth = 6;
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
+    env::setTimeSeed(spec->env.get());
     std::string task_name = getTaskName(benchmark_name);
-    std::cout << task_name << std::endl;
-    spec->env->random_engine.seed(time(0));
     prepareSampleSy(spec, task_name);
+    //ext::vsa::learnNFoldModel(spec->env.get(), config::KSourcePath + "/runner/model/intsy_repair.json",
+    //                          config::KSourcePath + "/runner/model/intsy_repair", 2, "samplesy");
+    //exit(0);
     SynthesisResult result;
     auto* guard = new TimeGuard(1e9);
     if (solver_name == "samplesy") {
         result = invokeSampleSy(spec, guard);
     } else if (solver_name == "randomsy") {
         result = invokeRandomSy(spec, guard);
-    } else if (solver_name == "random200") {
-        result = invokeRandomSemanticsSelector(spec, 200, guard);
-    } else if (solver_name == "random2000") {
-        result = invokeRandomSemanticsSelector(spec, 1000, guard);
+    } else {
+        auto info = selector::random::splitScorerName(solver_name, spec->env.get());
+        if (task_name.substr(task_name.size() - 3) == ".sl") task_name = task_name.substr(0, task_name.size() - 3);
+        TopDownModel* model = nullptr;
+        if (model_name.empty()) model = ext::vsa::getSizeModel(); else model = ext::vsa::loadNFoldModel(model_name, task_name);
+        result = invokeRandomSemanticsSelector(spec, info.second, info.first, guard, model);
     }
+
     std::cout << result.first << " " << result.second.toString() << std::endl;
+    std::cout << guard->getPeriod() << std::endl;
+    std::cout << global::recorder.query("verify") << std::endl;
+    global::recorder.printAll();
     FILE* f = fopen(output_name.c_str(), "w");
     fprintf(f, "%d %s\n", result.first, result.second.toString().c_str());
+    fprintf(f, "%.10lf\n", global::recorder.query("verify"));
     fprintf(f, "%.10lf\n", guard->getPeriod());
 }

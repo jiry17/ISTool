@@ -55,122 +55,57 @@ namespace {
         return cache[0];
     }
 
-    bool _isTerminate(TopDownGraphMatchStructure* s) {
-        auto* sem = s->program->semantics.get();
-        return dynamic_cast<ParamSemantics*>(sem) || dynamic_cast<ConstSemantics*>(sem);
+    _ProgramInfoList _collectAllProgramInfo(TopDownContextGraph* graph, const TopDownContextGraph::Edge& edge, std::unordered_map<int, _ProgramInfoList>& cache) {
+        std::vector<_ProgramInfoList> storage(edge.v_list.size());
+        for (int i = 0; i < edge.v_list.size(); ++i) {
+            storage[i] = _collectAllProgramInfo(edge.v_list[i], graph, cache);
+        }
+        return _mergeAllProgramInfo(1, edge.semantics, storage);
     }
 
-    Data _getTerminateOutput(TopDownGraphMatchStructure* s, const DataList& inp_list) {
-        auto* sem = s->program->semantics.get();
-        auto* cs = dynamic_cast<ConstSemantics*>(sem);
-        if (cs) return cs->w;
-        auto* ps = dynamic_cast<ParamSemantics*>(sem);
-        return inp_list[ps->id];
+    RandomSemanticsScore _getPairEqualProb(int node_id, TopDownContextGraph* graph, TopDownGraphMatchStructure* x, TopDownGraphMatchStructure* y,
+            RandomSemanticsModel* m) {
+        if (x->edge_id != y->edge_id) return m->weight_list[node_id][x->edge_id][y->edge_id];
+        auto& edge = graph->node_list[node_id].edge_list[x->edge_id];
+        RandomSemanticsScore sub_equal_prob = 1.0;
+        for (int i = 0; i < edge.v_list.size(); ++i) {
+            sub_equal_prob *= _getPairEqualProb(edge.v_list[i], graph, x->sub_list[i], y->sub_list[i], m);
+        }
+        return sub_equal_prob + (1 - sub_equal_prob) * m->weight_list[node_id][x->edge_id][y->edge_id];
     }
 
-    double _getRandomMatchProb(TopDownGraphMatchStructure* fs, TopDownGraphMatchStructure* gs, const DataList& inp_list, double KO) {
-        int terminate_count = _isTerminate(fs) + _isTerminate(gs);
-        if (terminate_count == 1) return 1 / KO;
-        if (terminate_count == 2) {
-            auto f_res = _getTerminateOutput(fs, inp_list), g_res = _getTerminateOutput(gs, inp_list);
-            if (f_res == g_res) return 1.0; else return 0.0;
+    RandomSemanticsScore _getSatisfyProb(TopDownContextGraph* graph, TopDownGraphMatchStructure* x_match,
+            TopDownGraphMatchStructure* y_match, TopDownGraphMatchStructure* p_match, RandomSemanticsModel* model, LearnedScorerType type) {
+        switch (type) {
+            case LearnedScorerType::SAME_PAIR:
+                return _getPairEqualProb(0, graph, x_match, p_match, model) * _getPairEqualProb(0, graph, y_match, p_match, model);
+            case LearnedScorerType::DIFFERENT_PAIR:
+                return _getPairEqualProb(0, graph, x_match, p_match, model) * _getPairEqualProb(0, graph, x_match, y_match, model);
+            case LearnedScorerType::TRIPLE:
+                return _getPairEqualProb(0, graph, x_match, p_match, model) * _getPairEqualProb(0, graph, y_match, p_match, model)
+                     * _getPairEqualProb(0, graph, x_match, y_match, model);
         }
-        if (fs->edge_id != gs->edge_id) return 1 / KO;
-        double equal_prob = 1.0;
-        for (int i = 0; i < fs->sub_list.size(); ++i) {
-            equal_prob *= _getRandomMatchProb(fs->sub_list[i], gs->sub_list[i], inp_list, KO);
-        }
-        return equal_prob + (1 - equal_prob) / KO;
-    }
-
-    double _getRandomMatchProb(std::vector<TopDownGraphMatchStructure*> s_list, const DataList& inp_list, double KO) {
-        assert(s_list.size() == 3);
-        std::sort(s_list.begin(), s_list.end(), [](TopDownGraphMatchStructure* x, TopDownGraphMatchStructure* y) {
-            bool xf = _isTerminate(x), yf = _isTerminate(y);
-            if (xf && (!yf)) return true; if ((!xf) && yf) return false;
-            return x->edge_id < y->edge_id;
-        });
-        if (_isTerminate(s_list[2])) {
-            DataList oup_list(3);
-            for (int i = 0; i < 3; ++i) oup_list[i] = _getTerminateOutput(s_list[i], inp_list);
-            if (oup_list[0] == oup_list[1] && oup_list[1] == oup_list[2]) return 1.0;
-            return 0.0;
-        }
-        if (_isTerminate(s_list[1])) {
-            if (_getTerminateOutput(s_list[0], inp_list) == _getTerminateOutput(s_list[1], inp_list))
-                return 1.0 / KO;
-            return 0.0;
-        }
-        if (s_list[0]->edge_id == s_list[1]->edge_id && s_list[1]->edge_id == s_list[2]->edge_id) {
-            double all_prob = 1.0;
-            double x[3];
-            for (int i = 0; i < 3; ++i) x[i] = 1.0;
-            for (int i = 0; i < s_list[0]->sub_list.size(); ++i) {
-                std::vector<TopDownGraphMatchStructure*> sub_list(3);
-                for (int j = 0; j < 3; ++j) sub_list[j] = s_list[j]->sub_list[i];
-                all_prob *= _getRandomMatchProb(sub_list, inp_list, KO);
-                for (int j = 0; j < 3; ++j) {
-                    x[j] *= _getRandomMatchProb(sub_list[j], sub_list[(j + 1) % 3], inp_list, KO);
-                }
-            }
-            double rem_prob = 1.0 - all_prob, res = all_prob;
-            for (int j = 0; j < 3; ++j) {
-                double now = x[j] - all_prob;
-                rem_prob -= now; res += now / KO;
-            }
-            return res + rem_prob / KO / KO;
-        }
-        if (s_list[1]->edge_id == s_list[2]->edge_id) std::swap(s_list[0], s_list[2]);
-        if (s_list[0]->edge_id == s_list[1]->edge_id) {
-            return _getRandomMatchProb(s_list[0], s_list[1], inp_list, KO) / KO;
-        }
-        return 1.0 / KO / KO;
-    }
-
-    DataStorage _getFullInpList(FlattenGrammar* fg, const DataStorage& raw_inp) {
-        DataStorage res;
-        for (auto& inp: raw_inp) res.push_back(fg->getFlattenInput(inp));
-        return res;
     }
 }
 
-double selector::test::getPairGroundTruth(Env* env, FlattenGrammar *fg, const DataStorage &raw_inp, double KO) {
+RandomSemanticsScore selector::test::getLearnedGroundTruth(Env *env, FlattenGrammar *fg, const PProgram &p,
+        const std::vector<RandomSemanticsModel *> &model_list, LearnedScorerType type) {
     auto info_list = _collectAllProgramInfo(fg->graph);
-    /*LOG(INFO) << "Program Infos:";
-    for (auto& info: info_list) {
-        LOG(INFO) << "  " << info.prob << ": " << info.program->toString() << std::endl;
-    }*/
-    auto inp_list = _getFullInpList(fg, raw_inp);
-    double res = 0.0;
-    for (auto& f_info: info_list) {
-        auto* fs = fg->graph->getProgramMatchStructure(f_info.program); assert(fs);
-        for (auto& g_info: info_list) {
-            auto* gs = fg->graph->getProgramMatchStructure(g_info.program); assert(gs);
-            double cur = 1.0;
-            for (auto& inp: inp_list) cur *= _getRandomMatchProb(fs, gs, inp, KO);
-            res += cur * f_info.prob * g_info.prob;
-            delete gs;
+    auto* p_match = fg->getMatchStructure(p);
+    auto* last_model = model_list[model_list.size() - 1];
+    RandomSemanticsScore res = 0.0;
+    for (auto& x_info: info_list) {
+        auto* x_match = fg->getMatchStructure(x_info.program);
+        for (auto& y_info: info_list) {
+            auto* y_match = fg->getMatchStructure(y_info.program);
+            auto equal_prob = _getPairEqualProb(0, fg->graph, x_match, y_match, last_model);
+            for (int i = 0; i + 1 < model_list.size(); ++i) {
+                equal_prob *= _getSatisfyProb(fg->graph, x_match, y_match, p_match, model_list[i], type);
+            }
+            res += equal_prob * x_info.prob * y_info.prob;
+            delete y_match;
         }
-        delete fs;
-    }
-    return res;
-}
-
-double selector::test::getTripleGroundTruth(Env* env, FlattenGrammar *fg, const PProgram& p, const DataStorage &raw_inp, double KO) {
-    _ProgramInfoList info_list = _collectAllProgramInfo(fg->graph);
-    auto inp_list = _getFullInpList(fg, raw_inp);
-    auto* ps = fg->getMatchStructure(p); assert(ps);
-    double res = 0.0;
-    for (auto& f_info: info_list) {
-        auto* fs = fg->graph->getProgramMatchStructure(f_info.program); assert(fs);
-        for (auto& g_info: info_list) {
-            auto* gs = fg->graph->getProgramMatchStructure(g_info.program); assert(gs);
-            double cur = _getRandomMatchProb(fs, gs, inp_list[inp_list.size() - 1], KO);
-            for (int i = 0; i + 1 < inp_list.size(); ++i)
-                cur *= _getRandomMatchProb({fs, gs, ps}, inp_list[i], KO);
-            // std::cout << f_info.program->toString() << " " << g_info.program->toString() << " " << cur << std::endl;
-            res += cur * f_info.prob * g_info.prob;
-        }
+        delete x_match;
     }
     return res;
 }

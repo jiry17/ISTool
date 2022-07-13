@@ -40,20 +40,6 @@ namespace {
         res[4][4] = 1 - 3 / KO + 2 / KO / KO;
         return res;
     }
-    std::string _twoState2String(int state, int n) {
-        std::string res;
-        for (int i = 0; i < n; ++i) {
-            res += std::to_string(state % 2); state >>= 1;
-        }
-        return res;
-    }
-    std::string _fiveState2String(int state, int n) {
-        std::string res;
-        for (int i = 0; i < n; ++i) {
-            res += std::to_string(state % KStateWeight); state /= KStateWeight;
-        }
-        return res;
-    }
 
     class _DPHolder {
     public:
@@ -302,8 +288,6 @@ namespace {
                                 else if (f_info.second[i] == g_info.second[i]) status = 1;
                                 state = state * KStateWeight + status;
                             }
-                            if (state >= five_state_num)
-                                std::cout << n << " " << five_state_num << " " << state << std::endl;
                             assert(state < five_state_num);
                             tmp_five[state] += weight;
                         }
@@ -449,5 +433,5 @@ RandomSemanticsScore RandomSemanticsScorer::getTripleScore(const PProgram& p, co
     return res;
 }
 RandomSemanticsScorer::~RandomSemanticsScorer() {
-    delete fg;
+    // delete fg;
 }

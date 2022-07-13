@@ -6,10 +6,12 @@
 #define ISTOOL_RANDOM_SEMANTICS_SCORER_TESTER_H
 
 #include "istool/selector/random/grammar_flatter.h"
+#include "istool/selector/random/random_semantics_scorer.h"
+#include "istool/selector/random/learned_scorer.h"
 
 namespace selector::test {
-    double getPairGroundTruth(Env* env, FlattenGrammar* graph, const DataStorage& inp_list, double KO);
-    double getTripleGroundTruth(Env* env, FlattenGrammar* graph, const PProgram& p, const DataStorage& inp_list, double KO);
+    RandomSemanticsScore getLearnedGroundTruth(Env* env, FlattenGrammar* graph, const PProgram& p,
+            const std::vector<RandomSemanticsModel*>& model_list, LearnedScorerType type);
 }
 
 #endif //ISTOOL_RANDOM_SEMANTICS_SCORER_TESTER_H

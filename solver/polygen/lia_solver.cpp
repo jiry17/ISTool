@@ -16,7 +16,7 @@ const std::string solver::lia::KTermIntMaxName = "LIA@TermIntMax";
 const std::string solver::lia::KMaxCostName = "LIA@MaxCost";
 
 namespace {
-    const int KDefaultConstValue = 3;
+    const int KDefaultConstValue = 1;
     const int KDefaultTermValue = 2;
     const int KDefaultMaxCost = 1e9;
 
@@ -167,8 +167,12 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
 
     auto solve_res = solver::lia::solveLIA(env, wrapped_example_list, ext, KTermIntMax, KConstIntMax, KMaxCost, guard);
     if (!solve_res.status) return {};
-
     PProgram res = _buildProgram(solve_res, considered_program_list, spec->env.get());
+
+    /*LOG(INFO) << "Current solve";
+    for (auto& example: wrapped_example_list) std::cout << example::ioExample2String(example) << std::endl;
+    std::cout << res->toString() << std::endl;*/
+
     return semantics::buildSingleContext(io_example_space->func_name, res);
 }
 
@@ -220,8 +224,10 @@ namespace {
 LIAResult solver::lia::solveLIA(GRBEnv& env, const std::vector<IOExample> &example_list, Z3Extension *ext, int t_max, int c_max, int cost_max, TimeGuard *guard) {
     int n = example_list[0].first.size();
     GRBModel model = GRBModel(env);
+
     model.set(GRB_IntParam_OutputFlag, 0);
     std::vector<GRBVar> var_list;
+    std::vector<GRBVar> neg_bound_list;
     std::vector<GRBVar> bound_list;
     for (int i = 0; i <= n; ++i) {
         std::string name_var = "var" + std::to_string(i);
@@ -234,8 +240,10 @@ LIAResult solver::lia::solveLIA(GRBEnv& env, const std::vector<IOExample> &examp
             model.addConstr(var_list[i] >= -bound * bound_list[i], "lbound" + std::to_string(i));
         } else {
             bound_list.push_back(model.addVar(0, bound, 0.0, GRB_INTEGER, name_bound));
+            neg_bound_list.push_back(model.addVar(0, 1, 0.0, GRB_BINARY, "neg_bound" + std::to_string(i)));
             model.addConstr(var_list[i] <= bound_list[i], "rbound" + std::to_string(i));
             model.addConstr(var_list[i] >= -bound_list[i], "lbound" + std::to_string(i));
+            model.addConstr(var_list[i] >= -bound * neg_bound_list[i]);
         }
     }
     int id = 0;
@@ -248,7 +256,11 @@ LIAResult solver::lia::solveLIA(GRBEnv& env, const std::vector<IOExample> &examp
     for (auto bound_var: bound_list) {
         target += bound_var;
     }
+    for (auto neg_bound: neg_bound_list) {
+        target += neg_bound;
+    }
     model.setObjective(target, GRB_MINIMIZE);
+
     model.optimize();
     int status = model.get(GRB_IntAttr_Status);
     if (status == GRB_INFEASIBLE) return {};

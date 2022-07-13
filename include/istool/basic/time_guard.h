@@ -7,6 +7,8 @@
 
 #include <ctime>
 #include <exception>
+#include <unordered_map>
+#include <string>
 
 struct TimeOutError: public std::exception {
 };
@@ -20,6 +22,17 @@ public:
     double getRemainTime() const;
     double getPeriod() const;
     ~TimeGuard() = default;
+};
+
+class TimeRecorder {
+public:
+    std::unordered_map<std::string, double> value_map;
+    std::unordered_map<std::string, timeval> start_time_map;
+    TimeRecorder() = default;
+    void start(const std::string& type);
+    void end(const std::string& type);
+    double query(const std::string& type);
+    void printAll();
 };
 
 #define TimeCheck(g) if (g) g->check()

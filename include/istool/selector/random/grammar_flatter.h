@@ -6,6 +6,7 @@
 #define ISTOOL_GRAMMAR_FLATTER_H
 
 #include "istool/basic/grammar.h"
+#include "equivalence_checker_tool.h"
 #include "istool/solver/maxflash/topdown_context_graph.h"
 
 class FlattenGrammar {
@@ -29,21 +30,33 @@ public:
     ~FlattenGrammar();
 };
 
+// todo: fix the memory leak leaded by prob_model.
+class FlattenGrammarBuilder {
+public:
+    Grammar* grammar;
+    TopDownModel* model;
+    FlattenGrammarBuilder(Grammar* _grammar, TopDownModel* _model);
+    virtual FlattenGrammar* getFlattenGrammar(int depth) = 0;
+    virtual ~FlattenGrammarBuilder() = default;
+};
+
 class TrivialFlattenGrammar: public FlattenGrammar {
 protected:
     virtual TopDownGraphMatchStructure* getMatchStructure(int node_id, const PProgram& program) const;
 public:
     std::unordered_map<std::string, int> param_map;
-    Env* env;
-    TrivialFlattenGrammar(TopDownContextGraph* _g, Env* env, int flatten_num, const std::function<bool(Program*)>& validator);
+    TrivialFlattenGrammar(TopDownContextGraph* _g, Env* env, int flatten_num, ProgramChecker* validator);
     ~TrivialFlattenGrammar() = default;
 };
 
-class EquivalenceCheckTool {
+class TrivialFlattenGrammarBuilder: public FlattenGrammarBuilder {
 public:
-    virtual PProgram insertProgram(const PProgram& p) = 0;
-    virtual PProgram queryProgram(const PProgram& p) = 0;
-    virtual Data getConst(Program* p) = 0;
+    Env* env;
+    int flatten_num;
+    ProgramChecker* validator;
+    TrivialFlattenGrammarBuilder(Grammar* g, TopDownModel* model, Env* _env, int _flatten_num, ProgramChecker* _validator);
+    virtual FlattenGrammar* getFlattenGrammar(int depth);
+    ~TrivialFlattenGrammarBuilder();
 };
 
 class MergedFlattenGrammar: public FlattenGrammar {
@@ -51,10 +64,21 @@ protected:
     virtual TopDownGraphMatchStructure* getMatchStructure(int node_id, const PProgram& program) const;
 public:
     std::unordered_map<std::string, int> param_map;
+    PEquivalenceCheckTool tool;
+    MergedFlattenGrammar(TopDownContextGraph* _g, Env* env, int flatten_num, ProgramChecker* validator, const PEquivalenceCheckTool& tool);
+    ~MergedFlattenGrammar() = default;
+};
+
+class MergedFlattenGrammarBuilder: public FlattenGrammarBuilder {
+public:
     Env* env;
-    EquivalenceCheckTool* tool;
-    MergedFlattenGrammar(TopDownContextGraph* _g, Env* env, int flatten_num, const std::function<bool(Program*)>& validator, ExampleSpace* example_space);
-    ~MergedFlattenGrammar();
+    int flatten_num;
+    ProgramChecker* validator;
+    PEquivalenceCheckTool tool;
+    MergedFlattenGrammarBuilder(Grammar* g, TopDownModel* model, Env* _env, int _flatten_num,
+            ProgramChecker* _validator, const PEquivalenceCheckTool& tool);
+    virtual FlattenGrammar* getFlattenGrammar(int depth);
+    virtual ~MergedFlattenGrammarBuilder();
 };
 
 #endif //ISTOOL_GRAMMAR_FLATTER_H

@@ -105,7 +105,7 @@ WitnessList StringDeleteWitnessFunction::witness(const WitnessData &oup) {
     auto oup_s = _getStringValue(oup);
     WitnessList res;
     for (auto& s: cons_str_list) {
-        for (int i = 0; i < oup_s.size(); ++i) {
+        for (int i = 0; i <= oup_s.size(); ++i) {
             auto inp = oup_s; inp.replace(i, 0, s);
             bool is_valid = false;
             for (const auto& param: inp_str_list) {
