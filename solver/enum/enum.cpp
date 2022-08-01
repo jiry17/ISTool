@@ -72,12 +72,17 @@ namespace {
         return res;
     }
 
+    bool _isDirectRule(Rule* rule) {
+        auto* cr = dynamic_cast<ConcreteRule*>(rule);
+        return cr && dynamic_cast<DirectSemantics*>(cr->semantics.get());
+    }
+
     std::vector<NonTerminal*> _getDirectOrder(Grammar* g) {
         std::unordered_map<NonTerminal*, std::vector<NonTerminal*>> edge_map;
         std::unordered_map<NonTerminal*, int> d;
         for (auto* s: g->symbol_list) {
             for (auto* r: s->rule_list) {
-                if (dynamic_cast<DirectSemantics*>(r->semantics.get())) {
+                if (_isDirectRule(r)) {
                     d[s]++; edge_map[r->param_list[0]].push_back(s);
                 }
             }
@@ -116,7 +121,7 @@ FunctionContext solver::enumerate(const std::vector<PSynthInfo> &info_list, cons
             for (auto* symbol: direct_order_list[pos]) {
                 int id = symbol->id; storage_list[id].emplace_back();
                 for (auto* rule: symbol->rule_list) {
-                    if (dynamic_cast<DirectSemantics*>(rule->semantics.get())) {
+                    if (_isDirectRule(rule)) {
                         for (const auto& p: storage_list[rule->param_list[0]->id][size]) {
                             if (!o->isDuplicated(info->name, symbol, p)) {
                                 storage_list[symbol->id][size].push_back(p);

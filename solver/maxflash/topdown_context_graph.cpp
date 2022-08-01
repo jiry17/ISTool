@@ -3,6 +3,7 @@
 //
 
 #include "istool/solver/maxflash/topdown_context_graph.h"
+#include "glog/logging.h"
 #include <queue>
 
 
@@ -56,16 +57,20 @@ TopDownContextGraph::TopDownContextGraph(Grammar *g, TopDownModel *model, ProbMo
         auto* symbol = node_list[id].symbol;
         auto* ctx = node_list[id].context.get();
         std::vector<Semantics*> sem_list;
-        for (const auto& rule: symbol->rule_list) sem_list.push_back(rule->semantics.get());
+        for (const auto& rule: symbol->rule_list) {
+            auto* cr = dynamic_cast<ConcreteRule*>(rule);
+            if (!cr) LOG(FATAL) << "Current implementation of VSA requires ConcreteRule";
+            sem_list.push_back(cr->semantics.get());
+        }
         auto prob_list = model->getWeightList(ctx, sem_list, prob_type);
         for (int rule_id = 0; rule_id < symbol->rule_list.size(); ++rule_id) {
             double weight = prob_list[rule_id]; std::vector<int> v_list;
-            auto& rule = symbol->rule_list[rule_id];
-            for (int i = 0; i < rule->param_list.size(); ++i) {
-                auto next_context = model->move(ctx, rule->semantics.get(), i);
-                v_list.push_back(initialize_node(rule->param_list[i], next_context));
+            auto* cr = dynamic_cast<ConcreteRule*>(symbol->rule_list[rule_id]);
+            for (int i = 0; i < cr->param_list.size(); ++i) {
+                auto next_context = model->move(ctx, cr->semantics.get(), i);
+                v_list.push_back(initialize_node(cr->param_list[i], next_context));
             }
-            node_list[id].edge_list.emplace_back(id, v_list, weight, rule->semantics);
+            node_list[id].edge_list.emplace_back(id, v_list, weight, cr->semantics);
         }
     }
 

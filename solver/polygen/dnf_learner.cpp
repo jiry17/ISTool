@@ -36,17 +36,19 @@ namespace {
         int now = 0;
         std::vector<int> bool_param_list;
         for (auto* rule: g->start->rule_list) {
-            auto name = rule->semantics->getName();
+            auto* cr = dynamic_cast<ConcreteRule*>(rule);
+            if (!cr) LOG(FATAL) << "The current implementation requires ConcreteSemantics";
+            auto name = cr->semantics->getName();
             if (ignored_set.find(name) != ignored_set.end()) {
                 delete rule;
             } else g->start->rule_list[now++] = rule;
-            auto* ps = dynamic_cast<ParamSemantics*>(rule->semantics.get());
+            auto* ps = dynamic_cast<ParamSemantics*>(cr->semantics.get());
             if (ps) bool_param_list.push_back(ps->id);
         }
         g->start->rule_list.resize(now);
         auto ps = new NonTerminal("param@bool", type::getTBool());
-        for (auto id: bool_param_list) ps->rule_list.push_back(new Rule(semantics::buildParamSemantics(id, type::getTBool()), {}));
-        g->start->rule_list.push_back(new Rule(std::make_shared<NotSemantics>(), {ps}));
+        for (auto id: bool_param_list) ps->rule_list.push_back(new ConcreteRule(semantics::buildParamSemantics(id, type::getTBool()), {}));
+        g->start->rule_list.push_back(new ConcreteRule(std::make_shared<NotSemantics>(), {ps}));
         g->removeUseless();
         return std::make_shared<SynthInfo>(info->name, info->inp_type_list, info->oup_type, g);
     }

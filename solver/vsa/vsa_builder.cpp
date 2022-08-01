@@ -61,11 +61,13 @@ VSANode* VSABuilder::buildFullVSA() {
     }
     for (auto* symbol: g->symbol_list) {
         for (auto* rule: symbol->rule_list) {
+            auto* cr = dynamic_cast<ConcreteRule*>(rule);
+            if (!cr) LOG(FATAL) << "Current implementation of VSA requires ConcreteRule";
             VSANodeList sub_list;
             for (auto* sub_symbol: rule->param_list) {
                 sub_list.push_back(node_list[sub_symbol->id]);
             }
-            node_list[symbol->id]->edge_list.emplace_back(rule->semantics, sub_list);
+            node_list[symbol->id]->edge_list.emplace_back(cr->semantics, sub_list);
         }
     }
     ext::vsa::cleanUpVSA(node_list[0]);
@@ -87,7 +89,9 @@ VSANode* DFSVSABuilder::buildVSA(NonTerminal *nt, const WitnessData &oup, const 
     if (pruner->isPrune(node)) return node;
     TimeCheck(guard);
     for (auto* rule: nt->rule_list) {
-        auto witness = ext->getWitness(rule->semantics.get(), oup, inp_list);
+        auto* cr = dynamic_cast<ConcreteRule*>(rule);
+        if (!cr) LOG(FATAL) << "Current implementation of VSA requires ConcreteRule";
+        auto witness = ext->getWitness(cr->semantics.get(), oup, inp_list);
         for (auto& wl: witness) {
 #ifdef DEBUG
             assert(wl.size() == rule->param_list.size());
@@ -97,7 +101,7 @@ VSANode* DFSVSABuilder::buildVSA(NonTerminal *nt, const WitnessData &oup, const 
                 auto sub_node = buildVSA(rule->param_list[i], wl[i], inp_list, guard, cache);
                 node_list.push_back(sub_node);
             }
-            node->edge_list.emplace_back(rule->semantics, node_list);
+            node->edge_list.emplace_back(cr->semantics, node_list);
         }
     }
     return node;
@@ -213,7 +217,9 @@ VSANode* BFSVSABuilder::_buildVSA(const Data &oup, const DataList &inp_list, Tim
         auto node = Q.front(); Q.pop();
         auto* sn = dynamic_cast<SingleVSANode*>(node);
         for (auto* rule: node->symbol->rule_list) {
-            auto witness = ext->getWitness(rule->semantics.get(), sn->oup, inp_list);
+            auto* cr = dynamic_cast<ConcreteRule*>(rule);
+            if (!cr) LOG(FATAL) << "Current implementation of VSA requires ConcreteRule";
+            auto witness = ext->getWitness(cr->semantics.get(), sn->oup, inp_list);
             for (auto& wl: witness) {
 #ifdef DEBUG
                 assert(wl.size() == rule->param_list.size());
@@ -222,7 +228,7 @@ VSANode* BFSVSABuilder::_buildVSA(const Data &oup, const DataList &inp_list, Tim
                 for (int i = 0; i < wl.size(); ++i) {
                     node_list.push_back(insert(rule->param_list[i], wl[i]));
                 }
-                VSAEdge edge(rule->semantics, node_list);
+                VSAEdge edge(cr->semantics, node_list);
                 node->edge_list.push_back(edge);
             }
         }

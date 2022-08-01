@@ -140,7 +140,7 @@ namespace {
         auto oup_type = g->start->type;
         for (auto* symbol: g->symbol_list) {
             for (auto* rule: symbol->rule_list) {
-                auto* ps = dynamic_cast<ParamSemantics*>(rule->semantics.get());
+                auto* ps = grammar::getParamSemantics(rule);
                 if (!ps) continue;
                 assert(ps->id < inp_type.size() && type::equal(ps->oup_type, inp_type[ps->id]));
             }

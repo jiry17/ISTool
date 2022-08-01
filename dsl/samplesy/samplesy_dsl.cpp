@@ -51,7 +51,7 @@ Grammar * samplesy::getSampleSyGrammar(const TypeList &inp_types, const PType &o
     auto* ind_symbol = new NonTerminal("ind", TINT);
     for (int i = 0; i < inp_types.size(); ++i) {
         auto type = inp_types[i];
-        auto* rule = new Rule(semantics::buildParamSemantics(i, type), {});
+        auto* rule = new ConcreteRule(semantics::buildParamSemantics(i, type), {});
         if (dynamic_cast<TString*>(type.get())) {
             p_symbol->rule_list.push_back(rule);
         } else {
@@ -60,7 +60,7 @@ Grammar * samplesy::getSampleSyGrammar(const TypeList &inp_types, const PType &o
         }
     }
     for (auto& c: const_list) {
-        auto* rule = new Rule(semantics::buildConstSemantics(c), {});
+        auto* rule = new ConcreteRule(semantics::buildConstSemantics(c), {});
         auto* sv = dynamic_cast<StringValue*>(c.get());
         if (sv && !sv->s.empty()) {
             sc_symbol->rule_list.push_back(rule);
@@ -68,23 +68,23 @@ Grammar * samplesy::getSampleSyGrammar(const TypeList &inp_types, const PType &o
     }
     int index_max = theory::clia::getIntValue(*(env->getConstRef(KSampleSyIndexMaxName, BuildData(Int, KDefaultIndexMax))));
     for (int i = -index_max; i <= index_max;++i) {
-        ic_symbol->rule_list.push_back(new Rule(semantics::buildConstSemantics(BuildData(Int, i)), {}));
+        ic_symbol->rule_list.push_back(new ConcreteRule(semantics::buildConstSemantics(BuildData(Int, i)), {}));
     }
-    s_symbol->rule_list.push_back(new Rule(env->getSemantics("str.++"), {s_symbol, s_symbol}));
-    s_symbol->rule_list.push_back(new Rule(env->getSemantics("replace"), {sub_symbol, sc_symbol, sc_symbol}));
-    s_symbol->rule_list.push_back(new Rule(env->getSemantics("delete"), {sub_symbol, sc_symbol}));
-    s_symbol->rule_list.push_back(new Rule(env->getSemantics(""), {sub_symbol}));
+    s_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics("str.++"), {s_symbol, s_symbol}));
+    s_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics("replace"), {sub_symbol, sc_symbol, sc_symbol}));
+    s_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics("delete"), {sub_symbol, sc_symbol}));
+    s_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics(""), {sub_symbol}));
 
-    sc_symbol->rule_list.push_back(new Rule(env->getSemantics(""), {p_symbol}));
+    sc_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics(""), {p_symbol}));
 
-    sub_symbol->rule_list.push_back(new Rule(env->getSemantics(""), {sc_symbol}));
-    sub_symbol->rule_list.push_back(new Rule(env->getSemantics("substr"), {p_symbol, i_symbol, i_symbol}));
+    sub_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics(""), {sc_symbol}));
+    sub_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics("substr"), {p_symbol, i_symbol, i_symbol}));
 
-    i_symbol->rule_list.push_back(new Rule(env->getSemantics(""), {ic_symbol}));
-    i_symbol->rule_list.push_back(new Rule(env->getSemantics("move"), {ind_symbol, ic_symbol}));
+    i_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics(""), {ic_symbol}));
+    i_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics("move"), {ind_symbol, ic_symbol}));
 
-    ind_symbol->rule_list.push_back(new Rule(env->getSemantics("indexof"), {p_symbol, s_symbol, i_symbol}));
-    ind_symbol->rule_list.push_back(new Rule(env->getSemantics("str.len"), {p_symbol}));
+    ind_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics("indexof"), {p_symbol, s_symbol, i_symbol}));
+    ind_symbol->rule_list.push_back(new ConcreteRule(env->getSemantics("str.len"), {p_symbol}));
 
     auto* start_symbol = dynamic_cast<TInt*>(oup_type.get()) ? i_symbol : s_symbol;
     return new Grammar(start_symbol, {s_symbol, sub_symbol, ind_symbol, sc_symbol, p_symbol, i_symbol, ic_symbol});
@@ -96,7 +96,7 @@ Grammar * samplesy::rewriteGrammar(Grammar *g, Env* env, FiniteIOExampleSpace* i
 
     for (auto* symbol: g->symbol_list) {
         for (auto* rule: symbol->rule_list) {
-            auto* ps = dynamic_cast<ParamSemantics*>(rule->semantics.get());
+            auto* ps = grammar::getParamSemantics(rule);
             if (ps) {
                 while (inp_types.size() <= ps->id) inp_types.emplace_back();
                 inp_types[ps->id] = ps->oup_type;
@@ -111,7 +111,7 @@ Grammar * samplesy::rewriteGrammar(Grammar *g, Env* env, FiniteIOExampleSpace* i
     std::unordered_set<std::string> const_set;
     for (auto* symbol: g->symbol_list) {
         for (auto* rule: symbol->rule_list) {
-            auto* cs = dynamic_cast<ConstSemantics*>(rule->semantics.get());
+            auto* cs = grammar::getConstSemantics(rule);
             if (cs) {
                 auto feature = cs->w.toString();
                 if (const_set.find(feature) == const_set.end()) {

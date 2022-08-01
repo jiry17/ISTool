@@ -32,16 +32,16 @@ Grammar * dsl::clia::getDefaultCLIAGrammar(Env* env, const CLIAGrammarInfo &info
 
     for (auto bool_value: {false, true}) {
         auto s = semantics::buildConstSemantics(BuildData(Bool, bool_value));
-        bs->rule_list.push_back(new Rule(s, {}));
+        bs->rule_list.push_back(new ConcreteRule(s, {}));
     }
     for (auto int_value: info.const_list) {
         auto s = semantics::buildConstSemantics(BuildData(Int, int_value));
-        is->rule_list.push_back(new Rule(s, {}));
+        is->rule_list.push_back(new ConcreteRule(s, {}));
     }
     for (int i = 0; i < info.param_list.size(); ++i) {
         auto s = semantics::buildParamSemantics(i, info.param_list[i]);
         auto* symbol = _isInt(info.param_list[i].get()) ? is : bs;
-        symbol->rule_list.push_back(new Rule(s, {}));
+        symbol->rule_list.push_back(new ConcreteRule(s, {}));
     }
     auto* start = _isInt(info.oup_type.get()) ? is : bs;
 
@@ -59,12 +59,12 @@ Grammar * dsl::clia::getDefaultCLIAGrammar(Env* env, const CLIAGrammarInfo &info
             if (_isInt(type.get())) sub_list.push_back(is); else sub_list.push_back(bs);
         }
         auto* s = _isInt(ts->oup_type.get()) ? is : bs;
-        s->rule_list.push_back(new Rule(sem, std::move(sub_list)));
+        s->rule_list.push_back(new ConcreteRule(sem, std::move(sub_list)));
     }
     for (const auto& op: {"<", "<="}) {
-        bs->rule_list.push_back(new Rule(env->getSemantics(op), {is, is}));
+        bs->rule_list.push_back(new ConcreteRule(env->getSemantics(op), {is, is}));
     }
-    is->rule_list.push_back(new Rule(env->getSemantics("ite"), {bs, is, is}));
+    is->rule_list.push_back(new ConcreteRule(env->getSemantics("ite"), {bs, is, is}));
 
     auto* res = new Grammar(start, {is, bs}, is_remove_empty);
     return res;

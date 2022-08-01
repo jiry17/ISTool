@@ -130,7 +130,7 @@ namespace {
         symbol_map[feature] = symbol;
         for (int i = 0; i < pt->sub_types.size(); ++i) {
             auto* sub = _buildComponentSymbol(pt->sub_types[i], symbol_map);
-            sub->rule_list.push_back(new Rule(std::make_shared<AccessSemantics>(i), {symbol}));
+            sub->rule_list.push_back(new ConcreteRule(std::make_shared<AccessSemantics>(i), {symbol}));
         }
         return symbol;
     }
@@ -142,7 +142,7 @@ namespace {
         }
         for (int i = 0; i < param_list.size(); ++i) {
             auto *param_symbol = _buildComponentSymbol(param_list[i], symbol_map);
-            param_symbol->rule_list.push_back(new Rule(semantics::buildParamSemantics(i, param_list[i]), {}));
+            param_symbol->rule_list.push_back(new ConcreteRule(semantics::buildParamSemantics(i, param_list[i]), {}));
         }
         NTList symbol_list;
         for (const auto& item: symbol_map) symbol_list.push_back(item.second);

@@ -268,7 +268,7 @@ namespace {
         TypeList res;
         for (auto* symbol: g->symbol_list) {
             for (auto* rule: symbol->rule_list) {
-                auto* ps = dynamic_cast<ParamSemantics*>(rule->semantics.get());
+                auto* ps = grammar::getParamSemantics(rule);
                 if (ps) {
                     while (res.size() <= ps->id) res.emplace_back();
                     res[ps->id] = ps->oup_type;

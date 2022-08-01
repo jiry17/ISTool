@@ -62,7 +62,9 @@ namespace {
                 param_list.push_back(current_node);
             }
             if (!flag) continue;
-            edge_list.push_back(new TreeEncoder::TreeEdge(rule->semantics, param_list));
+            ConcreteRule* cr = dynamic_cast<ConcreteRule*>(rule);
+            if (!cr) LOG(FATAL) << "TreeEncoder supports only ConcreteRules";
+            edge_list.push_back(new TreeEncoder::TreeEdge(cr->semantics, param_list));
         }
         if (edge_list.empty()) {
             for (auto& info: sub_map) {

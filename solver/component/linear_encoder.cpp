@@ -25,7 +25,7 @@ namespace {
 }
 
 LinearEncoder::Component LinearEncoder::buildComponent(NonTerminal *nt, Rule *r, const std::string& prefix) {
-    std::string name_prefix = prefix + "@" + r->semantics->name + "@";
+    std::string name_prefix = prefix + "@" + r->toString() + "@";
     auto oup = buildIntVar(name_prefix + "oup_ind", ext->ctx);
     std::vector<z3::expr> inp_list;
     for (int i = 0; i < r->param_list.size(); ++i) {
@@ -41,7 +41,9 @@ z3::expr_vector LinearEncoder::encodeStructure(const std::string &prefix) {
     for (int id = 0; id < base->symbol_list.size(); ++id) {
         auto* symbol = base->symbol_list[id];
         for (auto* rule: base->symbol_list[id]->rule_list) {
-            std::string op_name = rule->semantics->name;
+            auto* cr = dynamic_cast<ConcreteRule*>(rule);
+            if (!cr) LOG(FATAL) << "LinearEncoder supports only ConcreteRule";
+            std::string op_name = cr->semantics->name;
             int num = factor;
             if (special_usage.find(op_name) != special_usage.end()) {
                 num = special_usage.find(op_name)->second;
@@ -84,7 +86,7 @@ namespace {
     };
 
     ValueComponent buildValueComponent(const LinearEncoder::Component& component, const std::string& prefix, Z3Extension* ext) {
-        std::string name_prefix = prefix + component.rule->semantics->name + "@";
+        std::string name_prefix = prefix + component.rule->toString() + "@";
         std::string oup_name = name_prefix + "oup_value";
         auto oup_value = ext->buildVar(component.nt->type.get(), oup_name);
         z3::expr_vector inp_value_list(ext->ctx);
@@ -109,7 +111,9 @@ Z3EncodeRes LinearEncoder::encodeExample(const Z3EncodeList &inp_list, const std
     z3::expr_vector cons_list(ext->ctx);
     // semantics constraint
     for (int i = 0; i < component_list.size(); ++i) {
-        const auto& semantics = component_list[i].rule->semantics;
+        auto* cr = dynamic_cast<ConcreteRule*>(component_list[i].rule);
+        if (!cr) LOG(FATAL) << "LinearEncoder supports only ConcreteRule";
+        const auto& semantics = cr->semantics;
         const auto& vc = value_component_list[i];
         std::vector<Z3EncodeRes> sub_list;
         //std::cout << "Encode component " << i << " " << component_list[i].rule->semantics->getName() << std::endl;

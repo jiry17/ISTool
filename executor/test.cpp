@@ -46,7 +46,7 @@ int getParamNum(Grammar* g) {
     int param_num = 0;
     for (auto* node: g->symbol_list) {
         for (auto* rule: node->rule_list) {
-            auto* ps = dynamic_cast<ParamSemantics*>(rule->semantics.get());
+            auto* ps = grammar::getParamSemantics(rule);
             if (ps) param_num = std::max(param_num, ps->id + 1);
         }
     }

@@ -118,7 +118,7 @@ auto KStringPrepare = [](Grammar* g, Env* env, const IOExample& io_example) {
     std::unordered_set<std::string> const_set;
     for (auto* symbol: g->symbol_list) {
         for (auto* rule: symbol->rule_list) {
-            auto* sem = dynamic_cast<ConstSemantics*>(rule->semantics.get());
+            auto* sem = grammar::getConstSemantics(rule);
             if (sem) {
                 auto* sv = dynamic_cast<StringValue*>(sem->w.get());
                 if (!sv) continue;

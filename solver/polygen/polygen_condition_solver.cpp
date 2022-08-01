@@ -17,7 +17,7 @@ namespace {
             if (!term_type->equal(symbol->type.get())) continue;
             for (int i = 0; i < term_num; ++i) {
                 int id = i + int(inp_type.size());
-                symbol->rule_list.push_back(new Rule(semantics::buildParamSemantics(id, term_type), {}));
+                symbol->rule_list.push_back(new ConcreteRule(semantics::buildParamSemantics(id, term_type), {}));
             }
         }
         for (int i = 0; i < term_num; ++i) inp_type.push_back(term_type);

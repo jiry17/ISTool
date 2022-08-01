@@ -52,7 +52,7 @@ namespace {
             return fs->run(std::move(full_inp), info);
         };
         auto as = semantics::buildConstSemantics(ext::ho::buildAnonymousData(f, name));
-        return new Rule(as, {});
+        return new ConcreteRule(as, {});
     }
 }
 
@@ -76,12 +76,12 @@ Grammar * dsl::deepcoder::getDefaultDeepCoderGrammar(Env* env, const DeepCoderGr
         for (const auto& inp_type: ts->inp_type_list) {
             param_list.push_back(nt_map[_getSymbolName(inp_type.get())]);
         }
-        source->rule_list.push_back(new Rule(sem, std::move(param_list)));
+        source->rule_list.push_back(new ConcreteRule(sem, std::move(param_list)));
     }
-    int_expr->rule_list.push_back(new Rule(env->getSemantics("apply"), {bi_hf, int_expr, int_expr}));
+    int_expr->rule_list.push_back(new ConcreteRule(env->getSemantics("apply"), {bi_hf, int_expr, int_expr}));
 
     for (int c: {-1, 1, 2}) {
-        int_expr->rule_list.push_back(new Rule(semantics::buildConstSemantics(BuildData(Int, c)), {}));
+        int_expr->rule_list.push_back(new ConcreteRule(semantics::buildConstSemantics(BuildData(Int, c)), {}));
         if (c == -1) continue;
         for (auto op: {"-", "+"}) {
             int_hf->rule_list.push_back(_buildCurriedRule(env, op, {BuildData(Int, c)}, op + std::to_string(c)));

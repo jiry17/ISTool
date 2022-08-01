@@ -15,10 +15,13 @@ NonTerminal::~NonTerminal() {
     for (auto* r: rule_list) delete r;
 }
 
-Rule::Rule(const PSemantics &_semantics, NTList &&_param_list):
-    semantics(_semantics), param_list(_param_list){
+Rule::Rule(const NTList& _param_list): param_list(_param_list) {
 }
-std::string Rule::toString() const {
+
+ConcreteRule::ConcreteRule(const PSemantics &_semantics, const NTList &_param_list):
+    semantics(_semantics), Rule(_param_list) {
+}
+std::string ConcreteRule::toString() const {
     std::string res = semantics->getName();
     if (param_list.empty()) return res;
     for (int i = 0; i < param_list.size(); ++i) {
@@ -27,8 +30,11 @@ std::string Rule::toString() const {
     }
     return res + ")";
 }
-PProgram Rule::buildProgram(const ProgramList &sub_list) {
+PProgram ConcreteRule::buildProgram(const ProgramList &sub_list) {
     return std::make_shared<Program>(semantics, sub_list);
+}
+Rule * ConcreteRule::clone(const NTList &new_param_list) {
+    return new ConcreteRule(semantics, new_param_list);
 }
 
 Grammar::Grammar(NonTerminal *_start, const NTList &_symbol_list, bool is_remove_empty): start(_start), symbol_list(_symbol_list) {
@@ -167,8 +173,7 @@ Grammar * grammar::generateHeightLimitedGrammar(Grammar *grammar, int limit) {
                 for (auto* param: rule->param_list) {
                     sub_list.push_back(symbol_pool[h - 1][param->id]);
                 }
-                auto* new_r = new Rule(rule->semantics, std::move(sub_list));
-                new_symbol->rule_list.push_back(new_r);
+                new_symbol->rule_list.push_back(rule->clone(sub_list));
             }
         }
     }
@@ -195,7 +200,7 @@ Grammar * grammar::copyGrammar(Grammar *grammar) {
             for (auto* sub_node: rule->param_list) {
                 param_list.push_back(symbols[sub_node->id]);
             }
-            symbols[symbol->id]->rule_list.push_back(new Rule(rule->semantics, std::move(param_list)));
+            symbols[symbol->id]->rule_list.push_back(rule->clone(param_list));
         }
     }
     auto* res = new Grammar(symbols[grammar->start->id], symbols);
@@ -221,6 +226,18 @@ namespace {
     const int KINF = 1e9;
 }
 
+ConstSemantics * grammar::getConstSemantics(Rule *rule) {
+    auto* cr = dynamic_cast<ConcreteRule*>(rule);
+    if (cr) return dynamic_cast<ConstSemantics*>(cr->semantics.get());
+    return nullptr;
+}
+
+ParamSemantics* grammar::getParamSemantics(Rule *rule) {
+    auto* cr = dynamic_cast<ConcreteRule*>(rule);
+    if (cr) return dynamic_cast<ParamSemantics*>(cr->semantics.get());
+    return nullptr;
+}
+
 PProgram grammar::getMinimalProgram(Grammar *grammar) {
     grammar->indexSymbol();
     int n = grammar->symbol_list.size();
@@ -242,7 +259,7 @@ PProgram grammar::getMinimalProgram(Grammar *grammar) {
         for (auto* rule: symbol->rule_list) {
             if (rule->param_list.empty()) {
                 ProgramList empty_list;
-                res[symbol->id] = std::make_shared<Program>(rule->semantics, empty_list);
+                res[symbol->id] = rule->buildProgram(empty_list);
                 d[symbol->id] = 1; is_start = true;
                 break;
             }
@@ -262,7 +279,7 @@ PProgram grammar::getMinimalProgram(Grammar *grammar) {
             }
             if (size < d[node->id]) {
                 d[node->id] = size;
-                res[node->id] = std::make_shared<Program>(edge->semantics, sub_list);
+                res[node->id] = edge->buildProgram(sub_list);
                 Q.push({d[node->id], node->id});
             }
         }

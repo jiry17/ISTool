@@ -138,7 +138,7 @@ namespace {
                     if (d != KINF) new_depth = std::min(new_depth, d - 1);
                     param_list.push_back(get_limited_symbol(rule->param_list[j], new_depth));
                 }
-                current->rule_list.push_back(new Rule(rule->semantics, std::move(param_list)));
+                current->rule_list.push_back(rule->clone(param_list));
             }
         }
 

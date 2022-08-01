@@ -34,11 +34,11 @@ namespace {
         LOG(FATAL) << "Unknown Theory " << name;
     }
 
-    class _PartiallyKnownRule: public Rule {
+    class _PartiallyKnownRule: public ConcreteRule {
     public:
         ProgramList known_list;
-        _PartiallyKnownRule(const PSemantics& _sem, ProgramList&& _known_list, NTList&& _nt_list):
-            Rule(_sem, std::move(_nt_list)), known_list(_known_list) {
+        _PartiallyKnownRule(const PSemantics& _sem, const ProgramList& _known_list, const NTList& _nt_list):
+            ConcreteRule(_sem, std::move(_nt_list)), known_list(_known_list) {
 #ifdef DEBUG
             int unknown_num = 0;
             for (auto& p: known_list) if (!p) ++unknown_num;
@@ -70,6 +70,9 @@ namespace {
                 }
             }
             return std::make_shared<Program>(semantics, full_sub_list);
+        }
+        virtual Rule * clone(const NTList &new_param_list) {
+            return new _PartiallyKnownRule(semantics, known_list, new_param_list);
         }
     };
 
@@ -168,21 +171,21 @@ namespace {
                 if (rule_node.isString()) {
                     std::string rule_name = rule_node.asString();
                     if (nt_map.find(rule_name) != nt_map.end()) {
-                        symbol->rule_list.push_back(new Rule(std::make_shared<DirectSemantics>(), {nt_map[rule_name]}));
+                        symbol->rule_list.push_back(new ConcreteRule(std::make_shared<DirectSemantics>(), {nt_map[rule_name]}));
                     } else {
                         int inp_id = get_inp_id(rule_name);
                         if (inp_id == -1) LOG(FATAL) << "Cannot find " << rule_node << std::endl;
                         TEST_PARSER(inp_id >= 0)
                         PType inp_type = inp_type_list[inp_id];
                         auto s = semantics::buildParamSemantics(inp_id, std::move(inp_type));
-                        symbol->rule_list.push_back(new Rule(std::move(s), {}));
+                        symbol->rule_list.push_back(new ConcreteRule(std::move(s), {}));
                     }
                 } else {
                     TEST_PARSER(rule_node.isArray())
                     try {
                         Data d = json::getDataFromJson(rule_node, env);
                         auto s = semantics::buildConstSemantics(d);
-                        symbol->rule_list.push_back(new Rule(std::move(s), {}));
+                        symbol->rule_list.push_back(new ConcreteRule(std::move(s), {}));
                     } catch (ParseError& e) {
                         TEST_PARSER(rule_node[0].isString())
                         auto s = env->getSemantics(rule_node[0].asString());
@@ -208,7 +211,7 @@ namespace {
                             }
                         }
                         if (known_list.size() == param_list.size()) {
-                            symbol->rule_list.push_back(new Rule(std::move(s), std::move(param_list)));
+                            symbol->rule_list.push_back(new ConcreteRule(std::move(s), std::move(param_list)));
                         } else {
                             symbol->rule_list.push_back(new _PartiallyKnownRule(s, std::move(known_list), std::move(param_list)));
                         }

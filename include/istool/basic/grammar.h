@@ -23,12 +23,22 @@ typedef std::vector<NonTerminal*> NTList;
 
 class Rule {
 public:
-    PSemantics semantics;
     NTList param_list;
-    Rule(const PSemantics& _semantics, NTList&& _param_list);
+    Rule(const NTList& _param_list);
+    virtual PProgram buildProgram(const ProgramList& sub_list) = 0;
+    virtual std::string toString() const = 0;
+    virtual Rule* clone(const NTList& new_param_list) = 0;
+    virtual ~Rule() = default;
+};
+
+class ConcreteRule: public Rule {
+public:
+    PSemantics semantics;
+    ConcreteRule(const PSemantics& _semantics, const NTList& _param_list);
     virtual PProgram buildProgram(const ProgramList& sub_list);
     virtual std::string toString() const;
-    ~Rule() = default;
+    virtual Rule* clone(const NTList& new_param_list);
+    ~ConcreteRule() = default;
 };
 
 class Grammar {
@@ -47,6 +57,8 @@ namespace grammar {
     Grammar* generateHeightLimitedGrammar(Grammar* grammar, int limit);
     std::string getFreeName(Grammar* grammar);
     PProgram getMinimalProgram(Grammar* grammar);
+    ParamSemantics* getParamSemantics(Rule* rule);
+    ConstSemantics* getConstSemantics(Rule* rule);
 }
 
 

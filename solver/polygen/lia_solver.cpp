@@ -24,7 +24,7 @@ namespace {
         int c_max = KDefaultConstValue;
         for (auto* symbol: info->grammar->symbol_list) {
             for (auto* rule: symbol->rule_list) {
-                auto* cs = dynamic_cast<ConstSemantics*>(rule->semantics.get());
+                auto* cs = grammar::getConstSemantics(rule);
                 if (!cs) continue;
                 auto* iv = dynamic_cast<IntValue*>(cs->w.get());
                 if (iv) c_max = std::max(c_max, std::abs(iv->w));
@@ -49,9 +49,11 @@ namespace {
         std::string name = grammar::getFreeName(grammar);
         auto *start = new NonTerminal(name, grammar->start->type);
         for (auto *rule: grammar->start->rule_list) {
-            if (rule->semantics->name == "+" || rule->semantics->name == "-") continue;
+            auto* cr = dynamic_cast<ConcreteRule*>(rule);
+            if (!cr) LOG(FATAL) << "Current implementation of LIASolver requires ConcreteRule";
+            if (cr->semantics->name == "+" || cr->semantics->name == "-") continue;
             NTList sub_list = rule->param_list;
-            start->rule_list.push_back(new Rule(rule->semantics, std::move(sub_list)));
+            start->rule_list.push_back(new ConcreteRule(cr->semantics, std::move(sub_list)));
         }
         int n = grammar->symbol_list.size();
         grammar->symbol_list.push_back(start);

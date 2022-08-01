@@ -24,7 +24,9 @@ namespace {
             return cache[feature];
         }
         for (auto* rule: symbol->rule_list) {
-            if (rule->semantics->name != p->semantics->name) continue;
+            auto* cr = dynamic_cast<ConcreteRule*>(rule);
+            if (!cr) LOG(FATAL) << "Current implementation of ProgramAdaptor requires ConcreteRule";
+            if (cr->semantics->name != p->semantics->name) continue;
             bool flag = true; ProgramList sub_list(rule->param_list.size());
             for (int i = 0; i < rule->param_list.size(); ++i) {
                 auto res = _programAdaptorWithLIARules(rule->param_list[i], p->sub_list[i].get(), g, cache);
@@ -33,7 +35,7 @@ namespace {
                 }
                 sub_list[i] = res;
             }
-            if (flag) return cache[feature] = std::make_shared<Program>(rule->semantics, sub_list);
+            if (flag) return cache[feature] = std::make_shared<Program>(cr->semantics, sub_list);
         }
 
         // special treatment for constants
@@ -41,13 +43,15 @@ namespace {
             int w = _getInteger(p);
             if (w > 0) {
                 for (auto *rule: symbol->rule_list) {
-                    if (rule->semantics->name == "+") {
+                    auto* cr = dynamic_cast<ConcreteRule*>(rule);
+                    if (!cr) LOG(FATAL) << "Current implementation of ProgramAdaptor requires ConcreteRule";
+                    if (cr->semantics->name == "+") {
                         for (int i = w / 2; i; --i) {
                             auto px = program::buildConst(BuildData(Int, i)), py = program::buildConst(BuildData(Int, w - i));
                             auto res_x = _programAdaptorWithLIARules(rule->param_list[0], px.get(), g, cache);
                             auto res_y = _programAdaptorWithLIARules(rule->param_list[1], py.get(), g, cache);
                             if (res_x && res_y) {
-                                auto res = std::make_shared<Program>(rule->semantics, (ProgramList){res_x, res_y});
+                                auto res = std::make_shared<Program>(cr->semantics, (ProgramList){res_x, res_y});
                                 return cache[feature] = res;
                             }
                         }
@@ -55,12 +59,14 @@ namespace {
                 }
             } else if (w < 0) {
                 for (auto* rule: symbol->rule_list) {
-                    if (rule->semantics->name == "-") {
+                    auto* cr = dynamic_cast<ConcreteRule*>(rule);
+                    if (!cr) LOG(FATAL) << "Current implementation of ProgramAdaptor requires ConcreteRule";
+                    if (cr->semantics->name == "-") {
                         auto px = program::buildConst(BuildData(Int, 0)), py = program::buildConst(BuildData(Int, -w));
                         auto res_x = _programAdaptorWithLIARules(rule->param_list[0], px.get(), g, cache);
                         auto res_y = _programAdaptorWithLIARules(rule->param_list[1], py.get(), g, cache);
                         if (res_x && res_y) {
-                            auto res = std::make_shared<Program>(rule->semantics, (ProgramList){res_x, res_y});
+                            auto res = std::make_shared<Program>(cr->semantics, (ProgramList){res_x, res_y});
                             return cache[feature] = res;
                         }
                     }
@@ -78,23 +84,27 @@ namespace {
                     if (res) return cache[feature] = res;
                 } else if (lw > 1) {
                     for (auto* rule: symbol->rule_list) {
-                        if (rule->semantics->getName() != "+") continue;
+                        auto* cr = dynamic_cast<ConcreteRule*>(rule);
+                        if (!cr) LOG(FATAL) << "Current implementation of ProgramAdaptor requires ConcreteRule";
+                        if (cr->semantics->getName() != "+") continue;
                         auto px = program::buildConst(BuildData(Int, lw / 2)), py = program::buildConst(
                                 BuildData(Int, (lw + 1) / 2));
                         px = std::make_shared<Program>(p->semantics, (ProgramList) {px, pr});
                         py = std::make_shared<Program>(p->semantics, (ProgramList) {py, pr});
                         auto res_x = _programAdaptorWithLIARules(rule->param_list[0], px.get(), g, cache);
                         auto res_y = _programAdaptorWithLIARules(rule->param_list[1], py.get(), g, cache);
-                        if (res_x && res_y) return cache[feature] = std::make_shared<Program>(rule->semantics, (ProgramList){res_x, res_y});
+                        if (res_x && res_y) return cache[feature] = std::make_shared<Program>(cr->semantics, (ProgramList){res_x, res_y});
                     }
                 } else if (lw < 0) {
                     for (auto* rule: symbol->rule_list) {
-                        if (rule->semantics->name == "-") {
+                        auto* cr = dynamic_cast<ConcreteRule*>(rule);
+                        if (!cr) LOG(FATAL) << "Current implementation of ProgramAdaptor requires ConcreteRule";
+                        if (cr->semantics->name == "-") {
                             auto px = program::buildConst(BuildData(Int, 0)), py = program::buildConst(BuildData(Int, -lw));
                             py = std::make_shared<Program>(p->semantics, (ProgramList){py, pr});
                             auto res_x = _programAdaptorWithLIARules(rule->param_list[0], px.get(), g, cache);
                             auto res_y = _programAdaptorWithLIARules(rule->param_list[1], py.get(), g, cache);
-                            if (res_x && res_y) return cache[feature] = std::make_shared<Program>(rule->semantics, (ProgramList){res_x, res_y});
+                            if (res_x && res_y) return cache[feature] = std::make_shared<Program>(cr->semantics, (ProgramList){res_x, res_y});
                         }
                     }
                 }

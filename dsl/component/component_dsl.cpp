@@ -61,7 +61,7 @@ namespace {
                 }
                 sub_list.push_back(start);
             }
-            start->rule_list.push_back(new Rule(sem, std::move(sub_list)));
+            start->rule_list.push_back(new ConcreteRule(sem, std::move(sub_list)));
         };
 
         for (const auto &name: {"bvnot", "bvneg", "bvinc", "bvdec", "bvand", "bvor", "bvxor"}) {
@@ -71,12 +71,12 @@ namespace {
         for (auto w: info.const_list) {
             auto c = _buildConst(w); NTList sub;
             start->rule_list.push_back(
-                    new Rule(semantics::buildConstSemantics(BuildData(BitVector, c)), std::move(sub)));
+                    new ConcreteRule(semantics::buildConstSemantics(BuildData(BitVector, c)), std::move(sub)));
         }
         for (int i = 0; i < info.inp_num; ++i) {
             NTList sub;
             start->rule_list.push_back(
-                    new Rule(semantics::buildParamSemantics(i, bv_type), std::move(sub)));
+                    new ConcreteRule(semantics::buildParamSemantics(i, bv_type), std::move(sub)));
         }
         auto* grammar = new Grammar(start, {start});
         auto sig = _getSignature(info.inp_num);

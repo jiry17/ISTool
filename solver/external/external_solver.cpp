@@ -130,9 +130,11 @@ void ExternalSyGuSPBESolver::printSyGuSFile(const std::vector<Example> &example_
         for (auto* nt: info->grammar->symbol_list) {
             current += "(" + _getSymbolName(nt) + " " + _getTypeName(nt->type.get(), is_new_style) + " (\n";
             for (auto* rule: nt->rule_list) {
-                if (rule->param_list.empty()) current += _getSemanticsName(rule->semantics.get(), is_cvc5);
+                auto* cr = dynamic_cast<ConcreteRule*>(rule);
+                if (!cr) LOG(FATAL) << "Current implementation of LIASolver requires ConcreteRule";
+                if (rule->param_list.empty()) current += _getSemanticsName(cr->semantics.get(), is_cvc5);
                 else {
-                    current += "(" + _getSemanticsName(rule->semantics.get(), is_cvc5);
+                    current += "(" + _getSemanticsName(cr->semantics.get(), is_cvc5);
                     for (auto* sub: rule->param_list) current += " " + _getSymbolName(sub);
                     current += ")";
                 }

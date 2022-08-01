@@ -58,10 +58,12 @@ namespace {
         for (auto* symbol: g->symbol_list) {
             auto* new_symbol = symbol_map[symbol->name];
             for (auto* rule: symbol->rule_list) {
-                if (banned.find(rule->semantics->name) != banned.end()) continue;
+                auto* cr = dynamic_cast<ConcreteRule*>(rule);
+                if (!cr) LOG(FATAL) << "Current implementation of STUN requires ConcreteRule";
+                if (banned.find(cr->semantics->getName()) != banned.end()) continue;
                 NTList new_sub_list;
                 for (auto* sub: rule->param_list) new_sub_list.push_back(symbol_map[sub->name]);
-                new_symbol->rule_list.push_back(new Rule(rule->semantics, std::move(new_sub_list)));
+                new_symbol->rule_list.push_back(new ConcreteRule(cr->semantics, std::move(new_sub_list)));
             }
         }
         auto* grammar = new Grammar(symbol_map[start->name], symbol_list);
@@ -75,7 +77,9 @@ std::pair<PSynthInfo, PSynthInfo> solver::divideSpecForSTUN(const PSynthInfo &in
     bool is_used_ite = false;
     NonTerminal* b = nullptr;
     for (auto* rule: start->rule_list) {
-        if (rule->semantics->getName() == "ite") {
+        auto* cr = dynamic_cast<ConcreteRule*>(rule);
+        if (!cr) LOG(FATAL) << "Current implementation of STUN requires ConcreteRule";
+        if (cr->semantics->getName() == "ite") {
             if (is_used_ite || rule->param_list[1]->name != start->name || rule->param_list[2]->name != start->name) {
                 return {nullptr, nullptr};
             }
