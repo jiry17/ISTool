@@ -142,7 +142,7 @@ FunctionContext solver::enumerate(const std::vector<PSynthInfo> &info_list, cons
                 }
             }
         }
-        int merge_size = int(info_list.size()) + size - 1;
+        int merge_size = int(info_list.size()) + size;
         std::vector<int> sub_id_list;
         for (const auto& info: info_list) {
             auto* start = info->grammar->start;

@@ -8,8 +8,8 @@
 #include "istool/basic/grammar.h"
 
 class ComposedRule: public Rule {
-    PProgram composed_sketch;
 public:
+    PProgram composed_sketch;
     ComposedRule(const PProgram& sketch, const NTList& param_list);
     virtual PProgram buildProgram(const ProgramList& sub_list);
     virtual std::string toString() const;

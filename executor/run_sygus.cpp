@@ -22,27 +22,29 @@ int main(int argc, char** argv) {
     } else {
         solver_name = "obe";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv/PRE_icfp_gen_14.10.sl";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/x.sl";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mpg_guard2.sl";
         output_name = "/tmp/629453237.out";
     }
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
     auto* v = sygus::getVerifier(spec);
     spec->env->random_engine.seed(time(0));
-    auto solver_token = invoker::string2TheoryToken(solver_name);
-    auto* guard = new TimeGuard(300);
 
+    auto solver_token = invoker::string2TheoryToken(solver_name);
+    auto* guard = new TimeGuard(2000);
+
+    InvokeConfig config;
     if (solver_name == "cbs" && sygus::getSyGuSTheory(spec->env.get()) == TheoryToken::BV) {
         theory::loadZ3BV(spec->env.get());
         ext::z3::registerComposedManager(ext::z3::getExtension(spec->env.get()));
     }
+    if (solver_name == "cbs") config.set("encoder", std::string("Tree"));
     if (solver_name == "obe") {
+        config.set("isWeighted", true);
         for (auto& info: spec->info_list) {
             info->grammar = ext::grammar::rewriteComposedRule(info->grammar);
         }
     }
 
-    InvokeConfig config;
-    if (solver_name == "cbs") config.set("encoder", std::string("Tree"));
     auto result = invoker::getExampleNum(spec, v, solver_token, guard, config);
     std::cout << result.first << " " << result.second.toString() << std::endl;
     std::cout << guard->getPeriod() << std::endl;
