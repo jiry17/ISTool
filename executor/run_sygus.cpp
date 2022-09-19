@@ -10,7 +10,12 @@
 #include "istool/sygus/theory/z3/bv/bv_z3.h"
 #include "istool/ext/composed_semantics/composed_z3_semantics.h"
 #include "istool/ext/composed_semantics/composed_rule.h"
+#include "istool/basic/config.h"
 #include <ctime>
+
+#ifdef PROFILER
+#include <gperftools/profiler.h>
+#endif
 
 int main(int argc, char** argv) {
     assert(argc == 4 || argc == 1);
@@ -22,9 +27,14 @@ int main(int argc, char** argv) {
     } else {
         solver_name = "obe";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv/PRE_icfp_gen_14.10.sl";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mpg_guard2.sl";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mpg_guard2_mo.sl";
         output_name = "/tmp/629453237.out";
     }
+
+#ifdef PROFILER
+    ProfilerStart((config::KSourcePath + "init.prof").c_str());
+#endif
+
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
     auto* v = sygus::getVerifier(spec);
     spec->env->random_engine.seed(time(0));

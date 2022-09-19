@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include "z3++.h"
 
 class Type;

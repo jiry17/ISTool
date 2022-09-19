@@ -28,6 +28,7 @@ public:
     ProgramList program_list;
     PSynthInfo info;
     GRBEnv env;
+
     virtual FunctionContext synthesis(const std::vector<Example>& example_list, TimeGuard* guard = nullptr);
     virtual void* relax(TimeGuard* guard);
 

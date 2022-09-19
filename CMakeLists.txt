@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.13)
 project(ISTool)
 
-set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast -std=c++17")
 add_definitions(-DDEBUG)
+
 INCLUDE(FindPkgConfig)
 include_directories(include)
 
@@ -24,9 +24,17 @@ set(GUROBI_PATH /home/jiry/2021A/gurobi912/linux64)
 include_directories(${GUROBI_PATH}/include)
 link_directories(${GUROBI_PATH}/lib)
 set(GUROBI_FILE libgurobi_g++5.2.a libgurobi91.so)
+
+#Profiler
+#option(USE_PROFILER "option for using libprofiler" OFF)
+#if (USE_PROFILER)
+#  add_definitions(-DPROFILER)
+#  include_directories(${LIBPROFILER_INCLUDE_DIRS})
+#  set(PROFILER_FILE ${LIBPROFILER_LIBRARIES})
+#endif()
  
 # libs
-set(THIRDPARTY_LIBS glog gflags ${Jsoncpp_LIBRARY} ${Z3_FILE} ${GUROBI_FILE})
+set(THIRDPARTY_LIBS glog gflags ${Jsoncpp_LIBRARY} ${Z3_FILE} ${GUROBI_FILE} ${PROFILER_FILE})
 
 # subdic
 add_subdirectory(basic)
@@ -35,7 +43,8 @@ add_subdirectory(sygus)
 add_subdirectory(solver)
 add_subdirectory(selector)
 add_subdirectory(dsl)
+add_subdirectory(incre)
  
-set(SRC_LIBS solver_lib  ${SyGuS_LIBS} ext_lib selector_lib basic_lib  dsl_lib)
+set(SRC_LIBS solver_lib  ${SyGuS_LIBS} ext_lib selector_lib basic_lib dsl_lib incre_lib)
 
 add_subdirectory(executor)

@@ -12,6 +12,41 @@ WeightedOBESolver::WeightedOBESolver(Specification *_spec, Verifier *_v, Program
 }
 
 namespace {
+    class CachedOBEOptimizer: public Optimizer {
+    public:
+        std::unordered_map<std::string, std::string> output_cache;
+        ProgramChecker* is_runnable;
+        std::unordered_map<std::string, ExampleList> example_pool;
+        std::unordered_set<std::string> visited_set;
+        Env* env;
+        CachedOBEOptimizer(ProgramChecker* _is_runnable, const std::unordered_map<std::string, ExampleList>& _pool, Env* _env):
+            is_runnable(_is_runnable), example_pool(_pool), env(_env) {
+        }
+        std::string getOutput(const std::string& name, const PProgram& p) {
+            auto feature = name + "@" + p->toString();
+            if (output_cache.count(feature)) {
+                return output_cache[feature];
+            }
+            auto& example_list = example_pool[name];
+            std::string res;
+            for (auto& example: example_list) {
+                res += env->run(p.get(), example).toString() + "@";
+            }
+            return output_cache[feature] = res;
+        }
+        virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p) {
+            if (!is_runnable->isValid(p.get()) || example_pool.find(name) == example_pool.end()) return false;
+            auto feature = std::to_string(nt->id) + "@" + getOutput(name, p);
+            if (visited_set.find(feature) != visited_set.end()) return true;
+            visited_set.insert(feature);
+            return false;
+        }
+        virtual void clear() {
+            visited_set.clear(); output_cache.clear();
+        }
+        virtual ~CachedOBEOptimizer() = default;
+    };
+
     int indexAllNT(const std::vector<PSynthInfo>& info_list) {
         int id = 0;
         for (const auto& info: info_list) {
@@ -52,7 +87,6 @@ namespace {
             tmp.pop_back();
         }
     }
-
 
     ProgramStorage merge(const std::vector<int>& id_list, int size, const std::vector<ProgramStorage>& storage_list) {
         std::vector<std::vector<int> > size_pool;
@@ -127,6 +161,7 @@ namespace {
 
     FunctionContext _weightedEnumerate(const std::vector<PSynthInfo> &info_list, const EnumConfig &c) {
         auto* v = c.v; auto* o = c.o; o->clear();
+        static int c_num = 0;
         int n = indexAllNT(info_list);
         std::vector<ProgramStorage> storage_list(n);
         for (auto& ps: storage_list) ps.emplace_back();
@@ -176,7 +211,11 @@ namespace {
                 for (int i = 0; i < info_list.size(); ++i) {
                     info[info_list[i]->name] = sub_list[i];
                 }
-                if (v->verify(info, nullptr)) return info;
+                if (v->verify(info, nullptr)) {
+                    //LOG(INFO) << "construct num " << c_num;
+                    //int kk; std::cin >> kk;
+                    return info;
+                }
             }
         }
     }
@@ -206,7 +245,7 @@ FunctionContext WeightedOBESolver::synthesis(const std::vector<Example> &example
     }
 
     Env* env = spec->env.get();
-    auto* obe_optimizer = new OBEOptimizer(is_runnable, example_pool, env);
+    auto* obe_optimizer = new CachedOBEOptimizer(is_runnable, example_pool, env);
     auto* finite_example_space = new FiniteExampleSpace(spec->example_space->cons_program, example_list, env);
     auto* finite_verifier = new FiniteExampleVerifier(finite_example_space);
 
