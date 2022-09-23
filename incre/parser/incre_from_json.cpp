@@ -69,7 +69,6 @@ Ty incre::json2ty(const Json::Value &node) {
 }
 
 Term incre::json2term(const Json::Value &node) {
-    // std::cout << std::endl << node << std::endl;
     auto type = node["type"].asString();
     if (type == "true") return std::make_shared<TmValue>(BuildData(Bool, true));
     if (type == "false") return std::make_shared<TmValue>(BuildData(Bool, false));
@@ -143,11 +142,17 @@ Term incre::json2term(const Json::Value &node) {
         auto content = incre::json2term(node["content"]);
         return std::make_shared<TmCreate>(content);
     }
-    if (type == "use") {
-        auto name = node["name"].asString();
-        auto def = incre::json2term(node["def"]);
+    if (type == "pass") {
+        std::vector<std::string> names;
+        for (const auto& sub_node: node["names"]) {
+            names.push_back(sub_node.asString());
+        }
+        TermList defs;
+        for (const auto& sub_node: node["defs"]) {
+            defs.push_back(incre::json2term(sub_node));
+        }
         auto content = incre::json2term(node["content"]);
-        return std::make_shared<TmUseCompress>(name, def, content);
+        return std::make_shared<TmPass>(names, defs, content);
     }
     LOG(FATAL) << "Unknown term " << node;
 }
@@ -187,7 +192,7 @@ Command incre::json2command(const Json::Value &node) {
     LOG(FATAL) << "Unknown command " << node;
 }
 
-incre::Program incre::json2program(const Json::Value &node) {
+incre::IncreProgram incre::json2program(const Json::Value &node) {
     CommandList commands;
     for (auto& sub_node: node) {
         auto command = incre::json2command(sub_node);
@@ -197,7 +202,7 @@ incre::Program incre::json2program(const Json::Value &node) {
     return std::make_shared<incre::ProgramData>(commands);
 }
 
-incre::Program incre::file2program(const std::string &path) {
+incre::IncreProgram incre::file2program(const std::string &path) {
     Json::Reader reader;
     Json::Value root;
     std::ifstream inp(path, std::ios::out);

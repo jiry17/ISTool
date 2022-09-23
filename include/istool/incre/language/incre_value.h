@@ -60,6 +60,21 @@ namespace incre {
         virtual std::string toString() const;
         virtual ~VNamedFunction() = default;
     };
+
+    class VTyped {
+    public:
+        Ty type;
+        VTyped(const Ty& _type);
+        virtual ~VTyped() = default;
+    };
+
+    class VBasicOperator: public VNamedFunction, public VTyped {
+    public:
+        std::string name;
+        VBasicOperator(const Function& _func, const std::string& _name, const Ty& _type);
+        virtual ~VBasicOperator() = default;
+    };
+
 }
 
 #endif //ISTOOL_INCRE_VALUES_H

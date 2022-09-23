@@ -56,3 +56,7 @@ std::string VNamedFunction::toString() const {
     return name;
 }
 
+VTyped::VTyped(const Ty &_type): type(_type) {}
+VBasicOperator::VBasicOperator(const Function &_func, const std::string &_name, const Ty &_type):
+    VNamedFunction(_func, _name), VTyped(_type) {
+}

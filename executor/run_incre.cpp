@@ -4,7 +4,7 @@
 
 #include "istool/basic/config.h"
 #include "istool/incre/parser/incre_from_json.h"
-#include "istool/incre/language/incre_semantics.h"
+#include "istool/incre/language/incre.h"
 
 using namespace incre;
 

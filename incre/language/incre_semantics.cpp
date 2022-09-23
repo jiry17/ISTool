@@ -2,10 +2,31 @@
 // Created by pro on 2022/9/17.
 //
 
-#include "istool/incre/language/incre_semantics.h"
+#include "istool/incre/language/incre.h"
 #include "glog/logging.h"
 
 using namespace incre;
+
+bool incre::isUsed(const Pattern& pt, const std::string& name) {
+    switch (pt->getType()) {
+        case PatternType::UNDER_SCORE: return false;
+        case PatternType::VAR: {
+            auto *x = dynamic_cast<PtVar *>(pt.get());
+            return x->name == name;
+        }
+        case PatternType::CONSTRUCTOR: {
+            auto *x = dynamic_cast<PtConstructor *>(pt.get());
+            return isUsed(x->pattern, name);
+        }
+        case PatternType::TUPLE: {
+            auto* x = dynamic_cast<PtTuple*>(pt.get());
+            for (const auto& sub_pattern: x->pattern_list) {
+                if (isUsed(sub_pattern, name)) return true;
+            }
+            return false;
+        }
+    }
+}
 
 namespace {
     std::pair<Term, bool> _subst(const Term& x, const std::string& name, const Term& y);
@@ -19,33 +40,12 @@ namespace {
         return {_x, false};
     }
 
-    bool _isUsed(const Pattern& pt, const std::string& name) {
-        switch (pt->getType()) {
-            case PatternType::UNDER_SCORE: return false;
-            case PatternType::VAR: {
-                auto *x = dynamic_cast<PtVar *>(pt.get());
-                return x->name == name;
-            }
-            case PatternType::CONSTRUCTOR: {
-                auto *x = dynamic_cast<PtConstructor *>(pt.get());
-                return _isUsed(x->pattern, name);
-            }
-            case PatternType::TUPLE: {
-                auto* x = dynamic_cast<PtTuple*>(pt.get());
-                for (const auto& sub_pattern: x->pattern_list) {
-                    if (_isUsed(sub_pattern, name)) return true;
-                }
-                return false;
-            }
-        }
-    }
-
     SubstHead(Match) {
         auto def = _subst(x->def, name, y);
         bool is_changed = def.second;
         std::vector<std::pair<Pattern, Term>> cases;
         for (const auto& [pt, branch]: x->cases) {
-            if (_isUsed(pt, name)) {
+            if (isUsed(pt, name)) {
                 cases.emplace_back(pt, branch);
             } else {
                 auto [res, flag] = _subst(branch, name, y);
@@ -101,8 +101,12 @@ namespace {
     }
 
     SubstHead(Let) {
-        if (x->name == name) return {_x, false};
-        SubstRes(def); SubstRes(content);
+        SubstRes(def);
+        if (x->name == name) {
+            if (!flag_def) return {_x, false};
+            return {std::make_shared<TmLet>(x->name, res_def, x->content), true};
+        }
+        SubstRes(content);
         if (!flag_def && !flag_content) return {_x, false};
         return {std::make_shared<TmLet>(x->name, res_def, res_content), true};
     }
@@ -113,11 +117,21 @@ namespace {
         return {std::make_shared<TmProj>(res_content, x->id), true};
     }
 
-    SubstHead(UseCompress) {
-        if (x->name == name) return {_x, false};
-        SubstRes(def); SubstRes(content);
-        if (!flag_def && !flag_content) return {_x, false};
-        return {std::make_shared<TmUseCompress>(x->name, res_def, res_content), true};
+    SubstHead(Pass) {
+        TermList defs; bool flag = false;
+        for (const auto& def: x->defs) {
+            auto [res_def, flag_def] = _subst(def, name, y);
+            flag |= flag_def; defs.push_back(res_def);
+        }
+        for (auto& p_name: x->names) {
+            if (p_name == name) {
+                if (!flag) return {_x, false};
+                return {std::make_shared<TmPass>(x->names, defs, x->content), true};
+            }
+        }
+        SubstRes(content);
+        if (!flag && !flag_content) return {_x, false};
+        return {std::make_shared<TmPass>(x->names, defs, res_content), true};
     }
 
     std::pair<Term, bool> _subst(const Term& x, const std::string& name, const Term& y) {
@@ -133,7 +147,7 @@ namespace {
             case TermType::IF: SubstCase(If);
             case TermType::LET: SubstCase(Let);
             case TermType::PROJ: SubstCase(Proj);
-            case TermType::USE: SubstCase(UseCompress);
+            case TermType::PASS: SubstCase(Pass);
         }
     }
 }
@@ -242,7 +256,8 @@ namespace {
             if (incre::isMatch(v, pt)) {
                 auto binds = incre::bindPattern(v, pt);
                 auto res = sub_term;
-                for (const auto& [name, bind]: binds) {
+                for (int i = int(binds.size()) - 1; i >= 0; --i) {
+                    auto& [name, bind] = binds[i];
                     res = incre::subst(res, name, bind);
                 }
                 return incre::run(res, ctx);
@@ -321,13 +336,16 @@ namespace {
         return vt->elements[term->id - 1];
     }
 
-    RunHead(UseCompress) {
-        auto def = incre::run(term->def, ctx);
-        auto* cv = dynamic_cast<VCompress*>(def.get());
-        if (!cv) {
-            LOG(FATAL) << term->def->toString() << " is not a compress value.";
+    RunHead(Pass) {
+        Term res = term->content;
+        for (int i = int(term->names.size()) - 1; i >= 0; --i) {
+            auto def = incre::run(term->defs[i], ctx);
+            auto* cv = dynamic_cast<VCompress*>(def.get());
+            if (!cv) {
+                LOG(FATAL) << def.toString() << " does not return a compress value.";
+            }
+            res = incre::subst(res, term->names[i], std::make_shared<TmValue>(cv->content));
         }
-        auto res = subst(term->content, term->name, std::make_shared<TmValue>(cv->content));
         return incre::run(res, ctx);
     }
 }
@@ -346,7 +364,7 @@ Data incre::run(const Term &term, Context* ctx) {
         case TermType::IF: RunCase(If);
         case TermType::LET: RunCase(Let);
         case TermType::PROJ: RunCase(Proj);
-        case TermType::USE: RunCase(UseCompress);
+        case TermType::PASS: RunCase(Pass);
     }
 }
 
@@ -366,8 +384,9 @@ namespace {
             }
             case BindingType::TERM: {
                 auto* term_bind = dynamic_cast<TermBinding*>(command->binding.get());
+                auto ty = incre::getType(term_bind->term, ctx);
                 Data res = run(term_bind->term, ctx);
-                ctx->addBinding(command->name, std::make_shared<TmValue>(res));
+                ctx->addBinding(command->name, std::make_shared<TmValue>(res), ty);
                 return;
             }
         }
@@ -386,7 +405,9 @@ namespace {
     void _run(CommandDefInductive* command, Context* ctx) {
         ctx->addBinding(command->type->name, command->_type);
         for (const auto& [name, sub_ty]: command->type->constructors) {
-            ctx->addBinding(name, _buildConstructor(name));
+            auto ity = incre::subst(sub_ty, command->type->name, command->_type);
+            auto ty = std::make_shared<TyArrow>(ity, command->_type);
+            ctx->addBinding(name, _buildConstructor(name), ty);
         }
     }
 }
@@ -405,13 +426,13 @@ void incre::run(const Command &command, Context *ctx) {
     }
 }
 
-void incre::run(const Program &program, Context *ctx) {
+void incre::run(const IncreProgram &program, Context *ctx) {
     for (auto& command: program->commands) {
         incre::run(command, ctx);
     }
 }
 
-Context * incre::run(const Program &program) {
+Context * incre::run(const IncreProgram &program) {
     auto* ctx = new Context();
     incre::run(program, ctx);
     return ctx;

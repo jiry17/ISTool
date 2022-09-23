@@ -9,8 +9,15 @@
 #include <vector>
 
 namespace incre {
+    enum TyType {
+        INT, VAR, UNIT, BOOL, TUPLE, IND, COMPRESS, ARROW
+    };
+
     class TyData {
     public:
+        TyType type;
+        TyData(TyType _type);
+        TyType getType() const;
         virtual std::string toString() const = 0;
     };
 
@@ -19,21 +26,21 @@ namespace incre {
 
     class TyInt: public TyData {
     public:
-        TyInt() = default;
+        TyInt();
         virtual ~TyInt() = default;
         virtual std::string toString() const;
     };
 
     class TyUnit: public TyData {
     public:
-        TyUnit() = default;
+        TyUnit();
         virtual ~TyUnit() = default;
         virtual std::string toString() const;
     };
 
     class TyBool: public TyData {
     public:
-        TyBool() = default;
+        TyBool();
         virtual ~TyBool() = default;
         virtual std::string toString() const;
     };
@@ -78,6 +85,9 @@ namespace incre {
         virtual std::string toString() const;
         virtual ~TyCompress() =default;
     };
+
+    Ty subst(const Ty& x, const std::string& name, const Ty& y);
+    Ty getConstructor(const Ty& x, const std::string& name);
 
 }
 

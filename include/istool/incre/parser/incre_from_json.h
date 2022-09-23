@@ -16,11 +16,11 @@ namespace incre {
     Ty json2ty(const Json::Value& node);
     Pattern json2pt(const Json::Value& node);
     Term json2term(const Json::Value& node);
-    Term getOperator(const std::string& name);
     Binding json2binding(const Json::Value& node);
     Command json2command(const Json::Value& node);
-    Program json2program(const Json::Value& node);
-    Program file2program(const std::string& path);
+    IncreProgram json2program(const Json::Value& node);
+    IncreProgram file2program(const std::string& path);
+    Term getOperator(const std::string& name);
 }
 
 #endif //ISTOOL_INCRE_FROM_JSON_H

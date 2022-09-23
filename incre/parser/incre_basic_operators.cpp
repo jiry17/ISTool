@@ -16,9 +16,11 @@ namespace {
         return iv->w;
     }
 
-#define Wrap(f, opname) Data(std::make_shared<VNamedFunction>(f, opname))
-#define WrapTerm(f, opname) std::make_shared<TmValue>(Wrap(f, opname))
-#define BinaryOperator(name, rtype, exp, opname) \
+#define Wrap(f, opname, ty) Data(std::make_shared<VBasicOperator>(f, opname, ty))
+#define WrapTerm(f, opname, ty) std::make_shared<TmValue>(Wrap(f, opname, ty))
+#define BuildArrow(in, out) std::make_shared<TyArrow>(std::make_shared<Ty ## in>(), std::make_shared<Ty ## out>())
+#define BuildBinaryOp(in1, in2, out) std::make_shared<TyArrow>(std::make_shared<Ty ## in1>(), BuildArrow(in2, out))
+#define BinaryOperator(name, rtype, exp, opname, ty) \
     Term build ## name() { \
     auto func = [](const Term& term) { \
         int x = term2Int(term); \
@@ -28,16 +30,16 @@ namespace {
         }; \
         return Data(std::make_shared<VFunction>(func)); \
     }; \
-    return WrapTerm(func, opname); \
+    return WrapTerm(func, opname, ty); \
 }
 
-    BinaryOperator(Plus, Int, x + y, "+")
-    BinaryOperator(Minus, Int, x - y, "-")
-    BinaryOperator(Times, Int, x * y, "*")
-    BinaryOperator(Div, Int, x / y, "/")
-    BinaryOperator(Eq, Bool, x == y, "==")
-    BinaryOperator(Lt, Bool, x < y, "<")
-    BinaryOperator(Gt, Bool, x > y, ">")
+    BinaryOperator(Plus, Int, x + y, "+", BuildBinaryOp(Int, Int, Int))
+    BinaryOperator(Minus, Int, x - y, "-", BuildBinaryOp(Int, Int, Int))
+    BinaryOperator(Times, Int, x * y, "*", BuildBinaryOp(Int, Int, Int))
+    BinaryOperator(Div, Int, x / y, "/", BuildBinaryOp(Int, Int, Int))
+    BinaryOperator(Eq, Bool, x == y, "==", BuildBinaryOp(Int, Int, Bool))
+    BinaryOperator(Lt, Bool, x < y, "<", BuildBinaryOp(Int, Int, Bool))
+    BinaryOperator(Gt, Bool, x > y, ">", BuildBinaryOp(Int, Int, Bool))
 
     const static std::unordered_map<std::string, Term> basic_operator_map = {
             {"+", buildPlus()}, {"-", buildMinus()}, {"*", buildTimes()},

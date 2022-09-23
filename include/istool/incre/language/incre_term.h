@@ -11,7 +11,7 @@
 
 namespace incre {
     enum class TermType {
-        VALUE, IF, VAR, LET, TUPLE, PROJ, ABS, APP, FIX, MATCH, CREATE, USE
+        VALUE, IF, VAR, LET, TUPLE, PROJ, ABS, APP, FIX, MATCH, CREATE, PASS
     };
 
     class TermData {
@@ -119,13 +119,14 @@ namespace incre {
         virtual ~TmCreate() = default;
     };
 
-    class TmUseCompress: public TermData {
+    class TmPass: public TermData {
     public:
-        std::string name;
-        Term def, content;
-        TmUseCompress(const std::string& _name, const Term& _Def, const Term& _content);
+        std::vector<std::string> names;
+        TermList defs;
+        Term content;
+        TmPass(const std::vector<std::string>& names, const TermList& _defs, const Term& _content);
         std::string toString() const;
-        virtual ~TmUseCompress() = default;
+        virtual ~TmPass() = default;
     };
 }
 

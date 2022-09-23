@@ -60,7 +60,7 @@ namespace incre {
         void print() const;
         virtual ~ProgramData() = default;
     };
-    typedef std::shared_ptr<ProgramData> Program;
+    typedef std::shared_ptr<ProgramData> IncreProgram;
 }
 
 #endif //ISTOOL_INCRE_PROGRAM_H

@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/language/incre_term.h"
+#include "glog/logging.h"
 
 using namespace incre;
 
@@ -81,13 +82,24 @@ std::string TmCreate::toString() const {
     return "create " + def->toString();
 }
 
-TmUseCompress::TmUseCompress(const std::string &_name, const Term &_def, const Term &_content):
-    TermData(TermType::USE), name(_name), def(_def), content(_content) {
+TmPass::TmPass(const std::vector<std::string> &_names, const TermList &_defs, const Term &_content):
+    TermData(TermType::PASS), names(_names), defs(_defs), content(_content) {
+    if (names.size() != defs.size()) {
+        LOG(FATAL) << "In a TmPass, the numbers of names and definitions must be the same";
+    }
 }
-std::string TmUseCompress::toString() const {
-    return "use " + name + " = " + def->toString() + " in " + content->toString();
+std::string TmPass::toString() const {
+    std::string res = "pass (";
+    for (int i = 0; i < names.size(); ++i) {
+        if (i) res += ", "; res += names[i];
+    }
+    res += ") from (";
+    for (int i = 0; i < defs.size(); ++i) {
+        if (i) res += ","; res += defs[i]->toString();
+    }
+    res += ") to " + content->toString();
+    return res;
 }
-
 
 
 

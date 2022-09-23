@@ -36,18 +36,33 @@ namespace incre {
     class TermBinding: public BindingData {
     public:
         Term term;
-        TermBinding(const Term& _term);
+        Ty type;
+        TermBinding(const Term& _term, const Ty& _ty=nullptr);
         virtual std::string toString() const;
         virtual ~TermBinding() = default;
     };
 
     class Context {
-        std::unordered_map<std::string, Binding> binding_map;
     public:
+        std::unordered_map<std::string, Binding> binding_map;
         void addBinding(const std::string& name, const Ty& type);
-        void addBinding(const std::string& name, const Term& term);
+        void addBinding(const std::string& name, const Term& term, const Ty& type=nullptr);
         Term getTerm(const std::string& name);
         Ty getType(const std::string& name);
+    };
+
+    class TypeContext {
+    public:
+        struct BindLog {
+            std::string name;
+            Ty binding;
+        };
+        std::unordered_map<std::string, Ty> binding_map;
+        TypeContext(Context* ctx);
+        TypeContext() = default;
+        BindLog bind(const std::string& name, const Ty& type);
+        Ty lookup(const std::string& name);
+        void cancelBind(const BindLog& log);
     };
 }
 
