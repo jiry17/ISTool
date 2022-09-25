@@ -220,7 +220,7 @@ namespace {
         auto log = ctx->bind(term->name, type);
         LabelSub(content);
         ctx->cancelBind(log);
-        return {std::make_shared<TmAbs>(term->name, type, content_term), content_type};
+        return {std::make_shared<TmAbs>(term->name, type, content_term), std::make_shared<TyArrow>(type, content_type)};
     }
 
     LabelTermHead(Create) {
@@ -274,8 +274,9 @@ namespace {
         LabelSub(content);
         auto full_type = unfoldType(content_type, ctx, {});
         auto* at = dynamic_cast<TyArrow*>(full_type.get());
+        assert(at);
         unify(at->source, at->target, ctx, cs);
-        return {std::make_shared<TmFix>(term->content), at->target};
+        return {std::make_shared<TmFix>(content_term), at->target};
     }
 
     std::pair<Term, Ty> _labelTerm(const Term& term, TypeContext* ctx, CompressStructure* cs) {

@@ -32,8 +32,8 @@ NormalSemantics::NormalSemantics(const std::string& name, const PType &_oup_type
     TypedSemantics(std::move(_oup_type), std::move(_inp_list)), FullExecutedSemantics(name) {
 }
 
-ParamSemantics::ParamSemantics(PType &&type, int _id):
-        NormalSemantics("Param" + std::to_string(_id), std::move(type), {}), id(_id) {
+ParamSemantics::ParamSemantics(const PType &type, int _id):
+        NormalSemantics("Param" + std::to_string(_id), type, {}), id(_id) {
 }
 Data ParamSemantics::run(DataList&& inp_list, ExecuteInfo *info) {
     return info->param_value[id];
@@ -43,6 +43,8 @@ std::string ParamSemantics::buildProgramString(const std::vector<std::string> &s
 }
 
 ConstSemantics::ConstSemantics(const Data &_w): FullExecutedSemantics(_w.toString()), w(_w) {
+}
+ConstSemantics::ConstSemantics(const Data& _w, const std::string& _name): FullExecutedSemantics(_name), w(_w) {
 }
 Data ConstSemantics::run(DataList&& inp_list, ExecuteInfo *info) {
     return w;

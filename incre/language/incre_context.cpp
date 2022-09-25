@@ -20,12 +20,12 @@ std::string TermBinding::toString() const {
 }
 
 void Context::addBinding(const std::string &name, const Ty &type) {
-    LOG(INFO) << "binding " << name << " : " << type->toString();
+    // LOG(INFO) << "binding " << name << " : " << type->toString();
     binding_map[name] = std::make_shared<TypeBinding>(type);
 }
 
 void Context::addBinding(const std::string &name, const Term &term, const Ty& type) {
-    if (type) LOG(INFO) << "binding " << name << " : " << type->toString();
+    // if (type) LOG(INFO) << "binding " << name << " : " << type->toString();
     binding_map[name] = std::make_shared<TermBinding>(term, type);
 }
 

@@ -20,7 +20,6 @@ namespace incre {
     Command json2command(const Json::Value& node);
     IncreProgram json2program(const Json::Value& node);
     IncreProgram file2program(const std::string& path);
-    Term getOperator(const std::string& name);
 }
 
 #endif //ISTOOL_INCRE_FROM_JSON_H

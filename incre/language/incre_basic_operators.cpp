@@ -2,7 +2,8 @@
 // Created by pro on 2022/9/18.
 //
 
-#include "istool/incre/parser/incre_from_json.h"
+#include "istool/incre/language/incre_value.h"
+#include "istool/incre/language/incre_term.h"
 #include "glog/logging.h"
 
 using namespace incre;
@@ -53,4 +54,7 @@ Term incre::getOperator(const std::string &name) {
         LOG(FATAL) << "Unknown operator " << name;
     }
     return it->second;
+}
+bool incre::isBasicOperator(const std::string &name) {
+    return basic_operator_map.find(name) != basic_operator_map.end();
 }

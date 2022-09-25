@@ -32,7 +32,7 @@ namespace {
     }
     EliminateCreateHead(Abs) {
         EliminateSub(content);
-        return std::make_shared<TmAbs>(term->name, term->type, term->content);
+        return std::make_shared<TmAbs>(term->name, term->type, content);
     }
     EliminateCreateHead(Value) {
         return _term;
@@ -50,7 +50,7 @@ namespace {
         TermList defs;
         for (const auto& def: term->defs) defs.push_back(_eliminateUnboundedCreate(def, is_bounded));
         auto content = _eliminateUnboundedCreate(term->content, true);
-        return content;
+        return std::make_shared<TmPass>(term->names, defs, content);
     }
     EliminateCreateHead(Match) {
         EliminateSub(def);

@@ -14,6 +14,7 @@ namespace incre {
     bool isUsed(const Pattern& pt, const std::string& name);
     bool isMatch(const Data& data, const Pattern& pt);
     std::vector<std::pair<std::string, Term>> bindPattern(const Data& data, const Pattern& pt);
+    std::vector<std::string> getUnboundedVars(TermData* term);
 
     Term subst(const Term& x, const std::string& name, const Term& y);
     Data run(const Term& term, Context* ctx);
@@ -27,6 +28,7 @@ namespace incre {
     typedef std::unordered_map<TermType, ExternalTypeRule> ExternalTypeMap;
 
     Ty getType(const Term& x, Context* ctx, const ExternalTypeMap& ext = {});
+    bool isTypeEqual(const Ty& x, const Ty& y, TypeContext* ctx);
     Ty getType(const Term& x, TypeContext* ctx, const ExternalTypeMap& ext = {});
     Ty unfoldType(const Ty& x, TypeContext* ctx, const std::vector<std::string>& tmp_names);
     std::vector<TypeContext::BindLog> bindPattern(const Pattern& pt, const Ty& type, TypeContext* ctx);

@@ -3,14 +3,24 @@
 //
 
 #include "istool/incre/analysis/incre_instru_runtime.h"
+#include "glog/logging.h"
 
 using namespace incre;
 
 IncreExampleData::IncreExampleData(int _tau_id, const std::unordered_map<std::string, Term> &_inputs, const Data &_oup):
     tau_id(_tau_id), inputs(_inputs), oup(_oup) {
 }
+std::string IncreExampleData::toString() const {
+    std::string res = "(" + std::to_string(tau_id) + ") {";
+    bool flag = false;
+    for (const auto& [name, t]: inputs) {
+        if (flag) res += ","; res += (name + ": " + t->toString()); flag = true;
+    }
+    return res + "} -> " + oup.toString();
+}
 void IncreExamplePool::add(const IncreExample &example) {
     int id = example->tau_id;
+    LOG(INFO) << "Add " << example->toString();
     while (example_pool.size() <= id) example_pool.emplace_back();
     example_pool[id].push_back(example);
 }
@@ -112,7 +122,7 @@ namespace {
         SubstRes(content);
         if (!flag && !content_flag) return {_x, false};
         auto res = std::make_shared<TmLabeledPass>(x->names, defs, content_res, x->tau_id, x->subst_info);
-        res->addSubst(name, y);
+        if (content_flag) res->addSubst(name, y);
         return {res, true};
     }
 
@@ -134,14 +144,17 @@ namespace {
     }
 
     Term collectSubst(const Term& x, const std::string& name, const Term& y) {
+        //LOG(INFO) << "collect subst " << x->toString() << " " << name;
+        //LOG(INFO) << "subst " << y->toString();
         return _collectSubst(x, name, y).first;
     }
 
+    Data _collectExample(const Term &term, Context *ctx, IncreExamplePool* pool);
 
 #define CollectHead(name) Data _collectExample(Tm ## name* term, const Term& _term, Context* ctx, IncreExamplePool* pool)
 #define CollectCase(name) return _collectExample(dynamic_cast<Tm ## name*>(term.get()), term, ctx, pool)
-#define CollectSub(name) auto name = collectExample(term->name, ctx, pool)
-#define CollectSub2(name) auto name ## _res = collectExample(name, ctx, pool)
+#define CollectSub(name) auto name = _collectExample(term->name, ctx, pool)
+#define CollectSub2(name) auto name ## _res = _collectExample(name, ctx, pool)
 
     CollectHead(Value) {
         return term->data;
@@ -159,10 +172,12 @@ namespace {
         return content_res;
     }
     CollectHead(Abs) {
-        auto f = [term, ctx, pool](const Term& param) {
-            auto content = collectSubst(term->content, term->name, param);
-            CollectSub2(content);
-            return content_res;
+        auto name = term->name;
+        auto content = term->content;
+        auto f = [name, content, ctx, pool](const Term& param) {
+            auto c = collectSubst(content, name, param);
+            CollectSub2(c);
+            return c_res;
         };
         return Data(std::make_shared<VFunction>(f));
     }
@@ -226,7 +241,7 @@ namespace {
         for (int i = int(term->names.size()) - 1; i >= 0; --i) {
             auto def = term->defs[i];
             CollectSub2(def);
-            auto* cv = dynamic_cast<VCompress*>(def.get());
+            auto* cv = dynamic_cast<VCompress*>(def_res.get());
             assert(cv);
             if (inp.find(term->names[i]) == inp.end()) {
                 inp[term->names[i]] = std::make_shared<TmValue>(def_res);
@@ -235,23 +250,76 @@ namespace {
         }
         CollectSub2(content);
         auto example = std::make_shared<IncreExampleData>(term->tau_id, inp, content_res);
+        pool->add(example);
         return content_res;
+    }
+
+    Data _collectExample(const Term &term, Context *ctx, IncreExamplePool* pool) {
+        //std::cout << std::endl;
+        //LOG(INFO) << "Collect " << term->toString();
+        switch (term->getType()) {
+            case TermType::VALUE: CollectCase(Value);
+            case TermType::PROJ: CollectCase(Proj);
+            case TermType::LET: CollectCase(Let);
+            case TermType::ABS: CollectCase(Abs);
+            case TermType::APP: CollectCase(App);
+            case TermType::CREATE: CollectCase(LabeledCreate);
+            case TermType::PASS: CollectCase(LabeledPass);
+            case TermType::FIX: CollectCase(Fix);
+            case TermType::MATCH: CollectCase(Match);
+            case TermType::TUPLE: CollectCase(Tuple);
+            case TermType::VAR: CollectCase(Var);
+            case TermType::IF: CollectCase(If);
+        }
     }
 }
 
-Data incre::collectExample(const Term &term, Context *ctx, IncreExamplePool* pool) {
-    switch (term->getType()) {
-        case TermType::VALUE: CollectCase(Value);
-        case TermType::PROJ: CollectCase(Proj);
-        case TermType::LET: CollectCase(Let);
-        case TermType::ABS: CollectCase(Abs);
-        case TermType::APP: CollectCase(App);
-        case TermType::CREATE: CollectCase(LabeledCreate);
-        case TermType::PASS: CollectCase(LabeledPass);
-        case TermType::FIX: CollectCase(Fix);
-        case TermType::MATCH: CollectCase(Match);
-        case TermType::TUPLE: CollectCase(Tuple);
-        case TermType::VAR: CollectCase(Var);
-        case TermType::IF: CollectCase(If);
+void IncreExamplePool::generatorExample() {
+    auto start = generator->getStartTerm();
+    _collectExample(start, ctx, this);
+}
+IncreExamplePool::~IncreExamplePool() {
+    delete generator;
+}
+IncreExamplePool::IncreExamplePool(Context *_ctx, StartTermGenerator *_generator):
+    ctx(_ctx), generator(_generator) {
+}
+
+namespace {
+    void _buildCollectContext(const Command& command, Context* ctx, IncreExamplePool* pool) {
+        switch (command->getType()) {
+            case CommandType::DEF_IND: {
+                incre::run(command, ctx); return;
+            }
+            case CommandType::BIND: {
+                auto* cb = dynamic_cast<CommandBind*>(command.get());
+                switch (cb->binding->getType()) {
+                    case BindingType::TYPE: {
+                        incre::run(command, ctx);
+                        return;
+                    }
+                    case BindingType::TERM: {
+                        auto *term_bind = dynamic_cast<TermBinding *>(cb->binding.get());
+                        auto ty = incre::getType(term_bind->term, ctx);
+                        Data res = _collectExample(term_bind->term, ctx, pool);
+                        ctx->addBinding(cb->name, std::make_shared<TmValue>(res), ty);
+                        return;
+                    }
+                }
+            }
+            case CommandType::IMPORT: {
+                auto* ci = dynamic_cast<CommandImport*>(command.get());
+                for (auto& c: ci->commands) _buildCollectContext(c, ctx, pool);
+                return;
+            }
+        }
     }
+}
+
+Context * incre::buildCollectContext(const IncreProgram &program, IncreExamplePool* pool) {
+    auto* ctx = new Context();
+    for (const auto& command: program->commands) {
+        _buildCollectContext(command, ctx, pool);
+    }
+    return ctx;
 }

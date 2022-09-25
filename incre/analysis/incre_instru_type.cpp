@@ -14,6 +14,9 @@ VLabeledCompress::VLabeledCompress(const Data &_v, int _id):
 TyLabeledCompress::TyLabeledCompress(const Ty &_ty, int _id):
     TyCompress(_ty), id(_id) {
 }
+std::string TyLabeledCompress::toString() const {
+    return "compress[" + std::to_string(id) + "] " + content->toString();
+}
 
 TmLabeledCreate::TmLabeledCreate(const Term &_content, int _id):
     TmCreate(_content), id(_id) {

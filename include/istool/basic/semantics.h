@@ -53,7 +53,7 @@ public:
 class ParamSemantics: public NormalSemantics {
 public:
     int id;
-    ParamSemantics(PType&& type, int _id);
+    ParamSemantics(const PType& type, int _id);
     virtual Data run(DataList&&, ExecuteInfo* info);
     virtual std::string buildProgramString(const std::vector<std::string>& sub_exp);
     ~ParamSemantics() = default;
@@ -63,6 +63,7 @@ class ConstSemantics: public FullExecutedSemantics {
 public:
     Data w;
     ConstSemantics(const Data& _w);
+    ConstSemantics(const Data& _w, const std::string& _name);
     virtual Data run(DataList&&, ExecuteInfo* info);
     virtual std::string buildProgramString(const std::vector<std::string>& sub_exp);
     ~ConstSemantics() = default;

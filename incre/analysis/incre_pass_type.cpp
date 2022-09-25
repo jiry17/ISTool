@@ -3,11 +3,11 @@
 //
 
 #include "istool/incre/analysis/incre_instru_info.h"
+#include "glog/logging.h"
 
 using namespace incre;
 
 namespace {
-
     Ty _unfoldAll(const Ty& x, TypeContext* ctx, std::vector<std::string>& tmps);
 
 #define UnfoldAllCase(name) return _unfoldAll(dynamic_cast<Ty ## name*>(x.get()), x, ctx, tmps)
@@ -56,13 +56,14 @@ namespace {
             case TyType::ARROW: UnfoldAllCase(Arrow);
         }
     }
+}
 
+Ty incre::unfoldAll(const Ty& x, TypeContext* ctx) {
+    std::vector<std::string> tmps;
+    return _unfoldAll(x, ctx, tmps);
+}
 
-    Ty _unfoldAll(const Ty& x, TypeContext* ctx) {
-        std::vector<std::string> tmps;
-        return _unfoldAll(x, ctx, tmps);
-    }
-
+namespace {
     void _runCommand(const Command& command, TypeContext* ctx, const std::function<Ty(const Term&, TypeContext*)>& type_checker);
 
     void _runCommand(CommandImport* c, TypeContext* ctx, const std::function<Ty(const Term&, TypeContext*)>& type_checker) {
@@ -74,7 +75,8 @@ namespace {
     void _runCommand(CommandDefInductive* c, TypeContext* ctx) {
         auto* ty = c->type; ctx->bind(ty->name, c->_type);
         for (const auto& [name, _]: ty->constructors) {
-            ctx->bind(name, incre::getConstructor(c->_type, name));
+            auto inp_type = incre::getConstructor(c->_type, name);
+            ctx->bind(name, std::make_shared<TyArrow>(inp_type, c->_type));
         }
     }
     void _runCommand(CommandBind* c, TypeContext* ctx, const std::function<Ty(const Term&, TypeContext*)>& type_checker) {
@@ -126,6 +128,9 @@ PassTypeInfoList incre::collectPassType(const IncreProgram &program) {
         std::vector<TypeContext::BindLog> bind_list;
         TyList defs;
         std::unordered_map<std::string, Ty> inps;
+        for (const auto& [name, type]: ctx->binding_map) {
+            inps[name] = incre::unfoldAll(type, ctx);
+        }
         for (const auto& def: pt->defs) {
             defs.push_back(incre::getType(def, ctx, ext));
         }
@@ -134,14 +139,14 @@ PassTypeInfoList incre::collectPassType(const IncreProgram &program) {
             auto* ct = dynamic_cast<TyLabeledCompress*>(defs[i].get());
             assert(ct);
             bind_list.push_back(ctx->bind(name, ct->content));
-            inps[name] = defs[i];
+            inps[name] = incre::unfoldAll(defs[i], ctx);
         }
         auto res = incre::getType(pt->content, ctx, ext);
         for (int i = int(bind_list.size()) - 1; i >= 0; --i) {
             ctx->cancelBind(bind_list[i]);
         }
 
-        info[id] = std::make_shared<PassTypeInfoData>(inps, res);
+        info[id] = std::make_shared<PassTypeInfoData>(pt, inps, res);
         return res;
     };
 

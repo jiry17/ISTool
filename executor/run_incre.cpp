@@ -5,6 +5,7 @@
 #include "istool/basic/config.h"
 #include "istool/incre/parser/incre_from_json.h"
 #include "istool/incre/language/incre.h"
+#include "istool/incre/analysis/incre_instru_info.h"
 
 using namespace incre;
 
@@ -29,19 +30,10 @@ void invoke(const std::string& name, const TermList& ts, Context* ctx) {
 int main(int argv, char** argc) {
     std::string path = config::KSourcePath + "/tests/test.json";
     auto prog = incre::file2program(path);
-    prog->print();
 
-    auto* ctx = incre::run(prog);
-
-    std::vector<std::pair<int, int>> A({{3, 3}, {2, 2}, {1, 2}});
-    auto tl = buildList(A);
-    for (int i = 1; i <= 5;i ++) {
-        auto ti = std::make_shared<TmValue>(BuildData(Int, i));
-        invoke("knapsack", {ti, tl}, ctx);
-    }
-    for (int i = 1; i <= 5;i ++) {
-        auto ti = std::make_shared<TmValue>(BuildData(Int, i));
-        invoke("knapsackC", {ti, tl}, ctx);
+    auto* info = incre::buildIncreInfo(prog);
+    for (int i = 1; i <= 5; ++i) {
+        info->example_pool->generatorExample();
     }
     /*invoke("head", {tl}, ctx);
     invoke("tail", {tl}, ctx);

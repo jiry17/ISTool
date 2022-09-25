@@ -19,6 +19,7 @@ namespace incre {
     public:
         int id;
         TyLabeledCompress(const Ty& _ty, int _id);
+        virtual std::string toString() const;
         virtual ~TyLabeledCompress() = default;
     };
 

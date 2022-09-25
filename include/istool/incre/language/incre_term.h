@@ -128,6 +128,9 @@ namespace incre {
         std::string toString() const;
         virtual ~TmPass() = default;
     };
+
+    Term getOperator(const std::string& name);
+    bool isBasicOperator(const std::string& name);
 }
 
 #endif //ISTOOL_INCRE_TERM_H

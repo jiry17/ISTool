@@ -28,11 +28,15 @@ namespace {
 #define TypeEqualHead(name) bool _isTypeEqual(Ty ## name * x, Ty ## name* y, TypeContext* ctx, std::vector<std::string>& x_tmp, std::vector<std::string>& y_tmp)
 
     // TODO: May be error when type binding is reloaded
-    bool _isTypeEqual(const Ty& _x, const Ty& _y, TypeContext* ctx, std::vector<std::string>& x_tmp, std::vector<std::string>& y_tmp);
+    bool _isTypeEqual(const Ty &_x, const Ty &_y, TypeContext *ctx, std::vector<std::string> &x_tmp,
+                      std::vector<std::string> &y_tmp);
 
-    TypeEqualHead(Int) {return x && y;}
-    TypeEqualHead(Bool) {return x && y;}
-    TypeEqualHead(Unit) {return x && y;}
+    TypeEqualHead(Int) { return x && y; }
+
+    TypeEqualHead(Bool) { return x && y; }
+
+    TypeEqualHead(Unit) { return x && y; }
+
     TypeEqualHead(Tuple) {
         if (!x || !y || x->fields.size() != y->fields.size()) return false;
         for (int i = 0; i < x->fields.size(); ++i) {
@@ -40,57 +44,76 @@ namespace {
         }
         return true;
     }
+
     TypeEqualHead(Arrow) {
         if (!x || !y) return false;
-        return _isTypeEqual(x->source, y->source, ctx, x_tmp, y_tmp) && _isTypeEqual(x->target, y->target, ctx, x_tmp, y_tmp);
+        return _isTypeEqual(x->source, y->source, ctx, x_tmp, y_tmp) &&
+               _isTypeEqual(x->target, y->target, ctx, x_tmp, y_tmp);
     }
+
     TypeEqualHead(Var) {
         if (!x || !y) return false;
         return _lookup(x_tmp, x->name) == _lookup(y_tmp, y->name);
     }
+
     TypeEqualHead(Compress) {
         if (!x || !y) return false;
         return _isTypeEqual(x->content, y->content, ctx, x_tmp, y_tmp);
     }
+
     TypeEqualHead(Inductive) {
         if (!x || !y || x->constructors.size() != y->constructors.size()) return false;
-        std::cout << "compare " << x->toString() << " " << y->toString() << std::endl;
         std::unordered_map<std::string, Ty> cons_map;
-        for (const auto& [cons_name, cons_type]: y->constructors) {
+        for (const auto&[cons_name, cons_type]: y->constructors) {
             cons_map[cons_name] = cons_type;
         }
-        x_tmp.push_back(x->name); y_tmp.push_back(y->name);
+        x_tmp.push_back(x->name);
+        y_tmp.push_back(y->name);
         bool res = true;
-        for (const auto& [cons_name, cons_type]: x->constructors) {
+        for (const auto&[cons_name, cons_type]: x->constructors) {
             if (cons_map.find(cons_name) == cons_map.end()) continue;
             if (!_isTypeEqual(cons_type, cons_map[cons_name], ctx, x_tmp, y_tmp)) {
-                res = false; break;
+                res = false;
+                break;
             }
         }
-        x_tmp.pop_back(); y_tmp.pop_back();
+        x_tmp.pop_back();
+        y_tmp.pop_back();
         return res;
     }
 
-    bool _isTypeEqual(const Ty& _x, const Ty& _y, TypeContext* ctx, std::vector<std::string>& x_tmp, std::vector<std::string>& y_tmp) {
-        auto x = unfoldType(_x, ctx, x_tmp); auto y = unfoldType(_y, ctx, y_tmp);
+    bool _isTypeEqual(const Ty &_x, const Ty &_y, TypeContext *ctx, std::vector<std::string> &x_tmp,
+                      std::vector<std::string> &y_tmp) {
+        auto x = unfoldType(_x, ctx, x_tmp);
+        auto y = unfoldType(_y, ctx, y_tmp);
         switch (x->getType()) {
-            case TyType::INT: TypeEqualCase(Int);
-            case TyType::BOOL: TypeEqualCase(Bool);
-            case TyType::UNIT: TypeEqualCase(Unit);
-            case TyType::TUPLE: TypeEqualCase(Tuple);
-            case TyType::ARROW: TypeEqualCase(Arrow);
-            case TyType::VAR: TypeEqualCase(Var);
-            case TyType::COMPRESS: TypeEqualCase(Compress);
-            case TyType::IND: TypeEqualCase(Inductive);
+            case TyType::INT:
+                TypeEqualCase(Int);
+            case TyType::BOOL:
+                TypeEqualCase(Bool);
+            case TyType::UNIT:
+                TypeEqualCase(Unit);
+            case TyType::TUPLE:
+                TypeEqualCase(Tuple);
+            case TyType::ARROW:
+                TypeEqualCase(Arrow);
+            case TyType::VAR:
+                TypeEqualCase(Var);
+            case TyType::COMPRESS:
+                TypeEqualCase(Compress);
+            case TyType::IND:
+                TypeEqualCase(Inductive);
         }
         LOG(FATAL) << "Unknown type " << x->toString();
     }
+}
 
-    bool _isTypeEqual(const Ty& x, const Ty& y, TypeContext* ctx) {
-        std::vector<std::string> x_tmp, y_tmp;
-        return _isTypeEqual(x, y, ctx, x_tmp, y_tmp);
-    }
+bool incre::isTypeEqual(const Ty &x, const Ty &y, TypeContext *ctx) {
+    std::vector<std::string> x_tmp, y_tmp;
+    return _isTypeEqual(x, y, ctx, x_tmp, y_tmp);
+}
 
+namespace {
 #define GetTypeCase(name) return _getType(dynamic_cast<Tm ## name*>(term.get()), ctx, ext)
 #define GetTypeHead(name) Ty _getType(Tm ## name* term, TypeContext* ctx, const ExternalTypeMap& ext)
 
@@ -138,7 +161,7 @@ namespace {
         }
         auto t = getType(term->t, ctx, ext);
         auto f = getType(term->f, ctx, ext);
-        if (!_isTypeEqual(t, f, ctx)) {
+        if (!incre::isTypeEqual(t, f, ctx)) {
             LOG(FATAL) << "The two branches of an if-expression should have the same type, but get " << term->t->toString() << " and " << term->f->toString();
         }
         return t;
@@ -150,7 +173,7 @@ namespace {
         if (!ta) {
             LOG(FATAL) << "The function used in an app-expression should have type TyArrow, but get " << term->func->toString();
         }
-        if (!_isTypeEqual(ta->source, param, ctx)) {
+        if (!incre::isTypeEqual(ta->source, param, ctx)) {
             LOG(FATAL) << term->func->toString() << " expects an input of type " << ta->source->toString()
                 << ", but get " << term->param->toString() << " of type " << param->toString();
         }
@@ -175,7 +198,7 @@ namespace {
         if (!ta) {
             LOG(FATAL) << "A fix-expression requires a function, but get " << term->content->toString();
         }
-        if (!_isTypeEqual(ta->source, ta->target, ctx)) {
+        if (!incre::isTypeEqual(ta->source, ta->target, ctx)) {
             LOG(FATAL) << "The input type and the output type of the function in a fix-expression should be the same, but get " << term->content->toString();
         }
         return ta->source;
@@ -190,7 +213,7 @@ namespace {
             for (int i = logs.size(); i; --i) ctx->cancelBind(logs[i - 1]);
         }
         for (int i = 1; i < branch_types.size(); ++i) {
-            if (!_isTypeEqual(branch_types[0], branch_types[i], ctx)) {
+            if (!incre::isTypeEqual(branch_types[0], branch_types[i], ctx)) {
                 LOG(FATAL) << "The branches of a match-expression should have the same type, but get " << branch_types[0]->toString() << " and " << branch_types[i]->toString();
             }
         }
