@@ -12,9 +12,9 @@
 namespace incre {
     struct IncreExampleData {
         int tau_id;
-        std::unordered_map<std::string, Term> inputs;
+        std::unordered_map<std::string, Data> inputs;
         Data oup;
-        IncreExampleData(int _tau_id, const std::unordered_map<std::string, Term>& _inputs, const Data& _oup);
+        IncreExampleData(int _tau_id, const std::unordered_map<std::string, Data>& _inputs, const Data& _oup);
         std::string toString() const;
         virtual ~IncreExampleData() = default;
     };

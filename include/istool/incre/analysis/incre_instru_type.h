@@ -33,10 +33,10 @@ namespace incre {
     class TmLabeledPass: public TmPass {
     public:
         int tau_id;
-        std::unordered_map<std::string, Term> subst_info;
+        std::unordered_map<std::string, Data> subst_info;
         TmLabeledPass(const std::vector<std::string> &names, const TermList &_defs, const Term &_content, int _tau_id,
-                const std::unordered_map<std::string, Term>& _subst_info = {});
-        void addSubst(const std::string& name, const Term& data);
+                const std::unordered_map<std::string, Data>& _subst_info = {});
+        void addSubst(const std::string& name, const Data& data);
         virtual ~TmLabeledPass() = default;
     };
 }

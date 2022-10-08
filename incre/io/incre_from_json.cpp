@@ -2,7 +2,7 @@
 // Created by pro on 2022/9/17.
 //
 
-#include "istool/incre/parser/incre_from_json.h"
+#include "istool/incre/io/incre_from_json.h"
 #include "glog/logging.h"
 #include <fstream>
 

@@ -7,14 +7,14 @@
 
 using namespace incre;
 
-IncreExampleData::IncreExampleData(int _tau_id, const std::unordered_map<std::string, Term> &_inputs, const Data &_oup):
+IncreExampleData::IncreExampleData(int _tau_id, const std::unordered_map<std::string, Data> &_inputs, const Data &_oup):
     tau_id(_tau_id), inputs(_inputs), oup(_oup) {
 }
 std::string IncreExampleData::toString() const {
     std::string res = "(" + std::to_string(tau_id) + ") {";
     bool flag = false;
     for (const auto& [name, t]: inputs) {
-        if (flag) res += ","; res += (name + ": " + t->toString()); flag = true;
+        if (flag) res += ","; res += (name + ": " + t.toString()); flag = true;
     }
     return res + "} -> " + oup.toString();
 }
@@ -122,7 +122,7 @@ namespace {
         SubstRes(content);
         if (!flag && !content_flag) return {_x, false};
         auto res = std::make_shared<TmLabeledPass>(x->names, defs, content_res, x->tau_id, x->subst_info);
-        if (content_flag) res->addSubst(name, y);
+        if (content_flag) res->addSubst(name, incre::run(y, nullptr));
         return {res, true};
     }
 
@@ -236,7 +236,7 @@ namespace {
         return Data(std::make_shared<VLabeledCompress>(def, term->id));
     }
     CollectHead(LabeledPass) {
-        std::unordered_map<std::string, Term> inp = term->subst_info;
+        std::unordered_map<std::string, Data> inp = term->subst_info;
         Term content = term->content;
         for (int i = int(term->names.size()) - 1; i >= 0; --i) {
             auto def = term->defs[i];
@@ -244,7 +244,7 @@ namespace {
             auto* cv = dynamic_cast<VCompress*>(def_res.get());
             assert(cv);
             if (inp.find(term->names[i]) == inp.end()) {
-                inp[term->names[i]] = std::make_shared<TmValue>(def_res);
+                inp[term->names[i]] = def_res;
                 content = collectSubst(content, term->names[i], std::make_shared<TmValue>(cv->content));
             }
         }

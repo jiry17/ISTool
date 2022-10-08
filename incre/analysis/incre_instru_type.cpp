@@ -23,11 +23,11 @@ TmLabeledCreate::TmLabeledCreate(const Term &_content, int _id):
 }
 
 TmLabeledPass::TmLabeledPass(const std::vector<std::string> &names, const TermList &_defs, const Term &_content,
-        int _tau_id, const std::unordered_map<std::string, Term>& _info):
+        int _tau_id, const std::unordered_map<std::string, Data>& _info):
     TmPass(names, _defs, _content), tau_id(_tau_id), subst_info(_info) {
 }
 
-void TmLabeledPass::addSubst(const std::string &name, const Term& data) {
+void TmLabeledPass::addSubst(const std::string &name, const Data& data) {
     if (subst_info.find(name) != subst_info.end()) {
         LOG(FATAL) << "Multiple substitution happens for var " << name;
     }

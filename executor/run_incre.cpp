@@ -3,7 +3,7 @@
 //
 
 #include "istool/basic/config.h"
-#include "istool/incre/parser/incre_from_json.h"
+#include "istool/incre/io/incre_from_json.h"
 #include "istool/incre/language/incre.h"
 #include "istool/incre/analysis/incre_instru_info.h"
 
