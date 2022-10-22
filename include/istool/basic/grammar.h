@@ -35,6 +35,7 @@ class ConcreteRule: public Rule {
 public:
     PSemantics semantics;
     ConcreteRule(const PSemantics& _semantics, const NTList& _param_list);
+    virtual int getSize() const {return 1;}
     virtual PProgram buildProgram(const ProgramList& sub_list);
     virtual std::string toString() const;
     virtual Rule* clone(const NTList& new_param_list);

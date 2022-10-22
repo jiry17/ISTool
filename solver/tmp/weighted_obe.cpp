@@ -4,8 +4,10 @@
 
 #include "istool/solver/tmp/weighted_obe.h"
 #include "glog/logging.h"
+#include <map>
 #include <queue>
 #include <istool/ext/composed_semantics/composed_rule.h>
+#include <istool/ext/composed_semantics/composed_semantics.h>
 
 WeightedOBESolver::WeightedOBESolver(Specification *_spec, Verifier *_v, ProgramChecker *_is_runnable):
     OBESolver(_spec, _v, _is_runnable) {
@@ -148,15 +150,35 @@ namespace {
         return sum + 1;
     }
 
-    int _getWeight(Rule* r) {
+    void _unfoldCompressedSemantics(Grammar* grammar) {
+        for (auto* symbol: grammar->symbol_list) {
+            for (auto*& rule: symbol->rule_list) {
+                auto* dr = dynamic_cast<ConcreteRule*>(rule);
+                if (!dr) continue;
+                auto* cs = dynamic_cast<ComposedSemantics*>(dr->semantics.get());
+                if (!cs) continue;
+                auto* pre_rule = rule;
+                rule = new ComposedRule(cs->body, rule->param_list);
+                delete pre_rule;
+            }
+        }
+    }
+
+    int __getWeight(Rule* r) {
         auto* cr = dynamic_cast<ConcreteRule*>(r);
         if (cr) {
-            if (dynamic_cast<DirectSemantics*>(cr->semantics.get())) return 0;
-            return 1;
+            auto* ds = dynamic_cast<DirectSemantics*>(cr->semantics.get());
+            if (ds) return 0;
+            return cr->getSize();
         }
         auto* pr = dynamic_cast<ComposedRule*>(r);
         if (pr) return _getOperatorSize(pr->composed_sketch.get());
         LOG(FATAL) << "Unknown rule " << r->toString();
+    }
+
+    int _getWeight(Rule* r) {
+        auto res = __getWeight(r);
+        return res;
     }
 
     FunctionContext _weightedEnumerate(const std::vector<PSynthInfo> &info_list, const EnumConfig &c) {
@@ -167,7 +189,13 @@ namespace {
         for (auto& ps: storage_list) ps.emplace_back();
         std::vector<FunctionContext> res;
         std::vector<NTList> direct_order_list;
-        for (const auto& info: info_list) direct_order_list.push_back(_getDirectOrder(info->grammar));
+
+        std::map<std::string, int> c_num_map;
+
+        for (const auto& info: info_list) {
+            _unfoldCompressedSemantics(info->grammar);
+            direct_order_list.push_back(_getDirectOrder(info->grammar));
+        }
 
 
         for (int size = 1;; ++size) {
@@ -176,10 +204,12 @@ namespace {
                 auto& info = info_list[pos];
                 for (auto* symbol: direct_order_list[pos]) {
                     int id = symbol->id; storage_list[id].emplace_back();
+                    auto feature = info->name + "@" + symbol->name;
                     for (auto* rule: symbol->rule_list) {
                         if (_isDirectRule(rule)) {
                             for (const auto& p: storage_list[rule->param_list[0]->id][size]) {
                                 if (!o->isDuplicated(info->name, symbol, p)) {
+                                    ++c_num_map[feature];
                                     storage_list[symbol->id][size].push_back(p);
                                 }
                             }
@@ -190,6 +220,7 @@ namespace {
                             for (const auto &sub_list: tmp) {
                                 TimeCheck(c.guard);
                                 auto p = rule->buildProgram(sub_list);
+                                ++c_num_map[feature];
                                 if (o->isDuplicated(info->name, symbol, p))
                                     continue;
                                 storage_list[id][size].push_back(p);
@@ -212,6 +243,10 @@ namespace {
                     info[info_list[i]->name] = sub_list[i];
                 }
                 if (v->verify(info, nullptr)) {
+                    LOG(INFO) << "Construct num:";
+                    for (auto& info: c_num_map) {
+                        LOG(INFO) << info.first << ": " << info.second;
+                    }
                     //LOG(INFO) << "construct num " << c_num;
                     //int kk; std::cin >> kk;
                     return info;

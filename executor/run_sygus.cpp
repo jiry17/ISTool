@@ -27,7 +27,8 @@ int main(int argc, char** argv) {
     } else {
         solver_name = "obe";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv/PRE_icfp_gen_14.10.sl";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mpg_guard2_mo.sl";
+        //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mpg_guard2_non_half.sl";
+        benchmark_name = config::KSourcePath + "/tests/x.sl";
         output_name = "/tmp/629453237.out";
     }
 

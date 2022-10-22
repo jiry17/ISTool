@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(ISTool)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++17")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++17 -Ofast")
 add_definitions(-DDEBUG)
 
 INCLUDE(FindPkgConfig)

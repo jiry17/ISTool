@@ -8,6 +8,7 @@
 #include "istool/sygus/theory/z3/theory_z3_semantics.h"
 #include "istool/sygus/theory/basic/bv/bv.h"
 #include "istool/ext/composed_semantics/composed_semantics.h"
+#include "istool/ext/composed_semantics/composed_rule.h"
 #include "istool/ext/composed_semantics/composed_z3_semantics.h"
 #include "istool/basic/config.h"
 #include "istool/ext/z3/z3_example_space.h"
@@ -15,6 +16,20 @@
 #include <unordered_set>
 
 namespace {
+    void _unfoldCompressedSemantics(Grammar* grammar) {
+        for (auto* symbol: grammar->symbol_list) {
+            for (auto*& rule: symbol->rule_list) {
+                auto* dr = dynamic_cast<ConcreteRule*>(rule);
+                if (!dr) continue;
+                auto* cs = dynamic_cast<ComposedSemantics*>(dr->semantics.get());
+                if (!cs) continue;
+                auto* pre_rule = rule;
+                rule = new ComposedRule(cs->body, rule->param_list);
+                delete pre_rule;
+            }
+        }
+    }
+
     std::vector<Json::Value> getEntriesViaName(const Json::Value& root, const std::string& name) {
         assert(root.isArray());
         std::vector<Json::Value> res;
@@ -44,6 +59,9 @@ namespace {
             for (auto& p: known_list) if (!p) ++unknown_num;
             assert(unknown_num == param_list.size());
 #endif
+        }
+        virtual int getSize() const {
+            return 1 + known_list.size() - param_list.size();
         }
         virtual std::string toString() const {
             std::string res = semantics->getName();
@@ -220,6 +238,7 @@ namespace {
             }
         }
         auto* grammar = new Grammar(symbol_list[0], symbol_list);
+        // _unfoldCompressedSemantics(grammar);
         return std::make_shared<SynthInfo>(name, inp_type_list, oup_type, grammar);
     }
 

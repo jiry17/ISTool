@@ -59,7 +59,9 @@ TopDownContextGraph::TopDownContextGraph(Grammar *g, TopDownModel *model, ProbMo
         std::vector<Semantics*> sem_list;
         for (const auto& rule: symbol->rule_list) {
             auto* cr = dynamic_cast<ConcreteRule*>(rule);
-            if (!cr) LOG(FATAL) << "Current implementation of VSA requires ConcreteRule";
+            if (!cr) {
+                LOG(FATAL) << "Current implementation of VSA requires ConcreteRule but get " << rule->toString();
+            }
             sem_list.push_back(cr->semantics.get());
         }
         auto prob_list = model->getWeightList(ctx, sem_list, prob_type);

@@ -54,8 +54,8 @@ std::pair<LearnedScorerType, int> selector::random::splitScorerName(const std::s
         LOG(INFO) << prefix << " #flatten: " << num << " #example: " << example_num;
         env->setConst(selector::random::KExampleNumLimitName, BuildData(Int, example_num));
     } else {
-        env->setConst(selector::random::KExampleNumLimitName, BuildData(Int, 4));
-        LOG(INFO) << prefix << " #flatten: " << num << " #example: " << 4;
+        env->setConst(selector::random::KExampleNumLimitName, BuildData(Int, 3));
+        LOG(INFO) << prefix << " #flatten: " << num << " #example: " << 3;
     }
     return {getScorerType(prefix), num};
 }

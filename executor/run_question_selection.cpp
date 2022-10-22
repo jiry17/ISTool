@@ -343,12 +343,12 @@ int main(int argc, char** argv) {
         solver_name = argv[3];
         if (argc == 5) model_name = argv[4];
     } else {
-        solver_name = "diff100@3";
+        solver_name = "diff100";
         //benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/repair/t3.sl";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string-interactive/phone-2-long-repeat.sl";
+        benchmark_name = config::KSourcePath + "tests/string-interactive/phone-2-long-repeat.sl";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/x.sl";
         output_name = "/tmp/712015926.out";
-        model_name = "/tmp/tmp.wHOuYKwdWN//runner/model/intsy_string";
+        model_name = "";
     }
     KDefaultStringDepth = 6;
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);

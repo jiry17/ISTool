@@ -256,11 +256,11 @@ int main(int argc, char** argv) {
     } else {
         solver_name = "ext-eusolver";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/clia/LspPage9_2.sl";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string/phone-7-long.sl";
-        //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv-large/PRE_icfp_gen_14.14.sl";
+        //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string/phone-7-long.sl";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv-large/PRE_icfp_gen_14.14.sl";
         output_name = "/tmp/629453237.out";
-        verifier_name = "default";
-        model_path = "/tmp/tmp.wHOuYKwdWN/runner/model/ext-eusolver_string";
+        verifier_name = "diff100";
+        //model_path = "/tmp/tmp.wHOuYKwdWN/runner/model/ext-eusolver_string";
     }
 
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
