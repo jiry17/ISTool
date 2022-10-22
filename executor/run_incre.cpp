@@ -6,6 +6,7 @@
 #include "istool/incre/io/incre_from_json.h"
 #include "istool/incre/language/incre.h"
 #include "istool/incre/analysis/incre_instru_info.h"
+#include "istool/incre/io/incre_printer.h"
 
 using namespace incre;
 
@@ -35,6 +36,9 @@ int main(int argv, char** argc) {
     for (int i = 1; i <= 5; ++i) {
         info->example_pool->generatorExample();
     }
+
+    incre::printProgram(prog, config::KSourcePath + "result.txt");
+
     /*invoke("head", {tl}, ctx);
     invoke("tail", {tl}, ctx);
     invoke("length", {tl}, ctx);

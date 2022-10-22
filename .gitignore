@@ -1,8 +1,11 @@
 *.DS_Store
 *.idea
 *__pycache__
+*.vscode
 tests*
 cmake-build-debug-remote-host
+cmake-build-remotedebug*
 cmake-build-debug-yifan
 runner/cache/* 
 basic/config.cpp
+build*
