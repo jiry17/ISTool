@@ -221,8 +221,8 @@ SynthesisResult invokeSampleSy(Specification* spec, TimeGuard* guard) {
     auto theory = sygus::getSyGuSTheory(spec->env.get());
     if (theory == TheoryToken::STRING) vsa_ext->setEnvSetter(KStringPrepare);
     else if (theory == TheoryToken::CLIA) {
-        spec->env->setConst(selector::samplesy::KSampleNumLimit, BuildData(Int, 300));
         vsa_ext->setEnvSetter(KIntPrepare);
+        spec->env->setConst(selector::samplesy::KSampleNumLimit, BuildData(Int, 1000));
     }
     else LOG(FATAL) << "Unknosn theory " << sygus::theoryToken2String(theory);
     auto builder = std::make_shared<DFSVSABuilder>(info->grammar, pruner, spec->env.get());
@@ -343,24 +343,34 @@ int main(int argc, char** argv) {
         solver_name = argv[3];
         if (argc == 5) model_name = argv[4];
     } else {
-        solver_name = "diff100";
-        //benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/repair/t3.sl";
-        benchmark_name = config::KSourcePath + "tests/string-interactive/phone-2-long-repeat.sl";
+        solver_name = "samplesy";
+        benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/repair/t10.sl";
+
+        //benchmark_name = config::KSourcePath + "tests/string-interactive/initials-long-repeat.sl";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/x.sl";
         output_name = "/tmp/712015926.out";
-        model_name = "";
+        model_name = config::KSourcePath + "runner/model/intsy_repair";
     }
     KDefaultStringDepth = 6;
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
     env::setTimeSeed(spec->env.get());
     std::string task_name = getTaskName(benchmark_name);
     prepareSampleSy(spec, task_name);
-    //ext::vsa::learnNFoldModel(spec->env.get(), config::KSourcePath + "/runner/model/intsy_repair.json",
-    //                          config::KSourcePath + "/runner/model/intsy_repair", 2, "samplesy");
-    //exit(0);
+
+    /*std::string dataset_name = "intsy_string";
+    std::string main_name = "samplesy";
+    ext::vsa::learnNFoldModel(spec->env.get(), config::KSourcePath + "/runner/model/" + dataset_name + ".json",
+                              config::KSourcePath + "/runner/model/" + dataset_name, 2, main_name);
+    exit(0);*/
     SynthesisResult result;
     auto* guard = new TimeGuard(1e9);
-    if (solver_name == "samplesy") {
+    if (solver_name.substr(0, 8) == "samplesy") {
+        if (solver_name.length() > 9) {
+            int num = std::stoi(solver_name.substr(9));
+            LOG(INFO) << "set time out " << num;
+            spec->env->setConst(selector::samplesy::KSampleTimeOutLimit, BuildData(Int, num * 1000));
+            spec->env->setConst("Selector@TimeOut", BuildData(Int, 2000));
+        }
         result = invokeSampleSy(spec, guard);
     } else if (solver_name == "randomsy") {
         result = invokeRandomSy(spec, guard);
@@ -379,5 +389,6 @@ int main(int argc, char** argv) {
     FILE* f = fopen(output_name.c_str(), "w");
     fprintf(f, "%d %s\n", result.first, result.second.toString().c_str());
     fprintf(f, "%.10lf\n", global::recorder.query("verify"));
+    fprintf(f, "%.10lf\n", global::recorder.query("max-verify"));
     fprintf(f, "%.10lf\n", guard->getPeriod());
 }

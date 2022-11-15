@@ -374,6 +374,8 @@ namespace {
     }
 }
 
+bool parser::KIsRemoveDuplicated = true;
+
 Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
     auto env = std::make_shared<Env>();
     auto theory_list = getEntriesViaName(root, "set-logic");
@@ -414,9 +416,14 @@ Specification * parser::getSyGuSSpecFromJson(const Json::Value& root) {
             TEST_PARSER(info_list.size() == 1)
             auto syn_info = info_list[0];
             std::string name = syn_info->name;
+            std::unordered_set<std::string> example_set;
             for (auto& cons: cons_list) {
                 // LOG(INFO) << "Parse example " << cons;
-                example_list.push_back(parseIOExample(cons, syn_info, env.get()));
+                auto io_example = parseIOExample(cons, syn_info, env.get());
+                auto feature = example::ioExample2String(io_example);
+                if (KIsRemoveDuplicated && example_set.find(feature) != example_set.end()) continue;
+                example_list.push_back(io_example);
+                example_set.insert(feature);
             }
             auto example_space = example::buildFiniteIOExampleSpace(example_list, name, env.get());
             return new Specification(info_list, env, example_space);

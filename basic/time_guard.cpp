@@ -18,6 +18,7 @@ double TimeGuard::getPeriod() const {
 }
 
 double TimeGuard::getRemainTime() const {
+    // std::cout << time_limit << " " << getPeriod() << std::endl;
     return time_limit - getPeriod();
 }
 
@@ -32,7 +33,11 @@ void TimeRecorder::start(const std::string &type) {
 void TimeRecorder::end(const std::string& type) {
     timeval now; gettimeofday(&now, NULL);
     auto start_time = start_time_map[type];
-    value_map[type] += (now.tv_sec - start_time.tv_sec) + (now.tv_usec - start_time.tv_usec) / 1e6;
+    auto res = (now.tv_sec - start_time.tv_sec) + (now.tv_usec - start_time.tv_usec) / 1e6;
+    value_map[type] += res;
+    if (type == "verify") {
+        value_map["max-verify"] = std::max(value_map["max-verify"], res);
+    }
 }
 
 double TimeRecorder::query(const std::string &type) {

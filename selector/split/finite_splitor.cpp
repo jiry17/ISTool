@@ -54,19 +54,30 @@ bool FiniteSplitor::getDistinguishExample(Program *x, Program *y, const ProgramL
 
 int FiniteSplitor::getCost(const DataList &inp, const ProgramList &seed_list) {
     DataList oup_list;
+
+    std::unordered_map<std::string, int> feature_map;
+    int cost = 0;
+    int num = std::min(int(seed_list.size()), 10000);
+    for (int i = 0; i < num; ++i) {
+        auto now = env->run(seed_list[i].get(), inp).toString();
+        cost = std::max(cost, ++feature_map[now]);
+    }
+    return cost;
+/*
     std::vector<std::string> feature_list;
     for (auto& seed: seed_list) {
         oup_list.push_back(env->run(seed.get(), inp));
         feature_list.push_back(seed->toString());
     }
     int cost = 0;
-    for (int i = 0; i < seed_list.size(); ++i) {
-        for (int j = i + 1; j < seed_list.size(); ++j) {
+    int num = std::min(500, int(seed_list.size()));
+    for (int i = 0; i < num; ++i) {
+        for (int j = i + 1; j < num; ++j) {
             if (!(oup_list[i] == oup_list[j])) continue;
             auto feature = _getFeature(feature_list[i], feature_list[j]);
             if (feature_cache.find(feature) != feature_cache.end()) continue;
             ++cost;
         }
     }
-    return cost;
+    return cost;*/
 }

@@ -20,9 +20,13 @@ public:
     Splitor* splitor;
     SeedGenerator* gen;
     Data* KSampleTimeOut, *KSampleNum;
+    TimeGuard* turn_guard = nullptr;
+    ProgramList samples;
+    IOExampleList example_list;
     SampleSy(Specification* _spec, Splitor* _splitor, SeedGenerator* _gen, GrammarEquivalenceChecker* checker);
     virtual Example getNextExample(const PProgram& x, const PProgram& y);
     virtual void addExample(const IOExample& example);
+    virtual FunctionContext synthesis(TimeGuard *guard);
     virtual ~SampleSy();
 };
 

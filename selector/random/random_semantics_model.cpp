@@ -129,6 +129,20 @@ namespace {
         return (eq_num - sub_eq_num) / RandomSemanticsScore(total - sub_eq_num);
     }
 
+    RandomSemanticsScore _getSelfDiffProb(const std::vector<std::string>& sub_oups, const std::vector<int>& oup_list) {
+        int eq_num = 0, sub_diff_num = 0;
+        for (int i = 1; i < oup_list.size(); i += 2) {
+            if (sub_oups[i - 1] != sub_oups[i]) {
+                ++sub_diff_num;
+                if (oup_list[i - 1] != oup_list[i]) {
+                    ++eq_num;
+                }
+            }
+        }
+        if (sub_diff_num == 0) return KDefaultWeight;
+        return eq_num / RandomSemanticsScore(sub_diff_num);
+    }
+
     RandomSemanticsScore _getCrossProb(const _EdgeResInfo& x_info, const _EdgeResInfo& y_info) {
         if (x_info.used_pos.size() > y_info.used_pos.size()) return _getCrossProb(y_info, x_info);
         if (x_info.used_pos.empty()) return KDefaultWeight;
@@ -192,13 +206,13 @@ RandomSemanticsModel * BasicRandomSemanticsLearner::learn(const DataList &short_
         int num = 0; auto& node = graph->node_list[node_id];
         auto& sample_storage = sample_res[node_id];
         std::vector<std::vector<int>> oup_storage(node.edge_list.size());
-        std::vector<int> sub_eq_list(node.edge_list.size());
+        std::vector<std::vector<std::string>> sub_oup_storage(node.edge_list.size());
         for (int edge_id = 0; edge_id < node.edge_list.size(); ++edge_id) {
             auto& sample_list = sample_storage[edge_id];
             std::unordered_map<std::string, int> sub_map;
             for (auto& sample: sample_list) {
                 auto sub_feature = data::dataList2String(sample.second);
-                sub_eq_list[edge_id] += (sub_map[sub_feature]++);
+                sub_oup_storage[edge_id].emplace_back(std::move(sub_feature));
                 auto feature = sample.first.toString();
                 if (oup_index_map.count(feature) == 0) oup_index_map[feature] = num++;
                 oup_storage[edge_id].push_back(oup_index_map[feature]);
@@ -207,22 +221,19 @@ RandomSemanticsModel * BasicRandomSemanticsLearner::learn(const DataList &short_
         std::vector<int> tag(num, 0); int sign = 0;
         std::vector<_EdgeResInfo> edge_info_list;
         for (int edge_id = 0; edge_id < node.edge_list.size(); ++edge_id) {
-            int sub_eq_num = sub_eq_list[edge_id], eq_num = 0; ++sign;
             std::vector<int> used_list, frequency_list(num, 0);
             for (auto oup: oup_storage[edge_id]) {
-                eq_num += (frequency_list[oup]++);
                 if (tag[oup] != sign) {
                     tag[oup] = sign; used_list.push_back(oup);
                 }
             }
-            assert(eq_num <= oup_storage[edge_id].size() * (oup_storage[edge_id].size() - 1) / 2);
             std::vector<RandomSemanticsScore> weight_list(num);
             for (int i = 0; i < num; ++i) weight_list[i] = frequency_list[i] / RandomSemanticsScore(oup_storage[edge_id].size());
-            edge_info_list.emplace_back(weight_list, used_list, _getSelfDiffProb(eq_num, sub_eq_num, oup_storage[edge_id].size()));
+            edge_info_list.emplace_back(weight_list, used_list, _getSelfDiffProb(sub_oup_storage[edge_id], oup_storage[edge_id]));
         }
 
         auto& matrix = weight_matrix_list[node_id];
-        matrix.resize(node.edge_list.size(), std::vector<RandomSemanticsScore>(node.edge_list.size(), 0.0));
+        matrix.resize(node.edge_list.size(), std::vector<WeightType>(node.edge_list.size(), 0.0));
         for (int x_id = 0; x_id < node.edge_list.size(); ++x_id) {
             for (int y_id = 0; y_id < node.edge_list.size(); ++y_id) {
                 if (x_id > y_id) matrix[x_id][y_id] = matrix[y_id][x_id];
@@ -512,7 +523,7 @@ RandomSemanticsModel * FixedSampleRandomSemanticsLearner::learn(const DataList &
 
         auto& matrix = weight_matrix_list[node_id];
 
-        matrix.resize(node.edge_list.size(), std::vector<RandomSemanticsScore>(node.edge_list.size(), 0.0));
+        matrix.resize(node.edge_list.size(), std::vector<WeightType>(node.edge_list.size(), 0.0));
         for (int x_id = 0; x_id < node.edge_list.size(); ++x_id) {
             for (int y_id = 0; y_id < node.edge_list.size(); ++y_id) {
                 if (x_id > y_id) matrix[x_id][y_id] = matrix[y_id][x_id];

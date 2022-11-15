@@ -256,18 +256,19 @@ int main(int argc, char** argv) {
     } else {
         solver_name = "ext-eusolver";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/clia/LspPage9_2.sl";
-        //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string/phone-7-long.sl";
-        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv-large/PRE_icfp_gen_14.14.sl";
+        benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string/44789427.sl";
+        benchmark_name = config::KSourcePath + "tests/bv/PRE_icfp_gen_13.20.sl";
         output_name = "/tmp/629453237.out";
         verifier_name = "diff100";
-        //model_path = "/tmp/tmp.wHOuYKwdWN/runner/model/ext-eusolver_string";
+        model_path = config::KSourcePath + "runner/model/ext-eusolver_bv";
     }
 
+    if (verifier_name == "significant") parser::KIsRemoveDuplicated = false;
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
-    /*ext::vsa::learnNFoldModel(spec->env.get(), config::KSourcePath + "/runner/model/ext-cvc5_string.json",
-            config::KSourcePath + "/runner/model/ext-cvc5_string", 2);
+    /*std::string domain_name = "polygen_clia";
+    ext::vsa::learnNFoldModel(spec->env.get(), config::KSourcePath + "/runner/model/" + domain_name + ".json",
+            config::KSourcePath + "/runner/model/" + domain_name, 2);
     exit(0);*/
-    spec->env->setRandomSeed(1);
     if (sygus::getSyGuSTheory(spec->env.get()) == TheoryToken::BV) {
         if (solver_name == "ext-eusolver") sygus::setSyGuSHeader(spec->env.get(), KBVBenchmarkHead);
         else if (solver_name == "ext-cvc5") sygus::setSyGuSHeader(spec->env.get(), KBVBenchmarkNewStyleHead);
@@ -302,5 +303,6 @@ int main(int argc, char** argv) {
     FILE* f = fopen(output_name.c_str(), "w");
     fprintf(f, "%d %s\n", result.first, result.second.toString().c_str());
     fprintf(f, "%.10lf\n", global::recorder.query("verify"));
+    fprintf(f, "%.10lf\n", global::recorder.query("max-verify"));
     fprintf(f, "%.10lf\n", guard->getPeriod());
 }

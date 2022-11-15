@@ -216,8 +216,9 @@ ProgramList FiniteVSASeedGenerator::getSeeds(int num, double time_limit) {
     auto* guard = new TimeGuard(time_limit);
     sampler->setRoot(root);
     ProgramList res;
-    while (guard->getRemainTime() >= 0. && res.size() < num) {
+    while (res.size() < num) {
         res.push_back(sampler->sampleNext());
+        if (guard->getRemainTime() < 0) break;
     }
     PProgram now = res[0]; int count = 0;
     for (const auto& p: res) {
@@ -232,10 +233,12 @@ ProgramList FiniteVSASeedGenerator::getSeeds(int num, double time_limit) {
     count = 0;
     for (const auto& p: res) {
         if (isEquivalent(now.get(), p.get(), io_examples, builder->env)) count++;
+        if (guard->getRemainTime() < 0) break;
     }
-    if (count + 100 > res.size()) {
+    if (count + 100 > res.size() && guard->getRemainTime() > 0) {
         LOG(INFO) << "Start enhance from " << res.size() << " samples";
         for (auto& example: io_examples) {
+            if (guard->getRemainTime() < 0) break;
             for (auto& p: g->getDifferentProgram(example, 10)) res.push_back(p);
         }
         LOG(INFO) << "Finish with " << res.size() << " samples";
@@ -328,8 +331,9 @@ ProgramList Z3VSASeedGenerator::getSeeds(int num, double time_limit) {
     auto* guard = new TimeGuard(time_limit);
     sampler->setRoot(root);
     ProgramList res;
-    while (guard->getRemainTime() >= 0. && res.size() < num) {
+    while ( res.size() < num) {
         res.push_back(sampler->sampleNext());
+        if (guard->getRemainTime() < 0) break;
     }
     PProgram now = res[0]; int count = 0;
     for (const auto& p: res) {
@@ -338,6 +342,7 @@ ProgramList Z3VSASeedGenerator::getSeeds(int num, double time_limit) {
             count--;
             if (count == 0) count = 1, now = p;
         }
+        if (guard->getRemainTime() < 0) break;
     }
     if (count + 100 > res.size()) {
         LOG(INFO) << "Start enhance from " << res.size() << " samples for " << now->toString();

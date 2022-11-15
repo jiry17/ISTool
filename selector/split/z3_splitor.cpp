@@ -48,6 +48,8 @@ bool Z3Splitor::getExample(z3::solver &s, const ProgramList &seed_list, Example 
     if (!counter_example) return false;
     z3::model model = s.get_model();
 
+
+    LOG(INFO) << seed_list.size() << std::endl;
     z3::expr_vector seed_oup_list(ext->ctx);
     for (int i = 0; i < seed_list.size(); ++i) {
         auto oup_var = ext->buildVar(oup_type.get(), "Output" + std::to_string(i));
@@ -56,38 +58,66 @@ bool Z3Splitor::getExample(z3::solver &s, const ProgramList &seed_list, Example 
         assert(encode_res.cons_list.empty());
     }
 
-    auto eq_size = ext->ctx.int_const("eq_size");
-    z3::expr_vector eq_expr_list(ext->ctx);
-    for (int i = 0; i < seed_list.size(); ++i) {
-        for (int j = i + 1; j < seed_list.size(); ++j) {
-            auto feature = _getFeature(seed_list[i].get(), seed_list[j].get());
-            if (split_set.find(feature) != split_set.end()) continue;
-            eq_expr_list.push_back(z3::ite(seed_oup_list[i] == seed_oup_list[j], ext->ctx.int_val(1), ext->ctx.int_val(0)));
-        }
-    }
-    s.add(z3::sum(eq_expr_list) <= eq_size);
+    int size = std::min(int(seed_oup_list.size()), 100);
+    seed_oup_list.resize(size);
 
-    int l = 0, r = eq_expr_list.size(), ans = -1;
-    while (l < r) {
-        int mid = l + r >> 1;
-        ext->setTimeOut(s, guard);
-        s.push();
-        s.add(eq_size <= ext->ctx.int_val(mid));
-        z3_res = s.check();
-        if (z3_res == z3::sat) {
-            model = s.get_model();
-            ans = mid;
-            r = mid;
-        } else {
-            s.pop();
-            l = mid + 1;
+    auto get_cost = [&](const Example& example) -> int{
+        std::unordered_map<std::string, int> feature_map;
+        int cost = 0;
+        for (int i = 0; i < size; ++i) {
+            auto w = env->run(seed_list[i].get(), example).toString();
+            cost = std::max(cost, ++feature_map[w]);
         }
+        return cost;
+    };
+
+    auto get_example = [&]()->Example {
+        Example example;
+        for (int i = 0; i < param_list.size(); ++i) {
+            example.push_back(ext->getValueFromModel(model, param_list[i], io_space->type_list[i].get(), false));
+        }
+        return example;
+    };
+
+    auto eq_size = ext->ctx.int_const("eq_size");
+    auto best_example = get_example(); int best_score = get_cost(best_example);
+    for (int lim = 1;; lim = std::min(size, lim * 2 + 1)) {
+        s.push();
+        for (int i = 0; i < lim; ++i) {
+            z3::expr_vector eq_expr_list(ext->ctx);
+            eq_expr_list.push_back(ext->ctx.int_val(0));
+            for (int j = i + 1; j < seed_oup_list.size(); ++j) {
+                eq_expr_list.push_back(
+                        z3::ite(seed_oup_list[i] == seed_oup_list[j], ext->ctx.int_val(1), ext->ctx.int_val(0)));
+            }
+            s.add(z3::sum(eq_expr_list) <= eq_size);
+        }
+
+        int l = 0, r = lim, ans = -1;
+        while (l < r) {
+            int mid = l + r >> 1;
+            ext->setTimeOut(s, guard);
+            s.push();
+            s.add(eq_size <= ext->ctx.int_val(mid));
+            z3_res = s.check();
+            if (z3_res == z3::sat) {
+                model = s.get_model();
+                auto example = get_example();
+                int current_cost = get_cost(example);
+                if (current_cost < best_score) {
+                    best_score = current_cost;
+                    best_example = example;
+                }
+                r = mid;
+            } else {
+                s.pop();
+                l = mid + 1;
+            }
+        }
+        s.pop();
+        if (lim == size || guard->getRemainTime() < 0) break;
     }
-    Example example;
-    for (int i = 0; i < param_list.size(); ++i) {
-        example.push_back(ext->getValueFromModel(model, param_list[i], io_space->type_list[i].get(), false));
-    }
-    *counter_example = example;
+    *counter_example = best_example;
     return false;
 }
 

@@ -9,6 +9,7 @@
 #include "json/json.h"
 
 namespace parser {
+    extern bool KIsRemoveDuplicated;
     Json::Value getJsonForSyGuSFile(const std::string& file_name);
     Specification* getSyGuSSpecFromJson(const Json::Value& value);
     Specification* getDepthLimitedSyGuSSpecFromJson(const Json::Value& value);

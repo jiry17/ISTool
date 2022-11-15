@@ -125,7 +125,8 @@ public:
 };
 
 namespace selector::random {
-    typedef std::vector<std::vector<RandomSemanticsScore>> EqualWeightMatrix;
+    typedef float WeightType;
+    typedef std::vector<std::vector<WeightType>> EqualWeightMatrix;
     typedef std::pair<Data, DataList> FullOutput;
 
     class SampleOutputChecker {

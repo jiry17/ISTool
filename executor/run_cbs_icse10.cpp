@@ -196,7 +196,7 @@ int main(int argc, char** argv) {
         if (argc == 6) model_name = argv[5];
     } else {
         benchmark_id = 12;
-        solver_name = "ext-cvc5";
+        solver_name = "ext-eusolver";
         output_name = "/tmp/629453237.out";
         verifier_name = "biased";
         model_name = "/tmp/tmp.wHOuYKwdWN//runner/model/ext-cvc5_icse10_bv";
