@@ -7,6 +7,8 @@
 #include "istool/incre/language/incre.h"
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/io/incre_printer.h"
+#include "istool/incre/autolifter/incre_aux_semantics.h"
+#include "istool/incre/autolifter/incre_autolifter_solver.h"
 
 using namespace incre;
 
@@ -34,10 +36,24 @@ int main(int argv, char** argc) {
 
     auto* info = incre::buildIncreInfo(prog);
     for (int i = 1; i <= 5; ++i) {
-        info->example_pool->generatorExample();
+        info->example_pool->generateExample();
+    }
+
+    for (auto& pass_info: info->pass_infos) {
+        pass_info->print();
+        auto& example_list = info->example_pool->example_pool[pass_info->getId()];
+        for (int i = 0; i < 10 && i < example_list.size(); ++i) {
+            std::cout << "  " << example_list[i]->toString() << std::endl;
+        }
     }
 
     incre::printProgram(prog, config::KSourcePath + "result.txt");
+
+    auto env = std::make_shared<Env>();
+    incre::autolifter::prepareAutoLifterEnv(env.get());
+
+    auto* solver = new incre::IncreAutoLifterSolver(info, env);
+    solver->solve();
 
     /*invoke("head", {tl}, ctx);
     invoke("tail", {tl}, ctx);

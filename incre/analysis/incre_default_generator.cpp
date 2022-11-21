@@ -73,7 +73,7 @@ namespace {
         return BuildData(Bool, d(*(ctx->e)));
     }
     RandomHead(Unit) {
-        return {};
+        return Data(std::make_shared<VUnit>());
     }
     RandomHead(Tuple) {
         DataList fields;
@@ -135,7 +135,7 @@ Term DefaultStartTermGenerator::getStartTerm() {
         auto current = std::make_shared<TmValue>(getRandomData(type.get(), ctx));
         res = std::make_shared<TmApp>(res, current);
     }
-    LOG(INFO) << "start " << res->toString();
+    // LOG(INFO) << "start " << res->toString();
     return res;
 }
 DefaultStartTermGenerator::DefaultStartTermGenerator(const std::string& _func_name, TyData* type): func_name(_func_name), random_engine(123) {

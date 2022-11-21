@@ -20,7 +20,7 @@ std::string IncreExampleData::toString() const {
 }
 void IncreExamplePool::add(const IncreExample &example) {
     int id = example->tau_id;
-    LOG(INFO) << "Add " << example->toString();
+    // LOG(INFO) << "Add " << example->toString();
     while (example_pool.size() <= id) example_pool.emplace_back();
     example_pool[id].push_back(example);
 }
@@ -274,7 +274,7 @@ namespace {
     }
 }
 
-void IncreExamplePool::generatorExample() {
+void IncreExamplePool::generateExample() {
     auto start = generator->getStartTerm();
     _collectExample(start, ctx, this);
 }

@@ -60,9 +60,9 @@ namespace incre {
         std::unordered_map<std::string, Ty> binding_map;
         TypeContext(Context* ctx);
         TypeContext() = default;
-        BindLog bind(const std::string& name, const Ty& type);
+        virtual BindLog bind(const std::string& name, const Ty& type);
         Ty lookup(const std::string& name);
-        void cancelBind(const BindLog& log);
+        virtual void cancelBind(const BindLog& log);
     };
 }
 

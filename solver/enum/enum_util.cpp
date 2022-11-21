@@ -60,7 +60,7 @@ bool SizeLimitedVerifier::verify(const FunctionContext &info, Example *counter_e
     for (const auto& func: info) {
         total_size += func.second->size();
     }
-    if (total_size >= size_limit) return true;
+    if (total_size > size_limit) return true;
     if (v && !v->verify(info, counter_example)) return false;
     result.push_back(info);
     return false;
@@ -85,6 +85,7 @@ bool solver::collectAccordingSize(const std::vector<PSynthInfo> &info_list, int 
     auto* o = new TrivialOptimizer();
     auto* v = new SizeLimitedVerifier(size_limit, c.v);
     EnumConfig tmp(v, c.o ? c.o : o, c.guard);
+    tmp.size_limit = size_limit;
     bool is_timeout = false;
     try {
         solver::enumerate(info_list, tmp);

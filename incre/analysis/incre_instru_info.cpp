@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/analysis/incre_instru_info.h"
+#include "istool/incre/trans/incre_trans.h"
 
 using namespace incre;
 
@@ -11,9 +12,13 @@ PassTypeInfoData::PassTypeInfoData(TmLabeledPass* _term, const std::unordered_ma
     auto inps = incre::getUnboundedVars(term->content.get());
     for (const auto& inp: inps) {
         auto it = type_ctx.find(inp);
-        assert(it != type_ctx.end());
-        inp_types.emplace_back(inp, it->second);
+        if (it != type_ctx.end()) {
+            inp_types.emplace_back(inp, it->second);
+        }
     }
+}
+int PassTypeInfoData::getId() const {
+    return term->tau_id;
 }
 void PassTypeInfoData::print() const {
     std::cout << "pass term #" << term->tau_id << ": " << oup_type->toString() << std::endl;
@@ -23,18 +28,15 @@ void PassTypeInfoData::print() const {
     }
 }
 
-FComponent::FComponent(const std::string &_name, const Ty &_type, const Data &_d):
-    name(_name), type(_type), d(_d) {
-}
-
-IncreInfo::IncreInfo(const IncreProgram &_program, Context *_ctx, const PassTypeInfoList &_infos, IncreExamplePool *_pool):
-    program(_program), ctx(_ctx), pass_infos(_infos), example_pool(_pool) {
+IncreInfo::IncreInfo(const IncreProgram &_program, Context *_ctx, const PassTypeInfoList &infos, IncreExamplePool *pool, const std::vector<SynthesisComponent *> &_component_list):
+    program(_program), ctx(_ctx), pass_infos(infos), example_pool(pool), component_list(_component_list) {
 }
 IncreInfo::~IncreInfo() {
     delete ctx; delete example_pool;
+    for (auto* component: component_list) delete component;
 }
 
-IncreInfo* incre::buildIncreInfo(const IncreProgram &program) {
+IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
     auto labeled_program = incre::eliminateUnboundedCreate(program);
     labeled_program = incre::labelCompress(labeled_program);
     auto pass_info = incre::collectPassType(labeled_program);
@@ -57,5 +59,8 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program) {
     delete type_ctx;
     auto* generator = new DefaultStartTermGenerator(name, type.get());
     pool->generator = generator;
-    return new IncreInfo(labeled_program, ctx, pass_info, pool);
+
+    // build components
+    auto component = incre::collectComponentList(ctx, env);
+    return new IncreInfo(labeled_program, ctx, pass_info, pool, component_list);
 }

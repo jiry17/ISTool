@@ -17,17 +17,34 @@ namespace incre {
         Ty oup_type;
         PassTypeInfoData(TmLabeledPass* term, const std::unordered_map<std::string, Ty>& type_ctx, const Ty& _oup_type);
         void print() const;
+        int getId() const;
         ~PassTypeInfoData() = default;
     };
     typedef std::shared_ptr<PassTypeInfoData> PassTypeInfo;
     typedef std::vector<PassTypeInfo> PassTypeInfoList;
 
-    struct FComponent {
-        std::string name;
-        Ty type;
-        Data d;
-        FComponent(const std::string& _name, const Ty& _type, const Data& _d);
-        ~FComponent() = default;
+    class ComponentSemantics: public ConstSemantics {
+    public:
+        ComponentSemantics(const Data& _data, const std::string& _name);
+        virtual ~ComponentSemantics() = default;
+    };
+
+    enum class ComponentType {
+        BOTH, AUX, COMB
+    };
+
+    typedef std::function<Term(const TermList&)> TermBuilder;
+
+    class SynthesisComponent {
+    public:
+        ComponentType type;
+        TypeList inp_types;
+        PType oup_type;
+        PSemantics semantics;
+        TermBuilder builder;
+        virtual Term buildTerm(const TermList& term_list);
+        SynthesisComponent(ComponentType _type, const TypeList& _inp_types, const PType& _oup_type, const PSemantics& _semantics, const TermBuilder& builder);
+        virtual ~SynthesisComponent() = default;
     };
 
     class IncreInfo {
@@ -36,8 +53,8 @@ namespace incre {
         Context* ctx;
         PassTypeInfoList pass_infos;
         IncreExamplePool* example_pool;
-        std::vector<FComponent> f_components;
-        IncreInfo(const IncreProgram& _program, Context* _ctx, const PassTypeInfoList& infos, IncreExamplePool* pool);
+        std::vector<SynthesisComponent*> component_list;
+        IncreInfo(const IncreProgram& _program, Context* _ctx, const PassTypeInfoList& infos, IncreExamplePool* pool, const std::vector<SynthesisComponent*>& component_list);
         ~IncreInfo();
     };
 }
@@ -47,7 +64,8 @@ namespace incre {
     IncreProgram eliminateUnboundedCreate(const IncreProgram& program);
     IncreProgram labelCompress(const IncreProgram& program);
     PassTypeInfoList collectPassType(const IncreProgram& program);
-    IncreInfo* buildIncreInfo(const IncreProgram& program);
+    std::vector<SynthesisComponent*> collectComponentList(Context* ctx, Env* env);
+    IncreInfo* buildIncreInfo(const IncreProgram& program, Env* env);
 }
 
 

@@ -45,7 +45,7 @@ namespace incre {
         Context* ctx;
         void add(const IncreExample& example);
         IncreExamplePool(Context* _ctx, StartTermGenerator* _generator);
-        void generatorExample();
+        void generateExample();
         ~IncreExamplePool();
     };
 

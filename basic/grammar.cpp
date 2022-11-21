@@ -87,7 +87,13 @@ void Grammar::removeUseless() {
         }
         if (is_converged) break;
     }
-    if (is_empty[0]) LOG(FATAL) << "Empty grammar";
+    if (is_empty[0]) {
+        for (int i = 1; i < symbol_list.size(); ++i) delete symbol_list[i];
+        symbol_list.resize(1);
+        for (auto* rule: start->rule_list) delete rule;
+        start->rule_list.clear();
+        return;
+    }
     for (auto* node: symbol_list) {
         int now = 0;
         for (auto* rule: node->rule_list) {
@@ -285,4 +291,60 @@ PProgram grammar::getMinimalProgram(Grammar *grammar) {
         }
     }
     return res[0];
+}
+
+bool grammar::isFinite(Grammar *grammar) {
+    grammar->indexSymbol();
+    int n = grammar->symbol_list.size();
+    std::vector<bool> flag(n, false);
+    for (int _ = 0; _ < n; _++) {
+        bool is_found = false;
+        for (auto* symbol: grammar->symbol_list) {
+            if (flag[symbol->id]) continue;
+            bool is_full = true;
+            for (auto* rule: symbol->rule_list) {
+                for (auto* sub: rule->param_list) {
+                    is_full &= flag[sub->id];
+                }
+            }
+            if (is_full) {
+                flag[symbol->id] = true; is_found = true; break;
+            }
+        }
+        if (!is_found) return false;
+    }
+    return true;
+}
+
+int grammar::getMaxSize(Grammar *grammar) {
+    grammar->indexSymbol();
+    int n = grammar->symbol_list.size();
+    std::vector<int> max_size_list(n, -1);
+    for (int _ = 0; _ < n; _++) {
+        NonTerminal* finished_symbol = nullptr;
+        for (auto* symbol: grammar->symbol_list) {
+            if (max_size_list[symbol->id] != -1) continue;
+            bool is_finished = true;
+            for (auto* rule: symbol->rule_list) {
+                for (auto* sub: rule->param_list) {
+                    if (max_size_list[sub->id] == -1) {
+                        is_finished = false; break;
+                    }
+                }
+            }
+            if (is_finished) {
+                finished_symbol = symbol; break;
+            }
+        }
+        if (!finished_symbol) return -1;
+        max_size_list[finished_symbol->id] = 0;
+        for (auto* rule: finished_symbol->rule_list) {
+            int total_size = 1;
+            for (auto* sub: rule->param_list) {
+                total_size += max_size_list[sub->id];
+            }
+            max_size_list[finished_symbol->id] = std::max(max_size_list[finished_symbol->id], total_size);
+        }
+    }
+    return max_size_list[grammar->start->id];
 }

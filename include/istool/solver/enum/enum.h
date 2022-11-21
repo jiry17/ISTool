@@ -19,6 +19,7 @@ struct EnumConfig {
     TimeGuard* guard;
     Verifier* v;
     Optimizer* o;
+    int size_limit = 1000000000;
     EnumConfig(Verifier* _v, Optimizer* _o, TimeGuard* _guard = nullptr);
 };
 

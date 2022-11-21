@@ -8,7 +8,7 @@ SynthInfo::SynthInfo(const std::string &_name, const TypeList &_inp, const PType
     name(_name), inp_type_list(_inp), oup_type(_oup), grammar(_g) {
 }
 SynthInfo::~SynthInfo() {
-    delete grammar;
+    // delete grammar;
 }
 
 Specification::Specification(const std::vector<PSynthInfo> &_info_list, const PEnv& _env, const PExampleSpace& _example_space):

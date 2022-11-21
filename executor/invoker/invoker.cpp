@@ -38,6 +38,8 @@ FunctionContext invoker::synthesis(Specification *spec, Verifier *v, SolverToken
             RegisterSolverBuilder(ExternalEuSolver);
         case SolverToken::EXTERNAL_CVC5:
             RegisterSolverBuilder(ExternalCVC5);
+        case SolverToken::POLYGEN_CONDITION:
+            RegisterSolverBuilder(CondSolver);
         default:
             LOG(FATAL) << "Unknown solver token";
     }
@@ -68,7 +70,7 @@ namespace {
             {"vsa", SolverToken::VANILLA_VSA},
             {"polygen", SolverToken::POLYGEN},
             {"ext-eusolver", SolverToken::EXTERNAL_EUSOLVER},
-            {"ext-cvc5", SolverToken::EXTERNAL_CVC5}
+            {"ext-cvc5", SolverToken::EXTERNAL_CVC5},
     };
 }
 

@@ -72,7 +72,7 @@ Term incre::json2term(const Json::Value &node) {
     auto type = node["type"].asString();
     if (type == "true") return std::make_shared<TmValue>(BuildData(Bool, true));
     if (type == "false") return std::make_shared<TmValue>(BuildData(Bool, false));
-    if (type == "unit") return std::make_shared<TmValue>(Data());
+    if (type == "unit") return std::make_shared<TmValue>(Data(std::make_shared<VUnit>()));
     if (type == "int") {
         int v = node["value"].asInt();
         return std::make_shared<TmValue>(BuildData(Int, v));

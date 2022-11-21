@@ -19,6 +19,14 @@ TIncreInductive::TIncreInductive(const Ty &__type): _type(__type) {
     type = dynamic_cast<TyInductive*>(_type.get());
     assert(type);
 }
+bool TIncreInductive::equal(Type *t) {
+    auto* it = dynamic_cast<TIncreInductive*>(t);
+    if (!it) return false;
+    auto* ctx = new TypeContext();
+    auto res = incre::isTypeEqual(_type, it->_type, ctx);
+    delete ctx;
+    return res;
+}
 
 namespace {
 #define TypeFromHead(name) PType _typeFromIncre(Ty ## name* type)

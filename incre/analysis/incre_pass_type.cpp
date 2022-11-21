@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/analysis/incre_instru_info.h"
+#include "istool/incre/trans/incre_trans.h"
 #include "glog/logging.h"
 
 using namespace incre;
@@ -109,6 +110,18 @@ namespace {
             }
         }
     }
+
+    class _MarkedTypeContext: public TypeContext {
+    public:
+        std::unordered_map<std::string, int> mark_count;
+        void clear() {mark_count.clear();}
+        virtual BindLog bind(const std::string& name, const Ty& type) {
+            ++mark_count[name]; return TypeContext::bind(name, type);
+        }
+        virtual void cancelBind(const BindLog& log) {
+            --mark_count[log.name]; TypeContext::cancelBind(log);
+        }
+    };
 }
 
 // todo: add unfold programs
@@ -124,12 +137,13 @@ PassTypeInfoList incre::collectPassType(const IncreProgram &program) {
         auto* pt = dynamic_cast<TmLabeledPass*>(term.get());
         assert(pt); int id = pt->tau_id;
         while (info.size() <= id) info.emplace_back();
+        auto* mark_context = dynamic_cast<_MarkedTypeContext*>(ctx);
 
         std::vector<TypeContext::BindLog> bind_list;
         TyList defs;
         std::unordered_map<std::string, Ty> inps;
         for (const auto& [name, type]: ctx->binding_map) {
-            inps[name] = incre::unfoldAll(type, ctx);
+            if (mark_context->mark_count[name]) inps[name] = incre::unfoldAll(type, ctx);
         }
         for (const auto& def: pt->defs) {
             defs.push_back(incre::getType(def, ctx, ext));
@@ -155,9 +169,10 @@ PassTypeInfoList incre::collectPassType(const IncreProgram &program) {
     auto type_checker = [ext](const Term& term, TypeContext* ctx) {
         return incre::getType(term, ctx, ext);
     };
-    auto* ctx = new TypeContext();
+    auto* ctx = new _MarkedTypeContext();
     for (const auto& command: program->commands) {
         _runCommand(command, ctx, type_checker);
+        ctx->clear();
     }
     delete ctx;
     return info;

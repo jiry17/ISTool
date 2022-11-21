@@ -60,6 +60,8 @@ namespace grammar {
     PProgram getMinimalProgram(Grammar* grammar);
     ParamSemantics* getParamSemantics(Rule* rule);
     ConstSemantics* getConstSemantics(Rule* rule);
+    bool isFinite(Grammar* grammar);
+    int getMaxSize(Grammar* grammar);
 }
 
 

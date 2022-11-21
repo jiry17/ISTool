@@ -184,8 +184,8 @@ namespace {
     }
 
     LabelTermHead(Value) {
-        if (term->data.isNull()) return {_term, std::make_shared<TyUnit>()};
         auto* v = term->data.get();
+        if (dynamic_cast<VUnit*>(v)) return {_term, std::make_shared<TyUnit>()};
         if (dynamic_cast<VInt*>(v)) return {_term, std::make_shared<TyInt>()};
         if (dynamic_cast<VBool*>(v)) return {_term, std::make_shared<TyBool>()};
         auto* tv = dynamic_cast<VTyped*>(v);

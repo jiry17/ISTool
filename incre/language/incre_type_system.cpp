@@ -125,8 +125,8 @@ namespace {
         return std::make_shared<TyTuple>(fields);
     }
     GetTypeHead(Value) {
-        if (term->data.isNull()) return std::make_shared<TyUnit>();
         auto* v = term->data.get();
+        if (dynamic_cast<VUnit*>(v)) return std::make_shared<TyUnit>();
         if (dynamic_cast<VInt*>(v)) return std::make_shared<TyInt>();
         if (dynamic_cast<VBool*>(v)) return std::make_shared<TyBool>();
         auto* tv = dynamic_cast<VTyped*>(v);

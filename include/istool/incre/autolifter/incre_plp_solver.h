@@ -11,34 +11,59 @@
 #include "istool/solver/autolifter/composed_sf_solver.h"
 
 namespace incre::autolifter {
-    struct FUnitInfo {
-        int pos;
+    struct UnitInfo {
+        int pos; // pos = -1 represents const
         PProgram program;
         Bitset info;
-        FUnitInfo(int _pos, const PProgram& _program, const Bitset& _info);
-        ~FUnitInfo() = default;
+        UnitInfo(int _pos, const PProgram& _program, const Bitset& _info);
     };
 
     class IncrePLPSolver {
+
+        std::string example2String(const std::pair<int, int>& example);
+
+
     public:
         int KComposedNum, KExtraTurnNum;
         Env* env;
-        IncreExampleList* examples;
+        PLPTask* task;
         std::vector<std::pair<int, int>> example_list;
-        std::vector<std::pair<PProgram, int>> program_space;
+        void addExample(const std::pair<int, int>& example);
+
+        // Used to get components
+        UnitInfo init(int pos, const PProgram& program);
+        void getMoreComponent();
+        std::vector<UnitInfo> component_info_list;
+        int current_size = 0;
+        std::unordered_map<Grammar*, int> grammar_size_map;
+
+        // Used to enumerate compositions
         std::vector<std::vector<solver::autolifter::EnumerateInfo*>> info_storage;
         std::vector<solver::autolifter::MaximalInfoList> maximal_list;
         solver::autolifter::MaximalInfoList global_maximal;
-
         std::vector<std::queue<solver::autolifter::EnumerateInfo*>> working_list;
         std::unordered_map<std::string, solver::autolifter::EnumerateInfo*> uncovered_info_set;
-        int next_component_id;
+        int next_component_id = 0;
 
-        PLPInfo* plp_info;
-        PProgram output_program;
+        // Used to verify
+        int verify_num = 0, verify_pos = 0;
+        int KVerifyBaseNum, KExampleTimeOut, KExampleEnlargeFactor;
+        std::pair<int, int> verify(const std::vector<std::pair<int, PProgram>>& aux_list);
+
+        // Used for synthesis
+        bool addUncoveredInfo(solver::autolifter::EnumerateInfo* info);
+        void constructInfo(solver::autolifter::EnumerateInfo* info);
+        std::pair<solver::autolifter::EnumerateInfo*, solver::autolifter::EnumerateInfo*> recoverResult(
+                int pos, solver::autolifter::EnumerateInfo* info);
+        std::pair<solver::autolifter::EnumerateInfo*, solver::autolifter::EnumerateInfo*> constructResult(
+                solver::autolifter::EnumerateInfo* info, int limit);
+        solver::autolifter::EnumerateInfo* getNextComponent(int k, TimeGuard* guard);
+        std::vector<std::pair<int, PProgram>> extractResultFromInfo(solver::autolifter::EnumerateInfo* info);
+        std::vector<std::pair<int, PProgram>> synthesisFromExample(TimeGuard* guard);
+
     public:
-        IncrePLPSolver(PLPInfo* _info, const PProgram& _output_program);
-        ~IncrePLPSolver();
+        IncrePLPSolver(Env* _env, PLPTask* _task);
+        PLPRes synthesis(TimeGuard* guard);
     };
 }
 

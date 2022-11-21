@@ -114,7 +114,7 @@ FunctionContext solver::enumerate(const std::vector<PSynthInfo> &info_list, cons
     for (const auto& info: info_list) direct_order_list.push_back(_getDirectOrder(info->grammar));
 
 
-    for (int size = 1;; ++size) {
+    for (int size = 1; size <= c.size_limit; ++size) {
         TimeCheck(c.guard);
         for (int pos = 0; pos < info_list.size(); ++pos) {
             auto& info = info_list[pos];
@@ -158,6 +158,7 @@ FunctionContext solver::enumerate(const std::vector<PSynthInfo> &info_list, cons
             if (v->verify(info, nullptr)) return info;
         }
     }
+    return {};
 }
 
 EnumConfig::EnumConfig(Verifier *_v, Optimizer *_o, TimeGuard* _guard): v(_v), o(_o), guard(_guard) {

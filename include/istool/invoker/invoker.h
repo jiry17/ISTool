@@ -19,6 +19,7 @@ enum class SolverToken {
     MAXFLASH,
     VANILLA_VSA,
     POLYGEN,
+    POLYGEN_CONDITION,
     EXTERNAL_CVC5
 };
 
@@ -110,6 +111,7 @@ namespace invoker {
          */
         Solver* buildMaxFlash(Specification* spec, Verifier* v, const InvokeConfig& config);
         Solver* buildPolyGen(Specification* spec, Verifier* v, const InvokeConfig& config);
+        Solver* buildCondSolver(Specification* spec, Verifier* v, const InvokeConfig& config);
 
         /**
          * @config "memory"

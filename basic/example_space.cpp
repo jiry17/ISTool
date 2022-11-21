@@ -76,7 +76,7 @@ bool example::satisfyIOExample(Program *program, const IOExample &example, Env* 
 
 #include <unordered_set>
 
-PExampleSpace example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env) {
+std::shared_ptr<FiniteIOExampleSpace> example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env) {
     if (examples.empty()) {
         LOG(FATAL) << "Example space should not be empty";
     }

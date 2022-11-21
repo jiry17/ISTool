@@ -16,6 +16,7 @@ namespace incre {
         virtual ~TIncreInductive() = default;
         virtual std::string getName();
         virtual PType clone(const TypeList &params);
+        virtual bool equal(Type* t);
         TIncreInductive(const Ty& _type);
     };
 

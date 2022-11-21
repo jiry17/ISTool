@@ -15,3 +15,9 @@ Solver * invoker::single::buildPolyGen(Specification *spec, Verifier *v, const I
     auto* solver = new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
     return solver;
 }
+
+Solver* invoker::single::buildCondSolver(Specification *spec, Verifier *v, const InvokeConfig &config) {
+    auto* dnf_learner = new DNFLearner(spec);
+    auto* solver = new CEGISSolver(dnf_learner, v);
+    return solver;
+}
