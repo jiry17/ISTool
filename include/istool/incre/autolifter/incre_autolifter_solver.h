@@ -66,21 +66,12 @@ namespace incre {
             Ty unit_type;
             OutputUnit(const std::vector<int>& _path, const Ty& _unit_type);
         };
-
-        struct CombinatorCase {
-            Bitset null_inps;
-            PProgram program;
-            CombinatorCase(const Bitset& _null_inputs, const PProgram& _program);
-        };
-
-        typedef std::vector<CombinatorCase> CombinatorRes;
     }
     class IncreAutoLifterSolver: public IncreSolver {
         autolifter::PLPRes solvePLPTask(PassTypeInfoData* info, const PProgram& target, const std::vector<int>& path, int target_id);
         Grammar* buildAuxGrammar(int compress_id);
         Grammar* buildConstGrammar(const TypeList& type_list);
         Grammar* buildCombinatorGrammar(const TypeList& type_list);
-        Grammar* buildCombinatorCondGrammar(const TypeList& type_list);
     public:
         PEnv env;
         std::vector<autolifter::FExampleSpace*> example_space_list;
@@ -88,18 +79,18 @@ namespace incre {
 
         IncreAutoLifterSolver(IncreInfo* _info, const PEnv& _env);
         virtual ~IncreAutoLifterSolver();
-        std::vector<autolifter::FRes> f_res_list;
-        std::vector<autolifter::ConstRes> const_res_list;
         virtual IncreSolution solve();
 
         // Synthesize auxiliary programs
         void solveAuxiliaryProgram();
+        std::vector<autolifter::FRes> f_res_list;
+        TyList f_type_list;
+        std::vector<autolifter::ConstRes> const_res_list;
 
         // Synthesize combinators
-        autolifter::CombinatorRes synthesisCombinator(int pass_id);
+        Term synthesisCombinator(int pass_id);
+        TermList comb_list;
         void solveCombinators();
-
-
     };
 }
 

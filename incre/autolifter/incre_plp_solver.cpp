@@ -119,17 +119,14 @@ void IncrePLPSolver::getMoreComponent() {
         if (grammar_size_map[grammar] < current_size && grammar_size_map[grammar] >= 0) continue;
         get_components(i, grammar);
     }
-    if (grammar_size_map[task->const_grammar] >= current_size && grammar_size_map[task->const_grammar] >= 0) {
+    if (grammar_size_map[task->const_grammar] >= current_size || grammar_size_map[task->const_grammar] == -1) {
         get_components(-1, task->const_grammar);
     }
-    LOG(INFO) << "extend " << current_size << " " << grammar_size_map[task->const_grammar];
-    for (auto* grammar: task->f_grammar_list) std::cout << grammar_size_map[grammar] << " "; std::cout << std::endl;
     if (!is_extended) {
         LOG(FATAL) << "All auxiliary values have been exhausted.";
     }
     for (auto& unit: _randomMerge(unit_storage, env)) {
         component_info_list.push_back(unit);
-
         // LOG(INFO) << "new component " << unit.pos << " " << unit.program->toString();
     }
 }
@@ -319,6 +316,7 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
         LOG(INFO) << "aux grammar";
         grammar->print();
     }
+    LOG(INFO) << "const grammar"; task->const_grammar->print();
     std::vector<std::pair<int, PProgram>> empty;
     auto counter_example = verify(empty);
     if (counter_example.first == -1) return {{}, {}};

@@ -32,6 +32,8 @@ namespace incre {
     Ty getType(const Term& x, TypeContext* ctx, const ExternalTypeMap& ext = {});
     Ty unfoldType(const Ty& x, TypeContext* ctx, const std::vector<std::string>& tmp_names);
     std::vector<TypeContext::BindLog> bindPattern(const Pattern& pt, const Ty& type, TypeContext* ctx);
+
+    std::unordered_map<std::string, bool> compressRelatedNames(const IncreProgram& program);
 }
 
 #endif //ISTOOL_INCRE_H

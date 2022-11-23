@@ -5,6 +5,7 @@
 #include "istool/basic/config.h"
 #include "istool/incre/io/incre_from_json.h"
 #include "istool/incre/language/incre.h"
+#include "istool/incre/io/incre_printer.h"
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/io/incre_printer.h"
 #include "istool/incre/autolifter/incre_aux_semantics.h"
@@ -31,10 +32,13 @@ void invoke(const std::string& name, const TermList& ts, Context* ctx) {
 }
 
 int main(int argv, char** argc) {
-    std::string path = config::KSourcePath + "/tests/test.json";
+    std::string path = config::KSourcePath + "/tests/mps.json";
     auto prog = incre::file2program(path);
 
-    auto* info = incre::buildIncreInfo(prog);
+
+    auto env = std::make_shared<Env>();
+    incre::autolifter::prepareAutoLifterEnv(env.get());
+    auto* info = incre::buildIncreInfo(prog, env.get());
     for (int i = 1; i <= 5; ++i) {
         info->example_pool->generateExample();
     }
@@ -49,11 +53,12 @@ int main(int argv, char** argc) {
 
     incre::printProgram(prog, config::KSourcePath + "result.txt");
 
-    auto env = std::make_shared<Env>();
-    incre::autolifter::prepareAutoLifterEnv(env.get());
-
     auto* solver = new incre::IncreAutoLifterSolver(info, env);
-    solver->solve();
+    auto solution = solver->solve();
+    solution.print();
+
+    auto res = incre::rewriteWithIncreSolution(info->program.get(), solution);
+    incre::printProgram(res, config::KSourcePath + "/tests/res.f");
 
     /*invoke("head", {tl}, ctx);
     invoke("tail", {tl}, ctx);

@@ -169,11 +169,7 @@ int ConstRes::insert(const PProgram& program) {
 
 namespace {
     Data _run(Program* program, const DataList& inp, Env* env) {
-        try {
-            return env->run(program, inp);
-        } catch (SemanticsError& e) {
-            return {};
-        }
+        return env->run(program, inp);
     }
 }
 
@@ -279,9 +275,20 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
             }
         }
     }
+
+    // build type list
+    auto tint = std::make_shared<TyInt>();
+    for (auto& f_res: f_res_list) {
+        if (f_res.component_list.empty()) f_type_list.push_back(std::make_shared<TyUnit>());
+        else if (f_res.component_list.size() == 1) f_type_list.push_back(tint);
+        else {
+            TyList fields(f_res.component_list.size(), tint);
+            f_type_list.push_back(std::make_shared<TyTuple>(fields));
+        }
+    }
 }
 
 IncreSolution IncreAutoLifterSolver::solve() {
     solveAuxiliaryProgram(); solveCombinators();
-    LOG(FATAL) << "Todo: implement the construction of IncreSolution";
+    return {f_type_list, comb_list};
 }

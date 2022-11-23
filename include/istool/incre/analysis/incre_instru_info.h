@@ -64,7 +64,7 @@ namespace incre {
     IncreProgram eliminateUnboundedCreate(const IncreProgram& program);
     IncreProgram labelCompress(const IncreProgram& program);
     PassTypeInfoList collectPassType(const IncreProgram& program);
-    std::vector<SynthesisComponent*> collectComponentList(Context* ctx, Env* env);
+    std::vector<SynthesisComponent*> collectComponentList(Context* ctx, Env* env, const std::unordered_map<std::string, bool>& compress_map);
     IncreInfo* buildIncreInfo(const IncreProgram& program, Env* env);
 }
 

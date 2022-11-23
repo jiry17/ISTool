@@ -9,12 +9,11 @@
 
 namespace incre {
 
-    class IncreSolution {
-    public:
-        ProgramList f_list;
-        ProgramList tau_list;
-        IncreSolution(const ProgramList& _f_list, const ProgramList& _tau_list);
-        virtual ~IncreSolution() = default;
+    struct IncreSolution {
+        TyList compress_type_list;
+        TermList pass_list;
+        IncreSolution(const TyList& _compress_type_list, const TermList& _pass_list);
+        void print() const;
     };
 
     class IncreSolver {
@@ -24,6 +23,8 @@ namespace incre {
         virtual IncreSolution solve() = 0;
         virtual ~IncreSolver() = default;
     };
+
+    IncreProgram rewriteWithIncreSolution(ProgramData* program, const IncreSolution& solution);
 }
 
 #endif //ISTOOL_INCRE_SOLVER_H

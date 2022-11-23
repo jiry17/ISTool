@@ -5,6 +5,7 @@
 #include <istool/ext/deepcoder/data_type.h>
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/trans/incre_trans.h"
+#include "glog/logging.h"
 
 using namespace incre;
 
@@ -22,42 +23,15 @@ ComponentSemantics::ComponentSemantics(const Data &_data, const std::string &_na
 }
 
 namespace {
-    bool _containCompress(TyData* type) {
-        switch (type->getType()) {
-            case TyType::COMPRESS: return true;
-            case TyType::TUPLE: {
-                auto* tt = dynamic_cast<TyTuple*>(type);
-                for (const auto& field: tt->fields) {
-                    if (_containCompress(field.get())) return true;
-                }
-                return false;
-            }
-            case TyType::VAR:
-            case TyType::INT:
-            case TyType::BOOL:
-            case TyType::UNIT:
-                return false;
-            case TyType::ARROW: {
-                auto* at = dynamic_cast<TyArrow*>(type);
-                return _containCompress(at->target.get()) || _containCompress(at->source.get());
-            }
-            case TyType::IND: {
-                auto* it = dynamic_cast<TyInductive*>(type);
-                for (auto& [name, sub_ty]: it->constructors) {
-                    if (_containCompress(sub_ty.get())) return true;
-                }
-                return false;
-            }
-        }
-    }
-
-    SynthesisComponent* _buildSynthesisComponent(Context* ctx, const std::string& name) {
+    SynthesisComponent* _buildSynthesisComponent(Context* ctx, TypeContext* type_ctx, const std::string& name,
+            const std::unordered_map<std::string, bool>& compress_map) {
         auto bind = ctx->binding_map[name];
-        if (bind->getType() != BindingType::TYPE) return nullptr;
+        if (bind->getType() != BindingType::TERM) return nullptr;
         auto* tb = dynamic_cast<TermBinding*>(bind.get());
-        if (_containCompress(tb->type.get())) return nullptr;
+        assert(compress_map.find(name) != compress_map.end());
+        if (compress_map.find(name)->second) return nullptr;
 
-        auto type = incre::typeFromIncre(tb->type);
+        auto type = incre::typeFromIncre(incre::unfoldAll(tb->type, type_ctx));
         assert(tb->term->getType() == TermType::VALUE);
         auto* tv = dynamic_cast<TmValue*>(tb->term.get());
         auto sem = std::make_shared<ComponentSemantics>(tv->data, name);
@@ -81,7 +55,7 @@ namespace {
     std::vector<SynthesisComponent*> _getBasicSynthesisComponent(Env* env) {
         auto TINT = theory::clia::getTInt(), TBOOL = type::getTBool();
         auto ty_int = std::make_shared<TyInt>();
-        auto* ite = new SynthesisComponent(ComponentType::COMB, {TBOOL, TINT, TINT}, TBOOL, env->getSemantics("ite"), [=](const TermList& term_list) -> Term {
+        auto* ite = new SynthesisComponent(ComponentType::COMB, {TBOOL, TINT, TINT}, TINT, env->getSemantics("ite"), [=](const TermList& term_list) -> Term {
             assert(term_list.size() == 3);
             return std::make_shared<TmIf>(term_list[0], term_list[1], term_list[2]);
         });
@@ -107,6 +81,17 @@ namespace {
             comp_list.push_back(comp);
         }
 
+        std::vector<std::pair<PType, Data>> const_list = {{TINT, BuildData(Int, 0)}, {TINT, BuildData(Int, 1)}};
+
+        for (auto [type, value]: const_list) {
+            auto term = std::make_shared<TmValue>(value);
+            auto* comp = new SynthesisComponent(ComponentType::BOTH, {}, type, semantics::buildConstSemantics(value), [=](const TermList& term_list) -> Term {
+               assert(term_list.empty());
+               return term;
+            });
+            comp_list.push_back(comp);
+        }
+
         auto var_a = std::make_shared<TVar>("a"), var_b = std::make_shared<TVar>("b");
         auto var_arrow = std::make_shared<TArrow>((TypeList){var_a}, var_b);
         auto* app = new SynthesisComponent(ComponentType::BOTH, {var_arrow, var_a}, var_b, std::make_shared<TmAppSemantics>(), [=](const TermList& term_list) -> Term {
@@ -114,18 +99,20 @@ namespace {
             return std::make_shared<TmApp>(term_list[0], term_list[1]);
         });
         comp_list.push_back(app);
+
         return comp_list;
     }
 }
 
 // TODO: add lambda expressions
-
-std::vector<SynthesisComponent *> incre::collectComponentList(Context *ctx, Env *env) {
+std::vector<SynthesisComponent *> incre::collectComponentList(Context *ctx, Env *env, const std::unordered_map<std::string, bool>& compress_map) {
     auto component_list = _getBasicSynthesisComponent(env);
+    auto* type_ctx = new TypeContext(ctx);
     for (const auto& [name, _]: ctx->binding_map) {
-        auto* comp = _buildSynthesisComponent(ctx, name);
+        auto* comp = _buildSynthesisComponent(ctx, type_ctx, name, compress_map);
         if (comp) component_list.push_back(comp);
     }
+    delete type_ctx;
     return component_list;
 }
 

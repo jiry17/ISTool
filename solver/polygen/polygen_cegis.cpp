@@ -100,9 +100,9 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             }
         }
         if (!is_occur) {
-            LOG(INFO) << "new term";
+            // LOG(INFO) << "new term";
             auto new_term = term_solver->synthesisTerms(example_list, guard);
-            for (const auto& p: new_term) std::cout << "  " << p->toString() << std::endl;
+            //for (const auto& p: new_term) std::cout << "  " << p->toString() << std::endl;
             // for (auto* example: example_space) std::cout << *example << std::endl;
 
             ProgramList new_condition;
@@ -186,7 +186,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
         if (v->verify(result, &counter_example)) {
             return result;
         }
-        LOG(INFO) << "Counter Example " << data::dataList2String(counter_example);
+        // LOG(INFO) << "Counter Example " << data::dataList2String(counter_example);
         example_list.push_back(counter_example);
         io_example_list.push_back(io_space->getIOExample(counter_example));
     }

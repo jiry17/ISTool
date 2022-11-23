@@ -41,7 +41,7 @@ bool VFunction::equal(Value *value) const {
     return false;
 }
 std::string VFunction::toString() const {
-    LOG(WARNING) << "Get name for a value of type VFunction";
+    // LOG(WARNING) << "Get name for a value of type VFunction";
     return "function";
 }
 

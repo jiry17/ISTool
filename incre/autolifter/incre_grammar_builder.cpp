@@ -13,7 +13,6 @@ using namespace incre::autolifter;
 
 namespace {
     NonTerminal* _getSymbol(const PType& type, std::vector<NonTerminal*>& nt_list) {
-        // LOG(INFO) << "insert " << type->getName();
         for (auto* symbol: nt_list) {
             if (type::equal(type, symbol->type)) return symbol;
         }
@@ -155,6 +154,11 @@ namespace {
         // TODO: use a more general treatment
         SynthesisComponent* app_component = nullptr;
 
+        for (int i = 0; i < inp_types.size(); ++i) {
+            auto* symbol = _getSymbol(inp_types[i], nt_list);
+            symbol->rule_list.push_back(new ConcreteRule(semantics::buildParamSemantics(i, inp_types[i]), {}));
+        }
+
         for (auto* component: component_list) {
             if (component->type != ComponentType::BOTH && component->type != type) continue;
             if (component->semantics->getName() == "app") {
@@ -169,8 +173,10 @@ namespace {
         }
 
         if (app_component) {
-            for (auto* symbol: nt_list) {
+            for (int i = 0; i < nt_list.size(); ++i) {
+                auto* symbol = nt_list[i];
                 auto* at = dynamic_cast<TArrow*>(symbol->type.get());
+                if (!at) continue;
                 assert(at->inp_types.size() == 1);
                 auto* source = _getSymbol(at->inp_types[0], nt_list);
                 auto* target = _getSymbol(at->oup_type, nt_list);
@@ -180,8 +186,6 @@ namespace {
 
         auto* start_symbol = _getSymbol(oup_type, nt_list);
         auto* g = new Grammar(start_symbol, nt_list);
-        LOG(INFO) << "Build grammar ";
-        g->print();
         return g;
     }
 }
@@ -196,7 +200,4 @@ Grammar * IncreAutoLifterSolver::buildConstGrammar(const TypeList &type_list) {
 }
 Grammar * IncreAutoLifterSolver::buildCombinatorGrammar(const TypeList &type_list) {
     return _buildGrammar(info->component_list, ComponentType::COMB, type_list, theory::clia::getTInt());
-}
-Grammar * IncreAutoLifterSolver::buildCombinatorCondGrammar(const TypeList &type_list) {
-    return _buildGrammar(info->component_list, ComponentType::COMB, type_list, type::getTBool());
 }

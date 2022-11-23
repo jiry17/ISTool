@@ -61,6 +61,6 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
     pool->generator = generator;
 
     // build components
-    auto component = incre::collectComponentList(ctx, env);
+    auto component_list = incre::collectComponentList(ctx, env, incre::compressRelatedNames(program));
     return new IncreInfo(labeled_program, ctx, pass_info, pool, component_list);
 }
