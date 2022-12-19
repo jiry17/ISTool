@@ -60,3 +60,12 @@ VTyped::VTyped(const Ty &_type): type(_type) {}
 VBasicOperator::VBasicOperator(const Function &_func, const std::string &_name, const Ty &_type):
     VNamedFunction(_func, _name), VTyped(_type) {
 }
+
+Ty incre::getValueType(Value *v) {
+    if (dynamic_cast<VUnit*>(v)) return std::make_shared<TyUnit>();
+    if (dynamic_cast<VInt*>(v)) return std::make_shared<TyInt>();
+    if (dynamic_cast<VBool*>(v)) return std::make_shared<TyBool>();
+    auto* tv = dynamic_cast<VTyped*>(v);
+    if (tv) return tv->type;
+    LOG(FATAL) << "User cannot write " << v->toString() << " directly.";
+}

@@ -30,10 +30,15 @@ namespace incre {
     Ty getType(const Term& x, Context* ctx, const ExternalTypeMap& ext = {});
     bool isTypeEqual(const Ty& x, const Ty& y, TypeContext* ctx);
     Ty getType(const Term& x, TypeContext* ctx, const ExternalTypeMap& ext = {});
-    Ty unfoldType(const Ty& x, TypeContext* ctx, const std::vector<std::string>& tmp_names);
-    std::vector<TypeContext::BindLog> bindPattern(const Pattern& pt, const Ty& type, TypeContext* ctx);
 
-    std::unordered_map<std::string, bool> compressRelatedNames(const IncreProgram& program);
+    struct ExternalUnfoldRule {
+        std::function<Ty(const Ty&, TypeContext*, std::vector<std::string>&, const std::unordered_map<TyType, ExternalUnfoldRule>&)> func;
+    };
+    typedef std::unordered_map<TyType, ExternalUnfoldRule> ExternalUnfoldMap;
+    Ty unfoldType(const Ty& x, TypeContext* ctx, const std::vector<std::string>& tmp_names);
+    Ty unfoldTypeAll(const Ty& x, TypeContext* ctx, std::vector<std::string>& tmps, const ExternalUnfoldMap& ext = {});
+    Ty unfoldBasicType(const Ty& x, TypeContext* ctx);
+    std::vector<TypeContext::BindLog> bindPattern(const Pattern& pt, const Ty& type, TypeContext* ctx);
 }
 
 #endif //ISTOOL_INCRE_H

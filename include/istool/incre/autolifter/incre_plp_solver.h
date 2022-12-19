@@ -13,25 +13,24 @@
 namespace incre::autolifter {
     struct UnitInfo {
         int pos; // pos = -1 represents const
-        PProgram program;
+        TypedProgram program;
         Bitset info;
-        UnitInfo(int _pos, const PProgram& _program, const Bitset& _info);
+        UnitInfo(int _pos, const TypedProgram& _program, const Bitset& _info);
     };
 
     class IncrePLPSolver {
-
         std::string example2String(const std::pair<int, int>& example);
-
-
     public:
         int KComposedNum, KExtraTurnNum;
         Env* env;
         PLPTask* task;
         std::vector<std::pair<int, int>> example_list;
+        std::vector<std::pair<int, TypedProgram>> default_list;
+
         void addExample(const std::pair<int, int>& example);
 
         // Used to get components
-        UnitInfo init(int pos, const PProgram& program);
+        UnitInfo init(int pos, const TypedProgram& program);
         void getMoreComponent();
         std::vector<UnitInfo> component_info_list;
         int current_size = 0;
@@ -48,7 +47,7 @@ namespace incre::autolifter {
         // Used to verify
         int verify_num = 0, verify_pos = 0;
         int KVerifyBaseNum, KExampleTimeOut, KExampleEnlargeFactor;
-        std::pair<int, int> verify(const std::vector<std::pair<int, PProgram>>& aux_list);
+        std::pair<int, int> verify(const std::vector<std::pair<int, TypedProgram>>& aux_list);
 
         // Used for synthesis
         bool addUncoveredInfo(solver::autolifter::EnumerateInfo* info);
@@ -58,8 +57,8 @@ namespace incre::autolifter {
         std::pair<solver::autolifter::EnumerateInfo*, solver::autolifter::EnumerateInfo*> constructResult(
                 solver::autolifter::EnumerateInfo* info, int limit);
         solver::autolifter::EnumerateInfo* getNextComponent(int k, TimeGuard* guard);
-        std::vector<std::pair<int, PProgram>> extractResultFromInfo(solver::autolifter::EnumerateInfo* info);
-        std::vector<std::pair<int, PProgram>> synthesisFromExample(TimeGuard* guard);
+        std::vector<std::pair<int, std::pair<PType, PProgram>>> extractResultFromInfo(solver::autolifter::EnumerateInfo* info);
+        std::vector<std::pair<int, std::pair<PType, PProgram>>> synthesisFromExample(TimeGuard* guard);
 
     public:
         IncrePLPSolver(Env* _env, PLPTask* _task);

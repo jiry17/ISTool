@@ -10,7 +10,7 @@ using namespace incre::autolifter;
 using solver::autolifter::MaximalInfoList;
 using solver::autolifter::EnumerateInfo;
 
-UnitInfo::UnitInfo(int _pos, const PProgram &_program, const Bitset &_info):
+UnitInfo::UnitInfo(int _pos, const TypedProgram &_program, const Bitset &_info):
     pos(_pos), program(_program), info(_info) {
 }
 
@@ -27,9 +27,9 @@ namespace {
 }
 
 namespace {
-    int KDefaultComposedNum = 2;
+    int KDefaultComposedNum = 4;
     int KDefaultExtraTurnNum = 0;
-    int KDefaultVerifyBaseNum = 1000;
+    int KDefaultVerifyBaseNum = 300;
     int KDefaultExampleTimeOut = 10;
     int KDefaultEnlargeFactor = 2;
 }
@@ -37,6 +37,14 @@ namespace {
 IncrePLPSolver::IncrePLPSolver(Env *_env, PLPTask *_task): env(_env), task(_task) {
     for (auto* f_grammar: task->f_grammar_list) {
         grammar_size_map[f_grammar] = grammar::getMaxSize(f_grammar);
+    }
+    if (task->target.second) {
+        for (int i = 0; i < task->example_space->compress_infos.size(); ++i) {
+            auto compress_id = task->example_space->compress_infos[i].first;
+            if (compress_id == task->target_compress_id) {
+                default_list.emplace_back(i, task->target);
+            }
+        }
     }
     grammar_size_map[task->const_grammar] = grammar::getMaxSize(task->const_grammar);
 
@@ -66,10 +74,10 @@ namespace {
     }
 }
 
-UnitInfo IncrePLPSolver::init(int pos, const PProgram &program) {
+UnitInfo IncrePLPSolver::init(int pos, const TypedProgram &program) {
     Bitset info(example_list.size(), false);
     for (int i = 0; i < example_list.size(); ++i) {
-        if (_evaluate(example_list[i], task->example_space, pos, program.get())) info.set(i, true);
+        if (_evaluate(example_list[i], task->example_space, pos, program.second.get())) info.set(i, true);
     }
     return {pos, program, info};
 }
@@ -80,7 +88,7 @@ std::string IncrePLPSolver::example2String(const std::pair<int, int> &example) {
 }
 void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
     for (auto& unit: component_info_list) {
-        unit.info.append(_evaluate(example, task->example_space, unit.pos, unit.program.get()));
+        unit.info.append(_evaluate(example, task->example_space, unit.pos, unit.program.second.get()));
     }
     example_list.push_back(example);
 
@@ -96,7 +104,16 @@ void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
     }
     uncovered_info_set.clear(); global_maximal.clear();
 }
+
+namespace {
+    TypedProgram _extractTypedProgram(const PProgram& program) {
+        auto* ts = dynamic_cast<TypeLabeledDirectSemantics*>(program->semantics.get());
+        assert(ts && ts->type);
+        return {ts->type, program->sub_list[0]};
+    }
+}
 void IncrePLPSolver::getMoreComponent() {
+    LOG(INFO) << "get more component";
     //task->const_grammar->print();
     //LOG(INFO) << grammar_size_map[task->const_grammar];
     ++current_size; bool is_extended = false;
@@ -110,7 +127,7 @@ void IncrePLPSolver::getMoreComponent() {
         std::vector<UnitInfo> info_list;
         for (auto& res: res_list) {
             auto p = res[""];
-            if (p->size() == current_size) info_list.push_back(init(id, p));
+            if (p->size() == current_size) info_list.push_back(init(id, _extractTypedProgram(p)));
         }
         unit_storage.push_back(info_list);
     };
@@ -131,7 +148,27 @@ void IncrePLPSolver::getMoreComponent() {
     }
 }
 
-std::pair<int, int> IncrePLPSolver::verify(const std::vector<std::pair<int, PProgram> > &aux_list) {
+namespace {
+    std::vector<std::pair<int, PProgram>> _merge(const std::vector<std::pair<int, TypedProgram>>& x_list,
+            std::vector<std::pair<int, TypedProgram>>& y_list) {
+        std::vector<std::pair<int, PProgram>> res;
+        for (auto& [id, program]: x_list) res.emplace_back(id, program.second);
+        for (auto& [id, program]: y_list) res.emplace_back(id, program.second);
+        return res;
+    }
+
+    std::string _unitList2String(const std::vector<std::pair<int, TypedProgram>>& unit_list) {
+        std::string res = "[";
+        for (int i = 0; i < unit_list.size(); ++i) {
+            if (i) res += ",";
+            res += std::to_string(unit_list[i].first) + "@" + unit_list[i].second.second->toString();
+        }
+        return res + "]";
+    }
+}
+
+std::pair<int, int> IncrePLPSolver::verify(const std::vector<std::pair<int, TypedProgram> > &_aux_list) {
+    std::vector<std::pair<int, PProgram>> aux_list = _merge(_aux_list, default_list);
     int total_size = 1;
     for (auto& [_, p]: aux_list) total_size += p->size();
     verify_num = std::max(verify_num, total_size * KVerifyBaseNum);
@@ -168,9 +205,9 @@ std::pair<int, int> IncrePLPSolver::verify(const std::vector<std::pair<int, PPro
     return {-1, -1};
 }
 
-std::vector<std::pair<int, PProgram> > IncrePLPSolver::extractResultFromInfo(solver::autolifter::EnumerateInfo *info) {
+std::vector<std::pair<int, TypedProgram> > IncrePLPSolver::extractResultFromInfo(solver::autolifter::EnumerateInfo *info) {
     if (!info) return {};
-    std::vector<std::pair<int, PProgram>> res;
+    std::vector<std::pair<int, TypedProgram>> res;
     for (auto id: info->ind_list) {
         auto& unit = component_info_list[id];
         res.emplace_back(unit.pos, unit.program);
@@ -217,12 +254,12 @@ bool IncrePLPSolver::addUncoveredInfo(solver::autolifter::EnumerateInfo *info) {
 
 void IncrePLPSolver::constructInfo(solver::autolifter::EnumerateInfo *info) {
     int pos = info->ind_list.size();
+    while (working_list.size() <= pos) working_list.emplace_back();
     for (auto* component_info: info_storage[0]) {
-        if (component_info->ind_list[0] >= info->ind_list[0]) {
-            std::vector<int> ind_list = component_info->ind_list;
-            for (auto id: info->ind_list) ind_list.push_back(id);
-            working_list[pos].push(new EnumerateInfo(ind_list));
-        }
+        if (component_info->ind_list[0] >= info->ind_list[0]) continue;
+        std::vector<int> ind_list = component_info->ind_list;
+        for (auto id: info->ind_list) ind_list.push_back(id);
+        working_list[pos].push(new EnumerateInfo(ind_list));
     }
 }
 
@@ -258,9 +295,9 @@ std::pair<solver::autolifter::EnumerateInfo *, solver::autolifter::EnumerateInfo
     return {nullptr, nullptr};
 }
 
-std::vector<std::pair<int, PProgram> > IncrePLPSolver::synthesisFromExample(TimeGuard* guard) {
+std::vector<std::pair<int, TypedProgram> > IncrePLPSolver::synthesisFromExample(TimeGuard* guard) {
     if (example_list.empty()) return {};
-    std::vector<std::pair<int, PProgram>> best_result;
+    std::vector<std::pair<int, TypedProgram>> best_result;
     int extra_turn_num = 0, current_limit = KComposedNum;
 
     for (int turn_id = 1;; ++turn_id) {
@@ -271,6 +308,12 @@ std::vector<std::pair<int, PProgram> > IncrePLPSolver::synthesisFromExample(Time
         }
         int k = (turn_id - 1) % ((current_limit + 1) / 2);
         auto* info = getNextComponent(k, guard);
+        /*if (info->ind_list.size() == 2) {
+            std::vector<std::pair<int, PProgram>> unit_list;
+            for (auto ind: info->ind_list) unit_list.emplace_back(component_info_list[ind].pos, component_info_list[ind].program);
+            LOG(INFO) << "current enum " << _unitList2String(unit_list);
+            int kk; std::cin >> kk;
+        }*/
         if (!addUncoveredInfo(info)) {
             delete info; continue;
         }
@@ -288,25 +331,14 @@ std::vector<std::pair<int, PProgram> > IncrePLPSolver::synthesisFromExample(Time
 }
 
 namespace {
-    PLPRes _buildPLPRes(const std::vector<std::pair<int, PProgram>>& unit_list) {
-        ProgramList const_list;
-        std::vector<std::pair<int, PProgram>> aux_list;
+    PLPRes _buildPLPRes(const std::vector<std::pair<int, TypedProgram>>& unit_list) {
+        std::vector<TypedProgram> const_list;
+        std::vector<std::pair<int, TypedProgram>> aux_list;
         for (auto& [id, program]: unit_list) {
-            if (id < 0) const_list.push_back(program);
+            if (id < 0) const_list.emplace_back(program);
             else aux_list.emplace_back(id, program);
         }
         return {aux_list, const_list};
-    }
-}
-
-namespace {
-    std::string _unitList2String(const std::vector<std::pair<int, PProgram>>& unit_list) {
-        std::string res = "[";
-        for (int i = 0; i < unit_list.size(); ++i) {
-            if (i) res += ",";
-            res += std::to_string(unit_list[i].first) + "@" + unit_list[i].second->toString();
-        }
-        return res + "]";
     }
 }
 
@@ -317,8 +349,7 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
         grammar->print();
     }
     LOG(INFO) << "const grammar"; task->const_grammar->print();
-    std::vector<std::pair<int, PProgram>> empty;
-    auto counter_example = verify(empty);
+    auto counter_example = verify({});
     if (counter_example.first == -1) return {{}, {}};
     LOG(INFO) << "Counter example " << example2String(counter_example);
     addExample(counter_example);
@@ -332,5 +363,11 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
         if (counter_example.first == -1) return _buildPLPRes(candidate_result);
         addExample(counter_example);
         LOG(INFO) << "Counter example " << example2String(counter_example);
+        std::cout << task->runOup(counter_example.first).toString() << " " << task->runOup(counter_example.second).toString() << std::endl;
+        for (auto [id, info]: candidate_result) {
+            auto [_, prog] = info;
+            std::cout << "  " << data::dataList2String(task->runInp(counter_example.first, id, prog.get())) << " " <<
+              data::dataList2String(task->runInp(counter_example.second, id, prog.get())) << std::endl;
+        }
     }
 }

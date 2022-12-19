@@ -8,60 +8,15 @@
 
 using namespace incre;
 
-namespace {
-    Ty _unfoldAll(const Ty& x, TypeContext* ctx, std::vector<std::string>& tmps);
-
-#define UnfoldAllCase(name) return _unfoldAll(dynamic_cast<Ty ## name*>(x.get()), x, ctx, tmps)
-#define UnfoldAllHead(name) Ty _unfoldAll(Ty ## name* x, const Ty& _x, TypeContext* ctx, std::vector<std::string>& tmps)
-
-    UnfoldAllHead(Var) {
-        for (auto& name: tmps) if (x->name == name) return _x;
-        return _unfoldAll(ctx->lookup(x->name), ctx, tmps);
-    }
-    UnfoldAllHead(LabeledCompress) {
-        auto content = _unfoldAll(x->content, ctx, tmps);
-        return std::make_shared<TyLabeledCompress>(content, x->id);
-    }
-    UnfoldAllHead(Tuple) {
-        TyList fields;
-        for (const auto& field: x->fields) {
-            fields.push_back(_unfoldAll(field, ctx, tmps));
-        }
-        return std::make_shared<TyTuple>(fields);
-    }
-    UnfoldAllHead(Inductive) {
-        tmps.push_back(x->name);
-        std::vector<std::pair<std::string, Ty>> cons_list;
-        for (const auto& [cname, cty]: x->constructors) {
-            cons_list.emplace_back(cname, _unfoldAll(cty, ctx, tmps));
-        }
-        tmps.pop_back();
-        return std::make_shared<TyInductive>(x->name, cons_list);
-    }
-    UnfoldAllHead(Arrow) {
-        auto source = _unfoldAll(x->source, ctx, tmps);
-        auto target = _unfoldAll(x->target, ctx, tmps);
-        return std::make_shared<TyArrow>(source, target);
-    }
-
-    Ty _unfoldAll(const Ty& x, TypeContext* ctx, std::vector<std::string>& tmps) {
-        switch (x->getType()) {
-            case TyType::INT:
-            case TyType::UNIT:
-            case TyType::BOOL:
-                return x;
-            case TyType::VAR: UnfoldAllCase(Var);
-            case TyType::COMPRESS: UnfoldAllCase(LabeledCompress);
-            case TyType::TUPLE: UnfoldAllCase(Tuple);
-            case TyType::IND: UnfoldAllCase(Inductive);
-            case TyType::ARROW: UnfoldAllCase(Arrow);
-        }
-    }
-}
-
-Ty incre::unfoldAll(const Ty& x, TypeContext* ctx) {
-    std::vector<std::string> tmps;
-    return _unfoldAll(x, ctx, tmps);
+Ty incre::unfoldTypeWithLabeledCompress(const Ty &type, TypeContext *ctx) {
+    auto compress_sem = [](const Ty& type, TypeContext* ctx, std::vector<std::string>& names, const ExternalUnfoldMap& ext) -> Ty {
+        auto* lt = dynamic_cast<TyLabeledCompress*>(type.get()); assert(lt);
+        auto content = incre::unfoldTypeAll(lt->content, ctx, names, ext);
+        return std::make_shared<TyLabeledCompress>(content, lt->id);
+    };
+    ExternalUnfoldRule compress_rule = {compress_sem};
+    std::vector<std::string> tmp_names;
+    return incre::unfoldTypeAll(type, ctx, tmp_names, {{TyType::COMPRESS, compress_rule}});
 }
 
 namespace {
@@ -127,13 +82,14 @@ namespace {
 // todo: add unfold programs
 PassTypeInfoList incre::collectPassType(const IncreProgram &program) {
     PassTypeInfoList info;
+    int command_id = 0;
     auto create = [](const Term& term, TypeContext* ctx, const ExternalTypeMap& ext) {
          auto* ct = dynamic_cast<TmLabeledCreate*>(term.get());
          assert(ct);
          auto res = incre::getType(ct->def, ctx, ext);
          return std::make_shared<TyLabeledCompress>(res, ct->id);
     };
-    auto pass = [&info](const Term& term, TypeContext* ctx, const ExternalTypeMap& ext) {
+    auto pass = [&info, &command_id](const Term& term, TypeContext* ctx, const ExternalTypeMap& ext) {
         auto* pt = dynamic_cast<TmLabeledPass*>(term.get());
         assert(pt); int id = pt->tau_id;
         while (info.size() <= id) info.emplace_back();
@@ -143,7 +99,7 @@ PassTypeInfoList incre::collectPassType(const IncreProgram &program) {
         TyList defs;
         std::unordered_map<std::string, Ty> inps;
         for (const auto& [name, type]: ctx->binding_map) {
-            if (mark_context->mark_count[name]) inps[name] = incre::unfoldAll(type, ctx);
+            if (mark_context->mark_count[name]) inps[name] = incre::unfoldTypeWithLabeledCompress(type, ctx);
         }
         for (const auto& def: pt->defs) {
             defs.push_back(incre::getType(def, ctx, ext));
@@ -153,14 +109,14 @@ PassTypeInfoList incre::collectPassType(const IncreProgram &program) {
             auto* ct = dynamic_cast<TyLabeledCompress*>(defs[i].get());
             assert(ct);
             bind_list.push_back(ctx->bind(name, ct->content));
-            inps[name] = incre::unfoldAll(defs[i], ctx);
+            inps[name] = incre::unfoldTypeWithLabeledCompress(defs[i], ctx);
         }
         auto res = incre::getType(pt->content, ctx, ext);
         for (int i = int(bind_list.size()) - 1; i >= 0; --i) {
             ctx->cancelBind(bind_list[i]);
         }
 
-        info[id] = std::make_shared<PassTypeInfoData>(pt, inps, res);
+        info[id] = std::make_shared<PassTypeInfoData>(pt, inps, res, command_id);
         return res;
     };
 
@@ -170,8 +126,8 @@ PassTypeInfoList incre::collectPassType(const IncreProgram &program) {
         return incre::getType(term, ctx, ext);
     };
     auto* ctx = new _MarkedTypeContext();
-    for (const auto& command: program->commands) {
-        _runCommand(command, ctx, type_checker);
+    for (command_id = 0; command_id < program->commands.size(); ++command_id) {
+        _runCommand(program->commands[command_id], ctx, type_checker);
         ctx->clear();
     }
     delete ctx;

@@ -6,6 +6,7 @@
 #define ISTOOL_INCRE_VALUES_H
 
 #include "istool/basic/value.h"
+#include "incre_type.h"
 #include "incre_context.h"
 #include "istool/sygus/theory/basic/clia/clia_value.h"
 #include "istool/ext/deepcoder/data_value.h"
@@ -75,6 +76,7 @@ namespace incre {
         virtual ~VBasicOperator() = default;
     };
 
+    Ty getValueType(Value* value);
 }
 
 #endif //ISTOOL_INCRE_VALUES_H

@@ -131,6 +131,10 @@ namespace incre {
 
     Term getOperator(const std::string& name);
     bool isBasicOperator(const std::string& name);
+    TermList getSubTerms(TermData* term);
+    std::string termType2String(TermType type);
+
+    Term replaceTerm(const Term& term, const std::function<Term(const Term&)>& replace_func);
 }
 
 #endif //ISTOOL_INCRE_TERM_H

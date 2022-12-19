@@ -35,6 +35,29 @@ namespace {
             }
         }
     }
+    bool _isSelfRecursion(TyData* ty, const std::string& name) {
+        switch (ty->getType()) {
+            case TyType::VAR: {
+                auto* tvar = dynamic_cast<TyVar*>(ty); return tvar->name == name;
+            }
+            case TyType::INT:
+            case TyType::BOOL:
+            case TyType::UNIT:
+            case TyType::IND: return false;
+            case TyType::COMPRESS: {
+                auto* tc = dynamic_cast<TyCompress*>(ty);
+                return _isSelfRecursion(tc->content.get(), name);
+            }
+            case TyType::ARROW: assert(0);
+            case TyType::TUPLE: {
+                auto* tt = dynamic_cast<TyTuple*>(ty);
+                for (const auto& field: tt->fields) {
+                    if (_isSelfRecursion(field.get(), name)) return true;
+                }
+                return false;
+            }
+        }
+    }
     struct RandomContext {
         std::minstd_rand* e;
         std::stack<int> size;
@@ -50,7 +73,7 @@ namespace {
         void distributeSize(int num) {
             assert(!size.empty());
             int current = size.top(); size.pop();
-            if (current == 0) return;
+            if (num == 0) return;
             assert(current);
             std::vector<int> sub(num, 0);
             auto d = std::uniform_int_distribution<int>(0, num - 1);
@@ -86,13 +109,20 @@ namespace {
     }
     RandomHead(Inductive) {
         ctx->ctx.emplace_back(type->name, type);
-        std::vector<int> valid_indices;
+        std::vector<int> valid_indices, reduce_indices, empty_indices;
         int size = ctx->size.top();
+
         for (int i = 0; i < type->constructors.size(); ++i) {
             auto [cname, ctype] = type->constructors[i];
             int current = _getSize(ctype.get());
-            if (current == 0 && size) continue;
-            if (current <= size) valid_indices.push_back(i);
+            if (current == 0) empty_indices.push_back(i);
+            if (!_isSelfRecursion(ctype.get(), type->name)) reduce_indices.push_back(i);
+            if ((current == 0 && size) || (current && size == 0)) continue;
+            valid_indices.push_back(i);
+        }
+
+        if (valid_indices.empty()) {
+            if (size) valid_indices = empty_indices; else valid_indices = reduce_indices;
         }
         assert(!valid_indices.empty());
         std::shuffle(valid_indices.begin(), valid_indices.end(), *(ctx->e));

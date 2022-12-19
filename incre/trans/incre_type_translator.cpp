@@ -32,6 +32,29 @@ namespace {
 #define TypeFromHead(name) PType _typeFromIncre(Ty ## name* type)
 #define TypeFromCase(name) return _typeFromIncre(dynamic_cast<Ty ## name*>(type.get()))
 
+    class _TCompress: public Type {
+    public:
+        PType content;
+        _TCompress(const PType& _content): content(_content) {}
+        virtual std::string getName() {
+            return "compress(" + content->getName() + ")";
+        }
+        virtual bool equal(Type* type) {
+            auto* tc = dynamic_cast<_TCompress*>(content.get());
+            return tc && type::equal(content, tc->content);
+        }
+        virtual std::string getBaseName() {
+            LOG(FATAL) << "_TCompress.getBaseName() should not be invoked";
+        }
+        virtual TypeList getParams() {
+            LOG(FATAL) << "_TCompress.getParams() should not be invoked";
+        }
+        virtual PType clone(const TypeList& params) {
+            return std::make_shared<_TCompress>(params[0]);
+        }
+
+    };
+
     TypeFromHead(Int) {
         return theory::clia::getTInt();
     }
@@ -53,6 +76,10 @@ namespace {
         auto target = typeFromIncre(type->target);
         return std::make_shared<TArrow>((TypeList){source}, target);
     }
+    TypeFromHead(Compress) {
+        auto content = typeFromIncre(type->content);
+        return std::make_shared<_TCompress>(content);
+    }
 }
 
 PType incre::typeFromIncre(const Ty& type) {
@@ -63,7 +90,7 @@ PType incre::typeFromIncre(const Ty& type) {
         case TyType::TUPLE: TypeFromCase(Tuple);
         case TyType::IND: return std::make_shared<TIncreInductive>(type);
         case TyType::ARROW: TypeFromCase(Arrow);
-        case TyType::COMPRESS:
+        case TyType::COMPRESS: TypeFromCase(Compress);
         case TyType::VAR:
             LOG(FATAL) << "Unknown type for translating from Incre: " << type->toString();
     }

@@ -22,7 +22,6 @@ def run_clia(is_restart=False):
         benchmark_list = get_all_benchmark(src_path + "tests/clia/")
 
         cache_name = solver + "_clia"
-        if is_restart: clear_cache(src_path + "runner/cache/" + cache_name + ".json", lambda x, y, z: True)
 
         for runner in runner_list:
             result = execute(runner, benchmark_list, src_path + "runner/cache/" + cache_name + ".json", thread_num=8)

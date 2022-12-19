@@ -13,10 +13,9 @@
 using namespace incre;
 using namespace incre::autolifter;
 
-FInfo::FInfo(const PProgram &_program, int _id, bool _is_extended):
+FInfo::FInfo(const TypedProgram& _program, int _id, bool _is_extended):
     program(_program), id(_id), is_extended(_is_extended) {
 }
-
 FExample::FExample(const DataStorage &_compress_storage, const DataList &_const_list, const Data &_oup):
     compress_storage(_compress_storage), const_list(_const_list), oup(_oup) {
 }
@@ -126,6 +125,13 @@ namespace {
 OutputUnit::OutputUnit(const std::vector<int> &_path, const Ty &_unit_type): path(_path), unit_type(_unit_type) {
 }
 
+TypeLabeledDirectSemantics::TypeLabeledDirectSemantics(const PType &_type):
+    NormalSemantics("@" + _type->getName(), _type, (TypeList){_type}), type(_type) {
+}
+Data TypeLabeledDirectSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    return inp_list[0];
+}
+
 IncreAutoLifterSolver::IncreAutoLifterSolver(IncreInfo *_info, const PEnv& _env): env(_env), IncreSolver(_info),
     f_res_list(_getCNum(_info)), const_res_list(info->pass_infos.size()) {
     for (auto& pass_info: info->pass_infos) {
@@ -140,15 +146,27 @@ IncreAutoLifterSolver::~IncreAutoLifterSolver() noexcept {
     for (auto* example_space: example_space_list) {
         delete example_space;
     }
+    for (auto& [name, grammar]: grammar_map) delete grammar;
 }
 bool FRes::isEqual(Program *x, Program *y) {
     //TODO: add a semantical check
     return x->toString() == y->toString();
 }
-int FRes::insert(const PProgram &program) {
+Data FRes::run(const Data &inp, Env *env) {
+    if (component_list.empty()) return Data(std::make_shared<VUnit>());
+    if (component_list.size() == 1) {
+        return env->run(component_list[0].program.second.get(), {inp});
+    }
+    DataList elements;
+    for (auto& component: component_list) {
+        elements.push_back(env->run(component.program.second.get(), {inp}));
+    }
+    return Data(std::make_shared<VTuple>(elements));
+}
+int FRes::insert(const TypedProgram& program) {
     for (int i = 0; i < component_list.size(); ++i) {
         auto& info = component_list[i];
-        if (isEqual(program.get(), info.program.get())) return i;
+        if (type::equal(program.first, info.program.first) && isEqual(program.second.get(), info.program.second.get())) return i;
     }
     int id = component_list.size();
     component_list.emplace_back(program, id, false);
@@ -158,9 +176,9 @@ bool ConstRes::isEqual(Program *x, Program *y) {
     //TODO: add a semantical check
     return x->toString() == y->toString();
 }
-int ConstRes::insert(const PProgram& program) {
+int ConstRes::insert(const TypedProgram& program) {
     for (int i = 0; i < const_list.size(); ++i) {
-        if (isEqual(program.get(), const_list[i].get())) return i;
+        if (type::equal(program.first, const_list[i].first) && isEqual(program.second.get(), const_list[i].second.get())) return i;
     }
     int id = const_list.size();
     const_list.push_back(program);
@@ -176,8 +194,9 @@ namespace {
 DataList FExampleSpace::runAux(int example_id, int id, Program *program) {
     auto& example = example_list[example_id];
     DataList res;
-    for (auto& inp: example.compress_storage[id])
+    for (auto& inp: example.compress_storage[id]) {
         res.push_back(_run(program, {inp}, env.get()));
+    }
     return res;
 }
 Data FExampleSpace::runConst(int example_id, Program *program) {
@@ -200,11 +219,13 @@ namespace {
 }
 Data FExampleSpace::runOup(int example_id, Program *program, const std::vector<int>& path) {
     auto oup = _extract(example_list[example_id].oup, path);
-    if (program) return _run(program, {oup}, env.get());
+    if (program) {
+        return _run(program, {oup}, env.get());
+    }
     return oup;
 }
 
-autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(PassTypeInfoData *info, const PProgram &target, const std::vector<int>& path, int target_id) {
+autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(PassTypeInfoData *info, const TypedProgram &target, const std::vector<int>& path, int target_id) {
     auto* space = example_space_list[info->getId()];
     std::vector<Grammar*> f_grammar_list;
     for (auto& [id, _]: space->compress_infos) {
@@ -217,10 +238,10 @@ autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(PassTypeInfoData *info, c
     for (auto& [_, type]: space->const_infos) {
         const_types.push_back(type);
     }
-    auto* const_grammar = buildConstGrammar(const_types);
+    auto* const_grammar = buildConstGrammar(const_types, info->getId());
     // const_grammar->print();
 
-    auto* task = new PLPTask(space, f_grammar_list, const_grammar, target.get(), path, target_id);
+    auto* task = new PLPTask(space, f_grammar_list, const_grammar, target, path, target_id);
     auto* solver = new IncrePLPSolver(env.get(), task);
     auto res = solver->synthesis(nullptr);
 
@@ -232,9 +253,9 @@ autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(PassTypeInfoData *info, c
 void IncreAutoLifterSolver::solveAuxiliaryProgram() {
     auto record_res = [&](int pass_id, const PLPRes& res) {
         auto* example_space = example_space_list[pass_id];
-        for (auto& [pos_id, program]: res.first) {
+        for (auto& [pos_id, info]: res.first) {
             int f_id = example_space->compress_infos[pos_id].first;
-            f_res_list[f_id].insert(program);
+            f_res_list[f_id].insert(info);
         }
         for (auto& const_program: res.second) {
             const_res_list[pass_id].insert(const_program);
@@ -249,7 +270,7 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
         for (auto& unit: unit_storage[pass_info->getId()]) {
             auto *oup_ty = unit.unit_type.get();
             if (!dynamic_cast<TyCompress *>(oup_ty)) {
-                PLPRes res = solvePLPTask(pass_info.get(), nullptr, unit.path, -1);
+                PLPRes res = solvePLPTask(pass_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr}, unit.path, -1);
                 record_res(pass_info->getId(), res);
             }
         }
@@ -259,10 +280,11 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
     while (is_changed) {
         is_changed = false;
         for (int compress_id = 0; compress_id < f_res_list.size(); ++compress_id) {
-            for (auto& component: f_res_list[compress_id].component_list) {
+            for (int i = 0; i < f_res_list[compress_id].component_list.size(); ++i) {
+                auto component = f_res_list[compress_id].component_list[i];
                 if (component.is_extended) continue;
                 is_changed = true;
-                component.is_extended = true;
+                f_res_list[compress_id].component_list[i].is_extended = true;
                 for (auto& pass_info: info->pass_infos) {
                     for (auto& unit: unit_storage[pass_info->getId()]) {
                         auto *cty = dynamic_cast<TyLabeledCompress *>(unit.unit_type.get());
@@ -277,12 +299,15 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
     }
 
     // build type list
-    auto tint = std::make_shared<TyInt>();
     for (auto& f_res: f_res_list) {
-        if (f_res.component_list.empty()) f_type_list.push_back(std::make_shared<TyUnit>());
-        else if (f_res.component_list.size() == 1) f_type_list.push_back(tint);
-        else {
-            TyList fields(f_res.component_list.size(), tint);
+        if (f_res.component_list.empty()) {
+            f_type_list.push_back(std::make_shared<TyUnit>()); continue;
+        }
+        TyList fields;
+        for (auto& component: f_res.component_list) fields.push_back(incre::typeToIncre(component.program.first.get()));
+        if (fields.size() == 1) {
+            f_type_list.push_back(fields[0]);
+        } else {
             f_type_list.push_back(std::make_shared<TyTuple>(fields));
         }
     }

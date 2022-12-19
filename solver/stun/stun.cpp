@@ -67,7 +67,6 @@ namespace {
             }
         }
         auto* grammar = new Grammar(symbol_map[start->name], symbol_list);
-        grammar->removeUseless();
         return grammar;
     }
 }

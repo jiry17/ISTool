@@ -38,3 +38,32 @@ PtConstructor::PtConstructor(const std::string &_name, const Pattern &_pattern):
 std::string PtConstructor::toString() const {
     return name + " " + pattern->toString();
 }
+
+namespace {
+    void _collectNames(PatternData* pt, std::vector<std::string>& res) {
+        switch (pt->getType()) {
+            case PatternType::TUPLE: {
+                auto* tt = dynamic_cast<PtTuple*>(pt);
+                for (auto& sub: tt->pattern_list) _collectNames(sub.get(), res);
+                return;
+            }
+            case PatternType::UNDER_SCORE: return;
+            case PatternType::CONSTRUCTOR: {
+                auto* tc = dynamic_cast<PtConstructor*>(pt);
+                _collectNames(tc->pattern.get(), res);
+                return;
+            }
+            case PatternType::VAR: {
+                auto* tv = dynamic_cast<PtVar*>(pt);
+                res.push_back(tv->name);
+                return;
+            }
+        }
+    }
+}
+
+std::vector<std::string> incre::collectNames(PatternData *pattern) {
+    std::vector<std::string> res;
+    _collectNames(pattern, res);
+    return res;
+}

@@ -14,9 +14,9 @@ namespace incre::autolifter {
         FExampleSpace* example_space;
         std::vector<Grammar*> f_grammar_list;
         Grammar* const_grammar;
-        Program* target;
+        TypedProgram target;
         std::vector<int> path;
-        int target_pos;
+        int target_compress_id;
 
 
         DataList runInp(int example_id, int id, Program* program);
@@ -24,7 +24,7 @@ namespace incre::autolifter {
         IOExample getIO(int example_id, const std::vector<std::pair<int, PProgram>>& aux_list);
         int acquireExample(int target_num, int timeout);
         PLPTask(FExampleSpace* _example_space, const std::vector<Grammar*>& _f_grammar_list, Grammar* _const_grammar,
-                Program* _target, const std::vector<int>& _path, int target_compress_id);
+                const TypedProgram& _target, const std::vector<int>& _path, int target_compress_id);
     };
 }
 

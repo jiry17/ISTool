@@ -7,15 +7,13 @@
 using namespace incre::autolifter;
 
 PLPTask::PLPTask(FExampleSpace *_example_space, const std::vector<Grammar *> &_f_grammar_list, Grammar *_const_grammar,
-        Program *_target, const std::vector<int>& _path, int target_id):
-    example_space(_example_space), f_grammar_list(_f_grammar_list), const_grammar(_const_grammar), target(_target), path(_path) {
-    target_pos = -1;
-    for (auto& [id, _]: example_space->compress_infos) if (id == target_id) target_pos = id;
+        const TypedProgram& _target, const std::vector<int>& _path, int target_id):
+    example_space(_example_space), f_grammar_list(_f_grammar_list), const_grammar(_const_grammar), target(_target), path(_path), target_compress_id(target_id) {
 }
 
 // TODO: add cache
 Data PLPTask::runOup(int example_id) {
-    return example_space->runOup(example_id, target, path);
+    return example_space->runOup(example_id, target.second.get(), path);
 }
 DataList PLPTask::runInp(int example_id, int id, Program *program) {
     if (id == -1) return {example_space->runConst(example_id, program)};
@@ -28,11 +26,6 @@ IOExample PLPTask::getIO(int example_id, const std::vector<std::pair<int, PProgr
             inp.push_back(d);
         }
     }
-    /*if (target_pos != -1) {
-        for (auto& d: runInp(example_id, target_pos, target)) {
-            inp.push_back(d);
-        }
-    }*/
     return {inp, runOup(example_id)};
 }
 

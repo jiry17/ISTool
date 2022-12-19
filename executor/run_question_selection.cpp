@@ -343,8 +343,8 @@ int main(int argc, char** argv) {
         solver_name = argv[3];
         if (argc == 5) model_name = argv[4];
     } else {
-        solver_name = "samplesy";
-        benchmark_name = " /tmp/tmp.wHOuYKwdWN/tests/repair/t10.sl";
+        solver_name = "samplesy@1";
+        benchmark_name = "/home/jiry/2022/tests/repair/t10.sl";
 
         //benchmark_name = config::KSourcePath + "tests/string-interactive/initials-long-repeat.sl";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/x.sl";

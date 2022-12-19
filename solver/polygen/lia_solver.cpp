@@ -136,6 +136,20 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
     for (const auto& example: example_list) {
         io_example_list.push_back(io_example_space->getIOExample(example));
     }
+
+    {
+        bool is_constant = true;
+        for (int i = 1; i < io_example_list.size(); ++i) {
+            if (!(io_example_list[i].second == io_example_list[0].second)) {
+                is_constant = false;
+                break;
+            }
+        }
+        if (is_constant) {
+            auto prog = program::buildConst(io_example_list[0].second);
+            return semantics::buildSingleContext(io_example_space->func_name, prog);
+        }
+    }
     std::unordered_set<std::string> cache;
     ProgramList considered_program_list;
     IOExampleList wrapped_example_list;
@@ -345,14 +359,14 @@ namespace {
 }
 
 void* LIASolver::relax(TimeGuard* guard) {
-    LOG(INFO) << "relax " << std::endl;
+    // LOG(INFO) << "relax " << std::endl;
     int next_num = int(program_list.size()) * 2;
     double time_out = KRelaxTimeLimit;
     if (guard) time_out = std::min(time_out, guard->getRemainTime());
     double next_time_limit = KRelaxTimeLimit;
 
     auto next_program_list = _getConsideredTerms(info, next_num, time_out);
-    LOG(INFO) << "Next program list " << next_program_list.size() << " " << next_program_list[next_program_list.size() - 1]->toString();
+    // LOG(INFO) << "Next program list " << next_program_list.size() << " " << next_program_list[next_program_list.size() - 1]->toString() << " " << program_list.size();
     if (next_program_list.size() == program_list.size()) {
         next_time_limit *= 2;
         return nullptr;

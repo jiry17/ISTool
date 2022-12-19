@@ -177,6 +177,7 @@ std::vector<PCmpInfo> DNFLearner::getNextInfoList() {
 void DNFLearner::clear() {
     negative_list.clear(); positive_list.clear();
     pred_pos = -1; pred_list_set.clear(); pred_pool.clear();
+    info_storage.clear();
 }
 
 DNFLearner::~DNFLearner() {

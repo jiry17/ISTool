@@ -57,6 +57,8 @@ namespace incre {
         virtual std::string toString() const;
         virtual ~PtConstructor() = default;
     };
+
+    std::vector<std::string> collectNames(PatternData* pattern);
 }
 
 #endif //ISTOOL_INCRE_PATTERN_H

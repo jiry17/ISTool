@@ -11,11 +11,13 @@
 
 namespace incre {
     namespace autolifter {
+
+        typedef std::pair<PType, PProgram> TypedProgram;
         struct FInfo {
-            PProgram program;
+            TypedProgram program;
             int id;
             bool is_extended;
-            FInfo(const PProgram& _program, int _id, bool _is_extended);
+            FInfo(const TypedProgram& _program, int _id, bool _is_extended);
         };
 
         struct FRes {
@@ -23,18 +25,18 @@ namespace incre {
             bool isEqual(Program* x, Program* y);
         public:
             std::vector<FInfo> component_list;
-            int insert(const PProgram& program);
+            int insert(const TypedProgram& program);
+            Data run(const Data& inp, Env* env);
         };
 
         struct ConstRes {
         private:
             bool isEqual(Program* x, Program* y);
         public:
-            ProgramList const_list;
-            int insert(const PProgram& program);
+            std::vector<TypedProgram> const_list;
+            int insert(const TypedProgram& program);
         };
-
-        typedef std::pair<std::vector<std::pair<int, PProgram>>, ProgramList> PLPRes;
+        typedef std::pair<std::vector<std::pair<int, TypedProgram>>, std::vector<TypedProgram>> PLPRes;
 
         struct FExample {
             DataStorage compress_storage;
@@ -66,13 +68,26 @@ namespace incre {
             Ty unit_type;
             OutputUnit(const std::vector<int>& _path, const Ty& _unit_type);
         };
+
+        struct TypeLabeledDirectSemantics: public NormalSemantics {
+        public:
+            PType type;
+            TypeLabeledDirectSemantics(const PType& _type);
+            virtual Data run(DataList&& inp_list, ExecuteInfo* info);
+            virtual ~TypeLabeledDirectSemantics() = default;
+        };
+
     }
     class IncreAutoLifterSolver: public IncreSolver {
-        autolifter::PLPRes solvePLPTask(PassTypeInfoData* info, const PProgram& target, const std::vector<int>& path, int target_id);
+        // Grammar builder
+        std::unordered_map<std::string, Grammar*> grammar_map;
+
+        autolifter::PLPRes solvePLPTask(PassTypeInfoData* info, const autolifter::TypedProgram& target, const std::vector<int>& path, int target_id);
         Grammar* buildAuxGrammar(int compress_id);
-        Grammar* buildConstGrammar(const TypeList& type_list);
-        Grammar* buildCombinatorGrammar(const TypeList& type_list);
+        Grammar* buildConstGrammar(const TypeList& type_list, int pass_id);
     public:
+        Grammar* buildCombinatorGrammar(const TypeList& type_list, const PType& oup_type, int pass_id);
+
         PEnv env;
         std::vector<autolifter::FExampleSpace*> example_space_list;
         std::vector<std::vector<autolifter::OutputUnit>> unit_storage;

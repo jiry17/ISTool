@@ -22,6 +22,65 @@ Ty incre::unfoldType(const Ty &x, TypeContext *ctx, const std::vector<std::strin
     return x;
 }
 
+
+
+namespace {
+#define UnfoldAllCase(name) return _unfoldAll(dynamic_cast<Ty ## name*>(x.get()), x, ctx, tmps, ext)
+#define UnfoldAllHead(name) Ty _unfoldAll(Ty ## name* x, const Ty& _x, TypeContext* ctx, std::vector<std::string>& tmps, const ExternalUnfoldMap& ext)
+
+    UnfoldAllHead(Var) {
+        for (auto& name: tmps) if (x->name == name) return _x;
+        return unfoldTypeAll(ctx->lookup(x->name), ctx, tmps, ext);
+    }
+    UnfoldAllHead(Compress) {
+        auto content = unfoldTypeAll(x->content, ctx, tmps, ext);
+        return std::make_shared<TyCompress>(content);
+    }
+    UnfoldAllHead(Tuple) {
+        TyList fields;
+        for (const auto& field: x->fields) {
+            auto res = unfoldTypeAll(field, ctx, tmps, ext);
+            fields.push_back(res);
+        }
+        return std::make_shared<TyTuple>(fields);
+    }
+    UnfoldAllHead(Inductive) {
+        tmps.push_back(x->name);
+        std::vector<std::pair<std::string, Ty>> cons_list;
+        for (const auto& [cname, cty]: x->constructors) {
+            cons_list.emplace_back(cname, unfoldTypeAll(cty, ctx, tmps, ext));
+        }
+        tmps.pop_back();
+        return std::make_shared<TyInductive>(x->name, cons_list);
+    }
+    UnfoldAllHead(Arrow) {
+        auto source = unfoldTypeAll(x->source, ctx, tmps, ext);
+        auto target = unfoldTypeAll(x->target, ctx, tmps, ext);
+        return std::make_shared<TyArrow>(source, target);
+    }
+}
+
+Ty incre::unfoldTypeAll(const Ty& x, TypeContext* ctx, std::vector<std::string>& tmps, const ExternalUnfoldMap& ext) {
+    auto it = ext.find(x->getType());
+    if (it != ext.end()) return it->second.func(x, ctx, tmps, ext);
+    switch (x->getType()) {
+        case TyType::INT:
+        case TyType::UNIT:
+        case TyType::BOOL:
+            return x;
+        case TyType::VAR: UnfoldAllCase(Var);
+        case TyType::COMPRESS: UnfoldAllCase(Compress);
+        case TyType::TUPLE: UnfoldAllCase(Tuple);
+        case TyType::IND: UnfoldAllCase(Inductive);
+        case TyType::ARROW: UnfoldAllCase(Arrow);
+    }
+}
+
+Ty incre::unfoldBasicType(const Ty &x, TypeContext *ctx) {
+    std::vector<std::string> tmps;
+    return unfoldTypeAll(x, ctx, tmps, {});
+}
+
 namespace {
 
 #define TypeEqualCase(name) return _isTypeEqual(dynamic_cast<Ty ## name*>(x.get()), dynamic_cast<Ty ## name*>(y.get()), ctx, x_tmp, y_tmp)
@@ -71,7 +130,9 @@ namespace {
         y_tmp.push_back(y->name);
         bool res = true;
         for (const auto&[cons_name, cons_type]: x->constructors) {
-            if (cons_map.find(cons_name) == cons_map.end()) continue;
+            if (cons_map.find(cons_name) == cons_map.end()) {
+                res = false; break;
+            }
             if (!_isTypeEqual(cons_type, cons_map[cons_name], ctx, x_tmp, y_tmp)) {
                 res = false;
                 break;
@@ -126,12 +187,7 @@ namespace {
     }
     GetTypeHead(Value) {
         auto* v = term->data.get();
-        if (dynamic_cast<VUnit*>(v)) return std::make_shared<TyUnit>();
-        if (dynamic_cast<VInt*>(v)) return std::make_shared<TyInt>();
-        if (dynamic_cast<VBool*>(v)) return std::make_shared<TyBool>();
-        auto* tv = dynamic_cast<VTyped*>(v);
-        if (tv) return tv->type;
-        LOG(FATAL) << "User cannot write " << term->data.toString() << " directly.";
+        return incre::getValueType(v);
     }
     GetTypeHead(Var) {
         return ctx->lookup(term->name);
@@ -287,6 +343,7 @@ namespace {
         }
     }
     PtBindingHead(Constructor) {
+        // TODO: not completely correct
         auto it = incre::getConstructor(unfoldType(type, ctx, {}), pt->name);
         _addPtBinding(pt->pattern, it, ctx, res);
     }

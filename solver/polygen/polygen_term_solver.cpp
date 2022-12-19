@@ -18,15 +18,17 @@ namespace {
     const int KDefaultRandomFactor = 5;
 
     int _getMaxTermNum(const PSynthInfo& info) {
-        return std::max(KDefaultMaxTermNum, int(info->inp_type_list.size()));
+        return KDefaultMaxTermNum;
+        // return std::max(KDefaultMaxTermNum, int(info->inp_type_list.size()));
     }
 
     int _getMaxExampleNum(const PSynthInfo& info) {
-        if (info->inp_type_list.size() > 5) return 2; else return KDefaultExampleNum;
+        return KDefaultExampleNum;
+        // if (info->inp_type_list.size() > 5) return 2; else return KDefaultExampleNum;
     }
 
     int _getRandomFactor(const PSynthInfo& info) {
-        return info->inp_type_list.size() * 3;
+        return std::max(1, int(info->inp_type_list.size() * 3));
     }
 }
 
@@ -354,7 +356,10 @@ ProgramList PolyGenTermSolver::getTerms() {
                     domain_solver_list.push_back(relaxed_solver);
                     cache.push_back(new TermSolverCache());
                     progress.push_back(0);
-                } else continue;
+                } else {
+                    LOG(INFO) << "relax failed " << domain_solver_list.size();
+                    continue;
+                }
             }
             progress[si] += 1;
             int n_limit = std::min(KMaxExampleNum, progress[si]);

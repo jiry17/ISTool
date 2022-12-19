@@ -22,7 +22,7 @@ namespace {
             f.push_back(f_id); return f_id++;
         }
         int getTauLabel() {
-            f.push_back(tau_id); return tau_id++;
+            return tau_id++;
         }
         void merge(int x, int y) {
             f[getFather(x)] = getFather(y);

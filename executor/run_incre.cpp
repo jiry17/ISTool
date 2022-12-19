@@ -10,6 +10,7 @@
 #include "istool/incre/io/incre_printer.h"
 #include "istool/incre/autolifter/incre_aux_semantics.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
+#include "glog/logging.h"
 
 using namespace incre;
 
@@ -32,19 +33,26 @@ void invoke(const std::string& name, const TermList& ts, Context* ctx) {
 }
 
 int main(int argv, char** argc) {
-    std::string path = config::KSourcePath + "/tests/mps.json";
+    std::string path, target;
+
+    if (argv > 1) {
+        path = argc[1]; target = argc[2];
+    } else {
+        path = "/home/jiry/2022A/IncreLanguage//tmp.json";
+    }
     auto prog = incre::file2program(path);
 
 
     auto env = std::make_shared<Env>();
     incre::autolifter::prepareAutoLifterEnv(env.get());
     auto* info = incre::buildIncreInfo(prog, env.get());
-    for (int i = 1; i <= 5; ++i) {
+    for (int i = 1; i <= 100; ++i) {
         info->example_pool->generateExample();
     }
 
     for (auto& pass_info: info->pass_infos) {
         pass_info->print();
+        if (pass_info->getId() < info->example_pool->example_pool.size()) continue;
         auto& example_list = info->example_pool->example_pool[pass_info->getId()];
         for (int i = 0; i < 10 && i < example_list.size(); ++i) {
             std::cout << "  " << example_list[i]->toString() << std::endl;
@@ -58,7 +66,21 @@ int main(int argv, char** argc) {
     solution.print();
 
     auto res = incre::rewriteWithIncreSolution(info->program.get(), solution);
-    incre::printProgram(res, config::KSourcePath + "/tests/res.f");
+
+    // test
+    auto* new_ctx = incre::run(res);
+    for (int i = 0; i < 100; ++i) {
+        auto start_term = info->example_pool->generator->getStartTerm();
+        auto x = incre::run(start_term, info->ctx);
+        auto y = incre::run(start_term, new_ctx);
+        if (!(x == y)) {
+            LOG(FATAL) << "Counter example " << start_term->toString() << " std: " << x.toString() << " oup: " << y.toString();
+        }
+    }
+
+
+
+    incre::printProgram(res, target);
 
     /*invoke("head", {tl}, ctx);
     invoke("tail", {tl}, ctx);

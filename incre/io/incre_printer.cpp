@@ -349,16 +349,23 @@ void incre::printCommand(const std::shared_ptr<CommandData> &command) {
 }
 
 void incre::printProgram(const std::shared_ptr<ProgramData> &prog, const std::string &path) {
-    std::ofstream outFile(path);
-    std::streambuf *cout_buf = std::cout.rdbuf();
-    std::cout.rdbuf(outFile.rdbuf());
+    if (!path.empty()) {
+        std::ofstream outFile(path);
+        std::streambuf *cout_buf = std::cout.rdbuf();
+        std::cout.rdbuf(outFile.rdbuf());
 
-    for (auto& command : prog->commands) {
-      std::cout << std::endl;
-      printCommand(command);
+        for (auto &command : prog->commands) {
+            std::cout << std::endl;
+            printCommand(command);
+        }
+
+        std::cout.rdbuf(cout_buf);
+        outFile.close();
+    } else {
+        for (auto& command: prog->commands) {
+            std::cout << std::endl;
+            printCommand(command);
+        }
     }
-
-    std::cout.rdbuf(cout_buf);
-    outFile.close();
 }
 

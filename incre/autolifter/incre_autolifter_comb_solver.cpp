@@ -16,16 +16,16 @@ using namespace incre::autolifter;
 namespace {
     struct _OutputCase {
         std::vector<int> path;
-        PProgram program;
+        TypedProgram program;
         Env* env;
-        _OutputCase(const std::vector<int>& _path, const PProgram& _program, Env* _env): path(_path), program(_program), env(_env) {}
+        _OutputCase(const std::vector<int>& _path, const TypedProgram& _program, Env* _env): path(_path), program(_program), env(_env) {}
         Data extract(const Data& d) const {
             auto res = d;
             for (auto pos: path) {
                 auto* cv = dynamic_cast<VCompress*>(res.get());
                 if (cv) {
                     try {
-                        return env->run(program.get(), {cv->content});
+                        return env->run(program.second.get(), {cv->content});
                     } catch (SemanticsError& e) {
                         return {};
                     }
@@ -49,13 +49,17 @@ namespace {
         } else if (type->getType() == TyType::COMPRESS) {
             auto* ct = dynamic_cast<TyLabeledCompress*>(type.get());
             assert(ct);
-            for (int i = 0; i < f_res_list[ct->id].component_list.size(); ++i) {
-                path.push_back(i);
-                auto& oup_component = f_res_list[ct->id].component_list[i];
-                res.emplace_back(path, oup_component.program, env);
-                path.pop_back();
+            if (f_res_list[ct->id].component_list.size() == 1) {
+                res.emplace_back(path, f_res_list[ct->id].component_list[0].program,env);
+            } else {
+                for (int i = 0; i < f_res_list[ct->id].component_list.size(); ++i) {
+                    path.push_back(i);
+                    auto &oup_component = f_res_list[ct->id].component_list[i];
+                    res.emplace_back(path, oup_component.program, env);
+                    path.pop_back();
+                }
             }
-        } else res.emplace_back(path, nullptr, env);
+        } else res.emplace_back(path, std::pair<PType, PProgram>(incre::typeFromIncre(type), nullptr), env);
     }
 
     std::vector<_OutputCase> _collectOutputCase(int pass_id, IncreAutoLifterSolver* solver) {
@@ -69,13 +73,14 @@ namespace {
     public:
         FExampleSpace* base_example_space;
         PEnv env;
+        int pass_id;
 
         IOExampleList example_list;
         TypeList inp_type_list;
         Ty oup_ty;
         std::vector<FRes> f_res_list;
-        ProgramStorage compress_program_storage;
-        ProgramList const_program_list;
+        std::vector<std::vector<TypedProgram>> compress_program_storage;
+        std::vector<TypedProgram> const_program_list;
         int KExampleTimeOut = 10, current_pos, KExampleEnlargeFactor = 2;
 
         void insertExample(const IOExample& example) {
@@ -95,12 +100,8 @@ namespace {
             if (type->getType() == TyType::COMPRESS) {
                 auto* ct = dynamic_cast<TyLabeledCompress*>(type.get());
                 auto* cv = dynamic_cast<VCompress*>(d.get());
-                assert(ct && cv); auto& res = f_res_list[ct->id];
-                DataList elements(res.component_list.size());
-                for (int i = 0; i < res.component_list.size(); ++i) {
-                    elements[i] = env->run(res.component_list[i].program.get(), {cv->content});
-                }
-                return BuildData(Product, elements);
+                assert(ct && cv);
+                return f_res_list[ct->id].run(cv->content, env.get());
             }
             return d;
         }
@@ -113,18 +114,18 @@ namespace {
             for (int i = 0; i < compress_program_storage.size(); ++i) {
                 for (auto& d: f_example.compress_storage[i]) {
                     for (auto& p: compress_program_storage[i]) {
-                        inp.push_back(env->run(p.get(), {d}));
+                        inp.push_back(env->run(p.second.get(), {d}));
                     }
                 }
             }
             for (auto& p: const_program_list) {
-                inp.push_back(env->run(p.get(), f_example.const_list));
+                inp.push_back(env->run(p.second.get(), f_example.const_list));
             }
             auto oup = runOutput(oup_ty, f_example.oup);
             insertExample({inp, oup});
         }
-        CExampleSpace(int pass_id, FExampleSpace* _base_example_space, IncreAutoLifterSolver* source):
-                base_example_space(_base_example_space), compress_program_storage(_base_example_space->compress_infos.size()) {
+        CExampleSpace(int _pass_id, FExampleSpace* _base_example_space, IncreAutoLifterSolver* source):
+                pass_id(_pass_id), base_example_space(_base_example_space), compress_program_storage(_base_example_space->compress_infos.size()) {
             env = base_example_space->env;
             f_res_list = source->f_res_list; oup_ty = source->info->pass_infos[pass_id]->oup_type;
 
@@ -142,13 +143,13 @@ namespace {
             // collect input types
             for (int i = 0; i < compress_program_storage.size(); ++i) {
                 for (auto _: base_example_space->compress_infos[i].second) {
-                    for (auto cp: compress_program_storage[i]) {
-                        inp_type_list.push_back(theory::clia::getTInt());
+                    for (auto& cp: compress_program_storage[i]) {
+                        inp_type_list.push_back(cp.first);
                     }
                 }
             }
             for (auto& const_prog: const_program_list) {
-                inp_type_list.push_back(theory::clia::getTInt());
+                inp_type_list.push_back(const_prog.first);
             }
 
             for (int i = 0; i < current_pos; ++i) {
@@ -177,54 +178,32 @@ namespace {
         }
     };
 
-    PProgram _buildPossibleNullProgram(const PProgram& cond, const PProgram& res, Env* env) {
-        auto null = program::buildConst({});
-        return std::make_shared<Program>(env->getSemantics("ite"), (ProgramList){cond, null, res});
-    }
-
-    typedef std::pair<std::vector<int>, PProgram> ComponentProgram;
-
-    PProgram _mergeComponentProgram(int pos, int l, int r, const std::vector<ComponentProgram>& component_list, Env* env) {
-        if (r == l + 1 && pos == component_list[l].first.size()) return component_list[l].second;
-        int pre = l;
-        ProgramList components;
-        for (int i = l + 1; i <= r; ++i) {
-            if (i == r || component_list[i].first[pos] != component_list[pre].first[pos]) {
-                components.push_back(_mergeComponentProgram(pos + 1, pre, i, component_list, env));
-                pre = i;
+    PProgram _mergeComponentProgram(TyData* type, int& pos, const ProgramList& program_list, const std::vector<FRes>& f_res_list, Env* env) {
+        if (type->getType() == TyType::COMPRESS) {
+            auto* ct = dynamic_cast<TyLabeledCompress*>(type); assert(ct);
+            int size = f_res_list[ct->id].component_list.size();
+            if (size == 0) return program::buildConst(Data(std::make_shared<VUnit>()));
+            if (size == 1) return program_list[pos++];
+            ProgramList sub_list;
+            for (int i = 0; i < size; ++i) sub_list.push_back(program_list[pos++]);
+            return std::make_shared<Program>(env->getSemantics("prod"), sub_list);
+        }
+        if (type->getType() == TyType::TUPLE) {
+            auto* tt = dynamic_cast<TyTuple*>(type);
+            ProgramList sub_list;
+            for (auto& sub: tt->fields) {
+                sub_list.push_back(_mergeComponentProgram(sub.get(), pos, program_list, f_res_list, env));
             }
+            return std::make_shared<Program>(env->getSemantics("prod"), sub_list);
         }
-        return std::make_shared<Program>(env->getSemantics("prod"), components);
+        return program_list[pos++];
     }
 
-    PProgram _mergeComponentProgram(const std::vector<ComponentProgram>& component_list, Env* env) {
-        for (int i = 1; i < component_list.size(); ++i) {
-            assert(component_list[i - 1].first < component_list[i].first);
-        }
-        return _mergeComponentProgram(0, 0, component_list.size(), component_list, env);
-    }
-
-    Grammar* _eraseNullParam(Grammar* base, const Bitset& null_params) {
-        base->indexSymbol();
-        NTList symbols(base->symbol_list.size());
-        for (int i = 0; i < symbols.size(); ++i) {
-            symbols[i] = new NonTerminal(base->symbol_list[i]->name, base->symbol_list[i]->type);
-        }
-        for (auto* base_symbol: base->symbol_list) {
-            auto* symbol = symbols[base_symbol->id];
-            for (auto* rule: base_symbol->rule_list) {
-                auto* cr = dynamic_cast<ConcreteRule*>(rule); assert(cr);
-                auto* ps = dynamic_cast<ParamSemantics*>(cr->semantics.get());
-                if (ps) {
-                    LOG(INFO) << ps->id << " " << null_params.size();
-                }
-                if (ps && null_params[ps->id]) continue;
-                NTList params;
-                for (auto& base_param: rule->param_list) params.push_back(symbols[base_param->id]);
-                symbol->rule_list.push_back(new ConcreteRule(cr->semantics, params));
-            }
-        }
-        return new Grammar(symbols[base->start->id], symbols);
+    PProgram _mergeComponentProgram(TyData* type, const ProgramList& program_list, const std::vector<FRes>& f_res_list, Env* env) {
+        int pos = 0;
+        auto res = _mergeComponentProgram(type, pos, program_list, f_res_list, env);
+        assert(pos == program_list.size());
+        return res;
     }
 
     TypeList _getInpTypes(Grammar* grammar) {
@@ -248,8 +227,11 @@ namespace {
 
     PProgram _synthesis(Grammar* grammar, const IOExampleList& example_list, const PEnv& env, SolverToken token) {
         const std::string default_name = "func";
+        if (example_list.empty()) {
+            return grammar::getMinimalProgram(grammar);
+        }
         auto example_space = example::buildFiniteIOExampleSpace(example_list, default_name, env.get());
-        auto info = std::make_shared<SynthInfo>(default_name, _getInpTypes(grammar), theory::clia::getTInt(), grammar);
+        auto info = std::make_shared<SynthInfo>(default_name, _getInpTypes(grammar), grammar->start->type, grammar);
         auto* spec = new Specification({info}, env, example_space);
         auto* v = new FiniteExampleVerifier(example_space.get());
 
@@ -266,18 +248,29 @@ namespace {
         return res + "]";
     }
 
-    PProgram _synthesisCombinator(CExampleSpace* example_space, const std::vector<_OutputCase>& component_info_list, Grammar* grammar) {
-        std::vector<ComponentProgram> res_list;
+    SolverToken _getSolverToken(Type* oup_type) {
+        if (dynamic_cast<TBool*>(oup_type)) return SolverToken::POLYGEN_CONDITION;
+        if (dynamic_cast<TInt*>(oup_type)) return SolverToken::POLYGEN;
+        LOG(FATAL) << "Unsupported type " << oup_type->getName();
+    }
+
+    PProgram _synthesisCombinator(CExampleSpace* example_space, const std::vector<_OutputCase>& component_info_list, IncreAutoLifterSolver* solver) {
+        ProgramList res_list;
         for (auto& component_info: component_info_list) {
             IOExampleList component_example_list;
             for (auto& [inp, oup]: example_space->example_list) {
                 auto oup_component = component_info.extract(oup);
                 component_example_list.emplace_back(inp, oup_component);
             }
-            PProgram main = _synthesis(grammar, component_example_list, example_space->env, SolverToken::POLYGEN);
-            res_list.emplace_back(component_info.path, main);
+
+            // synthesis
+            auto oup_type = component_info.program.first;
+            auto* grammar = solver->buildCombinatorGrammar(example_space->inp_type_list, oup_type, example_space->pass_id);
+            SolverToken token = _getSolverToken(oup_type.get());
+            PProgram main = _synthesis(grammar, component_example_list, example_space->env, token);
+            res_list.push_back(main);
         }
-        return _mergeComponentProgram(res_list, example_space->env.get());
+        return _mergeComponentProgram(example_space->oup_ty.get(), res_list, example_space->f_res_list, example_space->env.get());
     }
 }
 
@@ -287,6 +280,11 @@ namespace {
         if (ps) return param_list[ps->id];
         TermList sub_list;
         for (const auto& sub: program->sub_list) sub_list.push_back(_buildProgram(sub.get(), component, param_list));
+        auto* as = dynamic_cast<AccessSemantics*>(program->semantics.get());
+        if (as) {
+            assert(param_list.size() == 1);
+            return std::make_shared<TmProj>(sub_list[0], as->id + 1);
+        }
         auto name = program->semantics->getName();
         auto it = component.find(program->semantics->getName());
         if (it != component.end()) {
@@ -314,16 +312,17 @@ Term IncreAutoLifterSolver::synthesisCombinator(int pass_id) {
     LOG(INFO) << "Output cases " << output_cases.size();
     for (auto& component: output_cases) {
         std::cout << "  " << _path2String(component.path) << " ";
-        if (!component.program) std::cout << "null" << std::endl;
-        else std::cout << component.program->toString() << std::endl;
+        if (!component.program.second) std::cout << "null" << std::endl;
+        else std::cout << component.program.second->toString() << std::endl;
     }
-    Grammar* grammar = buildCombinatorGrammar(example_space->inp_type_list);
     PProgram res = nullptr;
 
     while (!res || !example_space->isValid(res)) {
-        res = _synthesisCombinator(example_space, output_cases, grammar);
+        res = _synthesisCombinator(example_space, output_cases, this);
+        LOG(INFO) << "candidate program " << res->toString();
         example_space->extendExample();
     }
+    LOG(INFO) << "finished";
 
     // Build Param List
     TermList param_list;
@@ -353,9 +352,14 @@ Term IncreAutoLifterSolver::synthesisCombinator(int pass_id) {
             const_param_list.push_back(std::make_shared<TmVar>(const_name));
         }
         for (auto& const_program: const_res_list[pass_id].const_list) {
-            std::string const_name = "c" + std::to_string(const_id++);
-            binding_list.emplace_back(const_name, _buildProgram(const_program, info->component_list, const_param_list));
-            param_list.push_back(std::make_shared<TmVar>(const_name));
+            auto const_term = _buildProgram(const_program.second, info->component_list, const_param_list);
+            if (const_term->getType() == TermType::VALUE || const_term->getType() == TermType::VAR) {
+                param_list.push_back(const_term);
+            } else {
+                std::string const_name = "c" + std::to_string(const_id++);
+                binding_list.emplace_back(const_name, const_term);
+                param_list.push_back(std::make_shared<TmVar>(const_name));
+            }
         }
     }
 

@@ -7,8 +7,8 @@
 
 using namespace incre;
 
-PassTypeInfoData::PassTypeInfoData(TmLabeledPass* _term, const std::unordered_map<std::string, Ty> &type_ctx, const Ty &_oup_type):
-    oup_type(_oup_type), term(_term) {
+PassTypeInfoData::PassTypeInfoData(TmLabeledPass* _term, const std::unordered_map<std::string, Ty> &type_ctx, const Ty &_oup_type, int _command_id):
+    oup_type(_oup_type), term(_term), command_id(_command_id) {
     auto inps = incre::getUnboundedVars(term->content.get());
     for (const auto& inp: inps) {
         auto it = type_ctx.find(inp);
@@ -55,12 +55,12 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
     assert(command);
     auto name = command->name;
     auto* type_ctx = new TypeContext(ctx);
-    auto type = incre::unfoldAll(ctx->getType(name), type_ctx);
+    auto type = incre::unfoldTypeWithLabeledCompress(ctx->getType(name), type_ctx);
     delete type_ctx;
     auto* generator = new DefaultStartTermGenerator(name, type.get());
     pool->generator = generator;
 
     // build components
-    auto component_list = incre::collectComponentList(ctx, env, incre::compressRelatedNames(program));
+    auto component_list = incre::collectComponentList(ctx, env, incre::getComponentInfo(program));
     return new IncreInfo(labeled_program, ctx, pass_info, pool, component_list);
 }
