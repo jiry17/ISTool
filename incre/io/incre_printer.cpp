@@ -10,6 +10,14 @@
 using namespace incre;
 bool debug = false;
 
+namespace {
+    bool _isNeedBracket(TermType def_type) {
+        return !(def_type == incre::TermType::VALUE ||
+                 def_type == incre::TermType::VAR || def_type == incre::TermType::TUPLE
+                 || def_type == incre::TermType::PROJ);
+    }
+}
+
 void incre::printTy(const std::shared_ptr<TyData> &ty) {
     if (debug) std::cout << std::endl << "[zyw: printTy] ";
     if (ty->getType() == TyType::INT) {
@@ -218,14 +226,14 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
         std::cout << ")";
       if (debug) std::cout << std::endl << "[FIX_END]" << std::endl;
     } else if (term->getType() == TermType::MATCH) {
-      if (debug) std::cout << "[MATCH]" << std::endl;
+        if (debug) std::cout << "[MATCH]" << std::endl;
         std::shared_ptr<TmMatch> tm_match =
                 std::dynamic_pointer_cast<TmMatch>(term);
         std::cout << "match ";
         printTerm(tm_match->def);
         std::cout << " with " << std::endl;
         bool flag = false;
-        for (auto& match_case : tm_match->cases) {
+        for (auto &match_case : tm_match->cases) {
             if (flag) {
                 std::cout << "| ";
             } else {
@@ -238,50 +246,30 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
             std::cout << std::endl;
         }
         std::cout << "end" << std::endl;
-    } else if (term->getType() == TermType::CREATE) {
-      if (debug) std::cout << "[CREATE]" << std::endl;
-        std::shared_ptr<TmCreate> tm_create =
-                std::dynamic_pointer_cast<TmCreate>(term);
-        incre::TermType def_type = tm_create->def->getType();
-        bool need_bracket = !(def_type == incre::TermType::VALUE ||
-          def_type == incre::TermType::VAR || def_type == incre::TermType::TUPLE
-          || def_type == incre::TermType::PROJ);
-        std::cout << "create ";
+    } else if (term->getType() == TermType::LABEL) {
+        auto* tm_label = dynamic_cast<TmLabel*>(term.get());
+        auto need_bracket = _isNeedBracket(tm_label->content->getType());
+        std::cout << "label ";
         if (need_bracket) std::cout << "(";
-        printTerm(tm_create->def);
+        printTerm(tm_label->content);
         if (need_bracket) std::cout << ")";
         std::cout << " ";
-    } else if (term->getType() == TermType::PASS) {
-      if (debug) std::cout << "[PASS]" << std::endl;
-        std::shared_ptr<TmPass> tm_pass =
-                std::dynamic_pointer_cast<TmPass>(term);
-        bool need_bracket = (tm_pass->names.size() > 1);
-        std::cout << "pass ";
+    } else if (term->getType() == TermType::UNLABEL) {
+        auto* tm_unlabel = dynamic_cast<TmUnLabel*>(term.get());
+        auto need_bracket = _isNeedBracket(tm_unlabel->content->getType());
+        std::cout << "unlabel ";
         if (need_bracket) std::cout << "(";
-        bool flag = false;
-        for (auto& pass_name : tm_pass->names) {
-            if (flag) {
-                std::cout << ", ";
-            } else {
-                flag = true;
-            }
-            std::cout << pass_name;
-        }
+        printTerm(tm_unlabel->content);
         if (need_bracket) std::cout << ")";
-        std::cout << " from ";
+        std::cout << " ";
+    } else if (term->getType() == TermType::ALIGN) {
+        auto* tm_align = dynamic_cast<TmAlign*>(term.get());
+        auto need_bracket = _isNeedBracket(tm_align->content->getType());
+        std::cout << "align ";
         if (need_bracket) std::cout << "(";
-        flag = false;
-        for (auto& pass_def : tm_pass->defs) {
-            if (flag) {
-                std::cout << ", ";
-            } else {
-                flag = true;
-            }
-            printTerm(pass_def);
-        }
+        printTerm(tm_align->content);
         if (need_bracket) std::cout << ")";
-        std::cout << " to " << std::endl;
-        printTerm(tm_pass->content);
+        std::cout << " ";
     } else {
         LOG(FATAL) << "Unknown term";
     }

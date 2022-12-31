@@ -155,21 +155,22 @@ namespace {
         }
         return false;
     }
-    TermHead(Pass) {
-        for (auto& def: term->defs) {
-            if (_isTermMatch(def.get(), task, ctx, tmp_names)) return true;
-        }
-        for (auto& name: term->names) tmp_names.push_back(name);
-        auto res = _isTermMatch(term->content.get(), task, ctx, tmp_names);
-        for (auto& _: term->names) tmp_names.pop_back();
-        return res;
+    TermHead(Label) {
+        return _isTermMatch(term->content.get(), task, ctx, tmp_names);
+    }
+    TermHead(UnLabel) {
+        return _isTermMatch(term->content.get(), task, ctx, tmp_names);
+    }
+    TermHead(Align) {
+        return _isTermMatch(term->content.get(), task, ctx, tmp_names);
     }
     bool _isTermMatch(TermData* term, const MatchTask& task, const MatchContext& ctx, std::vector<std::string>& tmp_names) {
         if (task.term_matcher(term, ctx)) return true;
         switch (term->getType()) {
             case TermType::VALUE: return false;
-            case TermType::PASS: TermCase(Pass);
-            case TermType::CREATE: TermCase(Tuple);
+            case TermType::LABEL: TermCase(Label);
+            case TermType::UNLABEL: TermCase(UnLabel);
+            case TermType::ALIGN: TermCase(Align);
             case TermType::TUPLE: TermCase(Tuple);
             case TermType::VAR: TermCase(Var);
             case TermType::MATCH: TermCase(Match);
@@ -241,7 +242,7 @@ InputComponentInfo::InputComponentInfo(const std::string &_name): name(_name),
 std::unordered_map<std::string, InputComponentInfo> incre::getComponentInfo(const IncreProgram &program) {
     MatchTask compress_task, recursive_task;
     compress_task.term_matcher = [](TermData* term, const MatchContext& ctx) -> bool{
-        return term->getType() == TermType::PASS || term->getType() == TermType::CREATE;
+        return term->getType() == TermType::LABEL || term->getType() == TermType::UNLABEL || term->getType() == TermType::ALIGN;
     };
     compress_task.type_matcher = [](TyData* term, const MatchContext& ctx) -> bool {
         return term->getType() == TyType::COMPRESS;

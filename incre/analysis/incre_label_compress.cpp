@@ -223,10 +223,17 @@ namespace {
         return {std::make_shared<TmAbs>(term->name, type, content_term), std::make_shared<TyArrow>(type, content_type)};
     }
 
-    LabelTermHead(Create) {
-        LabelSub(def);
-        int id = cs->getFLabel();
-        return {std::make_shared<TmLabeledCreate>(def_term, id), std::make_shared<TyLabeledCompress>(def_type, id)};
+    LabelTermHead(Label) {
+        LabelSub(content); int id = cs->getFLabel();
+        return {std::make_shared<TmLabeledLabel>(content_term, id), std::make_shared<TyLabeledCompress>(content_type, id)};
+    }
+    LabelTermHead(UnLabel) {
+        LabelSub(content);
+        auto* ct = dynamic_cast<TyCompress*>(content_type.get());
+        if (!ct) {
+            LOG(FATAL) << "Only TyCompress can be unlabeled, but get " << content_type->toString();
+        }
+        return {std::make_shared<TmUnLabel>(content_term), ct->content};
     }
 
     LabelTermHead(Match) {
@@ -247,27 +254,10 @@ namespace {
         }
         return {std::make_shared<TmMatch>(def_term, case_list), type_list[0]};
     }
-
-    LabelTermHead(Pass) {
+    LabelTermHead(Align) {
         int tau_id = cs->getTauLabel();
-        TermList term_list; TyList type_list;
-        std::vector<TypeContext::BindLog> bind_list;
-        for (const auto& def: term->defs) {
-            LabelSub2(def);
-            term_list.push_back(def_term);
-            type_list.push_back(def_type);
-        }
-        for (int i = 0; i < type_list.size(); ++i) {
-            auto unfolded_type = unfoldType(type_list[i], ctx, {});
-            auto* ct = dynamic_cast<TyCompress*>(unfolded_type.get());
-            assert(ct);
-            bind_list.push_back(ctx->bind(term->names[i], ct->content));
-        }
         LabelSub(content);
-        for (int i = bind_list.size(); i; --i) {
-            ctx->cancelBind(bind_list[i - 1]);
-        }
-        return {std::make_shared<TmLabeledPass>(term->names, term_list, content_term, tau_id), content_type};
+        return {std::make_shared<TmLabeledAlign>(content_term, tau_id), content_type};
     }
 
     LabelTermHead(Fix) {
@@ -289,9 +279,10 @@ namespace {
             case TermType::IF: LabelTermCase(If);
             case TermType::APP: LabelTermCase(App);
             case TermType::ABS: LabelTermCase(Abs);
-            case TermType::CREATE: LabelTermCase(Create);
+            case TermType::LABEL: LabelTermCase(Label);
+            case TermType::ALIGN: LabelTermCase(Align);
+            case TermType::UNLABEL: LabelTermCase(UnLabel);
             case TermType::MATCH: LabelTermCase(Match);
-            case TermType::PASS: LabelTermCase(Pass);
             case TermType::FIX: LabelTermCase(Fix);
         }
     }
@@ -414,20 +405,19 @@ namespace {
         auto def = _relabelTerm(term->def, cs);
         return std::make_shared<TmMatch>(def, cases);
     }
-    RelabelTermHead(LabeledPass) {
-        assert(term);
-        TermList defs;
-        for (const auto& def: term->defs) {
-            defs.push_back(_relabelTerm(def, cs));
-        }
+    RelabelTermHead(LabeledLabel) {
+        assert(term); int id = cs->getGroup(term->id);
         auto content = _relabelTerm(term->content, cs);
-        return std::make_shared<TmLabeledPass>(term->names, defs, content, term->tau_id);
+        return std::make_shared<TmLabeledLabel>(content, id);
     }
-    RelabelTermHead(LabeledCreate) {
+    RelabelTermHead(UnLabel) {
+        auto content = _relabelTerm(term->content, cs);
+        return std::make_shared<TmUnLabel>(content);
+    }
+    RelabelTermHead(LabeledAlign) {
         assert(term);
-        auto id = cs->getGroup(term->id);
-        auto content = _relabelTerm(term->def, cs);
-        return std::make_shared<TmLabeledCreate>(content, id);
+        auto content = _relabelTerm(term->content, cs);
+        return std::make_shared<TmLabeledAlign>(content, term->id);
     }
     RelabelTermHead(Let) {
         auto def = _relabelTerm(term->def, cs);
@@ -452,10 +442,12 @@ namespace {
                 RelabelTermCase(Match);
             case TermType::IF:
                 RelabelTermCase(If);
-            case TermType::CREATE:
-                RelabelTermCase(LabeledCreate);
-            case TermType::PASS:
-                RelabelTermCase(LabeledPass);
+            case TermType::LABEL:
+                RelabelTermCase(LabeledLabel);
+            case TermType::UNLABEL:
+                RelabelTermCase(UnLabel);
+            case TermType::ALIGN:
+                RelabelTermCase(LabeledAlign);
             case TermType::APP:
                 RelabelTermCase(App);
             case TermType::ABS:

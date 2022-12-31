@@ -7,8 +7,8 @@
 
 using namespace incre;
 
-PassTypeInfoData::PassTypeInfoData(TmLabeledPass* _term, const std::unordered_map<std::string, Ty> &type_ctx, const Ty &_oup_type, int _command_id):
-    oup_type(_oup_type), term(_term), command_id(_command_id) {
+AlignTypeInfoData::AlignTypeInfoData(const Term& __term, const std::unordered_map<std::string, Ty> &type_ctx, const Ty &_oup_type, int _command_id):
+    oup_type(_oup_type), _term(__term), term(dynamic_cast<TmLabeledAlign*>(__term.get())), command_id(_command_id) {
     auto inps = incre::getUnboundedVars(term->content.get());
     for (const auto& inp: inps) {
         auto it = type_ctx.find(inp);
@@ -17,18 +17,18 @@ PassTypeInfoData::PassTypeInfoData(TmLabeledPass* _term, const std::unordered_ma
         }
     }
 }
-int PassTypeInfoData::getId() const {
-    return term->tau_id;
+int AlignTypeInfoData::getId() const {
+    return term->id;
 }
-void PassTypeInfoData::print() const {
-    std::cout << "pass term #" << term->tau_id << ": " << oup_type->toString() << std::endl;
+void AlignTypeInfoData::print() const {
+    std::cout << "align term #" << term->id << ": " << oup_type->toString() << std::endl;
     std::cout << term->toString() << std::endl;
     for (const auto& [name, ty]: inp_types) {
         std::cout << "  " << name << ": " << ty->toString() << std::endl;
     }
 }
 
-IncreInfo::IncreInfo(const IncreProgram &_program, Context *_ctx, const PassTypeInfoList &infos, IncreExamplePool *pool, const std::vector<SynthesisComponent *> &_component_list):
+IncreInfo::IncreInfo(const IncreProgram &_program, Context *_ctx, const AlignTypeInfoList &infos, IncreExamplePool *pool, const std::vector<SynthesisComponent *> &_component_list):
     program(_program), ctx(_ctx), pass_infos(infos), example_pool(pool), component_list(_component_list) {
 }
 IncreInfo::~IncreInfo() {
@@ -37,9 +37,10 @@ IncreInfo::~IncreInfo() {
 }
 
 IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
-    auto labeled_program = incre::eliminateUnboundedCreate(program);
-    labeled_program = incre::labelCompress(labeled_program);
-    auto pass_info = incre::collectPassType(labeled_program);
+    //auto labeled_program = incre::eliminateUnboundedCreate(program);
+    incre::checkAllLabelBounded(program.get());
+    auto labeled_program = incre::labelCompress(program);
+    auto pass_info = incre::collectAlignType(labeled_program);
     for (const auto& info: pass_info) {
         info->print();
     }

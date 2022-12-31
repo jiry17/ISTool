@@ -23,21 +23,22 @@ namespace incre {
         virtual ~TyLabeledCompress() = default;
     };
 
-    class TmLabeledCreate: public TmCreate {
+    class TmLabeledLabel: public TmLabel {
     public:
         int id;
-        TmLabeledCreate(const Term& _content, int _id);
-        virtual ~TmLabeledCreate() = default;
+        TmLabeledLabel(const Term& _content, int _id);
+        virtual std::string toString() const;
+        virtual ~TmLabeledLabel() = default;
     };
 
-    class TmLabeledPass: public TmPass {
+    class TmLabeledAlign: public TmAlign {
     public:
-        int tau_id;
+        int id;
         std::unordered_map<std::string, Data> subst_info;
-        TmLabeledPass(const std::vector<std::string> &names, const TermList &_defs, const Term &_content, int _tau_id,
-                const std::unordered_map<std::string, Data>& _subst_info = {});
-        void addSubst(const std::string& name, const Data& data);
-        virtual ~TmLabeledPass() = default;
+        TmLabeledAlign(const Term& _content, int _id, const std::unordered_map<std::string, Data>& _subst_info={});
+        virtual std::string toString() const;
+        void addSubst(const std::string& name, const Data& v);
+        virtual ~TmLabeledAlign() = default;
     };
 }
 

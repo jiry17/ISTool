@@ -77,37 +77,36 @@ std::string TmMatch::toString() const {
     return res;
 }
 
-TmCreate::TmCreate(const Term &_def): TermData(TermType::CREATE), def(_def) {}
-std::string TmCreate::toString() const {
-    return "create " + def->toString();
+TmLabel::TmLabel(const Term &_content): TermData(TermType::LABEL), content(_content) {}
+std::string TmLabel::toString() const {
+    return "label " + content->toString();
 }
 
-TmPass::TmPass(const std::vector<std::string> &_names, const TermList &_defs, const Term &_content):
-    TermData(TermType::PASS), names(_names), defs(_defs), content(_content) {
-    if (names.size() != defs.size()) {
-        LOG(FATAL) << "In a TmPass, the numbers of names and definitions must be the same";
-    }
+TmUnLabel::TmUnLabel(const Term &_content): TermData(TermType::UNLABEL), content(_content) {}
+std::string TmUnLabel::toString() const {
+    return "unlabel " + content->toString();
 }
-std::string TmPass::toString() const {
-    std::string res = "pass (";
-    for (int i = 0; i < names.size(); ++i) {
-        if (i) res += ", "; res += names[i];
-    }
-    res += ") from (";
-    for (int i = 0; i < defs.size(); ++i) {
-        if (i) res += ","; res += defs[i]->toString();
-    }
-    res += ") to " + content->toString();
-    return res;
+
+TmAlign::TmAlign(const Term &_content): TermData(TermType::ALIGN), content(_content) {}
+std::string TmAlign::toString() const {
+    return "align " + content->toString();
 }
 
 TermList incre::getSubTerms(TermData *term) {
     switch (term->getType()) {
         case TermType::VALUE:
         case TermType::VAR: return {};
-        case TermType::CREATE: {
-            auto* tc = dynamic_cast<TmCreate*>(term);
-            return {tc->def};
+        case TermType::ALIGN: {
+            auto* ta = dynamic_cast<TmAlign*>(term);
+            return {ta->content};
+        }
+        case TermType::LABEL: {
+            auto* tl = dynamic_cast<TmLabel*>(term);
+            return {tl->content};
+        }
+        case TermType::UNLABEL: {
+            auto* tu = dynamic_cast<TmUnLabel*>(term);
+            return {tu->content};
         }
         case TermType::APP: {
             auto* ta = dynamic_cast<TmApp*>(term);
@@ -130,11 +129,6 @@ TermList incre::getSubTerms(TermData *term) {
         case TermType::TUPLE: {
             auto* tt = dynamic_cast<TmTuple*>(term);
             return tt->fields;
-        }
-        case TermType::PASS: {
-            auto* tp = dynamic_cast<TmPass*>(term);
-            auto res = tp->defs; res.push_back(tp->content);
-            return res;
         }
         case TermType::PROJ: {
             auto* tp = dynamic_cast<TmProj*>(term);
@@ -170,10 +164,6 @@ namespace {
         }
         return std::make_shared<TmMatch>(def, cases);
     }
-    ReplaceHead(Create) {
-        ReplaceSub(def);
-        return std::make_shared<TmCreate>(def);
-    }
     ReplaceHead(If) {
         ReplaceSub(c); ReplaceSub(t); ReplaceSub(f);
         return std::make_shared<TmIf>(c, t, f);
@@ -182,11 +172,17 @@ namespace {
         ReplaceSub(content);
         return std::make_shared<TmFix>(content);
     }
-    ReplaceHead(Pass) {
-        TermList defs;
-        for (auto& def: term->defs) defs.push_back(replaceTerm(def, replace_func));
+    ReplaceHead(Align) {
         ReplaceSub(content);
-        return std::make_shared<TmPass>(term->names, defs, content);
+        return std::make_shared<TmAlign>(content);
+    }
+    ReplaceHead(Label) {
+        ReplaceSub(content);
+        return std::make_shared<TmLabel>(content);
+    }
+    ReplaceHead(UnLabel) {
+        ReplaceSub(content);
+        return std::make_shared<TmUnLabel>(content);
     }
     ReplaceHead(Let) {
         ReplaceSub(def); ReplaceSub(content);
@@ -212,8 +208,9 @@ Term incre::replaceTerm(const Term& term, const std::function<Term(const Term&)>
         case TermType::ABS: ReplaceCase(Abs);
         case TermType::APP: ReplaceCase(App);
         case TermType::MATCH: ReplaceCase(Match);
-        case TermType::CREATE: ReplaceCase(Create);
-        case TermType::PASS: ReplaceCase(Pass);
+        case TermType::ALIGN: ReplaceCase(Align);
+        case TermType::LABEL: ReplaceCase(Label);
+        case TermType::UNLABEL: ReplaceCase(UnLabel);
         case TermType::IF: ReplaceCase(If);
         case TermType::FIX: ReplaceCase(Fix);
         case TermType::LET: ReplaceCase(Let);
@@ -229,8 +226,9 @@ std::string incre::termType2String(TermType type) {
         case TermType::ABS: return "Abs";
         case TermType::APP: return "App";
         case TermType::MATCH: return "Match";
-        case TermType::CREATE: return "Create";
-        case TermType::PASS: return "Pass";
+        case TermType::ALIGN: return "Align";
+        case TermType::LABEL: return "Label";
+        case TermType::UNLABEL: return "UnLabel";
         case TermType::IF: return "If";
         case TermType::FIX: return "Fix";
         case TermType::LET: return "Let";

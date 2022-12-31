@@ -24,8 +24,14 @@ namespace {
     GetHead(Fix) {
         GetSub(content);
     }
-    GetHead(Create) {
-        GetSub(def);
+    GetHead(Label) {
+        GetSub(content);
+    }
+    GetHead(UnLabel) {
+        GetSub(content);
+    }
+    GetHead(Align) {
+        GetSub(content);
     }
     GetHead(Proj) {
         GetSub(content);
@@ -76,13 +82,6 @@ namespace {
             tmps.resize(len);
         }
     }
-    GetHead(Pass) {
-        for (const auto& def: term->defs) GetSub2(def);
-        int len = tmps.size();
-        for (const auto& name: term->names) tmps.push_back(name);
-        GetSub(content);
-        tmps.resize(len);
-    }
     GetHead(If) {
         GetSub(c); GetSub(t); GetSub(f);
     }
@@ -93,14 +92,15 @@ namespace {
             case TermType::VALUE: return;
             case TermType::VAR: GetCase(Var);
             case TermType::FIX: GetCase(Fix);
-            case TermType::CREATE: GetCase(Create);
+            case TermType::LABEL: GetCase(Label);
+            case TermType::UNLABEL: GetCase(UnLabel);
+            case TermType::ALIGN: GetCase(Align);
             case TermType::PROJ: GetCase(Proj);
             case TermType::TUPLE: GetCase(Tuple);
             case TermType::LET: GetCase(Let);
             case TermType::ABS: GetCase(Abs);
             case TermType::APP: GetCase(App);
             case TermType::MATCH: GetCase(Match);
-            case TermType::PASS: GetCase(Pass);
             case TermType::IF: GetCase(If);
         }
     }

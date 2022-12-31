@@ -4,9 +4,10 @@
 
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "glog/logging.h"
+#include <unordered_set>
 
 using namespace incre;
-
+/*
 namespace {
 #define EliminateCreateCase(name) return _eliminateUnboundedCreate(dynamic_cast<Tm ## name*>(term.get()), term, is_bounded)
 #define EliminateCreateHead(name) Term _eliminateUnboundedCreate(Tm ## name* term, const Term& _term, bool is_bounded)
@@ -112,4 +113,34 @@ IncreProgram incre::eliminateUnboundedCreate(const IncreProgram& prog) {
         }
     }
     return std::make_shared<ProgramData>(commands);
+}*/
+
+namespace {
+
+    void _checkCovered(const Term& term) {
+        switch (term->getType()) {
+            case TermType::ALIGN:
+                return;
+            case TermType::LABEL:
+            case TermType::UNLABEL: {
+                LOG(FATAL) << "Term " << term->toString() << " is not covered by TmAlign";
+            }
+            default: {
+                auto sub_terms = incre::getSubTerms(term.get());
+                for (auto& sub_term: sub_terms) _checkCovered(sub_term);
+                return;
+            }
+        }
+    }
+}
+
+// TODO: This check is a temporary syntax check.
+void incre::checkAllLabelBounded(ProgramData *program) {
+    for (auto& command: program->commands) {
+        auto* cb = dynamic_cast<CommandBind*>(command.get());
+        if (!cb) continue;
+        auto* tb = dynamic_cast<TermBinding*>(cb->binding.get());
+        if (!tb) continue;
+        _checkCovered(tb->term);
+    }
 }

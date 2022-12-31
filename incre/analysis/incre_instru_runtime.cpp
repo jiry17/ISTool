@@ -66,10 +66,15 @@ namespace {
         if (!flag) return {_x, false};
         return {std::make_shared<TmTuple>(fields), true};
     }
-    SubstHead(LabeledCreate) {
-        SubstRes(def);
-        if (!def_flag) return {_x, false};
-        return {std::make_shared<TmLabeledCreate>(def_res, x->id), true};
+    SubstHead(LabeledLabel) {
+        assert(x); SubstRes(content);
+        if (!content_flag) return {_x, false};
+        return {std::make_shared<TmLabeledLabel>(content_res, x->id), true};
+    }
+    SubstHead(UnLabel) {
+        SubstRes(content);
+        if (!content_flag) return {_x, false};
+        return {std::make_shared<TmUnLabel>(content_res), true};
     }
     SubstHead(Abs) {
         if (x->name == name) return {_x, false};
@@ -107,22 +112,11 @@ namespace {
         if (!content_flag) return {_x, false};
         return {std::make_shared<TmProj>(content_res, x->id), true};
     }
-    SubstHead(LabeledPass) {
-        TermList defs; bool flag = false;
-        for (const auto& def: x->defs) {
-            SubstRes2(def); flag |= def_flag;
-            defs.push_back(def_res);
-        }
-        for (auto& p_name: x->names) {
-            if (p_name == name) {
-                if (!flag) return {_x, false};
-                return {std::make_shared<TmLabeledPass>(x->names, defs, x->content, x->tau_id, x->subst_info), true};
-            }
-        }
+    SubstHead(LabeledAlign) {
         SubstRes(content);
-        if (!flag && !content_flag) return {_x, false};
-        auto res = std::make_shared<TmLabeledPass>(x->names, defs, content_res, x->tau_id, x->subst_info);
-        if (content_flag) res->addSubst(name, incre::run(y, nullptr));
+        if (!content_flag) return {_x, false};
+        auto res = std::make_shared<TmLabeledAlign>(content_res, x->id, x->subst_info);
+        res->addSubst(name, incre::run(y, nullptr));
         return {res, true};
     }
 
@@ -137,8 +131,9 @@ namespace {
             case TermType::APP: SubstCase(App);
             case TermType::LET: SubstCase(Let);
             case TermType::PROJ: SubstCase(Proj);
-            case TermType::CREATE: SubstCase(LabeledCreate);
-            case TermType::PASS: SubstCase(LabeledPass);
+            case TermType::LABEL: SubstCase(LabeledLabel);
+            case TermType::UNLABEL: SubstCase(UnLabel);
+            case TermType::ALIGN: SubstCase(LabeledAlign);
             case TermType::FIX: SubstCase(Fix);
         }
     }
@@ -231,27 +226,21 @@ namespace {
             CollectSub(f); return f;
         }
     }
-    CollectHead(LabeledCreate) {
-        CollectSub(def);
-        return Data(std::make_shared<VLabeledCompress>(def, term->id));
-    }
-    CollectHead(LabeledPass) {
+    CollectHead(LabeledAlign) {
         std::unordered_map<std::string, Data> inp = term->subst_info;
-        Term content = term->content;
-        for (int i = int(term->names.size()) - 1; i >= 0; --i) {
-            auto def = term->defs[i];
-            CollectSub2(def);
-            auto* cv = dynamic_cast<VCompress*>(def_res.get());
-            assert(cv);
-            if (inp.find(term->names[i]) == inp.end()) {
-                inp[term->names[i]] = def_res;
-                content = collectSubst(content, term->names[i], std::make_shared<TmValue>(cv->content));
-            }
-        }
-        CollectSub2(content);
-        auto example = std::make_shared<IncreExampleData>(term->tau_id, inp, content_res);
+        CollectSub(content);
+        auto example = std::make_shared<IncreExampleData>(term->id, inp, content);
         pool->add(example);
-        return content_res;
+        return content;
+    }
+    CollectHead(LabeledLabel) {
+        CollectSub(content);
+        return Data(std::make_shared<VLabeledCompress>(content, term->id));
+    }
+    CollectHead(UnLabel) {
+        CollectSub(content);
+        auto* cv = dynamic_cast<VCompress*>(content.get());
+        assert(cv); return cv->content;
     }
 
     Data _collectExample(const Term &term, Context *ctx, IncreExamplePool* pool) {
@@ -263,8 +252,9 @@ namespace {
             case TermType::LET: CollectCase(Let);
             case TermType::ABS: CollectCase(Abs);
             case TermType::APP: CollectCase(App);
-            case TermType::CREATE: CollectCase(LabeledCreate);
-            case TermType::PASS: CollectCase(LabeledPass);
+            case TermType::LABEL: CollectCase(LabeledLabel);
+            case TermType::UNLABEL: CollectCase(UnLabel);
+            case TermType::ALIGN: CollectCase(LabeledAlign);
             case TermType::FIX: CollectCase(Fix);
             case TermType::MATCH: CollectCase(Match);
             case TermType::TUPLE: CollectCase(Tuple);

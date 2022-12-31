@@ -69,10 +69,22 @@ namespace {
         return {std::make_shared<TmTuple>(fields), true};
     }
 
-    SubstHead(Create) {
-        SubstRes(def);
-        if (!flag_def) return {_x, false};
-        return {std::make_shared<TmCreate>(res_def), true};
+    SubstHead(Label) {
+        SubstRes(content);
+        if (!flag_content) return {_x, false};
+        return {std::make_shared<TmLabel>(res_content), true};
+    }
+
+    SubstHead(UnLabel) {
+        SubstRes(content);
+        if (!flag_content) return {_x, false};
+        return {std::make_shared<TmUnLabel>(res_content), true};
+    }
+
+    SubstHead(Align) {
+        SubstRes(content);
+        if (!flag_content) return {_x, false};
+        return {std::make_shared<TmAlign>(res_content), true};
     }
 
     SubstHead(Abs) {
@@ -117,37 +129,21 @@ namespace {
         return {std::make_shared<TmProj>(res_content, x->id), true};
     }
 
-    SubstHead(Pass) {
-        TermList defs; bool flag = false;
-        for (const auto& def: x->defs) {
-            auto [res_def, flag_def] = _subst(def, name, y);
-            flag |= flag_def; defs.push_back(res_def);
-        }
-        for (auto& p_name: x->names) {
-            if (p_name == name) {
-                if (!flag) return {_x, false};
-                return {std::make_shared<TmPass>(x->names, defs, x->content), true};
-            }
-        }
-        SubstRes(content);
-        if (!flag && !flag_content) return {_x, false};
-        return {std::make_shared<TmPass>(x->names, defs, res_content), true};
-    }
-
     std::pair<Term, bool> _subst(const Term& x, const std::string& name, const Term& y) {
         switch (x->getType()) {
             case TermType::VALUE: return {x, false};
             case TermType::VAR: SubstCase(Var);
             case TermType::MATCH: SubstCase(Match);
             case TermType::TUPLE: SubstCase(Tuple);
-            case TermType::CREATE: SubstCase(Create);
             case TermType::ABS: SubstCase(Abs);
             case TermType::APP: SubstCase(App);
             case TermType::FIX: SubstCase(Fix);
             case TermType::IF: SubstCase(If);
             case TermType::LET: SubstCase(Let);
             case TermType::PROJ: SubstCase(Proj);
-            case TermType::PASS: SubstCase(Pass);
+            case TermType::LABEL: SubstCase(Label);
+            case TermType::UNLABEL: SubstCase(UnLabel);
+            case TermType::ALIGN: SubstCase(Align);
         }
     }
 }
@@ -274,9 +270,22 @@ namespace {
         return Data(std::make_shared<VTuple>(res));
     }
 
-    RunHead(Create) {
-        auto res = incre::run(term->def, ctx);
+    RunHead(Label) {
+        auto res = incre::run(term->content, ctx);
         return Data(std::make_shared<VCompress>(res));
+    }
+
+    RunHead(UnLabel) {
+        auto res = incre::run(term->content, ctx);
+        auto* cv = dynamic_cast<VCompress*>(res.get());
+        if (!cv) {
+            LOG(FATAL) << term->content->toString() << " does not return a compressed value";
+        }
+        return cv->content;
+    }
+
+    RunHead(Align) {
+        return incre::run(term->content, ctx);
     }
 
     RunHead(Abs) {
@@ -335,19 +344,6 @@ namespace {
         }
         return vt->elements[term->id - 1];
     }
-
-    RunHead(Pass) {
-        Term res = term->content;
-        for (int i = int(term->names.size()) - 1; i >= 0; --i) {
-            auto def = incre::run(term->defs[i], ctx);
-            auto* cv = dynamic_cast<VCompress*>(def.get());
-            if (!cv) {
-                LOG(FATAL) << def.toString() << " does not return a compress value.";
-            }
-            res = incre::subst(res, term->names[i], std::make_shared<TmValue>(cv->content));
-        }
-        return incre::run(res, ctx);
-    }
 }
 
 Data incre::run(const Term &term, Context* ctx) {
@@ -357,14 +353,15 @@ Data incre::run(const Term &term, Context* ctx) {
         case TermType::VAR: RunCase(Var);
         case TermType::MATCH: RunCase(Match);
         case TermType::TUPLE: RunCase(Tuple);
-        case TermType::CREATE: RunCase(Create);
+        case TermType::LABEL: RunCase(Label);
+        case TermType::UNLABEL: RunCase(UnLabel);
+        case TermType::ALIGN: RunCase(Align);
         case TermType::ABS: RunCase(Abs);
         case TermType::APP: RunCase(App);
         case TermType::FIX: RunCase(Fix);
         case TermType::IF: RunCase(If);
         case TermType::LET: RunCase(Let);
         case TermType::PROJ: RunCase(Proj);
-        case TermType::PASS: RunCase(Pass);
     }
 }
 

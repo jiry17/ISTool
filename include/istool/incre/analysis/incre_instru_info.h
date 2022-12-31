@@ -10,19 +10,20 @@
 
 namespace incre {
 
-    class PassTypeInfoData {
+    class AlignTypeInfoData {
     public:
-        TmLabeledPass* term;
+        TmLabeledAlign* term;
+        Term _term;
         std::vector<std::pair<std::string, Ty>> inp_types;
         Ty oup_type;
         int command_id;
-        PassTypeInfoData(TmLabeledPass* term, const std::unordered_map<std::string, Ty>& type_ctx, const Ty& _oup_type, int _command_id);
+        AlignTypeInfoData(const Term& __term, const std::unordered_map<std::string, Ty>& type_ctx, const Ty& _oup_type, int _command_id);
         void print() const;
         int getId() const;
-        ~PassTypeInfoData() = default;
+        ~AlignTypeInfoData() = default;
     };
-    typedef std::shared_ptr<PassTypeInfoData> PassTypeInfo;
-    typedef std::vector<PassTypeInfo> PassTypeInfoList;
+    typedef std::shared_ptr<AlignTypeInfoData> AlignTypeInfo;
+    typedef std::vector<AlignTypeInfo> AlignTypeInfoList;
 
     class ComponentSemantics: public ConstSemantics {
     public:
@@ -54,19 +55,20 @@ namespace incre {
     public:
         IncreProgram program;
         Context* ctx;
-        PassTypeInfoList pass_infos;
+        AlignTypeInfoList pass_infos;
         IncreExamplePool* example_pool;
         std::vector<SynthesisComponent*> component_list;
-        IncreInfo(const IncreProgram& _program, Context* _ctx, const PassTypeInfoList& infos, IncreExamplePool* pool, const std::vector<SynthesisComponent*>& component_list);
+        IncreInfo(const IncreProgram& _program, Context* _ctx, const AlignTypeInfoList& infos, IncreExamplePool* pool, const std::vector<SynthesisComponent*>& component_list);
         ~IncreInfo();
     };
 }
 
 namespace incre {
     Ty unfoldTypeWithLabeledCompress(const Ty& type, TypeContext* ctx);
-    IncreProgram eliminateUnboundedCreate(const IncreProgram& program);
+    void checkAllLabelBounded(ProgramData* program);
+    // IncreProgram eliminateUnboundedCreate(const IncreProgram& program);
     IncreProgram labelCompress(const IncreProgram& program);
-    PassTypeInfoList collectPassType(const IncreProgram& program);
+    AlignTypeInfoList collectAlignType(const IncreProgram& program);
     std::vector<SynthesisComponent*> collectComponentList(Context* ctx, Env* env, const std::unordered_map<std::string, InputComponentInfo>& compress_map);
     IncreInfo* buildIncreInfo(const IncreProgram& program, Env* env);
 }

@@ -55,7 +55,7 @@ namespace incre {
             PEnv env;
             IncreExamplePool* pool;
             int tau_id;
-            FExampleSpace(IncreExamplePool* _pool, int _tau_id, const PEnv& _env, PassTypeInfoData* pass_info);
+            FExampleSpace(IncreExamplePool* _pool, int _tau_id, const PEnv& _env, AlignTypeInfoData* pass_info);
 
             Data runConst(int example_id, Program* program);
             DataList runAux(int example_id, int id, Program* program);
@@ -82,7 +82,7 @@ namespace incre {
         // Grammar builder
         std::unordered_map<std::string, Grammar*> grammar_map;
 
-        autolifter::PLPRes solvePLPTask(PassTypeInfoData* info, const autolifter::TypedProgram& target, const std::vector<int>& path, int target_id);
+        autolifter::PLPRes solvePLPTask(AlignTypeInfoData* info, const autolifter::TypedProgram& target, const std::vector<int>& path, int target_id);
         Grammar* buildAuxGrammar(int compress_id);
         Grammar* buildConstGrammar(const TypeList& type_list, int pass_id);
     public:

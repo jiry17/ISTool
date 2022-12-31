@@ -80,47 +80,31 @@ namespace {
 }
 
 // todo: add unfold programs
-PassTypeInfoList incre::collectPassType(const IncreProgram &program) {
-    PassTypeInfoList info;
+AlignTypeInfoList incre::collectAlignType(const IncreProgram &program) {
+    AlignTypeInfoList info;
     int command_id = 0;
-    auto create = [](const Term& term, TypeContext* ctx, const ExternalTypeMap& ext) {
-         auto* ct = dynamic_cast<TmLabeledCreate*>(term.get());
-         assert(ct);
-         auto res = incre::getType(ct->def, ctx, ext);
-         return std::make_shared<TyLabeledCompress>(res, ct->id);
-    };
-    auto pass = [&info, &command_id](const Term& term, TypeContext* ctx, const ExternalTypeMap& ext) {
-        auto* pt = dynamic_cast<TmLabeledPass*>(term.get());
-        assert(pt); int id = pt->tau_id;
-        while (info.size() <= id) info.emplace_back();
-        auto* mark_context = dynamic_cast<_MarkedTypeContext*>(ctx);
 
-        std::vector<TypeContext::BindLog> bind_list;
-        TyList defs;
+    auto label = [](const Term& term, TypeContext* ctx, const ExternalTypeMap& ext) {
+        auto* ct = dynamic_cast<TmLabeledLabel*>(term.get()); assert(ct);
+        return std::make_shared<TyLabeledCompress>(incre::getType(ct->content, ctx, ext), ct->id);
+    };
+    auto align = [&info, &command_id](const Term& term, TypeContext* ctx, const ExternalTypeMap& ext) {
+        auto* ct = dynamic_cast<TmLabeledAlign*>(term.get()); assert(ct);
+        int id = ct->id;
+        while (info.size() <= id) info.emplace_back();
+
+        auto* mark_content = dynamic_cast<_MarkedTypeContext*>(ctx);
         std::unordered_map<std::string, Ty> inps;
         for (const auto& [name, type]: ctx->binding_map) {
-            if (mark_context->mark_count[name]) inps[name] = incre::unfoldTypeWithLabeledCompress(type, ctx);
-        }
-        for (const auto& def: pt->defs) {
-            defs.push_back(incre::getType(def, ctx, ext));
-        }
-        for (int i = 0; i < defs.size(); ++i) {
-            auto name = pt->names[i];
-            auto* ct = dynamic_cast<TyLabeledCompress*>(defs[i].get());
-            assert(ct);
-            bind_list.push_back(ctx->bind(name, ct->content));
-            inps[name] = incre::unfoldTypeWithLabeledCompress(defs[i], ctx);
-        }
-        auto res = incre::getType(pt->content, ctx, ext);
-        for (int i = int(bind_list.size()) - 1; i >= 0; --i) {
-            ctx->cancelBind(bind_list[i]);
+            if (mark_content->mark_count[name]) inps[name] = incre::unfoldTypeWithLabeledCompress(type, ctx);
         }
 
-        info[id] = std::make_shared<PassTypeInfoData>(pt, inps, res, command_id);
+        auto res = incre::getType(ct->content, ctx, ext);
+        info[id] = std::make_shared<AlignTypeInfoData>(term, inps, res, command_id);
         return res;
     };
 
-    ExternalTypeMap ext({{TermType::CREATE, ExternalTypeRule{create}}, {TermType::PASS, ExternalTypeRule{pass}}});
+    ExternalTypeMap ext({{TermType::LABEL, ExternalTypeRule{label}}, {TermType::ALIGN, ExternalTypeRule{align}}});
 
     auto type_checker = [ext](const Term& term, TypeContext* ctx) {
         return incre::getType(term, ctx, ext);

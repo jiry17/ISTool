@@ -235,12 +235,19 @@ namespace {
         }
         return ta->target;
     }
-    GetTypeHead(Create) {
-        auto content = unfoldType(getType(term->def, ctx, ext), ctx, {});
-        if (dynamic_cast<TyArrow*>(content.get())) {
-            LOG(FATAL) << "Cannot create a compress value for a function, but get " << term->def->toString();
+    GetTypeHead(Label) {
+        return std::make_shared<TyCompress>(getType(term->content, ctx, ext));
+    }
+    GetTypeHead(UnLabel) {
+        auto content = unfoldType(getType(term->content, ctx, ext), ctx, {});
+        auto* tc = dynamic_cast<TyCompress*>(content.get());
+        if (!tc) {
+            LOG(FATAL) << "Only TyCompress can be unlabeled, but get " << content->toString();
         }
-        return std::make_shared<TyCompress>(content);
+        return tc->content;
+    }
+    GetTypeHead(Align) {
+        return getType(term->content, ctx, ext);
     }
     GetTypeHead(Abs) {
         auto log = ctx->bind(term->name, term->type);
@@ -275,21 +282,6 @@ namespace {
         }
         return branch_types[0];
     }
-
-    GetTypeHead(Pass) {
-        std::vector<TypeContext::BindLog> logs;
-        for (int i = 0; i < term->defs.size(); ++i) {
-            auto def_type = unfoldType(getType(term->defs[i], ctx, ext), ctx, {});
-            auto* ct = dynamic_cast<TyCompress*>(def_type.get());
-            if (!ct) LOG(FATAL) << "The definition of a pass-expression should be compressed, but get " << def_type->toString();
-            logs.push_back(ctx->bind(term->names[i], ct->content));
-        }
-        auto res = getType(term->content, ctx, ext);
-        for (int i = logs.size(); i; --i) {
-            ctx->cancelBind(logs[i - 1]);
-        }
-        return res;
-    }
 }
 
 Ty incre::getType(const Term& term, TypeContext* ctx, const ExternalTypeMap& ext) {
@@ -306,11 +298,12 @@ Ty incre::getType(const Term& term, TypeContext* ctx, const ExternalTypeMap& ext
         case TermType::LET: GetTypeCase(Let);
         case TermType::IF: GetTypeCase(If);
         case TermType::APP: GetTypeCase(App);
-        case TermType::CREATE: GetTypeCase(Create);
+        case TermType::LABEL: GetTypeCase(Label);
+        case TermType::UNLABEL: GetTypeCase(UnLabel);
+        case TermType::ALIGN: GetTypeCase(Align);
         case TermType::ABS: GetTypeCase(Abs);
         case TermType::FIX: GetTypeCase(Fix);
         case TermType::MATCH: GetTypeCase(Match);
-        case TermType::PASS: GetTypeCase(Pass);
     }
     LOG(FATAL) << "Unknown term " << term->toString();
 }

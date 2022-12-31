@@ -138,21 +138,17 @@ Term incre::json2term(const Json::Value &node) {
         }
         return std::make_shared<TmMatch>(value, cases);
     }
-    if (type == "create") {
+    if (type == "label") {
         auto content = incre::json2term(node["content"]);
-        return std::make_shared<TmCreate>(content);
+        return std::make_shared<TmLabel>(content);
     }
-    if (type == "pass") {
-        std::vector<std::string> names;
-        for (const auto& sub_node: node["names"]) {
-            names.push_back(sub_node.asString());
-        }
-        TermList defs;
-        for (const auto& sub_node: node["defs"]) {
-            defs.push_back(incre::json2term(sub_node));
-        }
+    if (type == "unlabel") {
         auto content = incre::json2term(node["content"]);
-        return std::make_shared<TmPass>(names, defs, content);
+        return std::make_shared<TmUnLabel>(content);
+    }
+    if (type == "align") {
+        auto content = incre::json2term(node["align"]);
+        return std::make_shared<TmAlign>(content);
     }
     LOG(FATAL) << "Unknown term " << node;
 }

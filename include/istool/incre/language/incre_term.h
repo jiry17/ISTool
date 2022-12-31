@@ -11,7 +11,7 @@
 
 namespace incre {
     enum class TermType {
-        VALUE, IF, VAR, LET, TUPLE, PROJ, ABS, APP, FIX, MATCH, CREATE, PASS
+        VALUE, IF, VAR, LET, TUPLE, PROJ, ABS, APP, FIX, MATCH, LABEL, UNLABEL, ALIGN
     };
 
     class TermData {
@@ -111,22 +111,28 @@ namespace incre {
         virtual ~TmMatch() = default;
     };
 
-    class TmCreate: public TermData {
+    class TmLabel: public TermData {
     public:
-        Term def;
-        TmCreate(const Term& _def);
+        Term content;
+        TmLabel(const Term& _content);
         std::string toString() const;
-        virtual ~TmCreate() = default;
+        virtual ~TmLabel() = default;
     };
 
-    class TmPass: public TermData {
+    class TmUnLabel: public TermData {
     public:
-        std::vector<std::string> names;
-        TermList defs;
         Term content;
-        TmPass(const std::vector<std::string>& names, const TermList& _defs, const Term& _content);
+        TmUnLabel(const Term& _content);
         std::string toString() const;
-        virtual ~TmPass() = default;
+        virtual ~TmUnLabel() = default;
+    };
+
+    class TmAlign: public TermData {
+    public:
+        Term content;
+        TmAlign(const Term& _content);
+        std::string toString() const;
+        virtual ~TmAlign() = default;
     };
 
     Term getOperator(const std::string& name);

@@ -18,18 +18,18 @@ std::string TyLabeledCompress::toString() const {
     return "compress[" + std::to_string(id) + "] " + content->toString();
 }
 
-TmLabeledCreate::TmLabeledCreate(const Term &_content, int _id):
-    TmCreate(_content), id(_id) {
+TmLabeledLabel::TmLabeledLabel(const Term &_content, int _id): TmLabel(_content), id(_id) {
+}
+std::string TmLabeledLabel::toString() const {
+    return "create@" + std::to_string(id) + " " + content->toString();
 }
 
-TmLabeledPass::TmLabeledPass(const std::vector<std::string> &names, const TermList &_defs, const Term &_content,
-        int _tau_id, const std::unordered_map<std::string, Data>& _info):
-    TmPass(names, _defs, _content), tau_id(_tau_id), subst_info(_info) {
+TmLabeledAlign::TmLabeledAlign(const Term &_content, int _id, const std::unordered_map<std::string, Data>& info):
+    TmAlign(_content), id(_id), subst_info(info) {
 }
-
-void TmLabeledPass::addSubst(const std::string &name, const Data& data) {
-    if (subst_info.find(name) != subst_info.end()) {
-        LOG(FATAL) << "Multiple substitution happens for var " << name;
-    }
-    subst_info[name] = data;
+void TmLabeledAlign::addSubst(const std::string &name, const Data &v) {
+    subst_info[name] = v;
+}
+std::string TmLabeledAlign::toString() const {
+    return "align@" + std::to_string(id) + " " + content->toString();
 }
