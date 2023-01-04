@@ -1,164 +1,78 @@
 //
-// Created by pro on 2022/5/1.
+// Created by pro on 2022/2/15.
 //
 
-#include <istool/dsl/samplesy/samplesy_dsl.h>
+#include "istool/invoker/invoker.h"
 #include "istool/sygus/theory/basic/string/str.h"
-#include "istool/selector/random/random_semantics_scorer_tester.h"
-#include "istool/selector/random/learned_scorer.h"
-#include "istool/selector/random/random_semantics_scorer.h"
-#include "istool/selector/random/grammar_flatter.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
-#include "istool/sygus/parser/parser.h"
+#include "istool/sygus/theory/witness/string/string_witness.h"
+#include "istool/sygus/theory/witness/clia/clia_witness.h"
+#include "istool/sygus/theory/witness/theory_witness.h"
+#include "istool/ext/composed_semantics/composed_witness.h"
+#include "istool/ext/vsa/vsa_extension.h"
 #include "istool/ext/vsa/top_down_model.h"
-#include "glog/logging.h"
+#include "istool/solver/maxflash/maxflash.h"
+#include <unordered_set>
+#include "istool/basic/config.h"
+#include "istool/solver/tmp/batched_maxflash.h"
+#include "istool/sygus/sygus.h"
+#include <ctime>
+#include <istool/sygus/parser/parser.h>
 
-DataList readSingleExample(int m) {
-    DataList inp;
-    for (int i = 0; i < m; ++i) {
-        int k; scanf("%d", &k);
-        inp.push_back(BuildData(Int, k));
-    }
-    return inp;
-}
 
-DataStorage readExample(int m) {
-    int n; scanf("%d", &n);
-    DataStorage inp_storage;
-    for (; n; n--) {
-        inp_storage.push_back(readSingleExample(m));
-    }
-    return inp_storage;
-}
-
-DataList generateExample(int m) {
-    DataList example;
-    for (int i = 0; i < m; ++i) example.push_back(BuildData(Int, std::rand() % 5 - 2));
-    return example;
-}
-DataStorage generateExampleList(int n, int m) {
-    DataStorage res;
-    for (int i = 0; i < n; ++i) res.push_back(generateExample(m));
-    return res;
-}
-
-int getParamNum(Grammar* g) {
-    int param_num = 0;
-    for (auto* node: g->symbol_list) {
-        for (auto* rule: node->rule_list) {
-            auto* ps = grammar::getParamSemantics(rule);
-            if (ps) param_num = std::max(param_num, ps->id + 1);
-        }
-    }
-    return param_num;
-}
-
-PProgram generateProgram(FlattenGrammar* fg, int node_id = 0) {
-    auto& node = fg->graph->node_list[node_id];
-    auto& edge = node.edge_list[rand() % node.edge_list.size()];
-    auto* ps = dynamic_cast<ParamSemantics*>(edge.semantics.get());
-    if (ps) return fg->param_info_list[ps->id].program;
-    ProgramList sub_list;
-    for (int i = 0; i < edge.v_list.size(); ++i) {
-        sub_list.push_back(generateProgram(fg, edge.v_list[i]));
-    }
-    return std::make_shared<Program>(edge.semantics, sub_list);
-}
-bool isEqual(RandomSemanticsScore x, RandomSemanticsScore y) {
-    return fabs(x - y) < 1e-9;
-}
-std::string exampleList2String(const ExampleList& example_list) {
-    std::string res = "[";
-    for (int i = 0; i < example_list.size(); ++i) {
-        if (i) res += ",";
-        res += data::dataList2String(example_list[i]);
-    }
-    return res + "]";
-}
-
-void testTrivialSemanticsScorer(Env* env, FlattenGrammar* fg, LearnedScorerType type, int param_num, int ti = 1) {
-    for (int _ = 0; _ < ti; ++_) {
-        auto* scorer = selector::random::buildTrivialScorer(type, env, fg);
-        auto inp_storage = generateExampleList(5, param_num);
-        int l = 0, r = -1;
-        while (1) {
-            ExampleList full;
-            auto p = generateProgram(fg);
-            for (int i = l; i <= r + 1; ++i) full.push_back(inp_storage[i]);
-            LOG(INFO) << "Check for example list " << exampleList2String(full) << " and program " << p->toString();
-            std::vector<RandomSemanticsModel*> model_list;
-            for (int i = l; i <= r + 1; ++i) model_list.push_back(scorer->learnModel(inp_storage[i]));
-            auto tx = selector::test::getLearnedGroundTruth(env, fg, p, model_list, type);
-            LOG(INFO) << "Standard result = " << tx;
-            auto ty = scorer->getScore(p, inp_storage[r + 1]);
-            LOG(INFO) << "My result = " << ty;
-            assert(isEqual(tx, ty));
-            if (l + 1 == inp_storage.size()) break;
-            bool is_push = rand() & 1;
-            if (l > r) is_push = true; if (r + 2 == inp_storage.size()) is_push = false;
-            if (is_push) {
-                r++; scorer->pushExample(inp_storage[r]);
-            } else {
-                l++; scorer->popExample();
+const auto KDefaultPrepare = [](Grammar* g, Env* env, const IOExample& io_example) {
+    DataList string_const_list, string_input_list;
+    std::unordered_set<std::string> const_set;
+    for (auto* symbol: g->symbol_list) {
+        for (auto* rule: symbol->rule_list) {
+            auto* sem = grammar::getConstSemantics(rule);
+            if (sem) {
+                auto* sv = dynamic_cast<StringValue*>(sem->w.get());
+                if (!sv) continue;
+                if (const_set.find(sv->s) == const_set.end()) {
+                    const_set.insert(sv->s);
+                    string_const_list.push_back(sem->w);
+                }
             }
         }
-        delete scorer;
     }
-}
-void testOptimizedScorer(Env* env, FlattenGrammar* fg, LearnedScorerType type, int param_num, int ti = 1) {
-    for (int _ = 0; _ < ti; ++_) {
-        auto* scorer = selector::random::buildTrivialScorer(type, env, fg);
-        auto* optimized_scorer = selector::random::buildDefaultScorer(type, env, fg);
-        optimized_scorer->learner = scorer->learner;
-        auto inp_storage = generateExampleList(5, param_num);
-        int l = 0, r = -1;
-        while (1) {
-            ExampleList full;
-            auto p = generateProgram(fg);
-            for (int i = l; i <= r + 1; ++i) full.push_back(inp_storage[i]);
-            LOG(INFO) << "Check for example list " << exampleList2String(full) << " and program " << p->toString();
-            auto tx = scorer->getScore(p, inp_storage[r + 1]);
-            LOG(INFO) << "My result = " << tx;
-            auto ty = optimized_scorer->getScore(p, inp_storage[r + 1]);
-            LOG(INFO) << "Optimized result = " << ty;
-            assert(isEqual(tx, ty));
-            if (l + 1 == inp_storage.size()) break;
-            bool is_push = rand() & 1;
-            if (l > r) is_push = true; if (r + 2 == inp_storage.size()) is_push = false;
-            if (is_push) {
-                r++; scorer->pushExample(inp_storage[r]); optimized_scorer->pushExample(inp_storage[r]);
-            } else {
-                l++; scorer->popExample(); optimized_scorer->popExample();
-            }
-        }
-        delete scorer;
+    for (const auto& inp: io_example.first) {
+        auto* sv = dynamic_cast<StringValue*>(inp.get());
+        if (sv) string_input_list.push_back(inp);
     }
-}
 
+    int int_max = 1;
+    for (const auto& s: string_const_list) {
+        int_max = std::max(int_max, int(theory::string::getStringValue(s).length()));
+    }
+    for (const auto& s: string_input_list) {
+        int_max = std::max(int_max, int(theory::string::getStringValue(s).length()));
+    }
+    for (const auto& inp: io_example.first) {
+        auto* iv = dynamic_cast<IntValue*>(inp.get());
+        if (iv) int_max = std::max(int_max, iv->w);
+    }
 
-int main() {
-    std::string benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/x.sl";
+    env->setConst(theory::clia::KWitnessIntMinName, BuildData(Int, -int_max));
+    env->setConst(theory::string::KStringConstList, string_const_list);
+    env->setConst(theory::string::KStringInputList, string_input_list);
+    env->setConst(theory::clia::KWitnessIntMaxName, BuildData(Int, int_max));
+};
+
+int main(int argc, char** argv) {
+    auto benchmark_name = config::KSourcePath + "/tests/string/phone-1.sl";
+
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
-    if (sygus::getSyGuSTheory(spec->env.get()) == TheoryToken::STRING) {
-        samplesy::registerSampleSyBasic(spec->env.get());
-        auto& info = spec->info_list[0];
-        samplesy::registerSampleSyWitness(spec->env.get());
-        info->grammar = samplesy::rewriteGrammar(info->grammar, spec->env.get(),
-                                                 dynamic_cast<FiniteIOExampleSpace *>(spec->example_space.get()));
+    auto* v = sygus::getVerifier(spec);
+    spec->env->random_engine.seed(time(0));
+
+    sygus::loadSyGuSTheories(spec->env.get(), theory::loadWitnessFunction);
+    ext::vsa::registerDefaultComposedManager(ext::vsa::getExtension(spec->env.get()));
+
+    auto* solver = new tmp::BatchedMaxFlash(spec, v, ext::vsa::getSizeModel(), KDefaultPrepare);
+
+    auto res = solver->batchedSynthesis(100);
+    for (int i = 0; i < res.size(); ++i) {
+        std::cout << "  " << res[i]->toString() << std::endl;
     }
-    int seed = time(0);
-    srand(seed);
-    auto* grammar = spec->info_list[0]->grammar;
-    grammar = grammar::generateHeightLimitedGrammar(grammar, 4);
-    int param_num = getParamNum(grammar);
-    LOG(INFO) << "Param num " << param_num;
-    auto* model = ext::vsa::getSizeModel();
-    auto* graph = new TopDownContextGraph(grammar, model, ProbModelType::NORMAL_PROB);
-    auto* fg = new TrivialFlattenGrammar(graph, spec->env.get(), 50, new AllValidProgramChecker());
-    // auto* fg = new MergedFlattenGrammar(graph, spec->env.get(), 50, [](Program*){return true;}, spec->example_space.get());
-    fg->print();
-
-    testOptimizedScorer(spec->env.get(), fg, LearnedScorerType::TRIPLE, param_num, 1);
-
-    return 0;
 }

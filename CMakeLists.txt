@@ -3,8 +3,8 @@ project(ISTool)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++17 -Ofast")
-#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++17 -O0")
+#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++17 -Ofast")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++17 -O0")
 add_definitions(-DDEBUG)
 
 INCLUDE(FindPkgConfig)
@@ -45,8 +45,8 @@ add_subdirectory(sygus)
 add_subdirectory(solver)
 add_subdirectory(selector)
 add_subdirectory(dsl)
-add_subdirectory(incre)
+#add_subdirectory(incre)
  
-set(SRC_LIBS solver_lib  ${SyGuS_LIBS} ext_lib selector_lib basic_lib dsl_lib incre_lib)
+set(SRC_LIBS solver_lib  ${SyGuS_LIBS} ext_lib selector_lib basic_lib dsl_lib) #incre_lib)
 
 add_subdirectory(executor)
