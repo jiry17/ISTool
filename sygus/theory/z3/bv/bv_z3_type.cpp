@@ -34,7 +34,7 @@ Data Z3BitVectorType::getValueFromModel(const z3::model &model, const z3::expr &
         if (bit_res.bool_value() == Z3_L_UNDEF) {
             is_undef = true; break;
         }
-        if (bit_res.bool_value() == Z3_TRUE) res.set(i, 1);
+        if (bit_res.bool_value() == Z3_L_TRUE) res.set(i, 1);
     }
     if (is_undef && is_strict) return Data();
     return BuildData(BitVector, res);

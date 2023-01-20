@@ -11,7 +11,7 @@
 
 namespace incre {
     enum class BindingType {
-        TYPE, TERM
+        TYPE, TERM, VAR
     };
 
     class BindingData {
@@ -40,6 +40,14 @@ namespace incre {
         TermBinding(const Term& _term, const Ty& _ty=nullptr);
         virtual std::string toString() const;
         virtual ~TermBinding() = default;
+    };
+
+    class VarTypeBinding: public BindingData {
+    public:
+        Ty type;
+        VarTypeBinding(const Ty& _type);
+        virtual std::string toString() const;
+        virtual ~VarTypeBinding() = default;
     };
 
     class Context {

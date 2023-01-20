@@ -7,6 +7,7 @@
 #include <set>
 #include <queue>
 #include <unordered_set>
+#include <iostream>
 
 NonTerminal::NonTerminal(const std::string &_name, const PType& _type): name(_name), type(_type) {
 }

@@ -198,6 +198,10 @@ namespace {
                 auto* tb = dynamic_cast<TermBinding*>(binding);
                 return _isTermMatch(tb->term.get(), task, ctx);
             }
+            case BindingType::VAR: {
+                auto* vb = dynamic_cast<VarTypeBinding*>(binding);
+                return _isTypeMatch(vb->type.get(), task, ctx);
+            }
         }
     }
 }

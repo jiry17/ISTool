@@ -1,0 +1,1551 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="ISTool"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\basic\;CMake Files\ext\;CMake Files\sygus\;CMake Files\sygus\theory\;CMake Files\solver\;CMake Files\solver\autolifter\;CMake Files\solver\recursive\;CMake Files\selector\;CMake Files\dsl\;CMake Files\incre\;CMake Files\executor\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="basic_lib">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic/libbasic_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic/Makefile&quot;  VERBOSE=1 basic_lib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="basic_lib/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic/libbasic_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic/Makefile&quot;  VERBOSE=1 basic_lib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/basic/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="ext_lib">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext/libext_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext/Makefile&quot;  VERBOSE=1 ext_lib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="ext_lib/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext/libext_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext/Makefile&quot;  VERBOSE=1 ext_lib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/ext/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="sygus_parser_lib">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/libsygus_parser_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/Makefile&quot;  VERBOSE=1 sygus_parser_lib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="sygus_parser_lib/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/libsygus_parser_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/Makefile&quot;  VERBOSE=1 sygus_parser_lib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="sygus_theory_lib">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory/libsygus_theory_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory/Makefile&quot;  VERBOSE=1 sygus_theory_lib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="sygus_theory_lib/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory/libsygus_theory_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory/Makefile&quot;  VERBOSE=1 sygus_theory_lib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/sygus/theory/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="solver_lib">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/libsolver_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 solver_lib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="solver_lib/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/libsolver_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 solver_lib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="selector_lib">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector/libselector_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector/Makefile&quot;  VERBOSE=1 selector_lib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="selector_lib/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector/libselector_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector/Makefile&quot;  VERBOSE=1 selector_lib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/selector/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="dsl_lib">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl/libdsl_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl/Makefile&quot;  VERBOSE=1 dsl_lib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="dsl_lib/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl/libdsl_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl/Makefile&quot;  VERBOSE=1 dsl_lib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/dsl/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="incre_lib">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre/libincre_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre/Makefile&quot;  VERBOSE=1 incre_lib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="incre_lib/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre/libincre_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre/Makefile&quot;  VERBOSE=1 incre_lib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/incre/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="invoker_lib">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/libinvoker_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 invoker_lib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="invoker_lib/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/libinvoker_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 invoker_lib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_cbs_icse10">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_cbs_icse10" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_cbs_icse10"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_cbs_icse10/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_cbs_icse10" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_cbs_icse10/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_sygus">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_sygus" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_sygus"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_sygus/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_sygus" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_sygus/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_splitor">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_splitor" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_splitor"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_splitor/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_splitor" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_splitor/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_autolifter">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_autolifter" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_autolifter"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_autolifter/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_autolifter" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_autolifter/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_question_selection">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_question_selection" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_question_selection"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_question_selection/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_question_selection" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_question_selection/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 test"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 test/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_incre">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_incre" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_incre"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="run_incre/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/run_incre" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 run_incre/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/executor/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/bitset.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/config.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/data.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/env.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/example_sampler.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/example_space.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/execute_info.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/grammar.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/program.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/semantics.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/specification.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/time_guard.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/type.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/type_system.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/value.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/verifier.cpp">
+			<Option target="basic_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/autolifter/autolifter_dad_dataset.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/autolifter/autolifter_dataset.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/autolifter/autolifter_dsl.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/autolifter/autolifter_lazy_tag_dataset.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/autolifter/autolifter_lsp_dataset.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/autolifter/autolifter_semantics.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/clia/clia_dsl.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/component/component_dataset.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/component/component_dsl.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/component/component_extra_semantics.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/deepcoder/deepcoder_dsl.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/samplesy/samplesy_dsl.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/samplesy/samplesy_semantics.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/samplesy/samplesy_witness.cpp">
+			<Option target="dsl_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/invoker/autolifter_invoker.cpp">
+			<Option target="invoker_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/invoker/cbs_invoker.cpp">
+			<Option target="invoker_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/invoker/eusolver_invoker.cpp">
+			<Option target="invoker_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/invoker/external_invoker.cpp">
+			<Option target="invoker_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/invoker/invoker.cpp">
+			<Option target="invoker_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/invoker/maxflash_invoker.cpp">
+			<Option target="invoker_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/invoker/obe_invoker.cpp">
+			<Option target="invoker_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/invoker/polygen_invoker.cpp">
+			<Option target="invoker_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/invoker/vsa_invoker.cpp">
+			<Option target="invoker_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/run_autolifter.cpp">
+			<Option target="run_autolifter"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/run_cbs_icse10.cpp">
+			<Option target="run_cbs_icse10"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/run_incre.cpp">
+			<Option target="run_incre"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/run_question_selection.cpp">
+			<Option target="run_question_selection"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/run_splitor.cpp">
+			<Option target="run_splitor"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/run_sygus.cpp">
+			<Option target="run_sygus"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/test.cpp">
+			<Option target="test"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/composed_semantics/composed_rule.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/composed_semantics/composed_semantics.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/composed_semantics/composed_witness.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/composed_semantics/composed_z3_semantics.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/composed_semantics/witness_value_join_op.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/deepcoder/anonymous_function.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/deepcoder/data_example_sampler.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/deepcoder/data_type.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/deepcoder/data_util.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/deepcoder/data_value.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/deepcoder/deepcoder_semantics.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/deepcoder/deepcoder_type_system.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/deepcoder/higher_order_operator.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/deepcoder/tmp_info.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/gurobi/gurobi_extension.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/gurobi/gurobi_verifier.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/limited_type/limited_ds.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/limited_type/limited_int.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/limited_type/limited_type.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/vsa/top_down_model.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/vsa/vsa.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/vsa/vsa_extension.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/vsa/vsa_inside_checker.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/vsa/witness.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/vsa/witness_manager.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/vsa/witness_value.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/z3/z3_example_space.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/z3/z3_extension.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/z3/z3_semantics.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/z3/z3_semantics_manager.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/z3/z3_verifier.cpp">
+			<Option target="ext_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/analysis/incre_align_type.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/analysis/incre_component_collector.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/analysis/incre_default_generator.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/analysis/incre_eliminate_unbounded_create.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/analysis/incre_instru_info.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/analysis/incre_instru_runtime.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/analysis/incre_instru_type.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/analysis/incre_label_compress.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/autolifter/incre_autolifter_comb_solver.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/autolifter/incre_autolifter_solver.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/autolifter/incre_aux_semantics.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/autolifter/incre_grammar_builder.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/autolifter/incre_plp.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/autolifter/incre_plp_solver.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/incre_solver.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/io/incre_from_json.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/io/incre_printer.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_aux_semantics.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_basic_operators.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_context.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_lookup.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_pattern.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_program.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_term.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_type.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_type_system.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_unbounded_vars.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/language/incre_value.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/trans/incre_program_translator.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/trans/incre_type_translator.cpp">
+			<Option target="incre_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/baseline/biased_bitvector_selector.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/baseline/clia_random_selector.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/baseline/significant-input.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/cached_random_semantics_scorer.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/complete_random_semantics_selector.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/different_pair_learned_scorer.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/equivalence_checker_tool.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/grammar_flatter.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/learned_random_semantics_scorer.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/optimized_different_pair_learned_score.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/optimized_triple_scorer.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/pair_learned_scorer.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/program_adaptor.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/random_semantics_model.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/random_semantics_scorer.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/random_semantics_scorer_tester.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/random_semantics_selector.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/random_sementics_scorer_cache.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/same_pair_learned_selector.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random/triple_learned_scorer.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/random_selector.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/samplesy/different_program_generator.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/samplesy/finite_equivalence_checker.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/samplesy/samplesy.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/samplesy/vsa_seed_generator.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/samplesy/z3_equivalence_checker.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/selector.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/split/finite_splitor.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/split/split_selector.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/split/splitor.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/split/z3_splitor.cpp">
+			<Option target="selector_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/autolifter.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/basic/lifting_problem.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/basic/lifting_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/basic/occam_verifier.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/basic/streamed_example_space.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/composed_sf_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/sf_verifier.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/component/component_based_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/component/grammar_encoder.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/component/linear_encoder.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/component/tree_encoder.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/enum/enum.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/enum/enum_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/enum/enum_util.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/external/external_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/external/external_solver_list.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/iterative_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/maxflash/maxflash.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/maxflash/maxflash_vsa.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/maxflash/topdown_context_graph.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/dnf_learner.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/lia_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/polygen.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/polygen_cegis.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/polygen_condition_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/polygen_term_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/polygen_unifier.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/recursive/basic/recursive_semantics.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/stun/eusolver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/stun/stun.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/tmp/batched_maxflash.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/tmp/weighted_obe.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/vsa/vsa_builder.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/vsa/vsa_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/parser/json_util.cpp">
+			<Option target="sygus_parser_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/parser/parser.cpp">
+			<Option target="sygus_parser_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/parser/parser_for_depth_limit.cpp">
+			<Option target="sygus_parser_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/sygus.cpp">
+			<Option target="sygus_parser_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/bv/bv.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/bv/bv_semantics.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/bv/bv_type.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/bv/bv_value.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/clia/clia.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/clia/clia_example_sampler.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/clia/clia_semantics.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/clia/clia_type.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/clia/clia_value.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/string/str.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/string/string_semantics.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/string/string_type.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/string/string_value.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/basic/theory_semantics.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/theory.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/witness/clia/clia_wit_value.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/witness/clia/clia_witness.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/witness/string/string_witness.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/witness/theory_witness.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/z3/bv/bv_z3.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/z3/bv/bv_z3_semantics.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/z3/bv/bv_z3_type.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/z3/clia/clia_z3.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/z3/clia/clia_z3_semantics.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/z3/clia/clia_z3_type.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/z3/theory_z3_semantics.cpp">
+			<Option target="sygus_theory_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\basic\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\ext\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\sygus\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\sygus\theory\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\solver\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\solver\autolifter\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/recursive/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\solver\recursive\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\selector\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\dsl\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\incre\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\executor\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

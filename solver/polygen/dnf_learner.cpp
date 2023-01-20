@@ -7,6 +7,7 @@
 #include "istool/sygus/theory/basic/clia/clia_value.h"
 #include "glog/logging.h"
 #include <algorithm>
+#include <iostream>
 
 using namespace polygen;
 

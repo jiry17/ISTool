@@ -6,6 +6,7 @@
 #include "glog/logging.h"
 #include <unordered_set>
 #include <queue>
+#include <iostream>
 
 VSAEdge::VSAEdge(const PSemantics &_semantics, const VSANodeList &_node_list): semantics(_semantics), node_list(_node_list) {
 }

@@ -3,7 +3,7 @@
 //
 
 #ifndef ISTOOL_AUTOLIFTER_DAD_DATASET_H
-#define ISTOOL_AUTOLIFTER_DATASET_H
+#define ISTOOL_AUTOLIFTER_DAD_DATASET_H
 
 #include "istool/solver/autolifter/basic/lifting_problem.h"
 

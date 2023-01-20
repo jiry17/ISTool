@@ -9,6 +9,7 @@
 #include "istool/solver/autolifter/basic/lifting_problem.h"
 #include "glog/logging.h"
 #include <unordered_set>
+#include <iostream>
 
 DataList* LiftingCache::registerProgram(Program *program, const DataList &res) {
     auto feature = program->toString();

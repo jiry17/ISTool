@@ -77,7 +77,7 @@ FunctionContext OBESolver::synthesis(const std::vector<Example> &example_list, T
                 }
             }
         }
-        std::random_shuffle(res.begin(), res.end());
+        std::shuffle(res.begin(), res.end(), spec->env->random_engine);
         example_pool[name] = res;
     }
 

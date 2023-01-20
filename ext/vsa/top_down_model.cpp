@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <cmath>
 #include <queue>
+#include <iostream>
 
 TopDownModel::TopDownModel(const PTopDownContext &_start, double _default_weight, ProbModelType _type):
     start(_start), default_weight(_default_weight), prob_type(_type) {

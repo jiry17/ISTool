@@ -9,6 +9,7 @@
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/ext/vsa/vsa_extension.h"
 #include "glog/logging.h"
+#include <iostream>
 
 using theory::string::getStringValue;
 using theory::clia::getIntValue;

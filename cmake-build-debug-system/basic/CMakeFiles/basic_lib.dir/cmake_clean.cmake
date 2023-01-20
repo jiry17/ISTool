@@ -1,0 +1,41 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/basic_lib.dir/bitset.cpp.o"
+  "CMakeFiles/basic_lib.dir/bitset.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/config.cpp.o"
+  "CMakeFiles/basic_lib.dir/config.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/data.cpp.o"
+  "CMakeFiles/basic_lib.dir/data.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/env.cpp.o"
+  "CMakeFiles/basic_lib.dir/env.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/example_sampler.cpp.o"
+  "CMakeFiles/basic_lib.dir/example_sampler.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/example_space.cpp.o"
+  "CMakeFiles/basic_lib.dir/example_space.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/execute_info.cpp.o"
+  "CMakeFiles/basic_lib.dir/execute_info.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/grammar.cpp.o"
+  "CMakeFiles/basic_lib.dir/grammar.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/program.cpp.o"
+  "CMakeFiles/basic_lib.dir/program.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/semantics.cpp.o"
+  "CMakeFiles/basic_lib.dir/semantics.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/specification.cpp.o"
+  "CMakeFiles/basic_lib.dir/specification.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/time_guard.cpp.o"
+  "CMakeFiles/basic_lib.dir/time_guard.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/type.cpp.o"
+  "CMakeFiles/basic_lib.dir/type.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/type_system.cpp.o"
+  "CMakeFiles/basic_lib.dir/type_system.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/value.cpp.o"
+  "CMakeFiles/basic_lib.dir/value.cpp.o.d"
+  "CMakeFiles/basic_lib.dir/verifier.cpp.o"
+  "CMakeFiles/basic_lib.dir/verifier.cpp.o.d"
+  "libbasic_lib.a"
+  "libbasic_lib.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/basic_lib.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

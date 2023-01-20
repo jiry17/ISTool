@@ -1,0 +1,361 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "executor/run_sygus"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"link_directories",
+			"target_link_libraries",
+			"add_definitions",
+			"include_directories"
+		],
+		"files" : 
+		[
+			"executor/CMakeLists.txt",
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 11,
+				"parent" : 0
+			},
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 41,
+				"parent" : 2
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 56,
+				"parent" : 2
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 12,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 1,
+				"line" : 8,
+				"parent" : 2
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 11,
+				"parent" : 2
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 43,
+				"parent" : 2
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 44,
+				"parent" : 2
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 48,
+				"parent" : 2
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 51,
+				"parent" : 2
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 55,
+				"parent" : 2
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : " -g -std=c++17 -O0 -g -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.3.sdk -fcolor-diagnostics"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 6,
+					"define" : "DEBUG"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 7,
+					"path" : "/Users/pro/Desktop/work/2023S/ISTool/include"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "/Users/pro/Desktop/work/2023S/z3/src/api/c++"
+				},
+				{
+					"backtrace" : 9,
+					"path" : "/Users/pro/Desktop/work/2023S/z3/src/api"
+				},
+				{
+					"backtrace" : 10,
+					"path" : "/usr/local/include"
+				},
+				{
+					"backtrace" : 11,
+					"path" : "/usr/local/opt/glog/include"
+				},
+				{
+					"backtrace" : 12,
+					"path" : "/Library/gurobi911/mac64/include"
+				}
+			],
+			"language" : "CXX",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 5,
+			"id" : "basic_lib::@71a224d41e900cb2577c"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "ext_lib::@a9f99adfd9f636cea434"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "sygus_parser_lib::@37f3549cff38f3c97f7f"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "sygus_theory_lib::@9a2524e99d8594d23aed"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "solver_lib::@f523546a396b221e20a4"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "selector_lib::@6e1fe3139bc56f0b0463"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "dsl_lib::@a766e47afdb1ff3c699c"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "incre_lib::@03b28ef6934af28b15d3"
+		},
+		{
+			"backtrace" : 5,
+			"id" : "invoker_lib::@78654b622289b382c266"
+		}
+	],
+	"id" : "run_sygus::@78654b622289b382c266",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "-g -std=c++17 -O0 -g",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "-L/usr/local/lib",
+				"role" : "libraryPath"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "-L/Library/gurobi911/mac64/lib",
+				"role" : "libraryPath"
+			},
+			{
+				"fragment" : "-Wl,-rpath,/usr/local/lib -Wl,-rpath,/Library/gurobi911/mac64/lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../solver/libsolver_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../sygus/libsygus_parser_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../sygus/theory/libsygus_theory_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../ext/libext_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../selector/libselector_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../basic/libbasic_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../dsl/libdsl_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../incre/libincre_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "libinvoker_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../solver/libsolver_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../sygus/libsygus_parser_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../sygus/theory/libsygus_theory_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../ext/libext_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../selector/libselector_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../basic/libbasic_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../dsl/libdsl_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "../incre/libincre_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "libinvoker_lib.a",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "/usr/local/lib/libjsoncpp.dylib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-lz3",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-lgurobi_c++",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "-lgurobi91",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 5,
+				"fragment" : "/usr/local/opt/glog/lib/libglog.dylib",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "run_sygus",
+	"nameOnDisk" : "run_sygus",
+	"paths" : 
+	{
+		"build" : "executor",
+		"source" : "executor"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "executor/run_sygus.cpp",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}

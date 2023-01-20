@@ -8,6 +8,7 @@
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include <unordered_set>
 #include "glog/logging.h"
+#include <iostream>
 
 FlattenGrammar::ParamInfo::ParamInfo(const PType &_type, const PProgram &_program): type(_type), program(_program) {
 }

@@ -6,6 +6,7 @@
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/basic/config.h"
 #include "glog/logging.h"
+#include <iostream>
 
 void ExampleCounter::addExampleCount() {
     example_count += 1;

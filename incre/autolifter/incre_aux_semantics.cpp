@@ -368,8 +368,3 @@ std::vector<PSemantics> list::getSemanticsList(const PType &base_type) {
     AddIncreListSemantics(ListRev); AddIncreListSemantics(ListSort);
     return res;
 }
-
-void autolifter::prepareAutoLifterEnv(Env *env) {
-    theory::loadBasicSemantics(env, TheoryToken::CLIA);
-    ext::ho::loadDeepCoderSemantics(env);
-}

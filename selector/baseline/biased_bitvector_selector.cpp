@@ -5,6 +5,7 @@
 #include "istool/selector/baseline/biased_bitvector_selector.h"
 #include "istool/sygus/theory/basic/bv/bv.h"
 #include "glog/logging.h"
+#include <iostream>
 
 namespace {
     std::string _getFeature(const Data& d, int K) {
@@ -84,7 +85,6 @@ Z3BiasedBitVectorSelector::Z3BiasedBitVectorSelector(Z3ExampleSpace *example_spa
 
     for (auto& x: case_list) {
         z3::expr_vector v(ext->ctx);
-        std::cout << data::dataList2String(x) << std::endl;
         for (int i = 0; i < param_list.size(); ++i) {
             v.push_back((param_list[i] & mask_v) == ext->buildConst(x[i]));
         }

@@ -4,6 +4,10 @@
 
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/trans/incre_trans.h"
+#include "istool/ext/deepcoder/deepcoder_semantics.h"
+#include "istool/sygus/theory/theory.h"
+#include "istool/sygus/theory/basic/theory_semantics.h"
+#include <iostream>
 
 using namespace incre;
 
@@ -29,11 +33,16 @@ void AlignTypeInfoData::print() const {
 }
 
 IncreInfo::IncreInfo(const IncreProgram &_program, Context *_ctx, const AlignTypeInfoList &infos, IncreExamplePool *pool, const std::vector<SynthesisComponent *> &_component_list):
-    program(_program), ctx(_ctx), pass_infos(infos), example_pool(pool), component_list(_component_list) {
+    program(_program), ctx(_ctx), align_infos(infos), example_pool(pool), component_list(_component_list) {
 }
 IncreInfo::~IncreInfo() {
     delete ctx; delete example_pool;
     for (auto* component: component_list) delete component;
+}
+
+void incre::prepareEnv(Env *env) {
+    theory::loadBasicSemantics(env, TheoryToken::CLIA);
+    ext::ho::loadDeepCoderSemantics(env);
 }
 
 IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {

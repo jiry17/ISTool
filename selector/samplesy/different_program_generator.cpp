@@ -5,6 +5,7 @@
 #include "istool/selector/samplesy/different_program_generator.h"
 #include "glog/logging.h"
 #include <unordered_set>
+#include <iostream>
 
 using namespace selector::samplesy;
 

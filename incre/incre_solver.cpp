@@ -5,17 +5,18 @@
 #include "istool/incre/incre_solver.h"
 #include "istool/incre/io/incre_printer.h"
 #include "glog/logging.h"
+#include <iostream>
 
 using namespace incre;
 
-IncreSolution::IncreSolution(const TyList &_compress_type_list, const TermList &_pass_list):
-    compress_type_list(_compress_type_list), pass_list(_pass_list) {
+IncreSolution::IncreSolution(const TyList &_compress_type_list, const TermList &_align_list):
+    compress_type_list(_compress_type_list), align_list(_align_list) {
 }
 void IncreSolution::print() const {
     for (int i = 0; i < compress_type_list.size(); ++i) std::cout << "compress #" << i << ": " << compress_type_list[i]->toString() << std::endl;
-    for (int i = 0; i < pass_list.size(); ++i) {
+    for (int i = 0; i < align_list.size(); ++i) {
         std::cout << "pass #" << i << ": " << std::endl;
-        incre::printTerm(pass_list[i]); std::cout << std::endl;
+        incre::printTerm(align_list[i]); std::cout << std::endl;
     }
 }
 IncreSolver::IncreSolver(IncreInfo *_info): info(_info) {}
@@ -105,9 +106,9 @@ namespace {
         }
         return std::make_shared<TmMatch>(def, cases);
     }
-    TermHead(LabeledPass) {
+    TermHead(LabeledAlign) {
         assert(term);
-        return solution.pass_list[term->tau_id];
+        return solution.align_list[term->id];
     }
     TermHead(Fix) {
         Rewrite(content);
@@ -125,9 +126,10 @@ namespace {
             case TermType::ABS: TermCase(Abs);
             case TermType::IF: TermCase(If);
             case TermType::MATCH: TermCase(Match);
-            case TermType::PASS: TermCase(LabeledPass);
-            case TermType::CREATE:
-                LOG(FATAL) << "Visit create while rewriting";
+            case TermType::ALIGN: TermCase(LabeledAlign);
+            case TermType::LABEL:
+            case TermType::UNLABEL:
+                LOG(FATAL) << "Unexceptional label/unlabel while rewriting: every label/unlabel should be covered by align";
             case TermType::FIX: TermCase(Fix);
         }
     }

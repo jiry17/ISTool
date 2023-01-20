@@ -11,8 +11,8 @@ namespace incre {
 
     struct IncreSolution {
         TyList compress_type_list;
-        TermList pass_list;
-        IncreSolution(const TyList& _compress_type_list, const TermList& _pass_list);
+        TermList align_list;
+        IncreSolution(const TyList& _compress_type_list, const TermList& align_list);
         void print() const;
     };
 

@@ -9,6 +9,7 @@
 #include "istool/incre/trans/incre_trans.h"
 #include "istool/invoker/invoker.h"
 #include "glog/logging.h"
+#include <iostream>
 
 using namespace incre;
 using namespace incre::autolifter;
@@ -62,8 +63,8 @@ namespace {
         } else res.emplace_back(path, std::pair<PType, PProgram>(incre::typeFromIncre(type), nullptr), env);
     }
 
-    std::vector<_OutputCase> _collectOutputCase(int pass_id, IncreAutoLifterSolver* solver) {
-        auto oup_type = solver->info->pass_infos[pass_id]->oup_type;
+    std::vector<_OutputCase> _collectOutputCase(int align_id, IncreAutoLifterSolver* solver) {
+        auto oup_type = solver->info->align_infos[align_id]->oup_type;
         std::vector<int> path; std::vector<_OutputCase> res;
         _collectOutputCase(oup_type, path, res, solver->f_res_list, solver->env.get());
         return res;
@@ -73,7 +74,7 @@ namespace {
     public:
         FExampleSpace* base_example_space;
         PEnv env;
-        int pass_id;
+        int align_id;
 
         IOExampleList example_list;
         TypeList inp_type_list;
@@ -124,10 +125,10 @@ namespace {
             auto oup = runOutput(oup_ty, f_example.oup);
             insertExample({inp, oup});
         }
-        CExampleSpace(int _pass_id, FExampleSpace* _base_example_space, IncreAutoLifterSolver* source):
-                pass_id(_pass_id), base_example_space(_base_example_space), compress_program_storage(_base_example_space->compress_infos.size()) {
+        CExampleSpace(int _align_id, FExampleSpace* _base_example_space, IncreAutoLifterSolver* source):
+                align_id(_align_id), base_example_space(_base_example_space), compress_program_storage(_base_example_space->compress_infos.size()) {
             env = base_example_space->env;
-            f_res_list = source->f_res_list; oup_ty = source->info->pass_infos[pass_id]->oup_type;
+            f_res_list = source->f_res_list; oup_ty = source->info->align_infos[align_id]->oup_type;
 
             for (int i = 0; i < base_example_space->compress_infos.size(); ++i) {
                 int compress_id = base_example_space->compress_infos[i].first;
@@ -136,7 +137,7 @@ namespace {
                 }
             }
 
-            const_program_list = source->const_res_list[pass_id].const_list;
+            const_program_list = source->const_res_list[align_id].const_list;
             int init_example_num = base_example_space->example_list.size();
             current_pos = (init_example_num + 1) / KExampleEnlargeFactor;
 
@@ -265,7 +266,7 @@ namespace {
 
             // synthesis
             auto oup_type = component_info.program.first;
-            auto* grammar = solver->buildCombinatorGrammar(example_space->inp_type_list, oup_type, example_space->pass_id);
+            auto* grammar = solver->buildCombinatorGrammar(example_space->inp_type_list, oup_type, example_space->align_id);
             SolverToken token = _getSolverToken(oup_type.get());
             PProgram main = _synthesis(grammar, component_example_list, example_space->env, token);
             res_list.push_back(main);
@@ -306,9 +307,9 @@ namespace {
     }
 }
 
-Term IncreAutoLifterSolver::synthesisCombinator(int pass_id) {
-    auto* example_space = new CExampleSpace(pass_id, example_space_list[pass_id], this);
-    auto output_cases = _collectOutputCase(pass_id, this);
+Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
+    auto* example_space = new CExampleSpace(align_id, example_space_list[align_id], this);
+    auto output_cases = _collectOutputCase(align_id, this);
     LOG(INFO) << "Output cases " << output_cases.size();
     for (auto& component: output_cases) {
         std::cout << "  " << _path2String(component.path) << " ";
@@ -328,12 +329,7 @@ Term IncreAutoLifterSolver::synthesisCombinator(int pass_id) {
     TermList param_list;
     std::vector<std::pair<std::string, Term>> binding_list;
     {
-        auto* init_pass = info->pass_infos[pass_id]->term;
-        for (int i = 0; i < init_pass->names.size(); ++i) {
-            binding_list.emplace_back(init_pass->names[i], init_pass->defs[i]);
-        }
-
-        auto* base_example_space = example_space_list[pass_id];
+        auto* base_example_space = example_space_list[align_id];
         for (auto& [id, name_list]: base_example_space->compress_infos) {
             for (auto& name: name_list) {
                 if (f_res_list[id].component_list.size() == 1) {
@@ -351,7 +347,7 @@ Term IncreAutoLifterSolver::synthesisCombinator(int pass_id) {
         for (auto& [const_name, _]: base_example_space->const_infos) {
             const_param_list.push_back(std::make_shared<TmVar>(const_name));
         }
-        for (auto& const_program: const_res_list[pass_id].const_list) {
+        for (auto& const_program: const_res_list[align_id].const_list) {
             auto const_term = _buildProgram(const_program.second, info->component_list, const_param_list);
             if (const_term->getType() == TermType::VALUE || const_term->getType() == TermType::VAR) {
                 param_list.push_back(const_term);
@@ -373,7 +369,7 @@ Term IncreAutoLifterSolver::synthesisCombinator(int pass_id) {
 }
 
 void IncreAutoLifterSolver::solveCombinators() {
-    for (int pass_id = 0; pass_id < info->pass_infos.size(); ++pass_id) {
+    for (int pass_id = 0; pass_id < info->align_infos.size(); ++pass_id) {
         comb_list.push_back(synthesisCombinator(pass_id));
     }
 }

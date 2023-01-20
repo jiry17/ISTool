@@ -147,7 +147,7 @@ Term incre::json2term(const Json::Value &node) {
         return std::make_shared<TmUnLabel>(content);
     }
     if (type == "align") {
-        auto content = incre::json2term(node["align"]);
+        auto content = incre::json2term(node["content"]);
         return std::make_shared<TmAlign>(content);
     }
     LOG(FATAL) << "Unknown term " << node;
@@ -163,6 +163,11 @@ Binding incre::json2binding(const Json::Value &node) {
         auto ty = incre::json2ty(node["content"]);
         return std::make_shared<TypeBinding>(ty);
     }
+    if (type == "var") {
+        auto ty = incre::json2ty(node["content"]);
+        return std::make_shared<VarTypeBinding>(ty);
+    }
+    LOG(FATAL) << "Unknown Binding";
 }
 
 Command incre::json2command(const Json::Value &node) {

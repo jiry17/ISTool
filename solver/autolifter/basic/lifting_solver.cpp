@@ -9,6 +9,7 @@
 #include "istool/ext/deepcoder/higher_order_operator.h"
 #include "istool/ext/deepcoder/data_util.h"
 #include "glog/logging.h"
+#include <iostream>
 
 namespace {
     PProgram _buildTmp(const std::string& name) {

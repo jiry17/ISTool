@@ -55,7 +55,7 @@ namespace incre {
     public:
         IncreProgram program;
         Context* ctx;
-        AlignTypeInfoList pass_infos;
+        AlignTypeInfoList align_infos;
         IncreExamplePool* example_pool;
         std::vector<SynthesisComponent*> component_list;
         IncreInfo(const IncreProgram& _program, Context* _ctx, const AlignTypeInfoList& infos, IncreExamplePool* pool, const std::vector<SynthesisComponent*>& component_list);
@@ -70,6 +70,7 @@ namespace incre {
     IncreProgram labelCompress(const IncreProgram& program);
     AlignTypeInfoList collectAlignType(const IncreProgram& program);
     std::vector<SynthesisComponent*> collectComponentList(Context* ctx, Env* env, const std::unordered_map<std::string, InputComponentInfo>& compress_map);
+    void prepareEnv(Env* env);
     IncreInfo* buildIncreInfo(const IncreProgram& program, Env* env);
 }
 

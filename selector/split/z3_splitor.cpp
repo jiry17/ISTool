@@ -7,6 +7,7 @@
 #include "istool/solver/enum/enum_util.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "glog/logging.h"
+#include <iostream>
 
 namespace {
     z3::context& _getCtx(Env* env) {

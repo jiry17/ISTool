@@ -5,7 +5,7 @@
 #include "istool/solver/maxflash/topdown_context_graph.h"
 #include "glog/logging.h"
 #include <queue>
-
+#include <iostream>
 
 TopDownContextGraph::Node::Node(NonTerminal *_symbol, const PTopDownContext& _context): symbol(_symbol), context(_context) {
 }

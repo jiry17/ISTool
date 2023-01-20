@@ -6,6 +6,7 @@
 #include "istool/selector/random/random_semantics_scorer.h"
 #include "glog/logging.h"
 #include "istool/basic/config.h"
+#include <iostream>
 
 using namespace selector::random;
 

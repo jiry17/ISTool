@@ -11,7 +11,6 @@
 
 namespace incre {
     namespace autolifter {
-
         typedef std::pair<PType, PProgram> TypedProgram;
         struct FInfo {
             TypedProgram program;
@@ -84,9 +83,9 @@ namespace incre {
 
         autolifter::PLPRes solvePLPTask(AlignTypeInfoData* info, const autolifter::TypedProgram& target, const std::vector<int>& path, int target_id);
         Grammar* buildAuxGrammar(int compress_id);
-        Grammar* buildConstGrammar(const TypeList& type_list, int pass_id);
+        Grammar* buildConstGrammar(const TypeList& type_list, int align_id);
     public:
-        Grammar* buildCombinatorGrammar(const TypeList& type_list, const PType& oup_type, int pass_id);
+        Grammar* buildCombinatorGrammar(const TypeList& type_list, const PType& oup_type, int align_id);
 
         PEnv env;
         std::vector<autolifter::FExampleSpace*> example_space_list;
@@ -103,7 +102,7 @@ namespace incre {
         std::vector<autolifter::ConstRes> const_res_list;
 
         // Synthesize combinators
-        Term synthesisCombinator(int pass_id);
+        Term synthesisCombinator(int align_id);
         TermList comb_list;
         void solveCombinators();
     };

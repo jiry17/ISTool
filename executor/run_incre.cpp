@@ -7,10 +7,10 @@
 #include "istool/incre/language/incre.h"
 #include "istool/incre/io/incre_printer.h"
 #include "istool/incre/analysis/incre_instru_info.h"
-#include "istool/incre/io/incre_printer.h"
 #include "istool/incre/autolifter/incre_aux_semantics.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
 #include "glog/logging.h"
+#include <iostream>
 
 using namespace incre;
 
@@ -38,34 +38,32 @@ int main(int argv, char** argc) {
     if (argv > 1) {
         path = argc[1]; target = argc[2];
     } else {
-        path = "/home/jiry/2022A/IncreLanguage//tmp.json";
+        path = "/Users/pro/Desktop/work/2023S/ISTool/tests/test.json";
     }
     auto prog = incre::file2program(path);
 
 
     auto env = std::make_shared<Env>();
-    incre::autolifter::prepareAutoLifterEnv(env.get());
+    incre::prepareEnv(env.get());
     auto* info = incre::buildIncreInfo(prog, env.get());
     for (int i = 1; i <= 100; ++i) {
         info->example_pool->generateExample();
     }
 
-    for (auto& pass_info: info->pass_infos) {
-        pass_info->print();
-        if (pass_info->getId() < info->example_pool->example_pool.size()) continue;
-        auto& example_list = info->example_pool->example_pool[pass_info->getId()];
+    for (auto& align_info: info->align_infos) {
+        align_info->print();
+        if (align_info->getId() >= info->example_pool->example_pool.size()) continue;
+        auto& example_list = info->example_pool->example_pool[align_info->getId()];
         for (int i = 0; i < 10 && i < example_list.size(); ++i) {
             std::cout << "  " << example_list[i]->toString() << std::endl;
         }
     }
 
-    incre::printProgram(prog, config::KSourcePath + "result.txt");
-
     auto* solver = new incre::IncreAutoLifterSolver(info, env);
     auto solution = solver->solve();
     solution.print();
 
-    auto res = incre::rewriteWithIncreSolution(info->program.get(), solution);
+    /*auto res = incre::rewriteWithIncreSolution(info->program.get(), solution);
 
     // test
     auto* new_ctx = incre::run(res);
@@ -80,7 +78,7 @@ int main(int argv, char** argc) {
 
 
 
-    incre::printProgram(res, target);
+    incre::printProgram(res, target);*/
 
     /*invoke("head", {tl}, ctx);
     invoke("tail", {tl}, ctx);

@@ -53,8 +53,6 @@ public: \
         std::vector<std::pair<PType, Data>> getConstList(Env* env);
         std::vector<PSemantics> getSemanticsList(const PType& base_type);
     }
-
-    void prepareAutoLifterEnv(Env*);
 }
 
 #endif //ISTOOL_INCRE_SEMANTICS_H

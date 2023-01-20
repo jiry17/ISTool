@@ -386,6 +386,7 @@ namespace {
                 ctx->addBinding(command->name, std::make_shared<TmValue>(res), ty);
                 return;
             }
+            case BindingType::VAR: return;
         }
     }
 

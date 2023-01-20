@@ -20,7 +20,7 @@ public:
     Splitor(ExampleSpace* _example_space);
     bool getCounterExample(Program* p, const ProgramList& seed_list, Example* counter_example);
     bool getDistinguishExample(Program* x, Program* y, const ProgramList& seed_list, Example* counter_example);
-    ~Splitor() = default;
+    virtual ~Splitor() = default;
 };
 
 namespace selector {

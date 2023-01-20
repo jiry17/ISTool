@@ -5,6 +5,7 @@
 #include "istool/solver/maxflash/maxflash.h"
 #include "istool/sygus/theory/basic/clia/clia_value.h"
 #include "glog/logging.h"
+#include <iostream>
 
 namespace {
     int KDefaultIterStep = 3;

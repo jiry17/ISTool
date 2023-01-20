@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="ISToolSolver"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\basic\;CMake Files\ext\;CMake Files\sygus\;CMake Files\sygus\theory\;CMake Files\solver\;CMake Files\solver\autolifter\;CMake Files\solver\recursive\;CMake Files\selector\;CMake Files\dsl\;CMake Files\incre\;CMake Files\executor\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="solver_lib">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/libsolver_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 solver_lib"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="solver_lib/fast">
+				<Option output="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/libsolver_lib.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DDEBUG"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/ISTool/include"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api/c++"/>
+					<Add directory="/Users/pro/Desktop/work/2023S/z3/src/api"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/local/opt/glog/include"/>
+					<Add directory="/Library/gurobi911/mac64/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/13.1.6/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 solver_lib/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/Users/pro/Desktop/work/2023S/ISTool/cmake-build-debug-system/solver/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/autolifter.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/basic/lifting_problem.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/basic/lifting_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/basic/occam_verifier.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/basic/streamed_example_space.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/composed_sf_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/sf_verifier.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/component/component_based_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/component/grammar_encoder.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/component/linear_encoder.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/component/tree_encoder.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/enum/enum.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/enum/enum_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/enum/enum_util.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/external/external_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/external/external_solver_list.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/iterative_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/maxflash/maxflash.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/maxflash/maxflash_vsa.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/maxflash/topdown_context_graph.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/dnf_learner.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/lia_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/polygen.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/polygen_cegis.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/polygen_condition_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/polygen_term_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/polygen/polygen_unifier.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/recursive/basic/recursive_semantics.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/stun/eusolver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/stun/stun.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/tmp/batched_maxflash.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/tmp/weighted_obe.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/vsa/vsa_builder.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/vsa/vsa_solver.cpp">
+			<Option target="solver_lib"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/basic/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\basic\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/ext/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\ext\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\sygus\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/sygus/theory/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\sygus\theory\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\solver\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/autolifter/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\solver\autolifter\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/solver/recursive/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\solver\recursive\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/selector/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\selector\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/dsl/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\dsl\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/incre/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\incre\"/>
+		</Unit>
+		<Unit filename="/Users/pro/Desktop/work/2023S/ISTool/executor/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\executor\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

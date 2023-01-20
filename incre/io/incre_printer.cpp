@@ -6,6 +6,7 @@
 #include "istool/incre/language/incre.h"
 #include "glog/logging.h"
 #include <fstream>
+#include <iostream>
 
 using namespace incre;
 bool debug = false;

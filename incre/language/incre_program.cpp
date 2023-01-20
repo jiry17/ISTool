@@ -4,6 +4,7 @@
 
 #include "istool/incre/language/incre_program.h"
 #include "glog/logging.h"
+#include <iostream>
 
 using namespace incre;
 

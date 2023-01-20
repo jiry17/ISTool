@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/autolifter/incre_plp.h"
+#include "glog/logging.h"
 
 using namespace incre::autolifter;
 
@@ -34,4 +35,33 @@ int PLPTask::acquireExample(int target_num, int timeout) {
     auto res = example_space->acquireExample(target_num, guard);
     delete guard;
     return res;
+}
+
+#define ValueHead(name) auto* v = dynamic_cast<V ## name*>(data.get()); if (v)
+
+Data incre::autolifter::eliminateCompress(const Data &data) {
+    {ValueHead(Int) return data;}
+    {ValueHead(Bool) return data;}
+    {ValueHead(Compress) return v->content;}
+    {
+        ValueHead(Tuple) {
+            DataList elements;
+            for (int i = 0; i < v->elements.size(); ++i) {
+                elements.push_back(eliminateCompress(v->elements[i]));
+            }
+            return Data(std::make_shared<VTuple>(elements));
+        }
+    }
+    {
+        ValueHead(Inductive) {
+            return Data(std::make_shared<VInductive>(v->name, eliminateCompress(v->content)));
+        }
+    }
+    LOG(FATAL) << "Unknown data " << data.toString();
+}
+
+Data incre::autolifter::openLabeledCompress(const Data &data, int label) {
+    auto* v = dynamic_cast<VLabeledCompress*>(data.get());
+    if (!v || v->id != label) LOG(FATAL) << "Unmatched compress id: get " << data.toString() << " but except " << label;
+    return eliminateCompress(data);
 }

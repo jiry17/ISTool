@@ -5,6 +5,7 @@
 #include "istool/incre/autolifter/incre_plp_solver.h"
 #include "istool/solver/enum/enum_util.h"
 #include "glog/logging.h"
+#include <iostream>
 
 using namespace incre::autolifter;
 using solver::autolifter::MaximalInfoList;
@@ -308,12 +309,6 @@ std::vector<std::pair<int, TypedProgram> > IncrePLPSolver::synthesisFromExample(
         }
         int k = (turn_id - 1) % ((current_limit + 1) / 2);
         auto* info = getNextComponent(k, guard);
-        /*if (info->ind_list.size() == 2) {
-            std::vector<std::pair<int, PProgram>> unit_list;
-            for (auto ind: info->ind_list) unit_list.emplace_back(component_info_list[ind].pos, component_info_list[ind].program);
-            LOG(INFO) << "current enum " << _unitList2String(unit_list);
-            int kk; std::cin >> kk;
-        }*/
         if (!addUncoveredInfo(info)) {
             delete info; continue;
         }

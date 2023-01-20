@@ -18,6 +18,7 @@
 #include "istool/sygus/sygus.h"
 #include <ctime>
 #include <istool/sygus/parser/parser.h>
+#include <iostream>
 
 
 const auto KDefaultPrepare = [](Grammar* g, Env* env, const IOExample& io_example) {

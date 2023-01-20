@@ -26,6 +26,9 @@ namespace incre::autolifter {
         PLPTask(FExampleSpace* _example_space, const std::vector<Grammar*>& _f_grammar_list, Grammar* _const_grammar,
                 const TypedProgram& _target, const std::vector<int>& _path, int target_compress_id);
     };
+
+    Data eliminateCompress(const Data& data);
+    Data openLabeledCompress(const Data& data, int label);
 }
 
 #endif //ISTOOL_INCRE_PLP_H

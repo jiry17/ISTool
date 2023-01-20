@@ -9,6 +9,7 @@
 #include <random>
 #include <algorithm>
 #include "glog/logging.h"
+#include <iostream>
 
 using namespace polygen;
 

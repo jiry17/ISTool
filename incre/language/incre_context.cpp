@@ -18,6 +18,10 @@ TermBinding::TermBinding(const Term &_term, const Ty& _ty): BindingData(BindingT
 std::string TermBinding::toString() const {
     return term->toString();
 }
+VarTypeBinding::VarTypeBinding(const Ty&_type): BindingData(BindingType::VAR), type(_type) {}
+std::string VarTypeBinding::toString() const {
+    return type->toString();
+}
 
 void Context::addBinding(const std::string &name, const Ty &type) {
     // LOG(INFO) << "binding " << name << " : " << type->toString();

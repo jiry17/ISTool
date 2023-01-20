@@ -4,6 +4,7 @@
 
 #include "istool/selector/baseline/clia_random_selector.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
+#include <algorithm>
 #include "glog/logging.h"
 
 const std::string selector::KCLIARandomRangeName = "CLIA-Random@Range";
@@ -42,7 +43,7 @@ bool CLIARandomSelector::verify(const FunctionContext &info, Example *counter_ex
             int_param_list.push_back(ext->buildVar(v->example_space->type_list[i].get(), "Param" + std::to_string(i)));
         }
     }
-    std::random_shuffle(int_param_list.begin(), int_param_list.end());
+    std::shuffle(int_param_list.begin(), int_param_list.end(), v->example_space->env->random_engine);
     auto model = s.get_model();
     for (const auto& param: int_param_list) {
         int k = _getRand(KRandomRange);

@@ -36,7 +36,7 @@ Example FiniteCompleteRandomSemanticsSelector::getNextExample(const PProgram &x,
         id_list.push_back(i);
     }
     if (id_list.size() > KExampleNum) {
-        std::random_shuffle(id_list.begin(), id_list.end());
+        std::shuffle(id_list.begin(), id_list.end(), spec->env->random_engine);
         id_list.resize(KExampleNum);
     }
     for (int id: id_list) candidate_inp_list.push_back(io_example_list[id].first);

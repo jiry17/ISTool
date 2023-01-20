@@ -65,7 +65,7 @@ int FExampleSpace::acquireExample(int target_num, TimeGuard *guard) {
     }
     return target_num;
 }
-FExampleSpace::FExampleSpace(IncreExamplePool *_pool, int _tau_id, const PEnv& _env, PassTypeInfoData* info):
+FExampleSpace::FExampleSpace(IncreExamplePool *_pool, int _tau_id, const PEnv& _env, AlignTypeInfoData* info):
         pool(_pool), tau_id(_tau_id), env(_env) {
     std::unordered_map<int, int> used_map;
     auto insert = [&](int id) {
@@ -94,9 +94,9 @@ namespace {
             if (ct) return ct->id + 1;
             return 0;
         };
-        for (auto& pass_info: info->pass_infos) {
-            for (auto& [_, type]: pass_info->inp_types) c_num = std::max(c_num, get_id(type.get()));
-            c_num = std::max(c_num, get_id(pass_info->oup_type.get()));
+        for (auto& align_info: info->align_infos) {
+            for (auto& [_, type]: align_info->inp_types) c_num = std::max(c_num, get_id(type.get()));
+            c_num = std::max(c_num, get_id(align_info->oup_type.get()));
         }
         return c_num;
     }
@@ -133,16 +133,16 @@ Data TypeLabeledDirectSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
 }
 
 IncreAutoLifterSolver::IncreAutoLifterSolver(IncreInfo *_info, const PEnv& _env): env(_env), IncreSolver(_info),
-    f_res_list(_getCNum(_info)), const_res_list(info->pass_infos.size()) {
-    for (auto& pass_info: info->pass_infos) {
+    f_res_list(_getCNum(_info)), const_res_list(info->align_infos.size()) {
+    for (auto& pass_info: info->align_infos) {
         example_space_list.push_back(new FExampleSpace(info->example_pool, pass_info->getId(), env, pass_info.get()));
         unit_storage.push_back(_unfoldOutputType(pass_info->oup_type));
     }
 #ifdef DEBUG
-    for (int i = 0; i < info->pass_infos.size(); ++i) assert(info->pass_infos[i]->getId() == i);
+    for (int i = 0; i < info->align_infos.size(); ++i) assert(info->align_infos[i]->getId() == i);
 #endif
 }
-IncreAutoLifterSolver::~IncreAutoLifterSolver() noexcept {
+IncreAutoLifterSolver::~IncreAutoLifterSolver() {
     for (auto* example_space: example_space_list) {
         delete example_space;
     }
@@ -225,7 +225,7 @@ Data FExampleSpace::runOup(int example_id, Program *program, const std::vector<i
     return oup;
 }
 
-autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(PassTypeInfoData *info, const TypedProgram &target, const std::vector<int>& path, int target_id) {
+autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(AlignTypeInfoData *info, const TypedProgram &target, const std::vector<int>& path, int target_id) {
     auto* space = example_space_list[info->getId()];
     std::vector<Grammar*> f_grammar_list;
     for (auto& [id, _]: space->compress_infos) {
@@ -262,16 +262,16 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
         }
     };
 
-    for (auto& pass_info: info->pass_infos) {
-        unit_storage.push_back(_unfoldOutputType(pass_info->oup_type));
+    for (auto& align_info: info->align_infos) {
+        unit_storage.push_back(_unfoldOutputType(align_info->oup_type));
     }
 
-    for (auto& pass_info: info->pass_infos) {
-        for (auto& unit: unit_storage[pass_info->getId()]) {
+    for (auto& align_info: info->align_infos) {
+        for (auto& unit: unit_storage[align_info->getId()]) {
             auto *oup_ty = unit.unit_type.get();
             if (!dynamic_cast<TyCompress *>(oup_ty)) {
-                PLPRes res = solvePLPTask(pass_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr}, unit.path, -1);
-                record_res(pass_info->getId(), res);
+                PLPRes res = solvePLPTask(align_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr}, unit.path, -1);
+                record_res(align_info->getId(), res);
             }
         }
     }
@@ -285,12 +285,12 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
                 if (component.is_extended) continue;
                 is_changed = true;
                 f_res_list[compress_id].component_list[i].is_extended = true;
-                for (auto& pass_info: info->pass_infos) {
-                    for (auto& unit: unit_storage[pass_info->getId()]) {
+                for (auto& align_info: info->align_infos) {
+                    for (auto& unit: unit_storage[align_info->getId()]) {
                         auto *cty = dynamic_cast<TyLabeledCompress *>(unit.unit_type.get());
                         if (cty && cty->id == compress_id) {
-                            PLPRes res = solvePLPTask(pass_info.get(), component.program, unit.path, compress_id);
-                            record_res(pass_info->getId(), res);
+                            PLPRes res = solvePLPTask(align_info.get(), component.program, unit.path, compress_id);
+                            record_res(align_info->getId(), res);
                         }
                     }
                 }

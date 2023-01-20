@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libsygus_parser_lib.a CMakeFiles/sygus_parser_lib.dir/parser/json_util.cpp.o CMakeFiles/sygus_parser_lib.dir/parser/parser.cpp.o CMakeFiles/sygus_parser_lib.dir/parser/parser_for_depth_limit.cpp.o CMakeFiles/sygus_parser_lib.dir/sygus.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libsygus_parser_lib.a

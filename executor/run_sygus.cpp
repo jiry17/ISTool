@@ -12,6 +12,7 @@
 #include "istool/ext/composed_semantics/composed_rule.h"
 #include "istool/basic/config.h"
 #include <ctime>
+#include <iostream>
 
 #ifdef PROFILER
 #include <gperftools/profiler.h>
