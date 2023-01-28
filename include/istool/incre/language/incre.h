@@ -14,6 +14,7 @@ namespace incre {
     bool isUsed(const Pattern& pt, const std::string& name);
     bool isMatch(const Data& data, const Pattern& pt);
     std::vector<std::pair<std::string, Term>> bindPattern(const Data& data, const Pattern& pt);
+    std::vector<std::string> getPatternVars(const Pattern& pt);
     std::vector<std::string> getUnboundedVars(TermData* term);
 
     Term subst(const Term& x, const std::string& name, const Term& y);
@@ -39,6 +40,10 @@ namespace incre {
     Ty unfoldTypeAll(const Ty& x, TypeContext* ctx, std::vector<std::string>& tmps, const ExternalUnfoldMap& ext = {});
     Ty unfoldBasicType(const Ty& x, TypeContext* ctx);
     std::vector<TypeContext::BindLog> bindPattern(const Pattern& pt, const Ty& type, TypeContext* ctx);
+
+    Ty clearCompress(const Ty& type);
+
+    IncreProgram eliminateNestedAlign(ProgramData* program);
 }
 
 #endif //ISTOOL_INCRE_H

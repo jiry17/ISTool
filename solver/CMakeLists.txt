@@ -10,6 +10,6 @@ aux_source_directory(maxflash MAX_SRC)
 aux_source_directory(external EXT_SOLVER_SRC)
 aux_source_directory(tmp TMP_SRC)
 add_subdirectory(autolifter)
-add_subdirectory(recursive)
+#add_subdirectory(recursive)
 add_library(solver_lib STATIC solver.cpp iterative_solver.cpp ${CB_SRC} ${ENUM_SRC} ${VSA_SRC} ${STUN_SRC} ${POLY_SRC}
-        ${TMP_SRC} ${MAX_SRC} ${AL_SRC} ${RECURSIVE_SRC} ${EXT_SOLVER_SRC})
+        ${TMP_SRC} ${MAX_SRC} ${AL_SRC} ${EXT_SOLVER_SRC})

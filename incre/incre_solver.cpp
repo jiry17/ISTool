@@ -131,6 +131,8 @@ namespace {
             case TermType::UNLABEL:
                 LOG(FATAL) << "Unexceptional label/unlabel while rewriting: every label/unlabel should be covered by align";
             case TermType::FIX: TermCase(Fix);
+            case TermType::WILDCARD:
+                LOG(FATAL) << "Unexceptional WILDCARD: " << term->toString();
         }
     }
 
@@ -143,6 +145,9 @@ namespace {
             case BindingType::TERM: {
                 auto* tb = dynamic_cast<TermBinding*>(binding);
                 return std::make_shared<TermBinding>(_rewriteTerm(tb->term, solution));
+            }
+            case BindingType::VAR: {
+                LOG(FATAL) << "All VarTypeBinding should be removed in this stage";
             }
         }
     }

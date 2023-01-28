@@ -16,7 +16,7 @@ FiniteCompleteRandomSemanticsSelector::FiniteCompleteRandomSemanticsSelector(Spe
         io_example_list.push_back(fio_space->getIOExample(example));
     }
 }
-FiniteCompleteRandomSemanticsSelector::~FiniteCompleteRandomSemanticsSelector() noexcept {
+FiniteCompleteRandomSemanticsSelector::~FiniteCompleteRandomSemanticsSelector() {
     delete g;
 }
 void FiniteCompleteRandomSemanticsSelector::addExample(const IOExample &example) {

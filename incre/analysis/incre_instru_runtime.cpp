@@ -135,6 +135,7 @@ namespace {
             case TermType::UNLABEL: SubstCase(UnLabel);
             case TermType::ALIGN: SubstCase(LabeledAlign);
             case TermType::FIX: SubstCase(Fix);
+            case TermType::WILDCARD: LOG(FATAL) << "Unknown WILDCARD: " << x->toString();
         }
     }
 
@@ -260,6 +261,7 @@ namespace {
             case TermType::TUPLE: CollectCase(Tuple);
             case TermType::VAR: CollectCase(Var);
             case TermType::IF: CollectCase(If);
+            case TermType::WILDCARD: LOG(FATAL) << "Unknown WILDCARD: " << term->toString();
         }
     }
 }
@@ -295,6 +297,7 @@ namespace {
                         ctx->addBinding(cb->name, std::make_shared<TmValue>(res), ty);
                         return;
                     }
+                    case BindingType::VAR: return;
                 }
             }
             case CommandType::IMPORT: {

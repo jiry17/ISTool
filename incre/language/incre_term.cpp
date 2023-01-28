@@ -142,6 +142,9 @@ TermList incre::getSubTerms(TermData *term) {
             auto* tf = dynamic_cast<TmFix*>(term);
             return {tf->content};
         }
+        case TermType::WILDCARD: {
+            LOG(FATAL) << "Unknown WILDCARD: " << term->toString();
+        }
     }
 }
 
@@ -216,6 +219,7 @@ Term incre::replaceTerm(const Term& term, const std::function<Term(const Term&)>
         case TermType::LET: ReplaceCase(Let);
         case TermType::TUPLE: ReplaceCase(Tuple);
         case TermType::PROJ: ReplaceCase(Proj);
+        case TermType::WILDCARD: LOG(FATAL) << "Unknown WILDCARD: " << term->toString();
     }
 }
 
@@ -234,5 +238,6 @@ std::string incre::termType2String(TermType type) {
         case TermType::LET: return "Let";
         case TermType::TUPLE: return "Tuple";
         case TermType::PROJ: return "Proj";
+        case TermType::WILDCARD: return "Wildcard";
     }
 }

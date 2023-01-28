@@ -194,4 +194,5 @@ z3::expr LinearEncoder::getBlockCons(const z3::model &model) const {
     std::vector<bool> cache(component_list.size() + 1, false);
     z3::expr_vector res(ext->ctx);
     getBlockCons(component_list.size(), model, cache, res);
+    return z3::mk_and(res);
 }

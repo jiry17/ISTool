@@ -11,7 +11,7 @@
 
 namespace incre {
     enum class TermType {
-        VALUE, IF, VAR, LET, TUPLE, PROJ, ABS, APP, FIX, MATCH, LABEL, UNLABEL, ALIGN
+        VALUE, IF, VAR, LET, TUPLE, PROJ, ABS, APP, FIX, MATCH, LABEL, UNLABEL, ALIGN, WILDCARD
     };
 
     class TermData {

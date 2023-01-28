@@ -16,7 +16,7 @@ ComponentBasedSynthesizer::ComponentBasedSynthesizer(Specification *_spec, const
     }
 }
 
-ComponentBasedSynthesizer::~ComponentBasedSynthesizer() noexcept {
+ComponentBasedSynthesizer::~ComponentBasedSynthesizer() {
     for (auto& info: encoder_map) {
         delete info.second;
     }

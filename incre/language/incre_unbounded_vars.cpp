@@ -4,6 +4,7 @@
 
 #include "istool/incre/language/incre.h"
 #include <unordered_set>
+#include "glog/logging.h"
 
 using namespace incre;
 
@@ -102,6 +103,7 @@ namespace {
             case TermType::APP: GetCase(App);
             case TermType::MATCH: GetCase(Match);
             case TermType::IF: GetCase(If);
+            case TermType::WILDCARD: LOG(FATAL) << "Unknown WILDCARD: " << term->toString();
         }
     }
 }

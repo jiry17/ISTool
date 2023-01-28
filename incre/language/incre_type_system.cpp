@@ -304,6 +304,7 @@ Ty incre::getType(const Term& term, TypeContext* ctx, const ExternalTypeMap& ext
         case TermType::ABS: GetTypeCase(Abs);
         case TermType::FIX: GetTypeCase(Fix);
         case TermType::MATCH: GetTypeCase(Match);
+        case TermType::WILDCARD: LOG(FATAL) << "Unexpected WILDCARD: " << term->toString();
     }
     LOG(FATAL) << "Unknown term " << term->toString();
 }

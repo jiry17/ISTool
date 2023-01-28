@@ -44,7 +44,18 @@ namespace {
             }
             case BindingType::TERM: {
                 auto* binding = dynamic_cast<TermBinding*>(c->binding.get());
-                ctx->bind(c->name, type_checker(binding->term, ctx));
+                auto it = ctx->binding_map.find(c->name);
+                auto res = type_checker(binding->term, ctx);
+                if (it != ctx->binding_map.end() && !incre::isTypeEqual(it->second,res, ctx)) {
+                    LOG(FATAL) << "Type cannot match: " << c->toString() << " " << it->second->toString();
+                }
+                ctx->bind(c->name, res);
+                break;
+            }
+            case BindingType::VAR: {
+                auto* binding = dynamic_cast<VarTypeBinding*>(c->binding.get());
+                ctx->bind(c->name, binding->type);
+                break;
             }
         }
     }

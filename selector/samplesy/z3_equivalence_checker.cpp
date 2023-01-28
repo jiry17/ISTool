@@ -77,7 +77,7 @@ ProgramList Z3GrammarEquivalenceChecker::getTwoDifferentPrograms() {
     return {x_program, y_program};
 }
 
-Z3GrammarEquivalenceChecker::~Z3GrammarEquivalenceChecker() noexcept {
+Z3GrammarEquivalenceChecker::~Z3GrammarEquivalenceChecker() {
     delete encoder;
 }
 

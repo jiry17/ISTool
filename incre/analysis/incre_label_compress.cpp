@@ -284,6 +284,7 @@ namespace {
             case TermType::UNLABEL: LabelTermCase(UnLabel);
             case TermType::MATCH: LabelTermCase(Match);
             case TermType::FIX: LabelTermCase(Fix);
+            case TermType::WILDCARD: LOG(FATAL) << "Unknown WILDCARD: " << term->toString();
         }
     }
 
@@ -300,6 +301,9 @@ namespace {
                 auto [term, ty] = _labelTerm(binding->term, ctx, cs);
                 ctx->bind(command->name, ty);
                 return std::make_shared<CommandBind>(command->name, std::make_shared<TermBinding>(term));
+            }
+            case BindingType::VAR: {
+                LOG(FATAL) << "All VarTypeBinding should be removed in this stage";
             }
         }
     }
@@ -456,6 +460,8 @@ namespace {
                 RelabelTermCase(Let);
             case TermType::PROJ:
                 RelabelTermCase(Proj);
+            case TermType::WILDCARD:
+                LOG(FATAL) << "Unexpected WILDCARD: " << term->toString();
         }
     }
 
@@ -470,6 +476,9 @@ namespace {
                 auto* tb = dynamic_cast<TermBinding*>(command->binding.get());
                 auto term = _relabelTerm(tb->term, cs);
                 return std::make_shared<CommandBind>(command->name, std::make_shared<TermBinding>(term));
+            }
+            case BindingType::VAR: {
+                LOG(FATAL) << "All VarTypeBinding should be removed in this stage";
             }
         }
     }

@@ -37,7 +37,7 @@ void OBEOptimizer::clear() {
     visited_set.clear();
 }
 // TODO: change the type of is_runnable to PProgramChecker to avoid memory leak;
-OBEOptimizer::~OBEOptimizer() noexcept {
+OBEOptimizer::~OBEOptimizer() {
     // delete is_runnable;
 }
 

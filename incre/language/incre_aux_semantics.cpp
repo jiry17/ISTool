@@ -144,6 +144,7 @@ namespace {
             case TermType::LABEL: SubstCase(Label);
             case TermType::UNLABEL: SubstCase(UnLabel);
             case TermType::ALIGN: SubstCase(Align);
+            case TermType::WILDCARD: LOG(FATAL) << "Unknown WILDCARD: " << x->toString();
         }
     }
 }
@@ -231,6 +232,37 @@ std::vector<std::pair<std::string, Term>> incre::bindPattern(const Data &data, c
     std::vector<std::pair<std::string, Term>> bind_list;
     _bindPattern(data, pt, bind_list);
     return bind_list;
+}
+
+namespace {
+    void _getPatternVars(const Pattern& pattern, std::vector<std::string>& res) {
+        switch (pattern->getType()) {
+            case PatternType::UNDER_SCORE: return;
+            case PatternType::VAR: {
+                auto* pv = dynamic_cast<PtVar*>(pattern.get());
+                res.push_back(pv->name);
+                return;
+            }
+            case PatternType::CONSTRUCTOR: {
+                auto* pc = dynamic_cast<PtConstructor*>(pattern.get());
+                _getPatternVars(pc->pattern, res);
+                return;
+            }
+            case PatternType::TUPLE: {
+                auto* pt = dynamic_cast<PtTuple*>(pattern.get());
+                for (auto& sub_pattern: pt->pattern_list) {
+                    _getPatternVars(sub_pattern, res);
+                }
+                return;
+            }
+        }
+    }
+}
+
+std::vector<std::string> incre::getPatternVars(const Pattern &pt) {
+    std::vector<std::string> res;
+    _getPatternVars(pt, res);
+    return res;
 }
 
 namespace {
@@ -362,6 +394,7 @@ Data incre::run(const Term &term, Context* ctx) {
         case TermType::IF: RunCase(If);
         case TermType::LET: RunCase(Let);
         case TermType::PROJ: RunCase(Proj);
+        case TermType::WILDCARD: LOG(FATAL) << "Unknown WildCard: " << term->toString();
     }
 }
 

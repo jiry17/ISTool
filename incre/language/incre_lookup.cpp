@@ -180,6 +180,7 @@ namespace {
             case TermType::LET: TermCase(Let);
             case TermType::FIX: TermCase(Fix);
             case TermType::IF: TermCase(If);
+            case TermType::WILDCARD: LOG(FATAL) << "Unknown WILDCARD: " << term->toString();
         }
     }
 
