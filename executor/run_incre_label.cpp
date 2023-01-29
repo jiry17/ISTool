@@ -24,6 +24,7 @@ int main(int argv, char** argc) {
         path = argc[1]; target = argc[2];
     } else {
         path = "/Users/pro/Desktop/work/2023S/ISTool/tests/test.json";
+        target = "/Users/pro/Desktop/work/2023S/ISTool/tests/test.f";
     }
     auto prog = incre::file2program(path);
 
@@ -35,9 +36,9 @@ int main(int argv, char** argc) {
     auto res = label_solver->label();
     res = autolabel::unfoldFuncTerm(res.get());
 
-    incre::printProgram(res);
-
     res = incre::eliminateNestedAlign(res.get());
+
+    incre::printProgram(res);
 
     int kk; std::cin >> kk;
     auto env = std::make_shared<Env>();
@@ -59,4 +60,8 @@ int main(int argv, char** argc) {
     auto* solver = new incre::IncreAutoLifterSolver(info, env);
     auto solution = solver->solve();
     solution.print();
+
+    auto full_res = incre::rewriteWithIncreSolution(info->program.get(), solution);
+
+    incre::printProgram(full_res, target);
 }

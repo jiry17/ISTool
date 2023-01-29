@@ -35,6 +35,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     #  include_directories(${LIBPROFILER_INCLUDE_DIRS})
     #  set(PROFILER_FILE ${LIBPROFILER_LIBRARIES})
     #endif()
+    set(THIRDPARTY_LIBS glog gflags ${Jsoncpp_LIBRARY} ${Z3_FILE} ${GUROBI_FILE} ${PROFILER_FILE})
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     #z3
     set(Z3_PATH /Users/pro/Desktop/work/2023S/z3)
