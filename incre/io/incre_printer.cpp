@@ -10,12 +10,19 @@
 
 using namespace incre;
 bool debug = false;
+int floor_num = 0;
 
 namespace {
     bool _isNeedBracket(TermType def_type) {
         return !(def_type == incre::TermType::VALUE ||
                  def_type == incre::TermType::VAR || def_type == incre::TermType::TUPLE
                  || def_type == incre::TermType::PROJ);
+    }
+
+    void printSpace(int num) {
+        while (num--) {
+            std::cout << "    ";
+        }
     }
 }
 
@@ -146,7 +153,9 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
         printTerm(tm_if->c);
         std::cout << ") then ";
         printTerm(tm_if->t);
-        std::cout << std::endl << "else ";
+        std::cout << std::endl;
+        printSpace(floor_num);
+        std::cout << "else ";
         printTerm(tm_if->f);
     } else if (term->getType() == TermType::VAR) {
       if (debug) std::cout << "[VAR]" << std::endl;
@@ -167,7 +176,9 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
         printTerm(tm_let->def);
         if (need_bracket) std::cout << ")";
         std::cout << " in " << std::endl;
+        floor_num++; printSpace(floor_num);
         printTerm(tm_let->content);
+        floor_num--;
     } else if (term->getType() == TermType::TUPLE) {
       if (debug) std::cout << "[TUPLE]" << std::endl;
         std::shared_ptr<TmTuple> tm_tuple =
@@ -200,10 +211,13 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
       if (debug) std::cout << "[ABS]" << std::endl;
         std::shared_ptr<TmAbs> tm_abs =
                 std::dynamic_pointer_cast<TmAbs>(term);
-        std::cout << "lambda " << tm_abs->name << ": ";
+        std::cout << "\\" << tm_abs->name << ": ";
         printTy(tm_abs->type);
         std::cout << ". ";
-        if (tm_abs->content->getType() != incre::TermType::ABS) std::cout << std::endl;
+        if (tm_abs->content->getType() != incre::TermType::ABS) {
+            std::cout << std::endl;
+            printSpace(floor_num);
+        }
         printTerm(tm_abs->content);
     } else if (term->getType() == TermType::APP) {
       if (debug) std::cout << "[APP]" << std::endl;
@@ -222,8 +236,10 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
       if (debug) std::cout << "[FIX]" << std::endl;
         std::shared_ptr<TmFix> tm_fix =
                 std::dynamic_pointer_cast<TmFix>(term);
-        std::cout << "fix (";
+        std::cout << "fix (" << std::endl;
+        printSpace(floor_num);
         printTerm(tm_fix->content);
+        printSpace(floor_num-1);
         std::cout << ")";
       if (debug) std::cout << std::endl << "[FIX_END]" << std::endl;
     } else if (term->getType() == TermType::MATCH) {
@@ -232,9 +248,10 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
                 std::dynamic_pointer_cast<TmMatch>(term);
         std::cout << "match ";
         printTerm(tm_match->def);
-        std::cout << " with " << std::endl;
+        std::cout << " with" << std::endl;
         bool flag = false;
         for (auto &match_case : tm_match->cases) {
+            printSpace(floor_num);
             if (flag) {
                 std::cout << "| ";
             } else {
@@ -243,9 +260,18 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
             }
             printPattern(match_case.first);
             std::cout << " -> ";
+            floor_num++;
+            auto term_type = match_case.second->getType();
+            if (term_type == TermType::LET || term_type == TermType::FIX ||
+                term_type == TermType::MATCH || term_type == TermType::ALIGN) {
+                std::cout << std::endl;
+                printSpace(floor_num);
+            }
             printTerm(match_case.second);
+            floor_num--;
             std::cout << std::endl;
         }
+        printSpace(floor_num);
         std::cout << "end" << std::endl;
     } else if (term->getType() == TermType::LABEL) {
         auto* tm_label = dynamic_cast<TmLabel*>(term.get());
@@ -278,28 +304,36 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
 
 void incre::printBinding(const std::shared_ptr<BindingData> &binding) {
     if (debug) std::cout << std::endl << "[zyw: printBinding]" << std::endl;
+    floor_num++;
     if (binding->getType() == BindingType::TYPE) {
-      if (debug) std::cout << "[TYPE]" << std::endl;
+        if (debug) std::cout << "[TYPE]" << std::endl;
         std::shared_ptr<TypeBinding> type_binding =
                 std::dynamic_pointer_cast<TypeBinding>(binding);
         printTy(type_binding->type);
     } else if (binding->getType() == BindingType::TERM) {
-      if (debug) std::cout << "[TERM]" << std::endl;
-      std::shared_ptr<TermBinding> term_binding =
-              std::dynamic_pointer_cast<TermBinding>(binding);
-      printTerm(term_binding->term);
-      if (debug) std::cout << std::endl << "[Binding_TERM_term_END]" << std::endl;
-      if (term_binding->type) {
-        std::cout << ": ";
-        printTy(term_binding->type);
-        if (debug) std::cout << std::endl << "[Binding_TERM_type_END]" << std::endl;
-      }
+        if (debug) std::cout << "[TERM]" << std::endl;
+        std::shared_ptr<TermBinding> term_binding =
+                std::dynamic_pointer_cast<TermBinding>(binding);
+        printTerm(term_binding->term);
+        if (debug) std::cout << std::endl << "[Binding_TERM_term_END]" << std::endl;
+        if (term_binding->type) {
+            std::cout << ": ";
+            printTy(term_binding->type);
+            if (debug) std::cout << std::endl << "[Binding_TERM_type_END]" << std::endl;
+        }
+    } else if (binding->getType() == BindingType::VAR) {
+        if (debug) std::cout << "[VAR]" << std::endl;
+        std::shared_ptr<VarTypeBinding> var_type_binding =
+                std::dynamic_pointer_cast<VarTypeBinding>(binding);
+        printTy(var_type_binding->type);
     } else {
         LOG(FATAL) << "Unknown binding";
     }
+    floor_num--;
 }
 
 void incre::printCommand(const std::shared_ptr<CommandData> &command) {
+    floor_num = 0;
     if (debug) std::cout << std::endl << "[zyw: printCommand]" << std::endl;
     if (command->getType() == CommandType::IMPORT) {
       if (debug) std::cout << "[IMPORT]" << std::endl;
@@ -319,17 +353,9 @@ void incre::printCommand(const std::shared_ptr<CommandData> &command) {
         std::cout << ";" << std::endl;
     } else if (command->getType() == CommandType::DEF_IND) {
       if (debug) std::cout << "[DEF_IND]" << std::endl;
-        // std::shared_ptr<CommandDefInductive> command_def = std::static_pointer_cast<CommandDefInductive>(command);
-        // std::shared_ptr<CommandDefInductive> command_def = reinterpret_cast<const std::shared_ptr<CommandDefInductive>&>(command);
-        // std::shared_ptr<CommandDefInductive> command_def = std::shared_polymorphic_downcast<CommandDefInductive>(command);
         std::shared_ptr<CommandDefInductive> command_def =
                 std::dynamic_pointer_cast<CommandDefInductive>(command);
         std::cout << "Inductive ";
-        /*
-        TyInductive command_type = *(command_def->type);
-        std::shared_ptr<TyData> def_type = std::make_shared<TyData>(command_type);
-        printTy(def_type);
-        */
         printTy(command_def->_type);
         std::cout << ";" << std::endl;
     } else {
@@ -357,4 +383,3 @@ void incre::printProgram(const std::shared_ptr<ProgramData> &prog, const std::st
         }
     }
 }
-
