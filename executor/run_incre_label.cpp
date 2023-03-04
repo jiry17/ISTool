@@ -21,7 +21,7 @@ using namespace incre;
     const std::string KLanguagePath = "/home/jiry/2023S/IncreLanguage/";
 #else
     const std::string KLanguagePath = "/Users/pro/Desktop/work/2023S/ISTool/tests/";
-#endif
+#endif 
 
 int main(int argv, char** argc) {
     std::string path, target;
