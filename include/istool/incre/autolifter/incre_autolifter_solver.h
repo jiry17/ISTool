@@ -8,10 +8,10 @@
 #include "istool/incre/incre_solver.h"
 #include "istool/basic/grammar.h"
 #include "istool/basic/bitset.h"
+#include "incre_plp.h"
 
 namespace incre {
     namespace autolifter {
-        typedef std::pair<PType, PProgram> TypedProgram;
         struct FInfo {
             TypedProgram program;
             int id;
@@ -28,38 +28,12 @@ namespace incre {
             Data run(const Data& inp, Env* env);
         };
 
-        struct ConstRes {
+        struct CompressRes {
         private:
             bool isEqual(Program* x, Program* y);
         public:
-            std::vector<TypedProgram> const_list;
+            std::vector<TypedProgram> compress_list;
             int insert(const TypedProgram& program);
-        };
-        typedef std::pair<std::vector<std::pair<int, TypedProgram>>, std::vector<TypedProgram>> PLPRes;
-
-        struct FExample {
-            DataStorage compress_storage;
-            DataList const_list;
-            Data oup;
-            virtual std::string toString() const;
-            FExample(const DataStorage& _compress_storage, const DataList& _const_list, const Data& _oup);
-        };
-
-        class FExampleSpace {
-            void addExample();
-        public:
-            std::vector<std::pair<std::string, PType>> const_infos;
-            std::vector<std::pair<int, std::vector<std::string>>> compress_infos;
-            std::vector<FExample> example_list;
-            PEnv env;
-            IncreExamplePool* pool;
-            int tau_id;
-            FExampleSpace(IncreExamplePool* _pool, int _tau_id, const PEnv& _env, AlignTypeInfoData* pass_info);
-
-            Data runConst(int example_id, Program* program);
-            DataList runAux(int example_id, int id, Program* program);
-            Data runOup(int example_id, Program* program, const std::vector<int>& path);
-            int acquireExample(int target_num, TimeGuard* guard);
         };
 
         struct OutputUnit {
@@ -68,22 +42,15 @@ namespace incre {
             OutputUnit(const std::vector<int>& _path, const Ty& _unit_type);
         };
 
-        struct TypeLabeledDirectSemantics: public NormalSemantics {
-        public:
-            PType type;
-            TypeLabeledDirectSemantics(const PType& _type);
-            virtual Data run(DataList&& inp_list, ExecuteInfo* info);
-            virtual ~TypeLabeledDirectSemantics() = default;
-        };
-
     }
     class IncreAutoLifterSolver: public IncreSolver {
         // Grammar builder
-        std::unordered_map<std::string, Grammar*> grammar_map;
 
-        autolifter::PLPRes solvePLPTask(AlignTypeInfoData* info, const autolifter::TypedProgram& target, const std::vector<int>& path, int target_id);
+        std::vector<autolifter::GrammarEnumerateTool*> compress_grammar_list, aux_grammar_list;
+        std::unordered_map<std::string, Grammar*> combine_grammar_map;
+        autolifter::PLPRes solvePLPTask(AlignTypeInfoData* info, const autolifter::TypedProgram& target, const std::vector<int>& path);
         Grammar* buildAuxGrammar(int compress_id);
-        Grammar* buildConstGrammar(const TypeList& type_list, int align_id);
+        Grammar* buildCompressGrammar(const TypeList& type_list, int align_id);
     public:
         Grammar* buildCombinatorGrammar(const TypeList& type_list, const PType& oup_type, int align_id);
 
@@ -98,8 +65,8 @@ namespace incre {
         // Synthesize auxiliary programs
         void solveAuxiliaryProgram();
         std::vector<autolifter::FRes> f_res_list;
+        std::vector<autolifter::CompressRes> compress_res_list;
         TyList f_type_list;
-        std::vector<autolifter::ConstRes> const_res_list;
 
         // Synthesize combinators
         Term synthesisCombinator(int align_id);

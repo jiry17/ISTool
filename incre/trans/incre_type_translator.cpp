@@ -5,6 +5,7 @@
 #include "istool/incre/trans/incre_trans.h"
 #include "istool/ext/deepcoder/data_type.h"
 #include "glog/logging.h"
+#include "istool/incre/analysis/incre_instru_type.h"
 
 using namespace incre;
 
@@ -28,32 +29,38 @@ bool TIncreInductive::equal(Type *t) {
     return res;
 }
 
+TCompress::TCompress(const PType &_content): content(_content) {
+}
+std::string TCompress::getName() {
+    return "Compress " + content->getName();
+}
+bool TCompress::equal(Type *type) {
+    auto* tc = dynamic_cast<TCompress*>(type);
+    return tc && type::equal(content, tc->content);
+}
+std::string TCompress::getBaseName() {
+    LOG(FATAL) << "TCompress.getBaseName() should not be invoked";
+}
+TypeList TCompress::getParams() {
+    LOG(FATAL) << "TCompress.getParams() should not be invoked";
+}
+PType TCompress::clone(const TypeList& params) {
+    LOG(FATAL) << "TCompress.clone() should not be invoked";
+}
+
+TLabeledCompress::TLabeledCompress(int _id, const PType &_content): id(_id), TCompress(_content) {
+}
+bool TLabeledCompress::equal(Type *type) {
+    auto* ltc = dynamic_cast<TLabeledCompress*>(type);
+    return ltc && ltc->id == id && type::equal(content, ltc->content);
+}
+std::string TLabeledCompress::getName() {
+    return "Compress[" + std::to_string(id) + "] " + content->getName();
+}
+
 namespace {
 #define TypeFromHead(name) PType _typeFromIncre(Ty ## name* type)
 #define TypeFromCase(name) return _typeFromIncre(dynamic_cast<Ty ## name*>(type.get()))
-
-    class _TCompress: public Type {
-    public:
-        PType content;
-        _TCompress(const PType& _content): content(_content) {}
-        virtual std::string getName() {
-            return "compress(" + content->getName() + ")";
-        }
-        virtual bool equal(Type* type) {
-            auto* tc = dynamic_cast<_TCompress*>(content.get());
-            return tc && type::equal(content, tc->content);
-        }
-        virtual std::string getBaseName() {
-            LOG(FATAL) << "_TCompress.getBaseName() should not be invoked";
-        }
-        virtual TypeList getParams() {
-            LOG(FATAL) << "_TCompress.getParams() should not be invoked";
-        }
-        virtual PType clone(const TypeList& params) {
-            return std::make_shared<_TCompress>(params[0]);
-        }
-
-    };
 
     TypeFromHead(Int) {
         return theory::clia::getTInt();
@@ -78,7 +85,9 @@ namespace {
     }
     TypeFromHead(Compress) {
         auto content = typeFromIncre(type->content);
-        return std::make_shared<_TCompress>(content);
+        auto* lt = dynamic_cast<TyLabeledCompress*>(type);
+        if (lt) return std::make_shared<TLabeledCompress>(lt->id, content);
+        return std::make_shared<TCompress>(content);
     }
 }
 

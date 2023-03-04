@@ -20,6 +20,25 @@ namespace incre {
         TIncreInductive(const Ty& _type);
     };
 
+    class TCompress: public SimpleType {
+    public:
+        PType content;
+        TCompress(const PType& _content);
+        virtual std::string getName();
+        virtual bool equal(Type* type);
+        virtual std::string getBaseName();
+        virtual TypeList getParams();
+        virtual PType clone(const TypeList& params);
+    };
+
+    class TLabeledCompress: public TCompress {
+    public:
+        int id;
+        TLabeledCompress(int _id, const PType& _content);
+        virtual std::string getName();
+        virtual bool equal(Type* type);
+    };
+
     PType typeFromIncre(const Ty& type);
     Ty typeToIncre(Type* type);
     Term termToIncre(Program* program, const TermList& inps);

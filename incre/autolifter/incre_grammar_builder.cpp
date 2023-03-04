@@ -2,11 +2,12 @@
 // Created by pro on 2022/11/16.
 //
 
-#include <istool/ext/deepcoder/deepcoder_semantics.h>
+#include "istool/ext/deepcoder/deepcoder_semantics.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
 #include "istool/ext/deepcoder/data_type.h"
 #include "istool/incre/trans/incre_trans.h"
 #include "istool/incre/autolifter/incre_aux_semantics.h"
+#include <iostream>
 #include "glog/logging.h"
 
 using namespace incre;
@@ -40,7 +41,7 @@ namespace {
 
 namespace {
     Grammar* _buildGrammar(const std::vector<SynthesisComponent*>& component_list, const TypeList& inp_types,
-            const TypeList& oup_type_list, bool is_multi_output, const std::function<bool(SynthesisComponent*)>& filter) {
+            const std::function<bool(Type*)>& is_oup_type, bool is_multi_output, const std::function<bool(SynthesisComponent*)>& filter) {
         std::vector<NonTerminal*> nt_list;
 
         // TODO: use a more general treatment
@@ -87,60 +88,67 @@ namespace {
             }
         }
 
-        NonTerminal* start_symbol; assert(!oup_type_list.empty());
-        if (!is_multi_output) {
-            assert(oup_type_list.size() == 1);
-            start_symbol = _getSymbol(oup_type_list[0], nt_list);
-        } else {
-            start_symbol = new NonTerminal("start", std::make_shared<TVar>("res"));
-            nt_list.push_back(start_symbol);
-            for (auto& oup_type: oup_type_list) {
-                auto* symbol = _getSymbol(oup_type, nt_list);
-                auto sem = std::make_shared<TypeLabeledDirectSemantics>(oup_type);
-                start_symbol->rule_list.push_back(new ConcreteRule(sem, {symbol}));
-            }
+        NTList possible_start_list;
+        for (auto* s: nt_list) {
+            if (is_oup_type(s->type.get())) possible_start_list.push_back(s);
         }
 
-        auto* g = new Grammar(start_symbol, nt_list);
-        return g;
+        if (!is_multi_output) {
+            if (possible_start_list.empty()) {
+                auto* dummy_symbol = new NonTerminal("start", type::getTBool());
+                return new Grammar(dummy_symbol, {dummy_symbol});
+            }
+            assert(possible_start_list.size() == 1);
+            return new Grammar(possible_start_list[0], nt_list);
+        } else {
+            auto* start_symbol = new NonTerminal("start", type::getTVarA());
+            nt_list.push_back(start_symbol);
+            for (auto* possible: possible_start_list) {
+                auto sem = std::make_shared<TypeLabeledDirectSemantics>(possible->type);
+                start_symbol->rule_list.push_back(new ConcreteRule(sem, {possible}));
+            }
+            return new Grammar(start_symbol, nt_list);
+        }
     }
 
-    TypeList _getPrimaryTypes() {
-        static TypeList res;
-        if (res.empty()) {
-            res.push_back(type::getTBool());
-            res.push_back(theory::clia::getTInt());
-        }
-        return res;
+    bool _isPrimaryType(Type* type) {
+        return dynamic_cast<TBool*>(type) || dynamic_cast<TInt*>(type);
+    }
+    bool _isCompressType(Type* type) {
+        return dynamic_cast<TCompress*>(type);
+    }
+    bool _isCompressOrPrimaryType(Type* type) {
+        return _isPrimaryType(type) || _isCompressType(type);
     }
 }
-
-
 Grammar * IncreAutoLifterSolver::buildAuxGrammar(int compress_id) {
     auto inp_type = _getCompressType(info, compress_id);
-    return _buildGrammar(info->component_list, {inp_type}, _getPrimaryTypes(), true, [](SynthesisComponent* component) -> bool{
-        return component->type != ComponentType::COMB;
+    return _buildGrammar(info->component_list, {inp_type}, _isPrimaryType, true, [](SynthesisComponent* component) -> bool {
+       return component->type != ComponentType::COMB;
     });
 }
-Grammar * IncreAutoLifterSolver::buildConstGrammar(const TypeList &type_list, int align_id) {
+
+
+Grammar * IncreAutoLifterSolver::buildCompressGrammar(const TypeList &type_list, int align_id) {
     int pos = info->align_infos[align_id]->command_id;
-    auto* grammar = _buildGrammar(info->component_list, type_list, _getPrimaryTypes(), true, [=](SynthesisComponent* component) -> bool{
+    auto* grammar = _buildGrammar(info->component_list, type_list, _isCompressOrPrimaryType, true, [=](SynthesisComponent* component) -> bool{
         if (component->type == ComponentType::COMB) return false;
         if (pos <= component->info.command_id) return false;
-        return !component->info.is_recursive && !component->info.is_compress_related;
+        return !component->info.is_recursive;
     });
     return grammar;
 }
 Grammar * IncreAutoLifterSolver::buildCombinatorGrammar(const TypeList &type_list, const PType& oup_type, int align_id) {
     auto feature = std::to_string(align_id) + "@" + type::typeList2String(type_list) + "@" + oup_type->getName();
-    if (grammar_map.count(feature)) return grammar_map[feature];
+    if (combine_grammar_map.count(feature)) return combine_grammar_map[feature];
     int pos = info->align_infos[align_id]->command_id;
-    auto* grammar = _buildGrammar(info->component_list, type_list, {oup_type}, false, [=](SynthesisComponent* component) -> bool{
+    auto is_oup = [=](Type* type) {
+        return type::equal(type, oup_type.get());
+    };
+    auto* grammar = _buildGrammar(info->component_list, type_list, is_oup, false, [=](SynthesisComponent* component) -> bool{
         if (component->type == ComponentType::AUX) return false;
         if (pos <= component->info.command_id) return false;
         return !component->info.is_recursive && !component->info.is_compress_related;
     });
-    LOG(INFO) << "Grammar";
-    grammar->print();
-    return grammar_map[feature] = grammar;
+    return combine_grammar_map[feature] = grammar;
 }

@@ -35,6 +35,10 @@ bool type::equal(const PType &t1, const PType &t2) {
     return t1->equal(t2.get());
 }
 
+bool type::equal(Type *t1, Type *t2) {
+    return t1->equal(t2);
+}
+
 std::string TBool::getName() {
     return "Bool";
 }

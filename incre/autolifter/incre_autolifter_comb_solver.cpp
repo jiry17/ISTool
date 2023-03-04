@@ -80,8 +80,7 @@ namespace {
         TypeList inp_type_list;
         Ty oup_ty;
         std::vector<FRes> f_res_list;
-        std::vector<std::vector<TypedProgram>> compress_program_storage;
-        std::vector<TypedProgram> const_program_list;
+        TypedProgramList compress_program_list;
         int KExampleTimeOut = 10, current_pos, KExampleEnlargeFactor = 2;
 
         void insertExample(const IOExample& example) {
@@ -111,46 +110,47 @@ namespace {
             assert(example_id < base_example_space->example_list.size());
 #endif
             auto& f_example = base_example_space->example_list[example_id];
+            auto& original_input = f_example.first;
+
             DataList inp;
-            for (int i = 0; i < compress_program_storage.size(); ++i) {
-                for (auto& d: f_example.compress_storage[i]) {
-                    for (auto& p: compress_program_storage[i]) {
-                        inp.push_back(env->run(p.second.get(), {d}));
+
+            for (auto& [compress_type, compress_program]: compress_program_list) {
+                auto* ltc = dynamic_cast<TLabeledCompress*>(compress_type.get());
+                auto compress_res = env->run(compress_program.get(), original_input);
+                if (!ltc) {
+                    inp.push_back(compress_res);
+                } else {
+                    auto* lv = dynamic_cast<VLabeledCompress*>(compress_res.get());
+                    assert(lv && ltc->id == lv->id);
+                    for (auto& aux_program: f_res_list[lv->id].component_list) {
+                        auto aux_value = env->run(aux_program.program.second.get(), {lv->content});
+                        inp.push_back(aux_value);
                     }
                 }
             }
-            for (auto& p: const_program_list) {
-                inp.push_back(env->run(p.second.get(), f_example.const_list));
-            }
-            auto oup = runOutput(oup_ty, f_example.oup);
+
+            auto oup = runOutput(oup_ty, f_example.second);
             insertExample({inp, oup});
         }
         CExampleSpace(int _align_id, FExampleSpace* _base_example_space, IncreAutoLifterSolver* source):
-                align_id(_align_id), base_example_space(_base_example_space), compress_program_storage(_base_example_space->compress_infos.size()) {
-            env = base_example_space->env;
-            f_res_list = source->f_res_list; oup_ty = source->info->align_infos[align_id]->oup_type;
+                align_id(_align_id), base_example_space(_base_example_space) {
+            env = source->env; f_res_list = source->f_res_list;
+            oup_ty = source->info->align_infos[align_id]->oup_type;
+            compress_program_list = source->compress_res_list[align_id].compress_list;
 
-            for (int i = 0; i < base_example_space->compress_infos.size(); ++i) {
-                int compress_id = base_example_space->compress_infos[i].first;
-                for (auto& f_res: source->f_res_list[compress_id].component_list) {
-                    compress_program_storage[i].push_back(f_res.program);
-                }
-            }
-
-            const_program_list = source->const_res_list[align_id].const_list;
             int init_example_num = base_example_space->example_list.size();
             current_pos = (init_example_num + 1) / KExampleEnlargeFactor;
 
             // collect input types
-            for (int i = 0; i < compress_program_storage.size(); ++i) {
-                for (auto _: base_example_space->compress_infos[i].second) {
-                    for (auto& cp: compress_program_storage[i]) {
-                        inp_type_list.push_back(cp.first);
+            for (auto& [compress_type, compress_program]: compress_program_list) {
+                auto* ltc = dynamic_cast<TLabeledCompress*>(compress_type.get());
+                if (!ltc) {
+                    inp_type_list.push_back(compress_type);
+                } else {
+                    for (auto& aux_program: f_res_list[ltc->id].component_list) {
+                        inp_type_list.push_back(aux_program.program.first);
                     }
                 }
-            }
-            for (auto& const_prog: const_program_list) {
-                inp_type_list.push_back(const_prog.first);
             }
 
             for (int i = 0; i < current_pos; ++i) {
@@ -298,12 +298,17 @@ namespace {
         LOG(FATAL) << "Unknown operator " << program->semantics->getName();
     }
 
-    Term _buildProgram(const PProgram& program, const std::vector<SynthesisComponent*>& component_list, const TermList& param_list) {
+    Term _buildProgram(const PProgram& program, const std::vector<SynthesisComponent*>& component_list,
+                       const TermList& param_list) {
         std::unordered_map<std::string, SynthesisComponent*> component_map;
         for (auto* component: component_list) {
             component_map[component->semantics->getName()] = component;
         }
         return _buildProgram(program.get(), component_map, param_list);
+    }
+
+    bool _isSymbolTerm(TermData* term) {
+        return term->getType() == TermType::VALUE || term->getType() == TermType::VAR;
     }
 }
 
@@ -326,40 +331,41 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
     LOG(INFO) << "finished";
 
     // Build Param List
-    TermList param_list;
+    TermList compress_param_list;
+    for (auto& [var_name, var_type]: info->align_infos[align_id]->inp_types) {
+        compress_param_list.push_back(std::make_shared<TmVar>(var_name));
+    }
+
     std::vector<std::pair<std::string, Term>> binding_list;
-    {
-        auto* base_example_space = example_space_list[align_id];
-        for (auto& [id, name_list]: base_example_space->compress_infos) {
-            for (auto& name: name_list) {
-                if (f_res_list[id].component_list.size() == 1) {
-                    param_list.push_back(std::make_shared<TmVar>(name));
-                } else {
-                    auto base = std::make_shared<TmVar>(name);
-                    for (int i = 0; i < f_res_list[id].component_list.size(); ++i) {
-                        param_list.push_back(std::make_shared<TmProj>(base, i + 1));
-                    }
-                }
-            }
+    TermList combine_param_list;
+    int var_id = 0;
+
+    for (auto& [compress_type, compress_program]: compress_res_list[align_id].compress_list) {
+        auto compress_term = _buildProgram(compress_program, info->component_list, compress_param_list);
+        if (!_isSymbolTerm(compress_term.get())) {
+            std::string compress_name = "c" + std::to_string(var_id++);
+            binding_list.emplace_back(compress_name, compress_term);
+            compress_term = std::make_shared<TmVar>(compress_name);
         }
-        int const_id = 0;
-        TermList const_param_list;
-        for (auto& [const_name, _]: base_example_space->const_infos) {
-            const_param_list.push_back(std::make_shared<TmVar>(const_name));
-        }
-        for (auto& const_program: const_res_list[align_id].const_list) {
-            auto const_term = _buildProgram(const_program.second, info->component_list, const_param_list);
-            if (const_term->getType() == TermType::VALUE || const_term->getType() == TermType::VAR) {
-                param_list.push_back(const_term);
+
+        auto* lt = dynamic_cast<TLabeledCompress*>(compress_type.get());
+        if (!lt) {
+            combine_param_list.push_back(compress_term);
+        } else {
+            int compress_id = lt->id;
+            int component_num = f_res_list[compress_id].component_list.size();
+            if (!component_num) continue;
+            if (component_num == 1) {
+                combine_param_list.push_back(compress_term);
             } else {
-                std::string const_name = "c" + std::to_string(const_id++);
-                binding_list.emplace_back(const_name, const_term);
-                param_list.push_back(std::make_shared<TmVar>(const_name));
+                for (int i = 1; i <= component_num; ++i) {
+                    combine_param_list.push_back(std::make_shared<TmProj>(compress_term, i));
+                }
             }
         }
     }
 
-    auto term = _buildProgram(res, info->component_list, param_list);
+    auto term = _buildProgram(res, info->component_list, combine_param_list);
     std::reverse(binding_list.begin(), binding_list.end());
     for (auto& [name, binding]: binding_list) {
         term = std::make_shared<TmLet>(name, binding, term);

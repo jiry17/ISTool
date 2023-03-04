@@ -38,7 +38,7 @@ int main(int argv, char** argc) {
     if (argv > 1) {
         path = argc[1]; target = argc[2];
     } else {
-        path = "/Users/pro/Desktop/work/2023S/ISTool/tests/test.json";
+        path = config::KSourcePath + "/tests/test.json";
     }
     auto prog = incre::file2program(path);
 
@@ -62,28 +62,4 @@ int main(int argv, char** argc) {
     auto* solver = new incre::IncreAutoLifterSolver(info, env);
     auto solution = solver->solve();
     solution.print();
-
-    /*auto res = incre::rewriteWithIncreSolution(info->program.get(), solution);
-
-    // test
-    auto* new_ctx = incre::run(res);
-    for (int i = 0; i < 100; ++i) {
-        auto start_term = info->example_pool->generator->getStartTerm();
-        auto x = incre::run(start_term, info->ctx);
-        auto y = incre::run(start_term, new_ctx);
-        if (!(x == y)) {
-            LOG(FATAL) << "Counter example " << start_term->toString() << " std: " << x.toString() << " oup: " << y.toString();
-        }
-    }
-
-
-
-    incre::printProgram(res, target);*/
-
-    /*invoke("head", {tl}, ctx);
-    invoke("tail", {tl}, ctx);
-    invoke("length", {tl}, ctx);
-    invoke("concat", {tl, tl}, ctx);
-    invoke("streaming", {tl}, ctx);
-    invoke("dac", {tl}, ctx);*/
 }

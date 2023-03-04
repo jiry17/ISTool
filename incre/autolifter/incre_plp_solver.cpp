@@ -3,27 +3,23 @@
 //
 
 #include "istool/incre/autolifter/incre_plp_solver.h"
-#include "istool/solver/enum/enum_util.h"
 #include "glog/logging.h"
+#include "istool/incre/trans/incre_trans.h"
 #include <iostream>
 
 using namespace incre::autolifter;
 using solver::autolifter::MaximalInfoList;
 using solver::autolifter::EnumerateInfo;
 
-UnitInfo::UnitInfo(int _pos, const TypedProgram &_program, const Bitset &_info):
-    pos(_pos), program(_program), info(_info) {
+
+UnitInfo::UnitInfo(const AuxProgram &_program, const Bitset &_info): program(_program), info(_info) {
 }
 
+
 namespace {
-    bool _evaluate(std::pair<int, int> example, FExampleSpace* example_space, int id, Program* program) {
+    bool _evaluate(std::pair<int, int> example, FExampleSpace* example_space, const AuxProgram& program) {
         auto [l_id, r_id] = example;
-        if (id < 0) {
-            return !(example_space->runConst(l_id, program) == example_space->runConst(r_id, program));
-        }
-        auto l_res = example_space->runAux(l_id, id, program);
-        auto r_res = example_space->runAux(r_id, id, program);
-        return !(l_res == r_res);
+        return !(example_space->runAux(l_id, program) == example_space->runAux(r_id, program));
     }
 }
 
@@ -36,19 +32,6 @@ namespace {
 }
 
 IncrePLPSolver::IncrePLPSolver(Env *_env, PLPTask *_task): env(_env), task(_task) {
-    for (auto* f_grammar: task->f_grammar_list) {
-        grammar_size_map[f_grammar] = grammar::getMaxSize(f_grammar);
-    }
-    if (task->target.second) {
-        for (int i = 0; i < task->example_space->compress_infos.size(); ++i) {
-            auto compress_id = task->example_space->compress_infos[i].first;
-            if (compress_id == task->target_compress_id) {
-                default_list.emplace_back(i, task->target);
-            }
-        }
-    }
-    grammar_size_map[task->const_grammar] = grammar::getMaxSize(task->const_grammar);
-
     auto* d = env->getConstRef(solver::autolifter::KComposedNumName, BuildData(Int, KDefaultComposedNum));
     KComposedNum = theory::clia::getIntValue(*d);
     d = env->getConstRef(solver::autolifter::KExtraTurnNumName, BuildData(Int, KDefaultExtraTurnNum));
@@ -75,21 +58,21 @@ namespace {
     }
 }
 
-UnitInfo IncrePLPSolver::init(int pos, const TypedProgram &program) {
+UnitInfo IncrePLPSolver::init(const AuxProgram& program) {
     Bitset info(example_list.size(), false);
     for (int i = 0; i < example_list.size(); ++i) {
-        if (_evaluate(example_list[i], task->example_space, pos, program.second.get())) info.set(i, true);
+        if (_evaluate(example_list[i], task->example_space, program)) info.set(i, true);
     }
-    return {pos, program, info};
+    return {program, info};
 }
 std::string IncrePLPSolver::example2String(const std::pair<int, int> &example) {
-    //LOG(INFO) << "example " << example.first << " " << example.second << " " << task->example_space->example_list.size();
-    //LOG(INFO) << task->example_space->example_list[0].toString();
-    return "(" + task->example_space->example_list[example.first].toString() + ", " + task->example_space->example_list[example.second].toString() + ")";
+    auto l_string = task->example_space->example2String(example.first);
+    auto r_string = task->example_space->example2String(example.second);
+    return "(" + l_string + ", " + r_string + ")";
 }
 void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
     for (auto& unit: component_info_list) {
-        unit.info.append(_evaluate(example, task->example_space, unit.pos, unit.program.second.get()));
+        unit.info.append(_evaluate(example, task->example_space, unit.program));
     }
     example_list.push_back(example);
 
@@ -106,46 +89,68 @@ void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
     uncovered_info_set.clear(); global_maximal.clear();
 }
 
-namespace {
-    TypedProgram _extractTypedProgram(const PProgram& program) {
-        auto* ts = dynamic_cast<TypeLabeledDirectSemantics*>(program->semantics.get());
-        assert(ts && ts->type);
-        return {ts->type, program->sub_list[0]};
-    }
-}
-void IncrePLPSolver::getMoreComponent() {
-    LOG(INFO) << "get more component";
-    //task->const_grammar->print();
-    //LOG(INFO) << grammar_size_map[task->const_grammar];
-    ++current_size; bool is_extended = false;
-    //LOG(INFO) << "Start get more component " << current_size;
-    std::vector<std::vector<UnitInfo>> unit_storage;
-    auto get_components = [&](int id, Grammar* grammar) {
-        is_extended = true;
-        auto info = std::make_shared<SynthInfo>("", TypeList(), PType(), grammar);
-        std::vector<FunctionContext> res_list; EnumConfig c(nullptr, nullptr, nullptr);
-        solver::collectAccordingSize({info}, current_size, res_list, c);
-        std::vector<UnitInfo> info_list;
-        for (auto& res: res_list) {
-            auto p = res[""];
-            if (p->size() == current_size) info_list.push_back(init(id, _extractTypedProgram(p)));
+std::vector<UnitInfo> IncrePLPSolver::mergeUnits(int compress_size, int aux_size) {
+    auto* compress_list = task->compress_grammar->acquirePrograms(compress_size);
+    if (!compress_list) return {};
+
+    std::vector<TypedProgramList> known_aux_list(task->aux_grammar_list.size());
+    std::vector<TypedProgramList*> aux_pointer_list(task->aux_grammar_list.size());
+    if (aux_size == 0) {
+        for (int i = 0; i < known_aux_list.size(); ++i) {
+            for (auto& f_res: task->pre_res_list[i]) {
+                known_aux_list[i].push_back(f_res);
+            }
+            aux_pointer_list[i] = &known_aux_list[i];
         }
-        unit_storage.push_back(info_list);
-    };
-    for (int i = 0; i < task->f_grammar_list.size(); ++i) {
-        auto* grammar = task->f_grammar_list[i];
-        if (grammar_size_map[grammar] < current_size && grammar_size_map[grammar] >= 0) continue;
-        get_components(i, grammar);
+    } else {
+        for (int i = 0; i < known_aux_list.size(); ++i) {
+            aux_pointer_list[i] = task->aux_grammar_list[i]->acquirePrograms(aux_size);
+        }
     }
-    if (grammar_size_map[task->const_grammar] >= current_size || grammar_size_map[task->const_grammar] == -1) {
-        get_components(-1, task->const_grammar);
+
+    /*for (auto* aux: aux_pointer_list) {
+        if (aux) std::cout << aux->size(); else std::cout << "null";
+        std::cout << " ";
     }
-    if (!is_extended) {
-        LOG(FATAL) << "All auxiliary values have been exhausted.";
+    std::cout << std::endl;*/
+
+    std::vector<UnitInfo> res_list;
+    for (auto compress_it = compress_list->begin(); compress_it < compress_list->end(); ++compress_it) {
+        auto program = *compress_it;
+        auto* ltc = dynamic_cast<TLabeledCompress*>(program.first.get());
+        if (!ltc) {
+            if (aux_size == 0) {
+                res_list.push_back(init({program, {nullptr, nullptr}}));
+            }
+        } else {
+            int compress_id = ltc->id; auto* aux_list = aux_pointer_list[compress_id];
+            if (!aux_list) continue;
+            for (auto aux_it = aux_list->begin(); aux_it < aux_list->end(); ++aux_it) {
+                res_list.push_back(init({program, *aux_it}));
+            }
+        }
     }
+
+    return res_list;
+}
+
+void IncrePLPSolver::getMoreComponent() {
+
+    ++current_size;
+    LOG(INFO) << "get more component";
+
+    std::vector<std::vector<UnitInfo>> unit_storage;
+    for (int compress_size = 0; compress_size <= current_size; ++compress_size) {
+        auto merge_result = mergeUnits(compress_size, current_size - compress_size);
+        /*LOG(INFO) << "merge " << compress_size << " " << current_size - compress_size << std::endl;
+        for (auto& program: merge_result) {
+            LOG(INFO) << "  " << aux2String(program.program);
+        }*/
+        unit_storage.push_back(merge_result);
+    }
+
     for (auto& unit: _randomMerge(unit_storage, env)) {
         component_info_list.push_back(unit);
-        // LOG(INFO) << "new component " << unit.pos << " " << unit.program->toString();
     }
 }
 
@@ -158,23 +163,24 @@ namespace {
         return res;
     }
 
-    std::string _unitList2String(const std::vector<std::pair<int, TypedProgram>>& unit_list) {
+    std::string _unitList2String(const std::vector<AuxProgram>& unit_list) {
         std::string res = "[";
         for (int i = 0; i < unit_list.size(); ++i) {
             if (i) res += ",";
-            res += std::to_string(unit_list[i].first) + "@" + unit_list[i].second.second->toString();
+            res += aux2String(unit_list[i]);
         }
         return res + "]";
     }
 }
 
-std::pair<int, int> IncrePLPSolver::verify(const std::vector<std::pair<int, TypedProgram> > &_aux_list) {
-    std::vector<std::pair<int, PProgram>> aux_list = _merge(_aux_list, default_list);
+std::pair<int, int> IncrePLPSolver::verify(const std::vector<AuxProgram> &aux_list) {
     int total_size = 1;
-    for (auto& [_, p]: aux_list) total_size += p->size();
+    for (auto& [p_compress, p_aux]: aux_list) {
+        total_size += p_compress.second->size();
+        if (p_aux.second) total_size += p_aux.second->size();
+    }
     verify_num = std::max(verify_num, total_size * KVerifyBaseNum);
     verify_num = task->acquireExample(verify_num, KExampleTimeOut);
-    // LOG(INFO) << "verify " << verify_num << " " << total_size;
 
     std::unordered_map<std::string, std::pair<Data, int>> verify_cache;
 
@@ -206,12 +212,13 @@ std::pair<int, int> IncrePLPSolver::verify(const std::vector<std::pair<int, Type
     return {-1, -1};
 }
 
-std::vector<std::pair<int, TypedProgram> > IncrePLPSolver::extractResultFromInfo(solver::autolifter::EnumerateInfo *info) {
+std::vector<AuxProgram> IncrePLPSolver::extractResultFromInfo(solver::autolifter::EnumerateInfo *info) {
     if (!info) return {};
-    std::vector<std::pair<int, TypedProgram>> res;
+    std::vector<AuxProgram> res;
+
     for (auto id: info->ind_list) {
         auto& unit = component_info_list[id];
-        res.emplace_back(unit.pos, unit.program);
+        res.push_back(unit.program);
     }
     return res;
 }
@@ -296,9 +303,9 @@ std::pair<solver::autolifter::EnumerateInfo *, solver::autolifter::EnumerateInfo
     return {nullptr, nullptr};
 }
 
-std::vector<std::pair<int, TypedProgram> > IncrePLPSolver::synthesisFromExample(TimeGuard* guard) {
+std::vector<AuxProgram> IncrePLPSolver::synthesisFromExample(TimeGuard* guard) {
     if (example_list.empty()) return {};
-    std::vector<std::pair<int, TypedProgram>> best_result;
+    std::vector<AuxProgram> best_result;
     int extra_turn_num = 0, current_limit = KComposedNum;
 
     for (int turn_id = 1;; ++turn_id) {
@@ -325,27 +332,19 @@ std::vector<std::pair<int, TypedProgram> > IncrePLPSolver::synthesisFromExample(
     }
 }
 
-namespace {
-    PLPRes _buildPLPRes(const std::vector<std::pair<int, TypedProgram>>& unit_list) {
-        std::vector<TypedProgram> const_list;
-        std::vector<std::pair<int, TypedProgram>> aux_list;
-        for (auto& [id, program]: unit_list) {
-            if (id < 0) const_list.emplace_back(program);
-            else aux_list.emplace_back(id, program);
-        }
-        return {aux_list, const_list};
-    }
-}
-
 PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
+    std::cout << std::endl << std::endl << std::endl;
     LOG(INFO) << "solve " << task->example_space->tau_id;
-    for (auto* grammar: task->f_grammar_list) {
-        LOG(INFO) << "aux grammar";
-        grammar->print();
+    for (auto* grammar: task->aux_grammar_list) {
+        std::cout << "aux grammar" << std::endl;
+        grammar->grammar->print();
+        std::cout << std::endl;
     }
-    LOG(INFO) << "const grammar"; task->const_grammar->print();
+    std::cout << "compress grammar" << std::endl;
+    task->compress_grammar->grammar->print();
+    std::cout << std::endl;
     auto counter_example = verify({});
-    if (counter_example.first == -1) return {{}, {}};
+    if (counter_example.first == -1) return {};
     LOG(INFO) << "Counter example " << example2String(counter_example);
     addExample(counter_example);
 
@@ -355,14 +354,13 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
         LOG(INFO) << "Candidate result " << _unitList2String(candidate_result);
 
         counter_example = verify(candidate_result);
-        if (counter_example.first == -1) return _buildPLPRes(candidate_result);
+        if (counter_example.first == -1) return candidate_result;
         addExample(counter_example);
         LOG(INFO) << "Counter example " << example2String(counter_example);
         std::cout << task->runOup(counter_example.first).toString() << " " << task->runOup(counter_example.second).toString() << std::endl;
-        for (auto [id, info]: candidate_result) {
-            auto [_, prog] = info;
-            std::cout << "  " << data::dataList2String(task->runInp(counter_example.first, id, prog.get())) << " " <<
-              data::dataList2String(task->runInp(counter_example.second, id, prog.get())) << std::endl;
+        for (auto unit: candidate_result) {
+            std::cout << "  " << task->runInp(counter_example.first, unit).toString() << " " <<
+              task->runInp(counter_example.second,unit).toString() << std::endl;
         }
     }
 }

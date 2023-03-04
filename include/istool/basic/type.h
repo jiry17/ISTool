@@ -60,6 +60,7 @@ typedef std::pair<TypeList, PType> Signature;
 namespace type {
     std::string typeList2String(const TypeList& type_list);
     bool equal(const PType& t1, const PType& t2);
+    bool equal(Type* t1, Type* t2);
     TypeList assignVarName(const TypeList& type_list);
     PType substituteVar(const PType& type, const std::unordered_map<std::string, PType>& type_map);
     PType getTBool();

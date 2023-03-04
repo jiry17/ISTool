@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
         solver_name = "obe";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv/PRE_icfp_gen_14.10.sl";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mpg_guard2_non_half.sl";
-        benchmark_name = config::KSourcePath + "/tests/x.sl";
+        benchmark_name = config::KSourcePath + "/tests/PRE_3_1000.sl";
         output_name = "/tmp/629453237.out";
     }
 
@@ -50,12 +50,12 @@ int main(int argc, char** argv) {
         ext::z3::registerComposedManager(ext::z3::getExtension(spec->env.get()));
     }
     if (solver_name == "cbs") config.set("encoder", std::string("Tree"));
-    if (solver_name == "obe") {
+    /*if (solver_name == "obe") {
         config.set("isWeighted", true);
         for (auto& info: spec->info_list) {
             info->grammar = ext::grammar::rewriteComposedRule(info->grammar);
         }
-    }
+    }*/
 
     auto result = invoker::getExampleNum(spec, v, solver_token, guard, config);
     std::cout << result.first << " " << result.second.toString() << std::endl;

@@ -11,6 +11,8 @@ INCLUDE(FindPkgConfig)
 include_directories(include)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_definitions(-DLINUX)
+
     #Z3
     set(Z3_PATH /home/jiry/2021A/z3)
     link_directories(${Z3_PATH}/build)

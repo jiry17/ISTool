@@ -17,14 +17,21 @@
 
 using namespace incre;
 
+#ifdef LINUX
+    const std::string KLanguagePath = "/home/jiry/2023S/IncreLanguage/";
+#else
+    const std::string KLanguagePath = "/Users/pro/Desktop/work/2023S/ISTool/tests/";
+#endif
+
 int main(int argv, char** argc) {
     std::string path, target;
 
     if (argv > 1) {
         path = argc[1]; target = argc[2];
     } else {
-        path = "/Users/pro/Desktop/work/2023S/ISTool/tests/test.json";
-        target = "/Users/pro/Desktop/work/2023S/ISTool/tests/test.f";
+        auto name = "mts_label_test3";
+        path = KLanguagePath + "/jsonfiles/" + name + ".json";
+        target = KLanguagePath + "/labelres/" + name + ".f";
     }
     auto prog = incre::file2program(path);
 
@@ -40,10 +47,10 @@ int main(int argv, char** argc) {
 
     incre::printProgram(res);
 
-    int kk; std::cin >> kk;
     auto env = std::make_shared<Env>();
     incre::prepareEnv(env.get());
     auto* info = incre::buildIncreInfo(res, env.get());
+
     for (int i = 1; i <= 100; ++i) {
         info->example_pool->generateExample();
     }
