@@ -9,8 +9,8 @@
 using namespace incre;
 using namespace incre::autolabel;
 
-autolabel::AutoLabelZ3Solver::AutoLabelZ3Solver(const AutoLabelTask &task):
-    AutoLabelSolver(task), ctx(new Z3Context()) {
+autolabel::AutoLabelZ3Solver::AutoLabelZ3Solver(const IncreProgram &init_program):
+    AutoLabelSolver(init_program), ctx(new Z3Context()) {
 }
 
 autolabel::AutoLabelZ3Solver::~AutoLabelZ3Solver() {
@@ -18,12 +18,11 @@ autolabel::AutoLabelZ3Solver::~AutoLabelZ3Solver() {
 }
 
 IncreProgram AutoLabelZ3Solver::label() {
-    task.updateFuncType();
-    initZ3Context(task, ctx);
-    collectAlignConstraint(task.program.get(), ctx);
+    initZ3Context(init_program.get(), ctx);
+    collectAlignConstraint(init_program.get(), ctx);
 
     z3::optimize solver(ctx->ctx);
-    auto obj = collectMinimalAlignConstraint(task.program.get(), ctx);
+    auto obj = collectMinimalAlignConstraint(init_program.get(), ctx);
     solver.minimize(obj);
 
     solver.add(ctx->cons_list);
@@ -37,5 +36,5 @@ IncreProgram AutoLabelZ3Solver::label() {
 
     LOG(INFO) << "objective " << model.eval(obj);
 
-    return constructLabel(task.program.get(), model, ctx);
+    return constructLabel(init_program.get(), model, ctx);
 }

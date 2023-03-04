@@ -215,14 +215,6 @@ namespace {
         return {std::make_shared<TmApp>(func_term, param_term), at->target};
     }
 
-    LabelTermHead(Abs) {
-        auto type = _labelType(term->type, cs);
-        auto log = ctx->bind(term->name, type);
-        LabelSub(content);
-        ctx->cancelBind(log);
-        return {std::make_shared<TmAbs>(term->name, type, content_term), std::make_shared<TyArrow>(type, content_type)};
-    }
-
     LabelTermHead(Label) {
         LabelSub(content); int id = cs->getFLabel();
         return {std::make_shared<TmLabeledLabel>(content_term, id), std::make_shared<TyLabeledCompress>(content_type, id)};
@@ -258,6 +250,14 @@ namespace {
         int tau_id = cs->getTauLabel();
         LabelSub(content);
         return {std::make_shared<TmLabeledAlign>(content_term, tau_id), content_type};
+    }
+
+    LabelTermHead(Abs) {
+        auto type = _labelType(term->type, cs);
+        auto log = ctx->bind(term->name, type);
+        LabelSub(content);
+        ctx->cancelBind(log);
+        return {std::make_shared<TmAbs>(term->name, type, content_term), std::make_shared<TyArrow>(type, content_type)};
     }
 
     LabelTermHead(Fix) {

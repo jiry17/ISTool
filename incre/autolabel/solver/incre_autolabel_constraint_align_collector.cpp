@@ -3,7 +3,6 @@
 //
 
 #include "istool/incre/autolabel/incre_autolabel_constraint_solver.h"
-#include "istool/incre/autolabel/incre_func_type.h"
 #include "glog/logging.h"
 
 using namespace incre;
@@ -14,14 +13,13 @@ namespace {
     bool is_print = false;
 
     void _collectCons(const Term& term, Z3Context* ctx, const z3::expr& path) {
-        TermList sub_list = autolabel::getSubTermsWithFunc(term.get());
+        TermList sub_list = incre::getSubTerms(term.get());
 
         auto align_it = ctx->align_map.find(term.get());
         auto flip_it = ctx->flip_map.find(term.get());
 
         auto new_path = (align_it == ctx->align_map.end()) ? path : (path | align_it->second);
         if (flip_it != ctx->flip_map.end()) {
-            // if (is_print) LOG(INFO) << term->toString() << " " << flip_it->second << " " << new_path;
             ctx->addCons(z3::implies(flip_it->second, new_path));
         }
 
@@ -54,7 +52,7 @@ namespace {
         auto free_var = ctx->getVar();
         ctx->free_map.insert({term.get(), free_var});
 
-        auto sub_list = autolabel::getSubTermsWithFunc(term.get());
+        auto sub_list = incre::getSubTerms(term.get());
         z3::expr_vector sub_cons(ctx->ctx);
         for (auto& sub_term: sub_list) {
             sub_cons.push_back(_initFreeMap(sub_term, ctx));
@@ -82,16 +80,10 @@ namespace {
         objs.push_back(obj_var);
 
         switch (term->getType()) {
-            case TermType::WILDCARD: {
-                auto* tf = dynamic_cast<TmFunc*>(term.get());
-                _collectObjective(tf->content, ctx, objs, unmovable_path, movable_path);
-                return;
-            }
-            case TermType::ABS:
-            case TermType::FIX:
             case TermType::ALIGN:
             case TermType::LABEL:
             case TermType::UNLABEL:
+            case TermType::WILDCARD:
                 LOG(FATAL) << "Unexpected TermType: " << term->toString();
             case TermType::TUPLE:
             case TermType::PROJ:
@@ -101,6 +93,16 @@ namespace {
                 for (auto& sub_term: incre::getSubTerms(term.get())) {
                     _collectObjective(sub_term, ctx, objs, unmovable_path, movable_path);
                 }
+                return;
+            }
+            case TermType::ABS: {
+                auto* ta = dynamic_cast<TmAbs*>(term.get());
+                _collectObjective(ta->content, ctx, objs, unmovable_path | movable_path, ctx->ctx.bool_val(false));
+                return;
+            }
+            case TermType::FIX: {
+                auto* tf = dynamic_cast<TmFix*>(term.get());
+                _collectObjective(tf->content, ctx, objs, unmovable_path | movable_path, ctx->ctx.bool_val(false));
                 return;
             }
             case TermType::LET: {

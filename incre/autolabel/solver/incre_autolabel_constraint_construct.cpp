@@ -3,7 +3,6 @@
 //
 
 #include "istool/incre/autolabel/incre_autolabel_constraint_solver.h"
-#include "istool/incre/autolabel/incre_func_type.h"
 #include "glog/logging.h"
 
 using namespace incre;
@@ -49,9 +48,13 @@ namespace {
         auto param = _constructLabel(term->param, model, ctx);
         return std::make_shared<TmApp>(func, param);
     }
-    ConstructHead(Func) {
+    ConstructHead(Fix) {
         auto content = _constructLabel(term->content, model, ctx);
-        return std::make_shared<TmFunc>(term->func_name, term->rec_res_type, term->param_list, content);
+        return std::make_shared<TmFix>(content);
+    }
+    ConstructHead(Abs) {
+        auto content = _constructLabel(term->content, model, ctx);
+        return std::make_shared<TmAbs>(term->name, term->type, content);
     }
     ConstructHead(If) {
         auto c = _constructLabel(term->c, model, ctx);
@@ -78,15 +81,15 @@ namespace {
             case TermType::VAR: {
                 res = term; break;
             }
-            case TermType::FIX:
-            case TermType::ABS:
             case TermType::ALIGN:
             case TermType::LABEL:
             case TermType::UNLABEL:
+            case TermType::WILDCARD:
                 LOG(FATAL) << "Unexpected TermType: " << term->toString();
+            case TermType::FIX: ConstructCase(Fix);
+            case TermType::ABS: ConstructCase(Abs);
             case TermType::MATCH: ConstructCase(Match);
             case TermType::APP: ConstructCase(App);
-            case TermType::WILDCARD: ConstructCase(Func);
             case TermType::IF: ConstructCase(If);
             case TermType::PROJ: ConstructCase(Proj);
             case TermType::TUPLE: ConstructCase(Tuple);

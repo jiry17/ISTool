@@ -7,7 +7,6 @@
 #include "istool/incre/io/incre_from_json.h"
 #include "istool/incre/io/incre_printer.h"
 #include "istool/incre/autolabel/incre_autolabel_constraint_solver.h"
-#include "istool/incre/autolabel/incre_func_type.h"
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/autolifter/incre_aux_semantics.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
@@ -21,7 +20,7 @@ using namespace incre;
     const std::string KLanguagePath = "/home/jiry/2023S/IncreLanguage/";
 #else
     const std::string KLanguagePath = "/Users/pro/Desktop/work/2023S/ISTool/tests/";
-#endif 
+#endif
 
 int main(int argv, char** argc) {
     std::string path, target;
@@ -29,19 +28,15 @@ int main(int argv, char** argc) {
     if (argv > 1) {
         path = argc[1]; target = argc[2];
     } else {
-        auto name = "mts_label_test3";
+        auto name = "mts_label_test2";
         path = KLanguagePath + "/jsonfiles/" + name + ".json";
         target = KLanguagePath + "/labelres/" + name + ".f";
     }
-    auto prog = incre::file2program(path);
-
-    prog = incre::autolabel::buildFuncTerm(prog.get());
-    auto task = incre::autolabel::initTask(prog.get());
+    auto init_program = incre::file2program(path);
 
 
-    auto* label_solver = new autolabel::AutoLabelZ3Solver(task);
+    auto* label_solver = new autolabel::AutoLabelZ3Solver(init_program);
     auto res = label_solver->label();
-    res = autolabel::unfoldFuncTerm(res.get());
 
     res = incre::eliminateNestedAlign(res.get());
 

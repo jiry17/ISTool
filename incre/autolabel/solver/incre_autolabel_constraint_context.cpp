@@ -2,7 +2,6 @@
 // Created by pro on 2023/1/27.
 //
 #include "istool/incre/autolabel/incre_autolabel_constraint_solver.h"
-#include "istool/incre/autolabel/incre_func_type.h"
 #include "istool/incre/language/incre_lookup.h"
 #include "glog/logging.h"
 
@@ -25,12 +24,6 @@ z3::expr Z3Context::getVar() {
     return ctx.bool_const(name.c_str());
 }
 autolabel::Z3Context::Z3Context(): ctx(), cons_list(ctx), tmp_id(0) {
-}
-
-TermList autolabel::getSubTermsWithFunc(TermData *term) {
-    if (term->getType() != TermType::WILDCARD) return incre::getSubTerms(term);
-    auto* tf = dynamic_cast<TmFunc*>(term);
-    return {tf->content};
 }
 
 Ty autolabel::unfoldTypeWithZ3Label(const Ty &type, TypeContext *ctx) {
@@ -150,26 +143,18 @@ namespace {
         for (auto& field: term->fields) sub_list.push_back(_labelTerm(field, ctx));
         return std::make_shared<TyTuple>(sub_list);
     }
-    LabelHead(Func) {
-        std::vector<TypeContext::BindLog> log_list;
-        for (auto& [param_name, param_type]: term->param_list) {
-            log_list.push_back(ctx->bind(param_name, param_type));
-        }
-        if (term->rec_res_type) {
-            auto full_type = term->rec_res_type;
-            for (int i = int(term->param_list.size()) - 1; i >= 0; --i) {
-                full_type = std::make_shared<TyArrow>(term->param_list[i].second, full_type);
-            }
-            log_list.push_back(ctx->bind(term->func_name, full_type));
-        }
+    LabelHead(Fix) {
         auto res = _labelTerm(term->content, ctx);
-        for (int i = int(log_list.size()) - 1; i >= 0; --i) {
-            ctx->cancelBind(log_list[i]);
-        }
-        for (int i = int(term->param_list.size()) - 1; i >= 0; --i) {
-            res = std::make_shared<TyArrow>(term->param_list[i].second, res);
-        }
-        return res;
+        auto* at = dynamic_cast<TyArrow*>(res.get());
+        assert(at);
+        _align(at->source, at->target, ctx);
+        return at->source;
+    }
+    LabelHead(Abs) {
+        auto log = ctx->bind(term->name, term->type);
+        auto res = _labelTerm(term->content, ctx);
+        ctx->cancelBind(log);
+        return std::make_shared<TyArrow>(term->type, res);
     }
     LabelHead(Value) {
         return incre::getValueType(term->data.get());
@@ -291,17 +276,17 @@ namespace {
     Ty _labelTerm(const Term& term, Z3Context* ctx) {
         Ty raw_type;
         switch (term->getType()) {
-            case TermType::FIX:
-            case TermType::ABS:
             case TermType::ALIGN:
             case TermType::LABEL:
             case TermType::UNLABEL:
+            case TermType::WILDCARD:
                 LOG(FATAL) << "Unexpected TermType: " << term->toString();
             case TermType::IF: LabelCase(If);
             case TermType::VAR: LabelCase(Var);
             case TermType::LET: LabelCase(Let);
             case TermType::MATCH: LabelCase(Match);
-            case TermType::WILDCARD: LabelCase(Func);
+            case TermType::FIX: LabelCase(Fix);
+            case TermType::ABS: LabelCase(Abs);
             case TermType::APP: LabelCase(App);
             case TermType::VALUE: LabelCase(Value);
             case TermType::TUPLE: LabelCase(Tuple);
@@ -330,8 +315,8 @@ namespace {
     }
 }
 
-void autolabel::initZ3Context(const AutoLabelTask& task, Z3Context* ctx) {
-    for (auto& command: task.program->commands) {
+void autolabel::initZ3Context(ProgramData* init_program, Z3Context* ctx) {
+    for (auto& command: init_program->commands) {
         switch (command->getType()) {
             case CommandType::DEF_IND: {
                 auto* cd = dynamic_cast<CommandDefInductive*>(command.get());
@@ -356,10 +341,7 @@ void autolabel::initZ3Context(const AutoLabelTask& task, Z3Context* ctx) {
                     case BindingType::TERM: {
                         auto* bt = dynamic_cast<TermBinding*>(bind.get());
                         auto type = _labelTerm(bt->term, ctx);
-                        auto target_type = task.getTargetType(cb->name);
-                        LOG(INFO) << "Align full " << cb->name << " " << type->toString() << " " << target_type->toString();
-                        _align(type, target_type, ctx);
-                        ctx->bind(cb->name, target_type);
+                        ctx->bind(cb->name, type);
                         break;
                     }
                 }
