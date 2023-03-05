@@ -203,7 +203,7 @@ incre::IncreProgram incre::json2program(const Json::Value &node) {
     return std::make_shared<incre::ProgramData>(commands);
 }
 
-incre::IncreProgram incre::file2program(const std::string &path) {
+incre::IncreProgram incre::jsonFile2program(const std::string &path) {
     Json::Reader reader;
     Json::Value root;
     std::ifstream inp(path, std::ios::out);

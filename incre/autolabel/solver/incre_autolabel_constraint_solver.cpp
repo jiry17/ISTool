@@ -23,13 +23,28 @@ IncreProgram AutoLabelZ3Solver::label() {
 
     z3::optimize solver(ctx->ctx);
     auto obj = collectMinimalAlignConstraint(init_program.get(), ctx);
-    solver.minimize(obj);
-
     solver.add(ctx->cons_list);
 
+    // Minimize the number of covered AST nodes
+    solver.push();
+    solver.minimize(obj);
+    assert(solver.check() == z3::sat);
+    auto first_staged_model = solver.get_model();
+    solver.pop();
+    auto min_obj = first_staged_model.eval(obj).get_numeral_int();
+    solver.add(obj == min_obj);
+
+    // 2nd keyword: minimize the number of inserted operators
+    z3::expr op_num = ctx->ctx.int_val(0);
+    for (auto& [_, op]: ctx->flip_map) {
+        op_num = op_num + z3::ite(op, ctx->ctx.int_val(1), ctx->ctx.int_val(0));
+    }
+    for (auto& [_, op]: ctx->align_map) {
+        op_num = op_num + z3::ite(op, ctx->ctx.int_val(1), ctx->ctx.int_val(0));
+    }
+    solver.minimize(op_num);
     assert(solver.check() == z3::sat);
     auto model = solver.get_model();
-
     /*for (auto& [term, free_var]: ctx->flip_map) {
         LOG(INFO) << "is free " << term->toString() << " " << model.eval(free_var).bool_value();
     }*/

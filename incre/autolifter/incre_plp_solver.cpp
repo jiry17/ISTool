@@ -335,8 +335,9 @@ std::vector<AuxProgram> IncrePLPSolver::synthesisFromExample(TimeGuard* guard) {
 PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
     std::cout << std::endl << std::endl << std::endl;
     LOG(INFO) << "solve " << task->example_space->tau_id;
-    for (auto* grammar: task->aux_grammar_list) {
-        std::cout << "aux grammar" << std::endl;
+    for (int i = 0; i < task->aux_grammar_list.size(); ++i) {
+        auto* grammar = task->aux_grammar_list[i];
+        std::cout << "aux grammar " << i << std::endl;
         grammar->grammar->print();
         std::cout << std::endl;
     }

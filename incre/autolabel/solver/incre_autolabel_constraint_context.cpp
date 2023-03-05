@@ -57,7 +57,6 @@ namespace {
         auto [x_label, x_content] = _unfoldCompress(x, ctx->ctx);
         auto [y_label, y_content] = _unfoldCompress(y, ctx->ctx);
         if (x->getType() == TyType::COMPRESS || y->getType() == TyType::COMPRESS) {
-            LOG(INFO) << "Align cons " << (x_label == y_label) << " " << x->toString() << " " << y->toString();
             ctx->addCons(x_label == y_label);
         }
         assert(x_content->getType() == y_content->getType());
@@ -164,7 +163,6 @@ namespace {
         func = autolabel::unfoldTypeWithZ3Label(func, ctx);
         auto param = _labelTerm(term->param, ctx);
         auto* at = dynamic_cast<TyArrow*>(func.get());
-        LOG(INFO) << "Align term " << term->toString();
         assert(at); _align(at->source, param, ctx);
         return at->target;
     }
@@ -306,6 +304,7 @@ namespace {
         // LOG(INFO) << "Full type " << term->toString() << " " << res->toString() << " " << _isCanFlip(raw_type, ctx);
 
         if (_isCanAlign(raw_type, ctx)) {
+            // LOG(INFO) << "Can align " << term->toString();
             auto align_var = ctx->getVar();
             ctx->align_map.insert({term.get(), align_var});
             ctx->addCons(z3::implies(align_var, _getAlignCons(res, ctx)));
@@ -340,6 +339,7 @@ void autolabel::initZ3Context(ProgramData* init_program, Z3Context* ctx) {
                     }
                     case BindingType::TERM: {
                         auto* bt = dynamic_cast<TermBinding*>(bind.get());
+
                         auto type = _labelTerm(bt->term, ctx);
                         ctx->bind(cb->name, type);
                         break;

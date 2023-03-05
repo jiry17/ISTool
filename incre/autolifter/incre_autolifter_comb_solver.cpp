@@ -283,7 +283,7 @@ namespace {
         for (const auto& sub: program->sub_list) sub_list.push_back(_buildProgram(sub.get(), component, param_list));
         auto* as = dynamic_cast<AccessSemantics*>(program->semantics.get());
         if (as) {
-            assert(param_list.size() == 1);
+            assert(sub_list.size() == 1);
             return std::make_shared<TmProj>(sub_list[0], as->id + 1);
         }
         auto name = program->semantics->getName();
@@ -341,6 +341,8 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
     int var_id = 0;
 
     for (auto& [compress_type, compress_program]: compress_res_list[align_id].compress_list) {
+        LOG(INFO) << "build compress " << compress_program->toString();
+        for (auto& param: compress_param_list) LOG(INFO) << "  param: " << param->toString();
         auto compress_term = _buildProgram(compress_program, info->component_list, compress_param_list);
         if (!_isSymbolTerm(compress_term.get())) {
             std::string compress_name = "c" + std::to_string(var_id++);

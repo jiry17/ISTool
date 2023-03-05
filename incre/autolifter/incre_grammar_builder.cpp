@@ -35,7 +35,7 @@ namespace {
                 }
             }
         }
-        LOG(FATAL) << "Compres #" << compress_id << " not found";
+        LOG(FATAL) << "Compress #" << compress_id << " not found";
     }
 }
 

@@ -140,7 +140,7 @@ z3::expr autolabel::collectMinimalAlignConstraint(ProgramData *program, Z3Contex
         _initFreeMap(tb->term, ctx);
         _collectObjective(tb->term, ctx, objs, ctx->ctx.bool_val(false), ctx->ctx.bool_val(false));
     }
-    for (auto [term, align_var]: ctx->align_map) objs.push_back(align_var);
+    // for (auto [term, align_var]: ctx->align_map) objs.push_back(align_var);
 
     z3::expr obj = ctx->ctx.int_val(0);
     for (int i = 0; i < objs.size(); ++i) {

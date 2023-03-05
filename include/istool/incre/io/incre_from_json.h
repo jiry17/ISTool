@@ -19,7 +19,8 @@ namespace incre {
     Binding json2binding(const Json::Value& node);
     Command json2command(const Json::Value& node);
     IncreProgram json2program(const Json::Value& node);
-    IncreProgram file2program(const std::string& path);
+    IncreProgram jsonFile2program(const std::string& path);
+    IncreProgram parseFromF(const std::string& path, bool is_autolabel);
 }
 
 #endif //ISTOOL_INCRE_FROM_JSON_H

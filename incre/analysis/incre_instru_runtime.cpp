@@ -27,12 +27,12 @@ void IncreExamplePool::add(const IncreExample &example) {
 
 namespace {
 
-    std::pair<Term, bool> _collectSubst(const Term& x, const std::string& name, const Term& y);
+    std::pair<Term, bool> _collectSubst(const Term& x, const std::string& name, const Term& y, IncreExamplePool* pool);
 
-#define SubstHead(ty) std::pair<Term, bool> _collectSubst(Tm ## ty *x, const Term& _x, const std::string& name, const Term& y)
-#define SubstCase(ty) return _collectSubst(dynamic_cast<Tm ## ty*>(x.get()), x, name, y)
-#define SubstRes(field) auto [field ## _res, field ##_flag] = _collectSubst(x->field, name, y)
-#define SubstRes2(field) auto [field ## _res, field ## _flag] = _collectSubst(field, name, y)
+#define SubstHead(ty) std::pair<Term, bool> _collectSubst(Tm ## ty *x, const Term& _x, const std::string& name, const Term& y, IncreExamplePool* pool)
+#define SubstCase(ty) return _collectSubst(dynamic_cast<Tm ## ty*>(x.get()), x, name, y, pool)
+#define SubstRes(field) auto [field ## _res, field ##_flag] = _collectSubst(x->field, name, y, pool)
+#define SubstRes2(field) auto [field ## _res, field ## _flag] = _collectSubst(field, name, y, pool)
 
     SubstHead(Var) {
         if (x->name == name) return {y, true};
@@ -114,13 +114,14 @@ namespace {
     }
     SubstHead(LabeledAlign) {
         SubstRes(content);
-        if (!content_flag) return {_x, false};
+        auto& cared_val = pool->cared_vars[x->id];
+        if (!content_flag && cared_val.find(name) == cared_val.end()) return {_x, false};
         auto res = std::make_shared<TmLabeledAlign>(content_res, x->id, x->subst_info);
-        res->addSubst(name, incre::run(y, nullptr));
+        if (cared_val.find(name) != cared_val.end()) res->addSubst(name, incre::run(y, nullptr));
         return {res, true};
     }
 
-    std::pair<Term, bool> _collectSubst(const Term& x, const std::string& name, const Term& y) {
+    std::pair<Term, bool> _collectSubst(const Term& x, const std::string& name, const Term& y, IncreExamplePool* pool) {
         switch (x->getType()) {
             case TermType::VAR: SubstCase(Var);
             case TermType::MATCH: SubstCase(Match);
@@ -139,10 +140,10 @@ namespace {
         }
     }
 
-    Term collectSubst(const Term& x, const std::string& name, const Term& y) {
+    Term collectSubst(const Term& x, const std::string& name, const Term& y, IncreExamplePool* pool) {
         //LOG(INFO) << "collect subst " << x->toString() << " " << name;
         //LOG(INFO) << "subst " << y->toString();
-        return _collectSubst(x, name, y).first;
+        return _collectSubst(x, name, y, pool).first;
     }
 
     Data _collectExample(const Term &term, Context *ctx, IncreExamplePool* pool);
@@ -163,7 +164,7 @@ namespace {
     }
     CollectHead(Let) {
         CollectSub(def);
-        auto content = collectSubst(term->content, term->name, std::make_shared<TmValue>(def));
+        auto content = collectSubst(term->content, term->name, std::make_shared<TmValue>(def), pool);
         CollectSub2(content);
         return content_res;
     }
@@ -171,7 +172,7 @@ namespace {
         auto name = term->name;
         auto content = term->content;
         auto f = [name, content, ctx, pool](const Term& param) {
-            auto c = collectSubst(content, name, param);
+            auto c = collectSubst(content, name, param, pool);
             CollectSub2(c);
             return c_res;
         };
@@ -197,7 +198,7 @@ namespace {
                 auto res = branch;
                 for (int i = int(binds.size()) - 1; i >= 0; --i) {
                     auto& [name, bind] = binds[i];
-                    res = collectSubst(res, name, bind);
+                    res = collectSubst(res, name, bind, pool);
                 }
                 CollectSub2(res);
                 return res_res;
@@ -273,8 +274,9 @@ void IncreExamplePool::generateExample() {
 IncreExamplePool::~IncreExamplePool() {
     delete generator;
 }
-IncreExamplePool::IncreExamplePool(Context *_ctx, StartTermGenerator *_generator):
-    ctx(_ctx), generator(_generator) {
+IncreExamplePool::IncreExamplePool(Context *_ctx, const std::vector<std::unordered_set<std::string>> &_cared_vars,
+                                   StartTermGenerator *_generator):
+                                   ctx(_ctx), cared_vars(_cared_vars), generator(_generator) {
 }
 
 namespace {

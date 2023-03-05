@@ -8,6 +8,7 @@
 #include "incre_instru_type.h"
 #include "istool/basic/example_sampler.h"
 #include <random>
+#include <unordered_set>
 
 namespace incre {
     struct IncreExampleData {
@@ -41,10 +42,11 @@ namespace incre {
     class IncreExamplePool {
     public:
         std::vector<IncreExampleList> example_pool;
+        std::vector<std::unordered_set<std::string>> cared_vars;
         StartTermGenerator* generator;
         Context* ctx;
         void add(const IncreExample& example);
-        IncreExamplePool(Context* _ctx, StartTermGenerator* _generator);
+        IncreExamplePool(Context* _ctx, const std::vector<std::unordered_set<std::string>>& _cared_vars, StartTermGenerator* _generator);
         void generateExample();
         ~IncreExamplePool();
     };

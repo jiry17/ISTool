@@ -44,6 +44,7 @@ namespace incre {
     Ty clearCompress(const Ty& type);
 
     IncreProgram eliminateNestedAlign(ProgramData* program);
+    IncreProgram eliminateUnusedLet(ProgramData* program);
 }
 
 #endif //ISTOOL_INCRE_H

@@ -40,7 +40,7 @@ int main(int argv, char** argc) {
     } else {
         path = config::KSourcePath + "/tests/test.json";
     }
-    auto prog = incre::file2program(path);
+    auto prog = incre::jsonFile2program(path);
 
 
     auto env = std::make_shared<Env>();

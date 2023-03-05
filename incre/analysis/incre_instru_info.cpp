@@ -8,17 +8,21 @@
 #include "istool/sygus/theory/theory.h"
 #include "istool/sygus/theory/basic/theory_semantics.h"
 #include <iostream>
+#include "glog/logging.h"
 
 using namespace incre;
 
 AlignTypeInfoData::AlignTypeInfoData(const Term& __term, const std::unordered_map<std::string, Ty> &type_ctx, const Ty &_oup_type, int _command_id):
     oup_type(_oup_type), _term(__term), term(dynamic_cast<TmLabeledAlign*>(__term.get())), command_id(_command_id) {
-    auto inps = incre::getUnboundedVars(term->content.get());
+    /*auto inps = incre::getUnboundedVars(term->content.get());
     for (const auto& inp: inps) {
         auto it = type_ctx.find(inp);
         if (it != type_ctx.end()) {
             inp_types.emplace_back(inp, it->second);
         }
+    }*/
+    for (auto& [inp_name, inp_type]: type_ctx) {
+        inp_types.emplace_back(inp_name, inp_type);
     }
 }
 int AlignTypeInfoData::getId() const {
@@ -49,12 +53,17 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
     //auto labeled_program = incre::eliminateUnboundedCreate(program);
     incre::checkAllLabelBounded(program.get());
     auto labeled_program = incre::labelCompress(program);
-    auto pass_info = incre::collectAlignType(labeled_program);
-    for (const auto& info: pass_info) {
+    auto align_info = incre::collectAlignType(labeled_program);
+    std::vector<std::unordered_set<std::string>> cared_vals(align_info.size());
+    for (const auto& info: align_info) {
         info->print();
+        for (auto& [name, _]: info->inp_types) {
+            cared_vals[info->getId()].insert(name);
+            LOG(INFO) << "insert name " << info->getId() << " " << name;
+        }
     }
 
-    auto* pool = new IncreExamplePool(nullptr, nullptr);
+    auto* pool = new IncreExamplePool(nullptr, cared_vals, nullptr);
     Context* ctx = incre::buildCollectContext(labeled_program, pool);
     pool->ctx = ctx;
 
@@ -72,5 +81,5 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
 
     // build components
     auto component_list = incre::collectComponentList(ctx, env, incre::getComponentInfo(program));
-    return new IncreInfo(labeled_program, ctx, pass_info, pool, component_list);
+    return new IncreInfo(labeled_program, ctx, align_info, pool, component_list);
 }

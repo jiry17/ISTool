@@ -12,6 +12,7 @@ namespace config {
     extern const std::string KSourcePath;
     extern const std::string KEuSolverPath;
     extern const std::string KCVC5Path;
+    extern const std::string KIncreParserPath;
 }
 
 namespace global {

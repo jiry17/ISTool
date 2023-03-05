@@ -4,6 +4,7 @@
 
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/trans/incre_trans.h"
+#include "istool/incre/language/incre_lookup.h"
 #include "glog/logging.h"
 
 using namespace incre;
@@ -88,6 +89,15 @@ namespace {
             --mark_count[log.name]; TypeContext::cancelBind(log);
         }
     };
+
+    bool _isFirstOrder(const Ty& type, TypeContext* ctx) {
+        match::MatchTask task;
+        task.type_matcher = [](TyData* current_type, const match::MatchContext& ctx) -> bool {
+            return current_type->getType() == TyType::ARROW;
+        };
+        auto full_type = incre::unfoldTypeWithLabeledCompress(type, ctx);
+        return !incre::match::match(full_type.get(), task);
+    }
 }
 
 // todo: add unfold programs
@@ -106,8 +116,12 @@ AlignTypeInfoList incre::collectAlignType(const IncreProgram &program) {
 
         auto* mark_content = dynamic_cast<_MarkedTypeContext*>(ctx);
         std::unordered_map<std::string, Ty> inps;
+        LOG(INFO) << "Build input for " << id;
         for (const auto& [name, type]: ctx->binding_map) {
-            if (mark_content->mark_count[name]) inps[name] = incre::unfoldTypeWithLabeledCompress(type, ctx);
+            if (mark_content->mark_count[name] && _isFirstOrder(type, ctx)) {
+                LOG(INFO) << "input " << name << " " << type->toString();
+                inps[name] = incre::unfoldTypeWithLabeledCompress(type, ctx);
+            }
         }
 
         auto res = incre::getType(ct->content, ctx, ext);

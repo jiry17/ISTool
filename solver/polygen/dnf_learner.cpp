@@ -80,6 +80,7 @@ DNFLearner::DNFLearner(Specification *spec): PBESolver(spec) {
     auto* val = spec->env->getConstRef(solver::polygen::KMaxClauseNumName);
     if (val->isNull()) KMaxClauseNum = _getDefaultClauseNum(spec->info_list[0]);
     else KMaxClauseNum = theory::clia::getIntValue(*val);
+    //LOG(INFO) <<" KMaxClauseNum" << KMaxClauseNum;
     KRelaxTimeLimit = 0.1;
 
     val = spec->env->getConstRef(solver::polygen::KIsAllowErrorName);
@@ -104,7 +105,10 @@ void DNFLearner::relax() {
 
     ExampleList inp_list = negative_list;
     for (auto& example: positive_list) inp_list.push_back(example);
+    //LOG(INFO) << "start collect";
     auto is_timeout = solver::collectAccordingSize({pred_info}, size_limit, result, EnumConfig(nullptr, nullptr, tmp_guard));
+    //LOG(INFO) << "end collect";
+    //pred_info->grammar->print();
     if (is_timeout) {
         KRelaxTimeLimit *= 2; size_limit -= 1;
     }
@@ -113,6 +117,7 @@ void DNFLearner::relax() {
     ProgramList pred_list;
     for (const auto& res: result) pred_list.push_back(res.begin()->second);
     pred_pool.push_back(pred_list);
+    //LOG(INFO) << "collect finished";
 }
 
 namespace {
@@ -133,10 +138,13 @@ namespace {
 std::vector<PCmpInfo> DNFLearner::getNextInfoList() {
     ++pred_pos;
     if (pred_pos == pred_pool.size()) relax();
+    // LOG(INFO) << "get next info list " << pred_pos << " " << pred_pool.size() << " " << size_limit << " " << pred_pool[pred_pos].size();
     std::vector<PCmpInfo> pred_list;
     std::vector<bool> is_duplicated;
+    //LOG(INFO) << "raw pred num" << pred_pool[pred_pos].size();
     for (const auto& res: pred_pool[pred_pos]) {
         PCmpInfo info;
+        // LOG(INFO) << "  build for " << res->toString();
         try {
             info = buildInfo(res);
             pred_list.push_back(info);
@@ -164,6 +172,7 @@ std::vector<PCmpInfo> DNFLearner::getNextInfoList() {
         if (!is_duplicated[i]) pred_list[now++] = pred_list[i];
     }
     pred_list.resize(now);
+    // LOG(INFO) << "pred num " << pred_list.size();
 
     if (!_isSolvable(pred_list)) return {};
     std::string feature;
@@ -177,7 +186,7 @@ std::vector<PCmpInfo> DNFLearner::getNextInfoList() {
 
 void DNFLearner::clear() {
     negative_list.clear(); positive_list.clear();
-    pred_pos = -1; pred_list_set.clear(); pred_pool.clear();
+    pred_pos = -1; pred_list_set.clear(); //pred_pool.clear();
     info_storage.clear();
 }
 
@@ -357,6 +366,7 @@ PProgram DNFLearner::searchForCondition(const std::vector<PCmpInfo> &cmp_info, i
 }
 
 FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, TimeGuard *_guard) {
+    LOG(INFO) << "start synthesis";
     clear(); guard = _guard;
     for (auto& example: example_list) {
         auto io_example = io_space->getIOExample(example);
@@ -373,6 +383,7 @@ FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, 
         }
         for (int clause_num = 1; clause_num <= or_limit; ++clause_num) {
             for (int si = 0; si < info_storage.size(); ++si) {
+                LOG(INFO) << "solve " << clause_num << " " << si;
                 if (visited_set.find({clause_num, si}) != visited_set.end()) continue;
                 TimeCheck(guard);
                 visited_set.insert({clause_num, si});
