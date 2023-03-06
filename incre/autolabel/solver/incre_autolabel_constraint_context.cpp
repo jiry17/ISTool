@@ -166,7 +166,8 @@ namespace {
         assert(at); _align(at->source, param, ctx);
         return at->target;
     }
-    void _bind(const Pattern& pattern, const Ty& type, Z3Context* ctx, std::vector<TypeContext::BindLog>& log_list) {
+    void _bind(const Pattern& pattern, const Ty& init_type, Z3Context* ctx, std::vector<TypeContext::BindLog>& log_list) {
+        auto type = autolabel::unfoldTypeWithZ3Label(init_type, ctx);
         switch (pattern->getType()) {
             case PatternType::VAR: {
                 auto* pv = dynamic_cast<PtVar*>(pattern.get());

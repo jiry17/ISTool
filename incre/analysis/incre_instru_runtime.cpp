@@ -122,6 +122,7 @@ namespace {
     }
 
     std::pair<Term, bool> _collectSubst(const Term& x, const std::string& name, const Term& y, IncreExamplePool* pool) {
+        // LOG(INFO) << "subst " << x->toString() << " " << name;
         switch (x->getType()) {
             case TermType::VAR: SubstCase(Var);
             case TermType::MATCH: SubstCase(Match);

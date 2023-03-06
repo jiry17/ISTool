@@ -29,7 +29,7 @@ namespace {
             for (auto& [_, type]: align_info->inp_types) c_num = std::max(c_num, get_id(type.get()));
             c_num = std::max(c_num, get_id(align_info->oup_type.get()));
         }
-        LOG(INFO) << "CNUM " << c_num;
+        // LOG(INFO) << "CNUM " << c_num;
         return c_num;
     }
 

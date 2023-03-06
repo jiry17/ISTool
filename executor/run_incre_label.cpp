@@ -14,11 +14,14 @@
 #include "glog/logging.h"
 #include <iostream>
 #include "glog/logging.h"
+#include "istool/solver/autolifter/composed_sf_solver.h"
 
 using namespace incre;
 
+const std::unordered_map<std::string, int> KComposeNumConfig;
+
 int main(int argv, char** argc) {
-    auto name = "lsp/page10";
+    auto name = "lsp/page22-1";
 
     std::string path = config::KSourcePath + "tests/incre/benchmark/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
@@ -31,11 +34,15 @@ int main(int argv, char** argc) {
 
     res = incre::eliminateNestedAlign(res.get());
     incre::printProgram(res, label_path);
-
     incre::printProgram(res);
 
     auto env = std::make_shared<Env>();
     incre::prepareEnv(env.get());
+
+    if (KComposeNumConfig.count(name) > 0) {
+        int compose_num = KComposeNumConfig.find(name)->second;
+        env->setConst(solver::autolifter::KComposedNumName, BuildData(Int, compose_num));
+    }
 
     auto* info = incre::buildIncreInfo(res, env.get());
 

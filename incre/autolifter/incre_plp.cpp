@@ -124,7 +124,7 @@ std::string incre::autolifter::aux2String(const AuxProgram &program) {
     if (!program.second.first) {
         return program.first.first->getName() + "@" + program.first.second->toString();
     } else {
-        return program.first.first->getName() + "@" + program.first.second->toString() + " -> " + program.second.second->toString();
+        return /*program.first.first->getName() + "@" +*/ program.first.second->toString() + " -> " + program.second.second->toString();
     }
 }
 namespace {
