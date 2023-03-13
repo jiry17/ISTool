@@ -42,11 +42,12 @@ namespace {
 
     class TmAppSemantics: public FullExecutedSemantics {
     public:
-        TmAppSemantics(): FullExecutedSemantics("app") {}
+        Context* ctx;
+        TmAppSemantics(Context* _ctx): FullExecutedSemantics("app"), ctx(_ctx) {}
         virtual Data run(DataList&& inp_list, ExecuteInfo* info) {
             assert(inp_list.size() == 2);
             auto* fv = dynamic_cast<VFunction*>(inp_list[0].get());
-            return fv->func(std::make_shared<TmValue>(inp_list[1]));
+            return fv->run(std::make_shared<TmValue>(inp_list[1]), ctx);
         }
         virtual ~TmAppSemantics() = default;
     };
@@ -64,7 +65,7 @@ namespace {
         return res;
     }
 
-    std::vector<SynthesisComponent*> _getBasicSynthesisComponent(Env* env) {
+    std::vector<SynthesisComponent*> _getBasicSynthesisComponent(Env* env, Context* ctx) {
         auto TINT = theory::clia::getTInt(), TBOOL = type::getTBool();
         auto* ite = new SynthesisComponent(ComponentType::COMB, {TBOOL, TINT, TINT}, TINT, env->getSemantics("ite"), [=](const TermList& term_list) -> Term {
             assert(term_list.size() == 3);
@@ -97,7 +98,7 @@ namespace {
             comp_list.push_back(comp);
         }
 
-        std::vector<std::pair<PType, Data>> const_list = {{TINT, BuildData(Int, 0)}/*, {TINT, BuildData(Int, 1)}*/};
+        std::vector<std::pair<PType, Data>> const_list = {{TINT, BuildData(Int, 0)}, {TINT, BuildData(Int, 1)}};
 
         for (auto [type, value]: const_list) {
             auto term = std::make_shared<TmValue>(value);
@@ -110,7 +111,7 @@ namespace {
 
         auto var_a = std::make_shared<TVar>("a"), var_b = std::make_shared<TVar>("b");
         auto var_arrow = std::make_shared<TArrow>((TypeList){var_a}, var_b);
-        auto* app = new SynthesisComponent(ComponentType::BOTH, {var_arrow, var_a}, var_b, std::make_shared<TmAppSemantics>(), [=](const TermList& term_list) -> Term {
+        auto* app = new SynthesisComponent(ComponentType::BOTH, {var_arrow, var_a}, var_b, std::make_shared<TmAppSemantics>(ctx), [=](const TermList& term_list) -> Term {
             assert(term_list.size() == 2);
             return std::make_shared<TmApp>(term_list[0], term_list[1]);
         }, {"app"});
@@ -122,7 +123,7 @@ namespace {
 
 // TODO: add lambda expressions
 std::vector<SynthesisComponent *> incre::collectComponentList(Context *ctx, Env *env, const std::unordered_map<std::string, InputComponentInfo>& compress_map) {
-    auto component_list = _getBasicSynthesisComponent(env);
+    auto component_list = _getBasicSynthesisComponent(env, ctx);
     auto* type_ctx = new TypeContext(ctx);
     for (const auto& [name, _]: ctx->binding_map) {
         auto* comp = _buildSynthesisComponent(ctx, type_ctx, name, compress_map);

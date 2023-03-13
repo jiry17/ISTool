@@ -321,13 +321,7 @@ namespace {
     }
 
     RunHead(Abs) {
-        auto name = term->name;
-        auto content = term->content;
-        auto func = [name, content, ctx](const Term& param) {
-            auto res = incre::subst(content, name, param);
-            return incre::run(res, ctx);
-        };
-        return Data(std::make_shared<VFunction>(func));
+        return Data(std::make_shared<VAbsFunction>(_term));
     }
 
     RunHead(App) {
@@ -337,7 +331,7 @@ namespace {
             LOG(FATAL) << term->func->toString() << " is not a function.";
         }
         auto param = incre::run(term->param, ctx);
-        return fv->func(std::make_shared<TmValue>(param));
+        return fv->run(std::make_shared<TmValue>(param), ctx);
     }
 
     RunHead(Fix) {
@@ -346,7 +340,7 @@ namespace {
         if (!fv) {
             LOG(FATAL) << term->content->toString() << " is not a function.";
         }
-        return fv->func(_term);
+        return fv->run(_term, ctx);
     }
 
     RunHead(If) {
@@ -423,13 +417,11 @@ namespace {
         }
     }
 
-    Term _buildConstructor(const std::string& name) {
-        auto func = [name](const Term& term) {
-            auto* tv = dynamic_cast<TmValue*>(term.get());
-            if (!tv) LOG(FATAL) << "Expected TermValue, but got " << term->toString();
-            return Data(std::make_shared<VInductive>(name, tv->data));
+    Term _buildConstructor(const std::string& name, const Ty& type) {
+        auto func = [name](const DataList& inps) {
+            return Data(std::make_shared<VInductive>(name, inps[0]));
         };
-        Data data(std::make_shared<VFunction>(func));
+        Data data(std::make_shared<VOpFunction>(name, 1, func, type));
         return std::make_shared<TmValue>(data);
     }
 
@@ -438,7 +430,7 @@ namespace {
         for (const auto& [name, sub_ty]: command->type->constructors) {
             auto ity = incre::subst(sub_ty, command->type->name, command->_type);
             auto ty = std::make_shared<TyArrow>(ity, command->_type);
-            ctx->addBinding(name, _buildConstructor(name), ty);
+            ctx->addBinding(name, _buildConstructor(name, ty), ty);
         }
     }
 }

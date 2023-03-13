@@ -147,7 +147,9 @@ namespace {
                 return std::make_shared<TermBinding>(_rewriteTerm(tb->term, solution));
             }
             case BindingType::VAR: {
-                LOG(FATAL) << "All VarTypeBinding should be removed in this stage";
+                auto* tb = dynamic_cast<VarTypeBinding*>(binding);
+                return std::make_shared<VarTypeBinding>(tb->type);
+                // LOG(FATAL) << "All VarTypeBinding should be removed in this stage";
             }
         }
     }
@@ -162,7 +164,7 @@ namespace {
             }
             case CommandType::BIND: {
                 auto* bc = dynamic_cast<CommandBind*>(command);
-                return std::make_shared<CommandBind>(bc->name, _rewriteBinding(bc->binding.get(), solution));
+                return std::make_shared<CommandBind>(bc->name, _rewriteBinding(bc->binding.get(), solution), command->decorate_set);
             }
         }
     }

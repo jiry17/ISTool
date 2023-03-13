@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/language/incre_value.h"
+#include "istool/incre/language/incre.h"
 #include "glog/logging.h"
 
 using namespace incre;
@@ -35,7 +36,30 @@ bool VCompress::equal(Value *value) const {
     return content == cv->content;
 }
 
-VFunction::VFunction(const Function &_func): func(_func) {}
+VFunction::VFunction(const std::string &_name): name(_name) {
+}
+
+bool VFunction::equal(Value *value) const {
+    auto* va = dynamic_cast<VFunction*>(value);
+    if (!va) return false;
+    return va->name == name;
+}
+
+std::string VFunction::toString() const {
+    return name;
+}
+
+Data VAbsFunction::run(const Term &param, Context *ctx) {
+    auto res = incre::subst(term->content, term->name, param);
+    return incre::run(res, ctx);
+}
+VAbsFunction::VAbsFunction(const Term &__term): VFunction("(" + __term->toString() + ")"), _term(__term) {
+    term = dynamic_cast<TmAbs*>(_term.get());
+}
+
+
+
+/*VFunction::VFunction(const Function &_func): func(_func) {}
 bool VFunction::equal(Value *value) const {
     LOG(WARNING) << "Checking equivalence between values of type VFunction";
     return false;
@@ -59,13 +83,41 @@ std::string VNamedFunction::toString() const {
 VTyped::VTyped(const Ty &_type): type(_type) {}
 VBasicOperator::VBasicOperator(const Function &_func, const std::string &_name, const Ty &_type):
     VNamedFunction(_func, _name), VTyped(_type) {
+}*/
+
+namespace {
+    Data _runOp(const std::string &op_name, int param_num, const std::function<Data(const DataList&)>& sem, const DataList& params) {
+        if (params.size() == param_num) return sem(params);
+        return Data(std::make_shared<VPartialOpFunction>(op_name, param_num, sem, params));
+    }
+}
+
+VOpFunction::VOpFunction(const std::string &_op_name, int _param_num, const std::function<Data(const DataList &)> &_sem,
+                         const Ty &_type): VFunction(_op_name), param_num(_param_num), sem(_sem), type(_type) {
+}
+Data VOpFunction::run(const Term &term, Context *ctx) {
+    auto* tv = dynamic_cast<TmValue*>(term.get());
+    if (!tv) LOG(FATAL) << "Unexpected TermType " << term->toString();
+    return _runOp(name, param_num, sem, {tv->data});
+}
+
+VPartialOpFunction::VPartialOpFunction(const std::string &_op_name, int _param_num,
+                                       const std::function<Data(const DataList&)>& _sem, const DataList &_param_list):
+                                       VFunction(_op_name + data::dataList2String(_param_list)), param_num(_param_num),
+                                       sem(_sem), param_list(_param_list), op_name(_op_name) {
+}
+Data VPartialOpFunction::run(const Term &term, Context *ctx) {
+    auto* tv = dynamic_cast<TmValue*>(term.get());
+    if (!tv) LOG(FATAL) << "Unexpected TermType " << term->toString();
+    auto extended_param = param_list; extended_param.push_back(tv->data);
+    return _runOp(op_name, param_num, sem, extended_param);
 }
 
 Ty incre::getValueType(Value *v) {
     if (dynamic_cast<VUnit*>(v)) return std::make_shared<TyUnit>();
     if (dynamic_cast<VInt*>(v)) return std::make_shared<TyInt>();
     if (dynamic_cast<VBool*>(v)) return std::make_shared<TyBool>();
-    auto* tv = dynamic_cast<VTyped*>(v);
-    if (tv) return tv->type;
+    auto* vo = dynamic_cast<VOpFunction*>(v);
+    if (vo) return vo->type;
     LOG(FATAL) << "User cannot write " << v->toString() << " directly.";
 }

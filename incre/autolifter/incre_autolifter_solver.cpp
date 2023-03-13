@@ -9,6 +9,7 @@
 #include "istool/incre/trans/incre_trans.h"
 #include "istool/solver/autolifter/basic/streamed_example_space.h"
 #include "glog/logging.h"
+#include <iostream>
 
 using namespace incre;
 using namespace incre::autolifter;
@@ -64,6 +65,9 @@ GrammarEnumerateTool::GrammarEnumerateTool(Grammar *_grammar): grammar(_grammar)
 IncreAutoLifterSolver::IncreAutoLifterSolver(IncreInfo *_info, const PEnv& _env): env(_env), IncreSolver(_info),
     f_res_list(_getCNum(_info)), compress_res_list(info->align_infos.size()),
     aux_grammar_list(_getCNum(_info)) {
+    for (auto& [name, inp_type]: info->example_pool->input_list) {
+        global_input_type_list.push_back(incre::typeFromIncre(inp_type));
+    }
     for (auto& align_info: info->align_infos) {
         assert(align_info->getId() == example_space_list.size());
         auto* example_space = new FExampleSpace(info->example_pool, align_info->getId(), env, align_info.get());
@@ -93,17 +97,6 @@ bool FRes::isEqual(Program *x, Program *y) {
     //TODO: add a semantical check
     return x->toString() == y->toString();
 }
-Data FRes::run(const Data &inp, Env *env) {
-    if (component_list.empty()) return Data(std::make_shared<VUnit>());
-    if (component_list.size() == 1) {
-        return env->run(component_list[0].program.second.get(), {inp});
-    }
-    DataList elements;
-    for (auto& component: component_list) {
-        elements.push_back(env->run(component.program.second.get(), {inp}));
-    }
-    return Data(std::make_shared<VTuple>(elements));
-}
 int FRes::insert(const TypedProgram& program) {
     for (int i = 0; i < component_list.size(); ++i) {
         auto& info = component_list[i];
@@ -124,27 +117,6 @@ int CompressRes::insert(const TypedProgram& program) {
     }
     int id = int(compress_list.size()); compress_list.push_back(program);
     return id;
-}
-
-namespace {
-    Data _extract(const Data& d, const std::vector<int>& path) {
-        Data res(d);
-        for (auto pos: path) {
-            auto* v = dynamic_cast<VTuple*>(res.get());
-            assert(v && v->elements.size() > pos);
-            res = v->elements[pos];
-        }
-        auto* cv = dynamic_cast<VCompress*>(res.get());
-        if (cv) return cv->content;
-        return res;
-    }
-}
-Data FExampleSpace::runOup(int example_id, Program *program, const std::vector<int>& path) {
-    auto oup = _extract(example_list[example_id].second, path);
-    if (program) {
-        return env->run(program, {oup});
-    }
-    return oup;
 }
 
 autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(AlignTypeInfoData *info, const TypedProgram &target, const std::vector<int>& path) {

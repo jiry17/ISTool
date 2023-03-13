@@ -366,7 +366,7 @@ PProgram DNFLearner::searchForCondition(const std::vector<PCmpInfo> &cmp_info, i
 }
 
 FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, TimeGuard *_guard) {
-    LOG(INFO) << "start synthesis";
+    // assert(0);
     clear(); guard = _guard;
     for (auto& example: example_list) {
         auto io_example = io_space->getIOExample(example);

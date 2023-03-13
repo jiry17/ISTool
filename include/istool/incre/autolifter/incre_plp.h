@@ -16,17 +16,31 @@ namespace incre::autolifter {
     typedef std::pair<TypedProgram, TypedProgram> AuxProgram;
     typedef std::vector<AuxProgram> PLPRes;
 
+    class IncreIOExample {
+    public:
+        DataList local_input, global_input, full_input;
+        Data oup;
+        IncreIOExample(const DataList& _local, const DataList& _global, const Data& _oup);
+        DataList getAuxInput(const Data& compress);
+        std::string toString() const;
+    };
+
     class FExampleSpace {
         void addExample();
     public:
-        std::vector<std::pair<std::string, PType>> value_list;
-        std::vector<IOExample> example_list;
+        std::vector<std::pair<std::string, PType>> value_list, global_input_list;
+        std::vector<IncreIOExample> example_list;
         Env* env;
         IncreExamplePool* pool;
+        int current_example_id;
+
         int tau_id;
         FExampleSpace(IncreExamplePool* _pool, int _tau_id, const PEnv& _env, AlignTypeInfoData* pass_info);
+        void switchTo(int example_id);
 
         Data runAux(int exmaple_id, const AuxProgram& aux);
+        Data runCompress(int example_id, Program* prog);
+        Data runAux(int example_id, const Data& content, Program* prog);
         std::string example2String(const IOExample& example);
         std::string example2String(int id);
         Data runOup(int example_id, Program* program, const std::vector<int>& path);

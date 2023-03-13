@@ -184,13 +184,8 @@ namespace {
     }
 
     LabelTermHead(Value) {
-        auto* v = term->data.get();
-        if (dynamic_cast<VUnit*>(v)) return {_term, std::make_shared<TyUnit>()};
-        if (dynamic_cast<VInt*>(v)) return {_term, std::make_shared<TyInt>()};
-        if (dynamic_cast<VBool*>(v)) return {_term, std::make_shared<TyBool>()};
-        auto* tv = dynamic_cast<VTyped*>(v);
-        if (tv) return {_term, tv->type};
-        LOG(FATAL) << "User cannot write " << term->data.toString() << " directly.";
+        auto type = getValueType(term->data.get());
+        return {_term, type};
     }
 
     LabelTermHead(Let) {
@@ -294,16 +289,21 @@ namespace {
                 auto* binding = dynamic_cast<TypeBinding*>(command->binding.get());
                 auto ty = _labelType(binding->type, cs);
                 ctx->bind(command->name, ty);
-                return std::make_shared<CommandBind>(command->name, std::make_shared<TypeBinding>(ty));
+                return std::make_shared<CommandBind>(command->name, std::make_shared<TypeBinding>(ty), command->decorate_set);
             }
             case BindingType::TERM: {
                 auto* binding = dynamic_cast<TermBinding*>(command->binding.get());
                 auto [term, ty] = _labelTerm(binding->term, ctx, cs);
                 ctx->bind(command->name, ty);
-                return std::make_shared<CommandBind>(command->name, std::make_shared<TermBinding>(term));
+                return std::make_shared<CommandBind>(command->name, std::make_shared<TermBinding>(term), command->decorate_set);
             }
             case BindingType::VAR: {
-                LOG(FATAL) << "All VarTypeBinding should be removed in this stage";
+                if (!command->isDecoratedWith(CommandDecorate::INPUT)) {
+                    LOG(FATAL) << "VarTypeBinding can only be used to declare input (with @Input)";
+                }
+                auto* tv = dynamic_cast<VarTypeBinding*>(command->binding.get());
+                ctx->bind(command->name, tv->type);
+                return std::make_shared<CommandBind>(command->name, command->binding, command->decorate_set);
             }
         }
     }
@@ -470,15 +470,15 @@ namespace {
             case BindingType::TYPE: {
                 auto* tb = dynamic_cast<TypeBinding*>(command->binding.get());
                 auto type = _relabelType(tb->type, cs);
-                return std::make_shared<CommandBind>(command->name, std::make_shared<TypeBinding>(type));
+                return std::make_shared<CommandBind>(command->name, std::make_shared<TypeBinding>(type), command->decorate_set);
             }
             case BindingType::TERM: {
                 auto* tb = dynamic_cast<TermBinding*>(command->binding.get());
                 auto term = _relabelTerm(tb->term, cs);
-                return std::make_shared<CommandBind>(command->name, std::make_shared<TermBinding>(term));
+                return std::make_shared<CommandBind>(command->name, std::make_shared<TermBinding>(term), command->decorate_set);
             }
             case BindingType::VAR: {
-                LOG(FATAL) << "All VarTypeBinding should be removed in this stage";
+                return std::make_shared<CommandBind>(command->name, command->binding, command->decorate_set);
             }
         }
     }

@@ -114,16 +114,29 @@ namespace {
     bool _isPrimaryType(Type* type) {
         return dynamic_cast<TBool*>(type) || dynamic_cast<TInt*>(type);
     }
+    bool _isPrimaryFuncType(Type* type) {
+        while (1) {
+            auto* ta = dynamic_cast<TArrow*>(type);
+            if (!ta) return _isPrimaryType(type);
+            for (auto& inp: ta->inp_types) {
+                if (!_isPrimaryType(inp.get())) return false;
+            }
+            type = ta->oup_type.get();
+        }
+    }
     bool _isCompressType(Type* type) {
         return dynamic_cast<TCompress*>(type);
     }
     bool _isCompressOrPrimaryType(Type* type) {
-        return _isPrimaryType(type) || _isCompressType(type);
+        return _isCompressType(type) || _isPrimaryType(type);
     }
 }
 Grammar * IncreAutoLifterSolver::buildAuxGrammar(int compress_id) {
     auto inp_type = _getCompressType(info, compress_id);
-    return _buildGrammar(info->component_list, {inp_type}, _isPrimaryType, true, [](SynthesisComponent* component) -> bool {
+    LOG(INFO) << "Aux Grammar " << compress_id << " " << inp_type->getName();
+    TypeList full_type_list = {inp_type};
+    for (auto& inp_type: global_input_type_list) full_type_list.push_back(inp_type);
+    return _buildGrammar(info->component_list, full_type_list, _isPrimaryType, true, [](SynthesisComponent* component) -> bool {
        return component->type != ComponentType::COMB;
     });
 }
@@ -131,11 +144,25 @@ Grammar * IncreAutoLifterSolver::buildAuxGrammar(int compress_id) {
 
 Grammar * IncreAutoLifterSolver::buildCompressGrammar(const TypeList &type_list, int align_id) {
     int pos = info->align_infos[align_id]->command_id;
-    auto* grammar = _buildGrammar(info->component_list, type_list, _isCompressOrPrimaryType, true, [=](SynthesisComponent* component) -> bool{
+    TypeList full_type_list = type_list;
+    for (auto& inp_type: global_input_type_list) full_type_list.push_back(inp_type);
+    auto* grammar = _buildGrammar(info->component_list, full_type_list, _isCompressOrPrimaryType, true, [=](SynthesisComponent* component) -> bool{
         if (component->type == ComponentType::COMB) return false;
         if (pos <= component->info.command_id) return false;
         return !component->info.is_recursive;
     });
+    for (int i = 0; i < full_type_list.size(); ++i) {
+        auto& type = full_type_list[i];
+        LOG(INFO) << "current type " << type->getName() << " " << _isPrimaryFuncType(type.get()) << " " << _isCompressOrPrimaryType(type.get());
+        if (_isPrimaryFuncType(type.get()) && !_isCompressOrPrimaryType(type.get())) {
+            LOG(INFO) << "insert";
+            auto* symbol = new NonTerminal("Param" + std::to_string(i), type);
+            symbol->rule_list.push_back(new ConcreteRule(semantics::buildParamSemantics(i, type), {}));
+            auto sem = std::make_shared<TypeLabeledDirectSemantics>(type);
+            grammar->start->rule_list.push_back(new ConcreteRule(sem, {symbol}));
+            grammar->symbol_list.push_back(symbol);
+        }
+    }
     return grammar;
 }
 Grammar * IncreAutoLifterSolver::buildCombinatorGrammar(const TypeList &type_list, const PType& oup_type, int align_id) {
@@ -145,6 +172,7 @@ Grammar * IncreAutoLifterSolver::buildCombinatorGrammar(const TypeList &type_lis
     auto is_oup = [=](Type* type) {
         return type::equal(type, oup_type.get());
     };
+
     auto* grammar = _buildGrammar(info->component_list, type_list, is_oup, false, [=](SynthesisComponent* component) -> bool{
         if (component->type == ComponentType::AUX) return false;
         if (pos <= component->info.command_id) return false;

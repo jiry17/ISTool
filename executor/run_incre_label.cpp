@@ -18,10 +18,15 @@
 
 using namespace incre;
 
-const std::unordered_map<std::string, int> KComposeNumConfig;
+const std::unordered_map<std::string, int> KComposeNumConfig = {
+        {"lsp/page21", 3}, {"lsp/page22-1", 4}, {"lsp/page22-2", 4}
+};
+const std::unordered_map<std::string, int> KVerifyBaseNumConfig = {
+        {"lsp/page22-1", 1000}
+};
 
 int main(int argv, char** argc) {
-    auto name = "lsp/page22-1";
+    auto name = "fusion_test";
 
     std::string path = config::KSourcePath + "tests/incre/benchmark/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
@@ -42,6 +47,10 @@ int main(int argv, char** argc) {
     if (KComposeNumConfig.count(name) > 0) {
         int compose_num = KComposeNumConfig.find(name)->second;
         env->setConst(solver::autolifter::KComposedNumName, BuildData(Int, compose_num));
+    }
+    if (KVerifyBaseNumConfig.count(name) > 0) {
+        int verify_base_num = KVerifyBaseNumConfig.find(name)->second;
+        env->setConst(solver::autolifter::KOccamExampleNumName, BuildData(Int, verify_base_num));
     }
 
     auto* info = incre::buildIncreInfo(res, env.get());
@@ -67,4 +76,5 @@ int main(int argv, char** argc) {
     full_res = incre::eliminateUnusedLet(full_res.get());
 
     incre::printProgram(full_res, target);
+    incre::printProgram(full_res);
 }

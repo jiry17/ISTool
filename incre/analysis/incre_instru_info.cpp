@@ -59,27 +59,12 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
         info->print();
         for (auto& [name, _]: info->inp_types) {
             cared_vals[info->getId()].insert(name);
-            LOG(INFO) << "insert name " << info->getId() << " " << name;
         }
     }
 
-    auto* pool = new IncreExamplePool(nullptr, cared_vals, nullptr);
-    Context* ctx = incre::buildCollectContext(labeled_program, pool);
-    pool->ctx = ctx;
-
-    // build generator
-    int command_num = labeled_program->commands.size();
-    assert(command_num);
-    auto* command = dynamic_cast<CommandBind*>(labeled_program->commands[command_num - 1].get());
-    assert(command);
-    auto name = command->name;
-    auto* type_ctx = new TypeContext(ctx);
-    auto type = incre::unfoldTypeWithLabeledCompress(ctx->getType(name), type_ctx);
-    delete type_ctx;
-    auto* generator = new DefaultStartTermGenerator(name, type.get());
-    pool->generator = generator;
+    auto* pool = new IncreExamplePool(labeled_program.get(), env, cared_vals);
 
     // build components
-    auto component_list = incre::collectComponentList(ctx, env, incre::getComponentInfo(program));
-    return new IncreInfo(labeled_program, ctx, align_info, pool, component_list);
+    auto component_list = incre::collectComponentList(pool->ctx, env, incre::getComponentInfo(program));
+    return new IncreInfo(labeled_program, pool->ctx, align_info, pool, component_list);
 }

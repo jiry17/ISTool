@@ -76,18 +76,22 @@ bool example::satisfyIOExample(Program *program, const IOExample &example, Env* 
 
 #include <unordered_set>
 
-std::shared_ptr<FiniteIOExampleSpace> example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env) {
+std::shared_ptr<FiniteIOExampleSpace> example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env, const TypeList& given_types) {
     if (examples.empty()) {
         LOG(FATAL) << "Example space should not be empty";
     }
     auto* type_ext = type::getTypeExtension(env);
     int n = examples[0].first.size();
     ProgramList l_subs;
-    TypeList inp_types;
+    TypeList inp_types = given_types;
+    if (inp_types.empty()) {
+        for (int i = 0; i < n; ++i) {
+            auto type = type_ext->getType(examples[0].first[i].get());
+            inp_types.push_back(type);
+        }
+    }
     for (int i = 0; i < n; ++i) {
-        auto type = type_ext->getType(examples[0].first[i].get());
-        l_subs.push_back(program::buildParam(i, type));
-        inp_types.push_back(type);
+        l_subs.push_back(program::buildParam(i, inp_types[i]));
     }
     auto oup_type = type_ext->getType(examples[0].second.get());
     auto r = program::buildParam(n, oup_type);

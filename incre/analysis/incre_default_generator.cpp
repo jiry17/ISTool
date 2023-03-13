@@ -10,6 +10,7 @@ using namespace incre;
 
 namespace {
     const int KSizeLimit = 10;
+    const int KTermSizeLimit = 3;
     const int KIntMin = -5;
     const int KIntMax = 5;
 
@@ -58,6 +59,14 @@ namespace {
             }
         }
     }
+
+    std::vector<int> _distributeSize(int tot, int num, std::minstd_rand* e) {
+        std::vector<int> res(num, 0);
+        auto d = std::uniform_int_distribution<int>(0, num - 1);
+        for (int i = 0; i < tot; ++i) res[d(*e)]++;
+        return res;
+    }
+
     struct RandomContext {
         std::minstd_rand* e;
         std::stack<int> size;
@@ -73,16 +82,13 @@ namespace {
         void distributeSize(int num) {
             assert(!size.empty());
             int current = size.top(); size.pop();
-            if (num == 0) return;
-            assert(current);
-            std::vector<int> sub(num, 0);
-            auto d = std::uniform_int_distribution<int>(0, num - 1);
-            for (int i = 1; i < current; ++i) sub[d(*e)]++;
+            if (num == 0) return; assert(current);
+            auto sub = _distributeSize(current - 1, num, e);
             for (auto w: sub) size.push(w);
         }
     };
 
-    Data getRandomData(TyData* type, RandomContext* ctx);
+    Data _getRandomData(TyData* type, RandomContext* ctx);
 
 #define RandomCase(name) return _getRandomData(dynamic_cast<Ty ## name*>(type), ctx)
 #define RandomHead(name) Data _getRandomData(Ty ## name* type, RandomContext* ctx)
@@ -100,12 +106,12 @@ namespace {
     }
     RandomHead(Tuple) {
         DataList fields;
-        for (auto& sub: type->fields) fields.push_back(getRandomData(sub.get(), ctx));
+        for (auto& sub: type->fields) fields.push_back(_getRandomData(sub.get(), ctx));
         return BuildData(Product, fields);
     }
     RandomHead(Var) {
         auto* ti = ctx->lookup(type->name);
-        return getRandomData(ti, ctx);
+        return _getRandomData(ti, ctx);
     }
     RandomHead(Inductive) {
         ctx->ctx.emplace_back(type->name, type);
@@ -129,12 +135,12 @@ namespace {
         int pos = valid_indices[0];
         auto [cname, ctype] = type->constructors[pos];
         ctx->distributeSize(_getSize(ctype.get()));
-        auto content = getRandomData(ctype.get(), ctx);
+        auto content = _getRandomData(ctype.get(), ctx);
         ctx->ctx.pop_back();
         return Data(std::make_shared<VInductive>(cname, content));
     }
 
-    Data getRandomData(TyData* type, RandomContext* ctx) {
+    Data _getRandomData(TyData* type, RandomContext* ctx) {
         switch (type->getType()) {
             case TyType::INT: RandomCase(Int);
             case TyType::BOOL: RandomCase(Bool);
@@ -149,30 +155,130 @@ namespace {
     }
 }
 
-Term DefaultStartTermGenerator::getStartTerm() {
-    Term res = std::make_shared<TmVar>(func_name);
-    auto* ctx = new RandomContext(&random_engine);
-    for (auto& type: inp_list) {
-        assert(ctx->size.empty());
-        int num = _getSize(type.get());
-        if (num) {
-            assert(num <= KSizeLimit);
-            auto d = std::uniform_int_distribution<int>(num, KSizeLimit);
-            int start_size = d(random_engine);
-            ctx->size.push(start_size + 1);
-            ctx->distributeSize(num);
-        }
-        auto current = std::make_shared<TmValue>(getRandomData(type.get(), ctx));
-        res = std::make_shared<TmApp>(res, current);
+Data BaseValueGenerator::getRandomData(TyData *type) {
+    auto* ctx = new RandomContext(&env->random_engine);
+    int num = _getSize(type);
+    if (num) {
+        assert(num <= KSizeLimit);
+        auto d = std::uniform_int_distribution<int>(num, KSizeLimit);
+        int start_size = d(env->random_engine);
+        ctx->size.push(start_size + 1);
+        ctx->distributeSize(num);
     }
-    // LOG(INFO) << "start " << res->toString();
+    auto res = _getRandomData(type, ctx);
+    delete ctx;
     return res;
 }
-DefaultStartTermGenerator::DefaultStartTermGenerator(const std::string& _func_name, TyData* type): func_name(_func_name), random_engine(123) {
-    while (1) {
-        auto* at = dynamic_cast<TyArrow*>(type);
-        if (!at) return;
-        inp_list.push_back(at->source);
-        type = at->target.get();
+IncreDataGenerator::IncreDataGenerator(Env *_env): env(_env) {
+}
+
+BaseValueGenerator::BaseValueGenerator(Env* _env): IncreDataGenerator(_env) {
+}
+
+FirstOrderFunctionGenerator::FirstOrderFunctionGenerator(Env *_env): BaseValueGenerator(_env) {
+}
+
+namespace {
+    struct ComponentInfo {
+    public:
+        TyList inp_list;
+        Ty oup;
+        Term op;
+        ComponentInfo(const TyList& _inp_list, const Ty& _oup, const Term& _op):
+          inp_list(_inp_list), oup(_oup), op(_op) {
+        }
+    };
+
+    Term _generateTerm(int term_size, const std::vector<ComponentInfo>& component_list, const Ty& target, std::minstd_rand* e) {
+        std::vector<int> possible_component;
+        for (int i = 0; i < component_list.size(); ++i) {
+            if (!isTypeEqual(component_list[i].oup, target, nullptr)) continue;
+            if (term_size) {
+                if (component_list[i].inp_list.size()) possible_component.push_back(i);
+            } else if (component_list[i].inp_list.empty()) possible_component.push_back(i);
+        }
+        if (possible_component.empty()) return nullptr;
+        std::uniform_int_distribution<int> d(0, int(possible_component.size()) - 1);
+        auto& component = component_list[possible_component[d(*e)]];
+        Term res = component.op;
+        auto sub_size_list = _distributeSize(term_size - 1, component.inp_list.size(), e);
+        for (int i = 0; i < component.inp_list.size(); ++i) {
+            auto sub = _generateTerm(sub_size_list[i], component_list, component.inp_list[i], e);
+            if (!sub) return nullptr;
+            res = std::make_shared<TmApp>(res, sub);
+        }
+        return res;
     }
+}
+
+Data FirstOrderFunctionGenerator::getRandomData(TyData *type) {
+    if (type->getType() != TyType::ARROW) return BaseValueGenerator::getRandomData(type);
+
+    std::vector<ComponentInfo> component_list;
+    Ty oup_type;
+    TyList param_list;
+    while (type->getType() == TyType::ARROW) {
+        auto* at = dynamic_cast<TyArrow*>(type);
+        type = at->target.get(); oup_type = at->target;
+        auto param_name = "v" + std::to_string(param_list.size());
+        param_list.push_back(at->source);
+        component_list.emplace_back((TyList){}, at->source, std::make_shared<TmVar>(param_name));
+    }
+
+    auto op = getOperator("+"); auto ti = std::make_shared<TyInt>();
+    component_list.emplace_back((TyList){ti, ti}, ti, op);
+    component_list.emplace_back((TyList){}, ti, std::make_shared<TmValue>(BuildData(Int, 1)));
+
+    std::uniform_int_distribution<int> dist(0, KTermSizeLimit);
+
+    while (true) {
+        int term_size = dist(env->random_engine);
+        auto res = _generateTerm(term_size, component_list, oup_type, &env->random_engine);
+        if (res) {
+            for (int i = int(param_list.size()) - 1; i >= 0; --i) {
+                auto param_name = "v" + std::to_string(i);
+                res = std::make_shared<TmAbs>(param_name, param_list[i], res);
+            }
+            // LOG(INFO) << "generate term " << res->toString();
+            return run(res, nullptr);
+        }
+    }
+}
+
+namespace {
+#define X std::make_shared<TmVar>("x")
+#define Y std::make_shared<TmVar>("y")
+#define APP(t1, t2) std::make_shared<TmApp>(t1, t2)
+#define ITE(c, t, f) std::make_shared<TmIf>(c, t, f)
+#define OP(op, t1, t2) APP(APP(incre::getOperator(op), t1), t2)
+#define IVAL(i) std::make_shared<TmValue>(BuildData(Int, i))
+#define BuildIntUnary(name, term) std::make_shared<TmAbs>(name, std::make_shared<TyInt>(), term)
+#define BuildIntBinary(term) BuildIntUnary("x", BuildIntUnary("y", term))
+#define TI std::make_shared<TyInt>()
+#define TARROW(s, t) std::make_shared<TyArrow>(s, t)
+
+    const TermList KBinaryIntOperator = {
+            BuildIntBinary(X), BuildIntBinary(Y), BuildIntBinary(OP("+", X, Y)),
+            BuildIntBinary(ITE(OP("<", X, Y), X, Y)), BuildIntBinary(ITE(OP("<", Y, X), X, Y)),
+            BuildIntBinary(OP("+", X, IVAL(1))), BuildIntBinary(OP("+", IVAL(1), Y))
+    };
+    const TermList KUnaryIntOperator = {
+            BuildIntUnary("x", X), BuildIntUnary("x", OP("+", X, IVAL(1))), BuildIntUnary("x", IVAL(1))
+    };
+    const std::vector<std::pair<Ty, TermList>> KOperatorPool = {
+            {TARROW(TI, TI), KUnaryIntOperator}, {TARROW(TI, TARROW(TI, TI)), KBinaryIntOperator}
+    };
+}
+
+FixedPoolFunctionGenerator::FixedPoolFunctionGenerator(Env *_env): BaseValueGenerator(_env) {
+}
+
+Data FixedPoolFunctionGenerator::getRandomData(TyData *type) {
+    for (auto& [ty, pool]: KOperatorPool) {
+        if (type->toString() == ty->toString()) {
+            std::uniform_int_distribution<int> d(0, int(pool.size()) - 1);
+            return Data(std::make_shared<VAbsFunction>(pool[d(env->random_engine)]));
+        }
+    }
+    return BaseValueGenerator::getRandomData(type);
 }

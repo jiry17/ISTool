@@ -313,6 +313,9 @@ void incre::printBinding(const std::shared_ptr<BindingData> &binding) {
 
 void incre::printCommand(const std::shared_ptr<CommandData> &command) {
     floor_num = 0;
+    for (auto deco: command->decorate_set) {
+        std::cout << "@" << decorate2String(deco) << " ";
+    }
     if (debug) std::cout << std::endl << "[zyw: printCommand]" << std::endl;
     if (command->getType() == CommandType::IMPORT) {
         if (debug) std::cout << "[IMPORT]" << std::endl;

@@ -7,6 +7,7 @@
 
 #include "istool/basic/value.h"
 #include "incre_type.h"
+#include "incre_term.h"
 #include "incre_context.h"
 #include "istool/sygus/theory/basic/clia/clia_value.h"
 #include "istool/ext/deepcoder/data_value.h"
@@ -42,38 +43,52 @@ namespace incre {
         virtual ~VCompress() = default;
     };
 
-    typedef std::function<Data(const Term&)> Function;
-
     class VFunction: public Value {
     public:
-        Function func;
-        VFunction(const Function& _func);
+        std::string name;
+        VFunction(const std::string& _name);
+        virtual Data run(const Term& param, Context* ctx) = 0;
         virtual bool equal(Value* value) const;
         virtual std::string toString() const;
         virtual ~VFunction() = default;
     };
 
-    class VNamedFunction: public VFunction {
+    class VAbsFunction: public VFunction {
+    public:
+        TmAbs* term;
+        Term _term;
+        VAbsFunction(const Term& __term);
+        virtual Data run(const Term& param, Context* ctx);
+    };
+
+    /*class VNamedFunction: public VFunction {
     public:
         std::string name;
         VNamedFunction(const Function& _func, const std::string& _name);
         virtual bool equal(Value* value) const;
         virtual std::string toString() const;
         virtual ~VNamedFunction() = default;
-    };
+    };*/
 
-    class VTyped {
+    class VOpFunction: public VFunction {
     public:
         Ty type;
-        VTyped(const Ty& _type);
-        virtual ~VTyped() = default;
+        int param_num;
+        std::function<Data(const DataList&)> sem;
+        VOpFunction(const std::string& _op_name, int _param_num, const std::function<Data(const DataList&)>& _sem, const Ty& _type);
+        virtual Data run(const Term& term, Context* ctx);
+        virtual ~VOpFunction() = default;
     };
 
-    class VBasicOperator: public VNamedFunction, public VTyped {
+    class VPartialOpFunction: public VFunction {
     public:
-        std::string name;
-        VBasicOperator(const Function& _func, const std::string& _name, const Ty& _type);
-        virtual ~VBasicOperator() = default;
+        std::string op_name;
+        int param_num;
+        std::function<Data(const DataList&)> sem;
+        DataList param_list;
+        VPartialOpFunction(const std::string& _op_name, int _param_num, const std::function<Data(const DataList&)>& _sem, const DataList& _param_list);
+        virtual Data run(const Term& term, Context* ctx);
+        virtual ~VPartialOpFunction() = default;
     };
 
     Ty getValueType(Value* value);

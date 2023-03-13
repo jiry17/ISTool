@@ -15,21 +15,93 @@ using solver::autolifter::EnumerateInfo;
 UnitInfo::UnitInfo(const AuxProgram &_program, const Bitset &_info): program(_program), info(_info) {
 }
 
-
-namespace {
-    bool _evaluate(std::pair<int, int> example, FExampleSpace* example_space, const AuxProgram& program) {
-        auto [l_id, r_id] = example;
-        return !(example_space->runAux(l_id, program) == example_space->runAux(r_id, program));
-    }
+AuxProgramEvaluateUtil::AuxProgramEvaluateUtil(PLPTask *_task): task(_task) {
 }
 
 namespace {
-    int KDefaultComposedNum = 4;
+    class BasicAuxProgramEvaluateUtil: public AuxProgramEvaluateUtil {
+    public:
+        BasicAuxProgramEvaluateUtil(PLPTask* _task): AuxProgramEvaluateUtil(_task) {
+        }
+        virtual Data execute(const AuxProgram& program, int example_id) {
+            return task->runInp(example_id, program);
+        }
+        virtual std::vector<AuxProgram> constructAuxProgram(const AuxProgram& program) {
+            return {program};
+        }
+        virtual std::vector<AuxProgram> getDefaultAuxPrograms() {
+            return {};
+        }
+    };
+
+    class VarMergedAuxProgramEvaluateUtil: public AuxProgramEvaluateUtil {
+    public:
+        std::unordered_map<int, std::pair<int, std::vector<int>>> compress_var_pool;
+        std::unordered_map<int, int> compress_var_id;
+        bool is_include_direct;
+        std::vector<AuxProgram> default_list;
+
+        VarMergedAuxProgramEvaluateUtil(PLPTask* _task, bool _is_include_direct): AuxProgramEvaluateUtil(_task), is_include_direct(_is_include_direct) {
+            for (int i = 0; i < task->example_space->value_list.size(); ++i) {
+                auto& [name, type] = task->example_space->value_list[i];
+                auto* lct = dynamic_cast<incre::TLabeledCompress*>(type.get());
+                if (lct) {
+                    int id = lct->id;
+                    if (compress_var_pool.count(id) == 0) {
+                        compress_var_pool[id] = {i, {}};
+                    }
+                    compress_var_pool[id].second.push_back(i);
+                    compress_var_id[i] = id;
+                } else if (is_include_direct) {
+                    TypedProgram compress(type, program::buildParam(i)), aux(nullptr, nullptr);
+                    default_list.emplace_back(compress, aux);
+                }
+            }
+        }
+        virtual std::vector<AuxProgram> constructAuxProgram(const AuxProgram& program) {
+            auto* sp = dynamic_cast<ParamSemantics*>(program.first.second->semantics.get());
+            if (is_include_direct) {
+                if (!program.second.first && sp) return {};
+            }
+            if (!sp || !program.second.first) return {program};
+            int param_id = sp->id; assert(compress_var_id.count(param_id));
+            int compress_id = compress_var_id[param_id];
+            auto it = compress_var_pool.find(compress_id);
+            assert(it != compress_var_pool.end());
+            if (param_id != it->second.first) return {};
+
+            std::vector<AuxProgram> res;
+            for (int var_id: it->second.second) {
+                auto compress_program = std::make_pair(program.first.first, program::buildParam(var_id, sp->oup_type));
+                res.emplace_back(compress_program, program.second);
+            }
+            return res;
+        }
+        virtual std::vector<AuxProgram> getDefaultAuxPrograms() {
+            return default_list;
+        }
+        virtual Data execute(const AuxProgram& program, int example_id) {
+            DataList res;
+            for (auto& derived_program: constructAuxProgram(program)) {
+                res.push_back(task->runInp(example_id, derived_program));
+            }
+            return BuildData(Product, res);
+        }
+    };
+}
+
+namespace {
+    int KDefaultComposedNum = 3;
     int KDefaultExtraTurnNum = 0;
-    int KDefaultVerifyBaseNum = 300;
+    int KDefaultVerifyBaseNum = 100;
     int KDefaultExampleTimeOut = 10;
     int KDefaultEnlargeFactor = 2;
+    bool KDefaultIsMergeVar = true;
+    bool KDefaultIsIncludeDirect = false;
 }
+
+const std::string incre::autolifter::KIsMergeVarName = "IncreAutoLifter@IsMergeVar";
+const std::string incre::autolifter::KIsIncludeDirectValueName = "IncreAutoLifter@IsIncludeVar";
 
 IncrePLPSolver::IncrePLPSolver(Env *_env, PLPTask *_task): env(_env), task(_task) {
     auto* d = env->getConstRef(solver::autolifter::KComposedNumName, BuildData(Int, KDefaultComposedNum));
@@ -40,6 +112,18 @@ IncrePLPSolver::IncrePLPSolver(Env *_env, PLPTask *_task): env(_env), task(_task
     KVerifyBaseNum = theory::clia::getIntValue(*d);
     KExampleTimeOut = KDefaultExampleTimeOut;
     KExampleEnlargeFactor = KDefaultEnlargeFactor;
+
+    d = env->getConstRef(KIsMergeVarName, BuildData(Bool, KDefaultIsMergeVar));
+    auto is_var = env->getConstRef(KIsIncludeDirectValueName, BuildData(Bool, KDefaultIsIncludeDirect));
+    if (d->isTrue()) evaluate_util = new VarMergedAuxProgramEvaluateUtil(task, is_var->isTrue());
+    else evaluate_util = new BasicAuxProgramEvaluateUtil(task);
+}
+
+IncrePLPSolver::~IncrePLPSolver() {
+    for (auto& info_list: info_storage) {
+        for (auto* info: info_list) delete info;
+    }
+    delete evaluate_util;
 }
 
 namespace {
@@ -60,8 +144,11 @@ namespace {
 
 UnitInfo IncrePLPSolver::init(const AuxProgram& program) {
     Bitset info(example_list.size(), false);
+
     for (int i = 0; i < example_list.size(); ++i) {
-        if (_evaluate(example_list[i], task->example_space, program)) info.set(i, true);
+        if (!(evaluate_util->execute(program, example_list[i].first) == evaluate_util->execute(program, example_list[i].second))) {
+            info.set(i, true);
+        }
     }
     return {program, info};
 }
@@ -70,9 +157,20 @@ std::string IncrePLPSolver::example2String(const std::pair<int, int> &example) {
     auto r_string = task->example_space->example2String(example.second);
     return "(" + l_string + ", " + r_string + ")";
 }
+
+std::vector<AuxProgram> IncrePLPSolver::unfoldComponents(const std::vector<AuxProgram> &program_list) {
+    std::vector<AuxProgram> res = evaluate_util->getDefaultAuxPrograms();
+    for (auto& program: program_list) {
+        for (auto& derived_program: evaluate_util->constructAuxProgram(program)) {
+            res.push_back(derived_program);
+        }
+    }
+    return res;
+}
 void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
     for (auto& unit: component_info_list) {
-        unit.info.append(_evaluate(example, task->example_space, unit.program));
+        auto is_valid = !(evaluate_util->execute(unit.program, example.first) == evaluate_util->execute(unit.program, example.second));
+        unit.info.append(is_valid);
     }
     example_list.push_back(example);
 
@@ -332,9 +430,24 @@ std::vector<AuxProgram> IncrePLPSolver::synthesisFromExample(TimeGuard* guard) {
     }
 }
 
+namespace {
+    PSemantics _getSemantics(Grammar* grammar, const std::string& name) {
+        for (auto* symbol: grammar->symbol_list) {
+            for (auto* rule: symbol->rule_list) {
+                auto* cr = dynamic_cast<ConcreteRule*>(rule);
+                if (cr->semantics->getName() == name) {
+                    return cr->semantics;
+                }
+            }
+        }
+        LOG(FATAL) << "Operator " << name << " not found";
+    }
+}
+
 PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
     std::cout << std::endl << std::endl << std::endl;
     LOG(INFO) << "solve " << task->example_space->tau_id;
+    if (task->target.second) LOG(INFO) << "  " << task->target.second->toString();
     for (int i = 0; i < task->aux_grammar_list.size(); ++i) {
         auto* grammar = task->aux_grammar_list[i];
         std::cout << "aux grammar " << i << std::endl;
@@ -344,23 +457,49 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
     std::cout << "compress grammar" << std::endl;
     task->compress_grammar->grammar->print();
     std::cout << std::endl;
-    auto counter_example = verify({});
+    auto counter_example = verify(unfoldComponents({}));
     if (counter_example.first == -1) return {};
     LOG(INFO) << "Counter example " << example2String(counter_example);
     addExample(counter_example);
 
+    /*if (task->example_space->tau_id == 0) {
+        TypedProgram compress_program(task->example_space->value_list[1].second, program::buildParam(1));
+        std::vector<AuxProgram> aux_list;
+        auto param0 = program::buildParam(0);
+        for (auto op_name: {"run", "minimum", "length"}) {
+            auto sem = _getSemantics(task->aux_grammar_list[0]->grammar, op_name);
+            auto sem_prog = std::make_shared<Program>(sem, (ProgramList){});
+            auto app = _getSemantics(task->aux_grammar_list[0]->grammar, "app");
+            auto prog = std::make_shared<Program>(app, (ProgramList){sem_prog, param0});
+            TypedProgram aux_program(theory::clia::getTInt(), prog);
+            aux_list.emplace_back(compress_program, aux_program);
+        }
+        aux_list = unfoldComponents(aux_list);
+        LOG(INFO) << "test components " << _unitList2String(aux_list);
+        counter_example = verify(aux_list);
+        LOG(INFO) << "conuter example " << counter_example.first << " " << counter_example.second;
+        if (counter_example.first != -1) {
+            LOG(INFO) << "  " << example2String(counter_example);
+            for (auto unit: aux_list) {
+                std::cout << "  " << task->runInp(counter_example.first, unit).toString() << " " <<
+                          task->runInp(counter_example.second,unit).toString() << std::endl;
+            }
+        }
+        int kk; std::cin >> kk;
+    }*/
+
     while (true) {
         TimeCheck(guard);
-        auto candidate_result = synthesisFromExample(guard);
+        auto candidate_result = unfoldComponents(synthesisFromExample(guard));
         LOG(INFO) << "Candidate result " << _unitList2String(candidate_result);
 
         counter_example = verify(candidate_result);
         if (counter_example.first == -1) return candidate_result;
         addExample(counter_example);
         LOG(INFO) << "Counter example " << example2String(counter_example);
-        std::cout << task->runOup(counter_example.first).toString() << " " << task->runOup(counter_example.second).toString() << std::endl;
+        LOG(INFO) << task->runOup(counter_example.first).toString() << " " << task->runOup(counter_example.second).toString() << std::endl;
         for (auto unit: candidate_result) {
-            std::cout << "  " << task->runInp(counter_example.first, unit).toString() << " " <<
+            LOG(INFO) << "  " << task->runInp(counter_example.first, unit).toString() << " " <<
               task->runInp(counter_example.second,unit).toString() << std::endl;
         }
     }

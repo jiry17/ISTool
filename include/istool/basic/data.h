@@ -34,6 +34,7 @@ typedef std::vector<DataList> DataStorage;
 
 namespace data {
     std::string dataList2String(const DataList& data_list);
+    DataList concatDataList(const DataList& x, const DataList& y);
     DataStorage cartesianProduct(const DataStorage& separate_data);
 }
 

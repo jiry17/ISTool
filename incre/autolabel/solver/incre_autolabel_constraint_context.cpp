@@ -333,7 +333,10 @@ void autolabel::initZ3Context(ProgramData* init_program, Z3Context* ctx) {
                 auto* cb = dynamic_cast<CommandBind*>(command.get());
                 auto& bind = cb->binding;
                 switch (bind->getType()) {
-                    case BindingType::VAR: break;
+                    case BindingType::VAR: {
+                        auto* bt = dynamic_cast<VarTypeBinding*>(bind.get());
+                        ctx->bind(cb->name, bt->type); break;
+                    }
                     case BindingType::TYPE: {
                         auto* bt = dynamic_cast<TypeBinding*>(bind.get());
                         ctx->bind(cb->name, bt->type); break;

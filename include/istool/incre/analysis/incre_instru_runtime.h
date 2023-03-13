@@ -13,9 +13,9 @@
 namespace incre {
     struct IncreExampleData {
         int tau_id;
-        std::unordered_map<std::string, Data> inputs;
+        std::unordered_map<std::string, Data> local_inputs, global_inputs;
         Data oup;
-        IncreExampleData(int _tau_id, const std::unordered_map<std::string, Data>& _inputs, const Data& _oup);
+        IncreExampleData(int _tau_id, const std::unordered_map<std::string, Data>& _local, const std::unordered_map<std::string, Data>& _global, const Data& _oup);
         std::string toString() const;
         virtual ~IncreExampleData() = default;
     };
@@ -23,35 +23,52 @@ namespace incre {
     typedef std::shared_ptr<IncreExampleData> IncreExample;
     typedef std::vector<IncreExample> IncreExampleList;
 
-    class StartTermGenerator {
+    class IncreDataGenerator {
     public:
-        virtual Term getStartTerm() = 0;
-        virtual ~StartTermGenerator() = default;
+        Env* env;
+        IncreDataGenerator(Env* _env);
+        virtual Data getRandomData(TyData* type) = 0;
+        virtual ~IncreDataGenerator() = default;
     };
 
-    class DefaultStartTermGenerator: public StartTermGenerator {
+    class BaseValueGenerator: public IncreDataGenerator {
     public:
-        std::string func_name;
-        TyList inp_list;
-        std::minstd_rand random_engine;
-        DefaultStartTermGenerator(const std::string& _func_name, TyData* type);
-        virtual ~DefaultStartTermGenerator() = default;
-        virtual Term getStartTerm();
+        virtual Data getRandomData(TyData* type);
+        BaseValueGenerator(Env* _env);
+        virtual ~BaseValueGenerator() = default;
+    };
+
+    class FirstOrderFunctionGenerator: public BaseValueGenerator {
+    public:
+        virtual Data getRandomData(TyData* type);
+        FirstOrderFunctionGenerator(Env* _env);
+        virtual ~FirstOrderFunctionGenerator() = default;
+    };
+
+    class FixedPoolFunctionGenerator: public BaseValueGenerator {
+    public:
+        virtual Data getRandomData(TyData* type);
+        FixedPoolFunctionGenerator(Env* _env);
+        virtual ~FixedPoolFunctionGenerator() = default;
     };
 
     class IncreExamplePool {
     public:
         std::vector<IncreExampleList> example_pool;
         std::vector<std::unordered_set<std::string>> cared_vars;
-        StartTermGenerator* generator;
+        IncreDataGenerator* generator;
         Context* ctx;
-        void add(const IncreExample& example);
-        IncreExamplePool(Context* _ctx, const std::vector<std::unordered_set<std::string>>& _cared_vars, StartTermGenerator* _generator);
+
+        std::vector<std::pair<std::string, Ty>> input_list;
+        std::vector<std::pair<std::string, TyList>> start_list;
+        std::uniform_int_distribution<int> start_dist;
+        std::unordered_map<std::string, Data> current_global;
+
+        void add(int tau_id, const std::unordered_map<std::string, Data>& local, const Data& oup);
+        IncreExamplePool(ProgramData* program, Env* env, const std::vector<std::unordered_set<std::string>>& _cared_vars);
         void generateExample();
         ~IncreExamplePool();
     };
-
-    Context* buildCollectContext(const IncreProgram& program, IncreExamplePool* pool);
 }
 
 #endif //ISTOOL_INCRE_INSTRU_RUNTIME_H

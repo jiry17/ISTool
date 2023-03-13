@@ -17,8 +17,20 @@ namespace incre::autolifter {
         UnitInfo(const AuxProgram& _program, const Bitset& _info);
     };
 
+    class AuxProgramEvaluateUtil {
+    public:
+        PLPTask* task;
+        AuxProgramEvaluateUtil(PLPTask* _task);
+        virtual Data execute(const AuxProgram& program, int example_id) = 0;
+        virtual std::vector<AuxProgram> constructAuxProgram(const AuxProgram& program) = 0;
+        virtual std::vector<AuxProgram> getDefaultAuxPrograms() = 0;
+        virtual ~AuxProgramEvaluateUtil() = default;
+    };
+
     class IncrePLPSolver {
         std::string example2String(const std::pair<int, int>& example);
+        AuxProgramEvaluateUtil* evaluate_util;
+        std::vector<AuxProgram> unfoldComponents(const std::vector<AuxProgram>& program_list);
     public:
         int KComposedNum, KExtraTurnNum;
         Env* env;
@@ -60,8 +72,12 @@ namespace incre::autolifter {
 
     public:
         IncrePLPSolver(Env* _env, PLPTask* _task);
+        ~IncrePLPSolver();
         PLPRes synthesis(TimeGuard* guard);
     };
+
+    extern const std::string KIsMergeVarName;
+    extern const std::string KIsIncludeDirectValueName;
 }
 
 #endif //ISTOOL_INCRE_PLP_SOLVER_H

@@ -9,37 +9,25 @@
 using namespace incre;
 
 namespace {
-    int term2Int(const Term& term) {
-        auto* vt = dynamic_cast<TmValue*>(term.get());
-        if (!vt) LOG(FATAL) << "Expected integer, but got " << term->toString();
-        auto* iv = dynamic_cast<VInt*>(vt->data.get());
-        if (!iv) LOG(FATAL) << "Expected integer, but got " << term->toString();
-        return iv->w;
+    int getInt(const Data& data) {
+        return theory::clia::getIntValue(data);
+    }
+    bool getBool(const Data& data) {
+        return data.isTrue();
     }
 
-    bool term2Bool(const Term& term) {
-        auto* vt = dynamic_cast<TmValue*>(term.get());
-        if (!vt) LOG(FATAL) << "Expected integer, but got " << term->toString();
-        auto* bv = dynamic_cast<VBool*>(vt->data.get());
-        if (!bv) LOG(FATAL) << "Expected integer, but got " << term->toString();
-        return bv->w;
-    }
-
-#define Wrap(f, opname, ty) Data(std::make_shared<VBasicOperator>(f, opname, ty))
-#define WrapTerm(f, opname, ty) std::make_shared<TmValue>(Wrap(f, opname, ty))
+#define Wrap(opname, param_num, sem, ty) Data(std::make_shared<VOpFunction>(opname, param_num, sem, ty))
+#define WrapTerm(opname, param_num, sem, ty) std::make_shared<TmValue>(Wrap(opname, param_num, sem, ty))
 #define BuildArrow(in, out) std::make_shared<TyArrow>(std::make_shared<Ty ## in>(), std::make_shared<Ty ## out>())
 #define BuildBinaryOp(in1, in2, out) std::make_shared<TyArrow>(std::make_shared<Ty ## in1>(), BuildArrow(in2, out))
 #define BinaryOperator(name, itype, rtype, exp, opname, ty) \
     Term build ## name() { \
-    auto func = [](const Term& term) { \
-        int x = term2 ## itype(term); \
-        auto func = [x](const Term& term) { \
-            int y = term2 ## itype(term); \
-            return BuildData(rtype, exp); \
-        }; \
-        return Data(std::make_shared<VFunction>(func)); \
+    auto func = [](const DataList& inp) -> Data {           \
+        auto x = get ## itype(inp[0]);                      \
+        auto y = get ## itype(inp[1]);                      \
+        return BuildData(rtype, exp); \
     }; \
-    return WrapTerm(func, opname, ty); \
+    return WrapTerm(opname, 2, func, ty); \
 }
 
     BinaryOperator(Plus, Int, Int, x + y, "+", BuildBinaryOp(Int, Int, Int))
@@ -53,11 +41,11 @@ namespace {
     BinaryOperator(Or, Bool, Bool, x || y, "or", BuildBinaryOp(Bool, Bool, Bool))
 
     Term buildNot() {
-        auto func = [](const Term &term) {
-            int x = term2Bool(term);
+        auto func = [](const DataList& inps) {
+            int x = getBool(inps[0]);
             return Data(std::make_shared<VBool>(!x));
         };
-        return std::make_shared<TmValue>(Data(std::make_shared<VBasicOperator>(func, "not",
+        return std::make_shared<TmValue>(Data(std::make_shared<VOpFunction>("not", 1, func,
                 std::make_shared<TyArrow>(
                 std::make_shared<TyBool>(),std::make_shared<TyBool>()))));
     }

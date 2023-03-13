@@ -54,6 +54,12 @@ std::string data::dataList2String(const DataList &data_list) {
     return res;
 }
 
+DataList data::concatDataList(const DataList &x, const DataList &y) {
+    auto res = x;
+    for (auto& data: y) res.push_back(data);
+    return res;
+}
+
 namespace {
     void _cartesianProduct(int pos, const DataStorage& separate_data, DataList& cur, DataStorage& res) {
         if (pos == separate_data.size()) {

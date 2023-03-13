@@ -3,6 +3,7 @@
 //
 
 #include "istool/solver/polygen/polygen_condition_solver.h"
+#include "glog/logging.h"
 
 namespace {
     bool _isUseTerm(Env* env) {
@@ -50,9 +51,16 @@ PolyGenConditionSolver::PolyGenConditionSolver(Specification *_spec, const PSynt
 PProgram PolyGenConditionSolver::getCondition(const ProgramList &term_list, const IOExampleList &pos_list,
                                               const IOExampleList& neg_list, TimeGuard* guard) {
     PSynthInfo cond_info;
+    TypeList inp_types = spec->info_list[0]->inp_type_list;
+    /*LOG(INFO) << "Term List";
+    for (auto& term: term_list) LOG(INFO) << "  " << term->toString();
+    for (auto& example: pos_list) LOG(INFO) << example::ioExample2String(example);
+    for (auto& example: neg_list) LOG(INFO) << example::ioExample2String(example);
+    spec->info_list[0]->grammar->print();*/
     if (!KIsUseTerm) cond_info = info;
     else {
         auto term_type = spec->info_list[0]->oup_type;
+        for (const auto& term: term_list) inp_types.push_back(term_type);
         cond_info = _insertTermsToInfo(info, int(term_list.size()), term_type);
     }
     IOExampleList io_example_list;
@@ -65,7 +73,7 @@ PProgram PolyGenConditionSolver::getCondition(const ProgramList &term_list, cons
     if (KIsUseTerm) {
         _insertTermsToExample(io_example_list, term_list, spec->env.get());
     }
-    auto example_space = example::buildFiniteIOExampleSpace(io_example_list, spec->info_list[0]->name, spec->env.get());
+    auto example_space = example::buildFiniteIOExampleSpace(io_example_list, spec->info_list[0]->name, spec->env.get(), inp_types);
     auto* cond_spec = new Specification({cond_info}, spec->env, example_space);
     auto* cond_solver = builder(cond_spec);
 

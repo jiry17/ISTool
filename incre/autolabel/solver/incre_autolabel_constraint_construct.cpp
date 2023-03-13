@@ -128,7 +128,7 @@ IncreProgram autolabel::constructLabel(ProgramData *program, const z3::model &mo
         auto* bt = dynamic_cast<TermBinding*>(bind.get());
         auto new_term = _constructLabel(bt->term, model, ctx);
         auto new_bind = std::make_shared<TermBinding>(new_term);
-        commands.push_back(std::make_shared<CommandBind>(cb->name, new_bind));
+        commands.push_back(std::make_shared<CommandBind>(cb->name, new_bind, cb->decorate_set));
     }
     return std::make_shared<ProgramData>(commands);
 }

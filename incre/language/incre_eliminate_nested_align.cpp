@@ -289,7 +289,7 @@ IncreProgram incre::eliminateNestedAlign(ProgramData *program) {
         auto* tb = dynamic_cast<TermBinding*>(cb->binding.get());
         auto new_term = _eliminateNestedAlign(tb->term);
         auto new_bind = std::make_shared<TermBinding>(new_term);
-        commands.push_back(std::make_shared<CommandBind>(cb->name, new_bind));
+        commands.push_back(std::make_shared<CommandBind>(cb->name, new_bind, cb->decorate_set));
     }
     return std::make_shared<ProgramData>(commands);
 }

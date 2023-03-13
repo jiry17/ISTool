@@ -20,16 +20,33 @@ std::string FExampleSpace::example2String(const IOExample &example) {
     return res;
 }
 std::string FExampleSpace::example2String(int id) {
-    return example2String(example_list[id]);
+    return example_list[id].toString();
+}
+IncreIOExample::IncreIOExample(const DataList &_local, const DataList &_global, const Data &_oup):
+    local_input(_local), global_input(_global), oup(_oup) {
+    full_input = data::concatDataList(local_input, global_input);
+}
+DataList IncreIOExample::getAuxInput(const Data &compress) {
+    DataList res(global_input.size() + 1); res[0] = compress;
+    for (int i = 0; i < global_input.size(); ++i) {
+        res[i + 1] = global_input[i];
+    }
+    return res;
+}
+std::string IncreIOExample::toString() const {
+    return data::dataList2String(local_input) + "@" + data::dataList2String(global_input) + " -> " + oup.toString();
 }
 void FExampleSpace::addExample() {
     auto example = pool->example_pool[tau_id][example_list.size()];
 
-    DataList inp;
+    DataList local_input, global_input;
     for (auto& [var_name, _]: value_list) {
-        inp.push_back(example->inputs[var_name]);
+        local_input.push_back(example->local_inputs[var_name]);
     }
-    example_list.emplace_back(inp, example->oup);
+    for (auto& [var_name, _]: pool->input_list) {
+        global_input.push_back(example->global_inputs[var_name]);
+    }
+    example_list.emplace_back(local_input, global_input, example->oup);
 }
 int FExampleSpace::acquireExample(int target_num, TimeGuard *guard) {
     while (pool->example_pool[tau_id].size() < target_num && guard->getRemainTime() > 0) {
@@ -42,24 +59,66 @@ int FExampleSpace::acquireExample(int target_num, TimeGuard *guard) {
     return target_num;
 }
 FExampleSpace::FExampleSpace(IncreExamplePool *_pool, int _tau_id, const PEnv& _env, AlignTypeInfoData* info):
-        pool(_pool), tau_id(_tau_id), env(_env.get()) {
+        pool(_pool), tau_id(_tau_id), env(_env.get()), current_example_id(-1) {
 
     for (auto& [var_name, var_type]: info->inp_types) {
         value_list.emplace_back(var_name, incre::typeFromIncre(var_type));
     }
+    for (auto& [var_name, var_type]: pool->input_list) {
+        global_input_list.emplace_back(var_name, incre::typeFromIncre(var_type));
+    }
+}
+
+void FExampleSpace::switchTo(int example_id) {
+    if (current_example_id == example_id) return;
+    current_example_id = example_id;
+    for (int i = 0; i < global_input_list.size(); ++i) {
+        pool->ctx->addBinding(global_input_list[i].first, std::make_shared<TmValue>(example_list[example_id].global_input[i]));
+    }
+}
+
+namespace {
+    Data _extract(const Data& d, const std::vector<int>& path) {
+        Data res(d);
+        for (auto pos: path) {
+            auto* v = dynamic_cast<incre::VTuple*>(res.get());
+            assert(v && v->elements.size() > pos);
+            res = v->elements[pos];
+        }
+        auto* cv = dynamic_cast<incre::VCompress*>(res.get());
+        if (cv) return cv->content;
+        return res;
+    }
+}
+
+Data FExampleSpace::runCompress(int example_id, Program *prog) {
+    switchTo(example_id);
+    return env->run(prog, example_list[example_id].full_input);
+}
+Data FExampleSpace::runAux(int example_id, const Data& content, Program *prog) {
+    switchTo(example_id);
+    return env->run(prog, example_list[example_id].getAuxInput(content));
 }
 
 Data FExampleSpace::runAux(int example_id, const AuxProgram &aux) {
-    auto compress = env->run(aux.first.second.get(), example_list[example_id].first);
+    auto compress = runCompress(example_id, aux.first.second.get());
     if (aux.second.second) {
         auto* tv = dynamic_cast<VLabeledCompress*>(compress.get());
 #ifdef DEBUG
         auto* mid_type = dynamic_cast<TLabeledCompress*>(aux.first.first.get());
         assert(tv && mid_type && tv->id == mid_type->id);
 #endif
-        return env->run(aux.second.second.get(), {tv->content});
+        return runAux(example_id, tv->content, aux.second.second.get());
     }
     return compress;
+}
+Data FExampleSpace::runOup(int example_id, Program *program, const std::vector<int>& path) {
+    switchTo(example_id);
+    auto oup = _extract(example_list[example_id].oup, path);
+    if (program) {
+        return runAux(example_id, oup, program);
+    }
+    return oup;
 }
 
 PLPTask::PLPTask(FExampleSpace *_example_space, const std::vector<GrammarEnumerateTool *> &_aux_grammar_list,

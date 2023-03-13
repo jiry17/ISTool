@@ -4,25 +4,31 @@
 
 #include "istool/incre/analysis/incre_instru_runtime.h"
 #include "glog/logging.h"
+#include "istool/incre/language/incre_lookup.h"
+#include <iostream>
 
 using namespace incre;
 
-IncreExampleData::IncreExampleData(int _tau_id, const std::unordered_map<std::string, Data> &_inputs, const Data &_oup):
-    tau_id(_tau_id), inputs(_inputs), oup(_oup) {
+IncreExampleData::IncreExampleData(int _tau_id, const std::unordered_map<std::string, Data> &_local,
+                                   const std::unordered_map<std::string, Data> &_global, const Data &_oup):
+                                   tau_id(_tau_id), local_inputs(_local), global_inputs(_global), oup(_oup) {
 }
 std::string IncreExampleData::toString() const {
     std::string res = "(" + std::to_string(tau_id) + ") {";
     bool flag = false;
-    for (const auto& [name, t]: inputs) {
+    for (const auto& [name, t]: local_inputs) {
+        if (flag) res += ","; res += (name + ": " + t.toString()); flag = true;
+    }
+    res += "} @ {"; flag = false;
+    for (const auto& [name, t]: global_inputs) {
         if (flag) res += ","; res += (name + ": " + t.toString()); flag = true;
     }
     return res + "} -> " + oup.toString();
 }
-void IncreExamplePool::add(const IncreExample &example) {
-    int id = example->tau_id;
-    // LOG(INFO) << "Add " << example->toString();
-    while (example_pool.size() <= id) example_pool.emplace_back();
-    example_pool[id].push_back(example);
+
+void IncreExamplePool::add(int tau_id, const std::unordered_map<std::string, Data> &local, const Data &oup) {
+    while (example_pool.size() <= tau_id) example_pool.emplace_back();
+    example_pool[tau_id].push_back(std::make_shared<IncreExampleData>(tau_id, local, current_global, oup));
 }
 
 namespace {
@@ -113,6 +119,7 @@ namespace {
         return {std::make_shared<TmProj>(content_res, x->id), true};
     }
     SubstHead(LabeledAlign) {
+        assert(x);
         SubstRes(content);
         auto& cared_val = pool->cared_vars[x->id];
         if (!content_flag && cared_val.find(name) == cared_val.end()) return {_x, false};
@@ -122,7 +129,7 @@ namespace {
     }
 
     std::pair<Term, bool> _collectSubst(const Term& x, const std::string& name, const Term& y, IncreExamplePool* pool) {
-        // LOG(INFO) << "subst " << x->toString() << " " << name;
+        // LOG(INFO) << "subst " << x->toString() << " " << name << " " << y->toString();
         switch (x->getType()) {
             case TermType::VAR: SubstCase(Var);
             case TermType::MATCH: SubstCase(Match);
@@ -142,8 +149,6 @@ namespace {
     }
 
     Term collectSubst(const Term& x, const std::string& name, const Term& y, IncreExamplePool* pool) {
-        //LOG(INFO) << "collect subst " << x->toString() << " " << name;
-        //LOG(INFO) << "subst " << y->toString();
         return _collectSubst(x, name, y, pool).first;
     }
 
@@ -170,6 +175,10 @@ namespace {
         return content_res;
     }
     CollectHead(Abs) {
+        return Data(std::make_shared<VAbsFunction>(_term));
+    }
+    /*
+     *
         auto name = term->name;
         auto content = term->content;
         auto f = [name, content, ctx, pool](const Term& param) {
@@ -177,19 +186,30 @@ namespace {
             CollectSub2(c);
             return c_res;
         };
-        return Data(std::make_shared<VFunction>(f));
+     */
+
+    Data _runCollectFunc(VFunction* func, const Term& param, Context* ctx, IncreExamplePool* pool) {
+        auto* fa = dynamic_cast<VAbsFunction*>(func);
+        if (fa) {
+            auto name = fa->term->name; auto content = fa->term->content;
+            auto c = collectSubst(content, name, param, pool);
+            CollectSub2(c);
+            return c_res;
+        }
+        return func->run(param, ctx);
     }
+
     CollectHead(App) {
         CollectSub(func); CollectSub(param);
         auto* av = dynamic_cast<VFunction*>(func.get());
         assert(av);
-        return av->func(std::make_shared<TmValue>(param));
+        return _runCollectFunc(av, std::make_shared<TmValue>(param), ctx, pool);
     }
     CollectHead(Fix) {
         CollectSub(content);
         auto* av = dynamic_cast<VFunction*>(content.get());
         assert(av);
-        return av->func(_term);
+        return _runCollectFunc(av, _term, ctx, pool);
     }
     CollectHead(Match) {
         CollectSub(def);
@@ -232,8 +252,7 @@ namespace {
     CollectHead(LabeledAlign) {
         std::unordered_map<std::string, Data> inp = term->subst_info;
         CollectSub(content);
-        auto example = std::make_shared<IncreExampleData>(term->id, inp, content);
-        pool->add(example);
+        pool->add(term->id, inp, content);
         return content;
     }
     CollectHead(LabeledLabel) {
@@ -268,16 +287,8 @@ namespace {
     }
 }
 
-void IncreExamplePool::generateExample() {
-    auto start = generator->getStartTerm();
-    _collectExample(start, ctx, this);
-}
 IncreExamplePool::~IncreExamplePool() {
     delete generator;
-}
-IncreExamplePool::IncreExamplePool(Context *_ctx, const std::vector<std::unordered_set<std::string>> &_cared_vars,
-                                   StartTermGenerator *_generator):
-                                   ctx(_ctx), cared_vars(_cared_vars), generator(_generator) {
 }
 
 namespace {
@@ -296,11 +307,16 @@ namespace {
                     case BindingType::TERM: {
                         auto *term_bind = dynamic_cast<TermBinding *>(cb->binding.get());
                         auto ty = incre::getType(term_bind->term, ctx);
+                        LOG(INFO) << "collect for " << term_bind->term->toString();
                         Data res = _collectExample(term_bind->term, ctx, pool);
                         ctx->addBinding(cb->name, std::make_shared<TmValue>(res), ty);
                         return;
                     }
-                    case BindingType::VAR: return;
+                    case BindingType::VAR: {
+                        auto* var_bind = dynamic_cast<VarTypeBinding*>(cb->binding.get());
+                        ctx->addBinding(cb->name, var_bind->type);
+                        return;
+                    }
                 }
             }
             case CommandType::IMPORT: {
@@ -310,12 +326,66 @@ namespace {
             }
         }
     }
+
+    bool _isCompressRelevant(TyData* type) {
+        match::MatchTask task;
+        task.type_matcher = [](TyData* type, const match::MatchContext& ctx) -> bool {
+            return type->getType() == TyType::COMPRESS;
+        };
+        return match::match(type, task);
+    }
 }
 
-Context * incre::buildCollectContext(const IncreProgram &program, IncreExamplePool* pool) {
-    auto* ctx = new Context();
-    for (const auto& command: program->commands) {
-        _buildCollectContext(command, ctx, pool);
+IncreExamplePool::IncreExamplePool(ProgramData *program, Env* env,
+                                   const std::vector<std::unordered_set<std::string>> &_cared_vars): cared_vars(_cared_vars) {
+    generator = new FixedPoolFunctionGenerator(env);
+    ctx = new Context();
+    for (int command_id = 0; command_id < program->commands.size(); ++command_id) {
+        auto& command = program->commands[command_id];
+        _buildCollectContext(command, ctx, this);
+
+        if (command->getType() == CommandType::BIND) {
+            auto* cb = dynamic_cast<CommandBind*>(command.get());
+            auto type = ctx->getType(cb->name);
+            auto* type_ctx = new TypeContext(ctx);
+            type = incre::unfoldBasicType(type, type_ctx);
+            delete type_ctx;
+            if (cb->isDecoratedWith(CommandDecorate::INPUT)) {
+                if (_isCompressRelevant(type.get())) {
+                    LOG(FATAL) << "The input should not be compressed, but get " << type->toString();
+                }
+                input_list.emplace_back(cb->name, type);
+            }
+            if (cb->isDecoratedWith(CommandDecorate::START) || (command_id + 1 == program->commands.size() && start_list.empty())) {
+                if (_isCompressRelevant(type.get())) {
+                    LOG(FATAL) << "The output should not be compressed, but get " << type->toString();
+                }
+                TyList param_list;
+                auto* ty = dynamic_cast<TyArrow*>(type.get());
+                while (ty) {
+                    param_list.push_back(ty->source);
+                    ty = dynamic_cast<TyArrow*>(ty->target.get());
+                }
+                start_list.emplace_back(cb->name, param_list);
+            }
+        }
     }
-    return ctx;
+
+    start_dist = std::uniform_int_distribution<int>(0, int(start_list.size()) - 1);
+}
+
+void IncreExamplePool::generateExample() {
+    current_global.clear();
+    for (auto& [inp_name, inp_ty]: input_list) {
+        auto input_data = generator->getRandomData(inp_ty.get());
+        ctx->addBinding(inp_name, std::make_shared<TmValue>(input_data));
+        current_global[inp_name] = input_data;
+    }
+    auto& [start_name, params] = start_list[start_dist(generator->env->random_engine)];
+    Term term = std::make_shared<TmVar>(start_name);
+    for (auto& param_type: params) {
+        auto input_data = generator->getRandomData(param_type.get());
+        term = std::make_shared<TmApp>(term, std::make_shared<TmValue>(input_data));
+    }
+    _collectExample(term, ctx, this);
 }

@@ -86,14 +86,26 @@ namespace {
         void insertExample(const IOExample& example) {
             example_list.push_back(example);
         }
-        Data runOutput(const Ty& type, const Data& d) {
+        Data runFRes(const FRes& res, int example_id, const Data& content) {
+            if (res.component_list.empty()) return Data(std::make_shared<VUnit>());
+            if (res.component_list.size() == 1) {
+                return base_example_space->runAux(example_id, content, res.component_list[0].program.second.get());
+            }
+            DataList elements;
+            for (auto& component: res.component_list) {
+                auto res = base_example_space->runAux(example_id, content, component.program.second.get());
+                elements.push_back(res);
+            }
+            return Data(std::make_shared<VTuple>(elements));
+        }
+        Data runOutput(const Ty& type, int example_id, const Data& d) {
             if (type->getType() == TyType::TUPLE) {
                 auto* tt = dynamic_cast<TyTuple*>(type.get());
                 auto* tv = dynamic_cast<VTuple*>(d.get());
                 assert(tt && tv && tt->fields.size() == tv->elements.size());
                 DataList elements(tt->fields.size());
                 for (int i = 0; i < tt->fields.size(); ++i) {
-                    elements[i] = runOutput(tt->fields[i], tv->elements[i]);
+                    elements[i] = runOutput(tt->fields[i], example_id, tv->elements[i]);
                 }
                 return BuildData(Product, elements);
             }
@@ -101,7 +113,7 @@ namespace {
                 auto* ct = dynamic_cast<TyLabeledCompress*>(type.get());
                 auto* cv = dynamic_cast<VCompress*>(d.get());
                 assert(ct && cv);
-                return f_res_list[ct->id].run(cv->content, env.get());
+                return runFRes(f_res_list[ct->id], example_id, cv->content);
             }
             return d;
         }
@@ -110,26 +122,24 @@ namespace {
             assert(example_id < base_example_space->example_list.size());
 #endif
             auto& f_example = base_example_space->example_list[example_id];
-            auto& original_input = f_example.first;
-
             DataList inp;
 
             for (auto& [compress_type, compress_program]: compress_program_list) {
                 auto* ltc = dynamic_cast<TLabeledCompress*>(compress_type.get());
-                auto compress_res = env->run(compress_program.get(), original_input);
+                auto compress_res = base_example_space->runCompress(example_id, compress_program.get());
                 if (!ltc) {
                     inp.push_back(compress_res);
                 } else {
                     auto* lv = dynamic_cast<VLabeledCompress*>(compress_res.get());
                     assert(lv && ltc->id == lv->id);
                     for (auto& aux_program: f_res_list[lv->id].component_list) {
-                        auto aux_value = env->run(aux_program.program.second.get(), {lv->content});
+                        auto aux_value = base_example_space->runAux(example_id, lv->content, aux_program.program.second.get());
                         inp.push_back(aux_value);
                     }
                 }
             }
 
-            auto oup = runOutput(oup_ty, f_example.second);
+            auto oup = runOutput(oup_ty, example_id, f_example.oup);
             insertExample({inp, oup});
         }
         CExampleSpace(int _align_id, FExampleSpace* _base_example_space, IncreAutoLifterSolver* source):
@@ -226,12 +236,12 @@ namespace {
         return res;
     }
 
-    PProgram _synthesis(Grammar* grammar, const IOExampleList& example_list, const PEnv& env, SolverToken token) {
+    PProgram _synthesis(Grammar* grammar, const IOExampleList& example_list, const PEnv& env, SolverToken token, const TypeList& inp_types) {
         const std::string default_name = "func";
         if (example_list.empty()) {
             return grammar::getMinimalProgram(grammar);
         }
-        auto example_space = example::buildFiniteIOExampleSpace(example_list, default_name, env.get());
+        auto example_space = example::buildFiniteIOExampleSpace(example_list, default_name, env.get(), inp_types);
         auto info = std::make_shared<SynthInfo>(default_name, _getInpTypes(grammar), grammar->start->type, grammar);
         auto* spec = new Specification({info}, env, example_space);
         auto* v = new FiniteExampleVerifier(example_space.get());
@@ -267,8 +277,13 @@ namespace {
             // synthesis
             auto oup_type = component_info.program.first;
             auto* grammar = solver->buildCombinatorGrammar(example_space->inp_type_list, oup_type, example_space->align_id);
+
             SolverToken token = _getSolverToken(oup_type.get());
-            PProgram main = _synthesis(grammar, component_example_list, example_space->env, token);
+            PProgram main = _synthesis(grammar, component_example_list, example_space->env, token, example_space->inp_type_list);
+            LOG(INFO) << "Synthesize " << main->toString() << " from ";
+            for (int i = 0; i < 10 && i < component_example_list.size(); ++i) {
+                LOG(INFO) << "  " << example::ioExample2String(component_example_list[i]);
+            }
             res_list.push_back(main);
         }
         return _mergeComponentProgram(example_space->oup_ty.get(), res_list, example_space->f_res_list, example_space->env.get());
@@ -333,6 +348,9 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
     // Build Param List
     TermList compress_param_list;
     for (auto& [var_name, var_type]: info->align_infos[align_id]->inp_types) {
+        compress_param_list.push_back(std::make_shared<TmVar>(var_name));
+    }
+    for (auto& [var_name, var_type]: info->example_pool->input_list) {
         compress_param_list.push_back(std::make_shared<TmVar>(var_name));
     }
 

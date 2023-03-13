@@ -25,7 +25,6 @@ namespace incre {
         public:
             std::vector<FInfo> component_list;
             int insert(const TypedProgram& program);
-            Data run(const Data& inp, Env* env);
         };
 
         struct CompressRes {
@@ -56,6 +55,7 @@ namespace incre {
 
         PEnv env;
         std::vector<autolifter::FExampleSpace*> example_space_list;
+        TypeList global_input_type_list;
         std::vector<std::vector<autolifter::OutputUnit>> unit_storage;
 
         IncreAutoLifterSolver(IncreInfo* _info, const PEnv& _env);

@@ -8,18 +8,28 @@
 #include "incre_term.h"
 #include "incre_type.h"
 #include "incre_context.h"
+#include <unordered_set>
 
 namespace incre {
     enum class CommandType {
         IMPORT, BIND, DEF_IND
     };
 
+    enum class CommandDecorate {
+        INPUT, START
+    };
+
+    typedef std::unordered_set<CommandDecorate> DecorateSet;
+
     class CommandData {
         CommandType type;
     public:
-        CommandData(CommandType _type);
+        DecorateSet decorate_set;
+        CommandData(CommandType _type, const DecorateSet& _set);
         CommandType getType() const;
-        virtual std::string toString() const = 0;
+        bool isDecoratedWith(CommandDecorate deco) const;
+        std::string toString();
+        virtual std::string contentToString() const = 0;
         virtual ~CommandData() = default;
     };
 
@@ -31,7 +41,7 @@ namespace incre {
         std::string name;
         CommandList commands;
         CommandImport(const std::string& _name, const CommandList& _commands);
-        virtual std::string toString() const;
+        virtual std::string contentToString() const;
         virtual ~CommandImport() = default;
     };
 
@@ -39,8 +49,8 @@ namespace incre {
     public:
         std::string name;
         Binding binding;
-        CommandBind(const std::string& _name, const Binding& _binding);
-        virtual std::string toString() const;
+        CommandBind(const std::string& _name, const Binding& _binding, const DecorateSet& decorate_set);
+        virtual std::string contentToString() const;
         virtual ~CommandBind() = default;
     };
 
@@ -49,7 +59,7 @@ namespace incre {
         TyInductive* type;
         Ty _type;
         CommandDefInductive(const Ty& __type);
-        virtual std::string toString() const;
+        virtual std::string contentToString() const;
         virtual ~CommandDefInductive() = default;
     };
 
@@ -61,6 +71,9 @@ namespace incre {
         virtual ~ProgramData() = default;
     };
     typedef std::shared_ptr<ProgramData> IncreProgram;
+
+    CommandDecorate string2Decorate(const std::string& s);
+    std::string decorate2String(CommandDecorate deco);
 }
 
 #endif //ISTOOL_INCRE_PROGRAM_H

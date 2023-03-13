@@ -61,6 +61,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
     IOExampleList io_example_list;
     Example counter_example;
     auto result = semantics::buildSingleContext(info->name, start);
+    LOG(INFO) << "synthesis " << result.toString();
     if (v->verify(result, &counter_example)) {
         return result;
     }

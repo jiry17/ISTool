@@ -170,7 +170,9 @@ Binding incre::json2binding(const Json::Value &node) {
     LOG(FATAL) << "Unknown Binding";
 }
 
-Command incre::json2command(const Json::Value &node) {
+Command incre::json2command(const Json::Value &full_node) {
+    auto node = full_node["node"];
+    auto deco_node = full_node["decorates"];
     auto type = node["type"].asString();
     if (type == "import") {
         auto name = node["name"].asString();
@@ -184,7 +186,13 @@ Command incre::json2command(const Json::Value &node) {
     if (type == "bind") {
         auto name = node["name"].asString();
         auto content = incre::json2binding(node["def"]);
-        return std::make_shared<CommandBind>(name, content);
+
+        DecorateSet decorate_set;
+        for (auto& deco: deco_node) {
+            decorate_set.insert(string2Decorate(deco.asString()));
+        }
+
+        return std::make_shared<CommandBind>(name, content, decorate_set);
     }
     if (type == "defind") {
         auto ty = incre::json2ty(node["indtype"]);

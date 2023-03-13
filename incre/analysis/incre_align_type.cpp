@@ -98,6 +98,8 @@ namespace {
         auto full_type = incre::unfoldTypeWithLabeledCompress(type, ctx);
         return !incre::match::match(full_type.get(), task);
     }
+
+    // const bool KDefaultIsFirstOrder = false;
 }
 
 // todo: add unfold programs
@@ -105,6 +107,7 @@ AlignTypeInfoList incre::collectAlignType(const IncreProgram &program) {
     AlignTypeInfoList info;
     int command_id = 0;
 
+    // TODO: filter out fix functions even when KDefaultIsFirstOrder
     auto label = [](const Term& term, TypeContext* ctx, const ExternalTypeMap& ext) {
         auto* ct = dynamic_cast<TmLabeledLabel*>(term.get()); assert(ct);
         return std::make_shared<TyLabeledCompress>(incre::getType(ct->content, ctx, ext), ct->id);
@@ -116,10 +119,10 @@ AlignTypeInfoList incre::collectAlignType(const IncreProgram &program) {
 
         auto* mark_content = dynamic_cast<_MarkedTypeContext*>(ctx);
         std::unordered_map<std::string, Ty> inps;
-        LOG(INFO) << "Build input for " << id;
+        // LOG(INFO) << "Build input for " << id;
         for (const auto& [name, type]: ctx->binding_map) {
             if (mark_content->mark_count[name] && _isFirstOrder(type, ctx)) {
-                LOG(INFO) << "input " << name << " " << type->toString();
+                // LOG(INFO) << "input " << name << " " << type->toString();
                 inps[name] = incre::unfoldTypeWithLabeledCompress(type, ctx);
             }
         }
@@ -136,6 +139,7 @@ AlignTypeInfoList incre::collectAlignType(const IncreProgram &program) {
     };
     auto* ctx = new _MarkedTypeContext();
     for (command_id = 0; command_id < program->commands.size(); ++command_id) {
+        auto& command = program->commands[command_id];
         _runCommand(program->commands[command_id], ctx, type_checker);
         ctx->clear();
     }
