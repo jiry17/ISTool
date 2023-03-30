@@ -8,7 +8,7 @@
 #include "incre_autolabel.h"
 
 namespace incre::autolabel {
-    class TmLabeledLet: public TmLet {
+    /*class TmLabeledLet: public TmLet {
     public:
         Ty var_type;
         TmLabeledLet(const std::string& name, const Ty& _var_type, const Term& def, const Term& content);
@@ -25,7 +25,7 @@ namespace incre::autolabel {
         GreedyAutoLabelSolver(const AutoLabelTask& task);
         virtual IncreProgram label();
         virtual ~GreedyAutoLabelSolver() = default;
-    };
+    };*/
 }
 
 #endif //ISTOOL_INCRE_AUTOLABEL_GREEDY_SOLVER_H

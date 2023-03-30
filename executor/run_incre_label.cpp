@@ -26,7 +26,7 @@ const std::unordered_map<std::string, int> KVerifyBaseNumConfig = {
 };
 
 int main(int argv, char** argc) {
-    auto name = "fusion_test";
+    auto name = "dac_mps";
 
     std::string path = config::KSourcePath + "tests/incre/benchmark/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
