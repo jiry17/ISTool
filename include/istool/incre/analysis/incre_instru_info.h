@@ -25,31 +25,7 @@ namespace incre {
     typedef std::shared_ptr<AlignTypeInfoData> AlignTypeInfo;
     typedef std::vector<AlignTypeInfo> AlignTypeInfoList;
 
-    class ComponentSemantics: public ConstSemantics {
-    public:
-        ComponentSemantics(const Data& _data, const std::string& _name);
-        virtual ~ComponentSemantics() = default;
-    };
 
-    enum class ComponentType {
-        BOTH, AUX, COMB
-    };
-
-    typedef std::function<Term(const TermList&)> TermBuilder;
-
-    class SynthesisComponent {
-    public:
-        ComponentType type;
-        TypeList inp_types;
-        PType oup_type;
-        PSemantics semantics;
-        TermBuilder builder;
-        InputComponentInfo info;
-        virtual Term buildTerm(const TermList& term_list);
-        SynthesisComponent(ComponentType _type, const TypeList& _inp_types, const PType& _oup_type, const PSemantics& _semantics, const TermBuilder& builder,
-                const InputComponentInfo& _info);
-        virtual ~SynthesisComponent() = default;
-    };
 
     class IncreInfo {
     public:

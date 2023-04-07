@@ -62,7 +62,7 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
         }
     }
 
-    auto* pool = new IncreExamplePool(labeled_program.get(), env, cared_vals);
+    auto* pool = new IncreExamplePool(labeled_program, env, cared_vals);
 
     // build components
     auto component_list = incre::collectComponentList(pool->ctx, env, incre::getComponentInfo(program));

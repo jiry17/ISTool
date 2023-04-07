@@ -2,13 +2,17 @@ cmake_minimum_required(VERSION 3.13)
 project(ISTool)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++17 -Ofast")
+
 #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++17 -O0")
 add_definitions(-DDEBUG)
 
 INCLUDE(FindPkgConfig)
 include_directories(include)
+find_package(Threads)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_definitions(-DLINUX)
@@ -37,7 +41,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     #  include_directories(${LIBPROFILER_INCLUDE_DIRS})
     #  set(PROFILER_FILE ${LIBPROFILER_LIBRARIES})
     #endif()
-    set(THIRDPARTY_LIBS glog gflags ${Jsoncpp_LIBRARY} ${Z3_FILE} ${GUROBI_FILE} ${PROFILER_FILE})
+    set(THIRDPARTY_LIBS glog gflags ${Jsoncpp_LIBRARY} ${Z3_FILE} ${GUROBI_FILE} ${PROFILER_FILE} ${CMAKE_THREAD_LIBS_INIT})
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     #z3
     set(Z3_PATH /Users/pro/Desktop/work/2023S/z3)
@@ -60,7 +64,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(GUROBI_FILE libgurobi_c++.a libgurobi91.dylib)
 
     # libs
-    set(THIRDPARTY_LIBS ${Jsoncpp_LIBRARY} ${Z3_FILE} ${GUROBI_FILE} ${PROFILER_FILE} ${GLOG_FILE})
+    set(THIRDPARTY_LIBS ${Jsoncpp_LIBRARY} ${Z3_FILE} ${GUROBI_FILE} ${PROFILER_FILE} ${GLOG_FILE} ${CMAKE_THREAD_LIBS_INIT})
 else()
     message(FATAL_ERROR "Unexceptional system ${CMAKE_SYSTEM_NAME}")
 endif()

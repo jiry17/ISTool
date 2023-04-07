@@ -383,7 +383,7 @@ FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, 
         }
         for (int clause_num = 1; clause_num <= or_limit; ++clause_num) {
             for (int si = 0; si < info_storage.size(); ++si) {
-                LOG(INFO) << "solve " << clause_num << " " << si;
+                // LOG(INFO) << "solve " << clause_num << " " << si;
                 if (visited_set.find({clause_num, si}) != visited_set.end()) continue;
                 TimeCheck(guard);
                 visited_set.insert({clause_num, si});

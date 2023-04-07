@@ -4,6 +4,7 @@
 
 #include "istool/incre/io/incre_from_json.h"
 #include "istool/basic/config.h"
+#include "glog/logging.h"
 
 using namespace incre;
 

@@ -52,23 +52,40 @@ namespace incre {
         virtual ~FixedPoolFunctionGenerator() = default;
     };
 
+    class IncreExampleCollector {
+    public:
+        std::vector<IncreExampleList> example_pool;
+        std::vector<std::unordered_set<std::string>> cared_vars;
+        Context* ctx;
+        std::unordered_map<std::string, Data> current_global;
+        IncreExampleCollector(const std::vector<std::unordered_set<std::string>>& _cared_vars, ProgramData* _program);
+        void add(int tau_id, const std::unordered_map<std::string, Data>& local, const Data& oup);
+        void collect(const Term& start, const std::unordered_map<std::string, Data>& _global);
+        ~IncreExampleCollector();
+    };
+
     class IncreExamplePool {
     public:
         std::vector<IncreExampleList> example_pool;
         std::vector<std::unordered_set<std::string>> cared_vars;
         IncreDataGenerator* generator;
+        int thread_num;
         Context* ctx;
+        IncreProgram program;
 
         std::vector<std::pair<std::string, Ty>> input_list;
         std::vector<std::pair<std::string, TyList>> start_list;
         std::uniform_int_distribution<int> start_dist;
-        std::unordered_map<std::string, Data> current_global;
 
-        void add(int tau_id, const std::unordered_map<std::string, Data>& local, const Data& oup);
-        IncreExamplePool(ProgramData* program, Env* env, const std::vector<std::unordered_set<std::string>>& _cared_vars);
-        void generateExample();
+        void merge(IncreExampleCollector* collector);
+        std::pair<Term, std::unordered_map<std::string, Data>> generateStart();
+        IncreExamplePool(const IncreProgram& _program, Env* env, const std::vector<std::unordered_set<std::string>>& _cared_vars);
+        void generateSingleExample();
+        void generateBatchedExample(int tau_id, int target_num, TimeGuard* guard);
         ~IncreExamplePool();
     };
+
+    extern const std::string KExampleThreadName;
 }
 
 #endif //ISTOOL_INCRE_INSTRU_RUNTIME_H

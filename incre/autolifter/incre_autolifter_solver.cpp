@@ -201,7 +201,14 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
     }
 }
 
+#include "istool/basic/config.h"
+
 IncreSolution IncreAutoLifterSolver::solve() {
-    solveAuxiliaryProgram(); solveCombinators();
+    global::recorder.start("syn-align");
+    solveAuxiliaryProgram();
+    global::recorder.end("syn-align");
+    global::recorder.start("syn-comb");
+    solveCombinators();
+    global::recorder.end("syn-comb");
     return {f_type_list, comb_list};
 }

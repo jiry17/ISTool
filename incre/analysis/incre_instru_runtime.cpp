@@ -6,6 +6,9 @@
 #include "glog/logging.h"
 #include "istool/incre/language/incre_lookup.h"
 #include <iostream>
+#include <mutex>
+#include <thread>
+#include <queue>
 
 using namespace incre;
 
@@ -25,20 +28,31 @@ std::string IncreExampleData::toString() const {
     }
     return res + "} -> " + oup.toString();
 }
-
-void IncreExamplePool::add(int tau_id, const std::unordered_map<std::string, Data> &local, const Data &oup) {
+IncreExampleCollector::~IncreExampleCollector() {
+    delete ctx;
+}
+void IncreExampleCollector::add(int tau_id, const std::unordered_map<std::string, Data> &local, const Data &oup) {
     while (example_pool.size() <= tau_id) example_pool.emplace_back();
     example_pool[tau_id].push_back(std::make_shared<IncreExampleData>(tau_id, local, current_global, oup));
 }
 
+void IncreExamplePool::merge(IncreExampleCollector *collector) {
+    while (collector->example_pool.size() > example_pool.size()) example_pool.emplace_back();
+    for (int i = 0; i < collector->example_pool.size(); ++i) {
+        for (auto& example: collector->example_pool[i]) {
+            example_pool[i].push_back(example);
+        }
+    }
+}
+
 namespace {
 
-    std::pair<Term, bool> _collectSubst(const Term& x, const std::string& name, const Term& y, IncreExamplePool* pool);
+    std::pair<Term, bool> _collectSubst(const Term& x, const std::string& name, const Term& y, IncreExampleCollector* collector);
 
-#define SubstHead(ty) std::pair<Term, bool> _collectSubst(Tm ## ty *x, const Term& _x, const std::string& name, const Term& y, IncreExamplePool* pool)
-#define SubstCase(ty) return _collectSubst(dynamic_cast<Tm ## ty*>(x.get()), x, name, y, pool)
-#define SubstRes(field) auto [field ## _res, field ##_flag] = _collectSubst(x->field, name, y, pool)
-#define SubstRes2(field) auto [field ## _res, field ## _flag] = _collectSubst(field, name, y, pool)
+#define SubstHead(ty) std::pair<Term, bool> _collectSubst(Tm ## ty *x, const Term& _x, const std::string& name, const Term& y, IncreExampleCollector* collector)
+#define SubstCase(ty) return _collectSubst(dynamic_cast<Tm ## ty*>(x.get()), x, name, y, collector)
+#define SubstRes(field) auto [field ## _res, field ##_flag] = _collectSubst(x->field, name, y, collector)
+#define SubstRes2(field) auto [field ## _res, field ## _flag] = _collectSubst(field, name, y, collector)
 
     SubstHead(Var) {
         if (x->name == name) return {y, true};
@@ -121,14 +135,14 @@ namespace {
     SubstHead(LabeledAlign) {
         assert(x);
         SubstRes(content);
-        auto& cared_val = pool->cared_vars[x->id];
+        auto& cared_val = collector->cared_vars[x->id];
         if (!content_flag && cared_val.find(name) == cared_val.end()) return {_x, false};
         auto res = std::make_shared<TmLabeledAlign>(content_res, x->id, x->subst_info);
         if (cared_val.find(name) != cared_val.end()) res->addSubst(name, incre::run(y, nullptr));
         return {res, true};
     }
 
-    std::pair<Term, bool> _collectSubst(const Term& x, const std::string& name, const Term& y, IncreExamplePool* pool) {
+    std::pair<Term, bool> _collectSubst(const Term& x, const std::string& name, const Term& y, IncreExampleCollector* collector) {
         // LOG(INFO) << "subst " << x->toString() << " " << name << " " << y->toString();
         switch (x->getType()) {
             case TermType::VAR: SubstCase(Var);
@@ -148,16 +162,16 @@ namespace {
         }
     }
 
-    Term collectSubst(const Term& x, const std::string& name, const Term& y, IncreExamplePool* pool) {
-        return _collectSubst(x, name, y, pool).first;
+    Term collectSubst(const Term& x, const std::string& name, const Term& y, IncreExampleCollector* collector) {
+        return _collectSubst(x, name, y, collector).first;
     }
 
-    Data _collectExample(const Term &term, Context *ctx, IncreExamplePool* pool);
+    Data _collectExample(const Term &term, Context *ctx, IncreExampleCollector* collector);
 
-#define CollectHead(name) Data _collectExample(Tm ## name* term, const Term& _term, Context* ctx, IncreExamplePool* pool)
-#define CollectCase(name) return _collectExample(dynamic_cast<Tm ## name*>(term.get()), term, ctx, pool)
-#define CollectSub(name) auto name = _collectExample(term->name, ctx, pool)
-#define CollectSub2(name) auto name ## _res = _collectExample(name, ctx, pool)
+#define CollectHead(name) Data _collectExample(Tm ## name* term, const Term& _term, Context* ctx, IncreExampleCollector* collector)
+#define CollectCase(name) return _collectExample(dynamic_cast<Tm ## name*>(term.get()), term, ctx, collector)
+#define CollectSub(name) auto name = _collectExample(term->name, ctx, collector)
+#define CollectSub2(name) auto name ## _res = _collectExample(name, ctx, collector)
 
     CollectHead(Value) {
         return term->data;
@@ -170,29 +184,19 @@ namespace {
     }
     CollectHead(Let) {
         CollectSub(def);
-        auto content = collectSubst(term->content, term->name, std::make_shared<TmValue>(def), pool);
+        auto content = collectSubst(term->content, term->name, std::make_shared<TmValue>(def), collector);
         CollectSub2(content);
         return content_res;
     }
     CollectHead(Abs) {
         return Data(std::make_shared<VAbsFunction>(_term));
     }
-    /*
-     *
-        auto name = term->name;
-        auto content = term->content;
-        auto f = [name, content, ctx, pool](const Term& param) {
-            auto c = collectSubst(content, name, param, pool);
-            CollectSub2(c);
-            return c_res;
-        };
-     */
 
-    Data _runCollectFunc(VFunction* func, const Term& param, Context* ctx, IncreExamplePool* pool) {
+    Data _runCollectFunc(VFunction* func, const Term& param, Context* ctx, IncreExampleCollector* collector) {
         auto* fa = dynamic_cast<VAbsFunction*>(func);
         if (fa) {
             auto name = fa->term->name; auto content = fa->term->content;
-            auto c = collectSubst(content, name, param, pool);
+            auto c = collectSubst(content, name, param, collector);
             CollectSub2(c);
             return c_res;
         }
@@ -203,13 +207,13 @@ namespace {
         CollectSub(func); CollectSub(param);
         auto* av = dynamic_cast<VFunction*>(func.get());
         assert(av);
-        return _runCollectFunc(av, std::make_shared<TmValue>(param), ctx, pool);
+        return _runCollectFunc(av, std::make_shared<TmValue>(param), ctx, collector);
     }
     CollectHead(Fix) {
         CollectSub(content);
         auto* av = dynamic_cast<VFunction*>(content.get());
         assert(av);
-        return _runCollectFunc(av, _term, ctx, pool);
+        return _runCollectFunc(av, _term, ctx, collector);
     }
     CollectHead(Match) {
         CollectSub(def);
@@ -219,7 +223,7 @@ namespace {
                 auto res = branch;
                 for (int i = int(binds.size()) - 1; i >= 0; --i) {
                     auto& [name, bind] = binds[i];
-                    res = collectSubst(res, name, bind, pool);
+                    res = collectSubst(res, name, bind, collector);
                 }
                 CollectSub2(res);
                 return res_res;
@@ -252,7 +256,7 @@ namespace {
     CollectHead(LabeledAlign) {
         std::unordered_map<std::string, Data> inp = term->subst_info;
         CollectSub(content);
-        pool->add(term->id, inp, content);
+        collector->add(term->id, inp, content);
         return content;
     }
     CollectHead(LabeledLabel) {
@@ -265,9 +269,9 @@ namespace {
         assert(cv); return cv->content;
     }
 
-    Data _collectExample(const Term &term, Context *ctx, IncreExamplePool* pool) {
-        //std::cout << std::endl;
-        //LOG(INFO) << "Collect " << term->toString();
+    Data _collectExample(const Term &term, Context *ctx, IncreExampleCollector* collector) {
+        // std::cout << std::endl;
+        // LOG(INFO) << "Collect " << term->toString();
         switch (term->getType()) {
             case TermType::VALUE: CollectCase(Value);
             case TermType::PROJ: CollectCase(Proj);
@@ -292,7 +296,7 @@ IncreExamplePool::~IncreExamplePool() {
 }
 
 namespace {
-    void _buildCollectContext(const Command& command, Context* ctx, IncreExamplePool* pool) {
+    void _buildCollectContext(const Command& command, Context* ctx, IncreExampleCollector* collector) {
         switch (command->getType()) {
             case CommandType::DEF_IND: {
                 incre::run(command, ctx); return;
@@ -307,8 +311,8 @@ namespace {
                     case BindingType::TERM: {
                         auto *term_bind = dynamic_cast<TermBinding *>(cb->binding.get());
                         auto ty = incre::getType(term_bind->term, ctx);
-                        LOG(INFO) << "collect for " << term_bind->term->toString();
-                        Data res = _collectExample(term_bind->term, ctx, pool);
+                        // LOG(INFO) << "collect for " << term_bind->term->toString();
+                        Data res = _collectExample(term_bind->term, ctx, collector);
                         ctx->addBinding(cb->name, std::make_shared<TmValue>(res), ty);
                         return;
                     }
@@ -321,10 +325,18 @@ namespace {
             }
             case CommandType::IMPORT: {
                 auto* ci = dynamic_cast<CommandImport*>(command.get());
-                for (auto& c: ci->commands) _buildCollectContext(c, ctx, pool);
+                for (auto& c: ci->commands) _buildCollectContext(c, ctx, collector);
                 return;
             }
         }
+    }
+
+    Context* _buildCollectContext(ProgramData* program, IncreExampleCollector* collector) {
+        auto* ctx = new Context();
+        for (auto& command: program->commands) {
+            _buildCollectContext(command, ctx, collector);
+        }
+        return ctx;
     }
 
     bool _isCompressRelevant(TyData* type) {
@@ -334,15 +346,22 @@ namespace {
         };
         return match::match(type, task);
     }
+
+    const int KDefaultThreadNum = 8;
 }
 
-IncreExamplePool::IncreExamplePool(ProgramData *program, Env* env,
-                                   const std::vector<std::unordered_set<std::string>> &_cared_vars): cared_vars(_cared_vars) {
-    generator = new FixedPoolFunctionGenerator(env);
-    ctx = new Context();
+IncreExampleCollector::IncreExampleCollector(const std::vector<std::unordered_set<std::string>> &_cared_vars,
+                                             ProgramData* _program): cared_vars(_cared_vars) {
+    ctx = _buildCollectContext(_program, this);
+}
+
+IncreExamplePool::IncreExamplePool(const IncreProgram& _program, Env* env,
+                                   const std::vector<std::unordered_set<std::string>> &_cared_vars):
+                                   program(_program), cared_vars(_cared_vars) {
+    generator = new FixedPoolFunctionGenerator(env); ctx = new Context();
     for (int command_id = 0; command_id < program->commands.size(); ++command_id) {
         auto& command = program->commands[command_id];
-        _buildCollectContext(command, ctx, this);
+        incre::run(command, ctx);
 
         if (command->getType() == CommandType::BIND) {
             auto* cb = dynamic_cast<CommandBind*>(command.get());
@@ -372,14 +391,24 @@ IncreExamplePool::IncreExamplePool(ProgramData *program, Env* env,
     }
 
     start_dist = std::uniform_int_distribution<int>(0, int(start_list.size()) - 1);
+    auto data = env->getConstRef(incre::KExampleThreadName, BuildData(Int, KDefaultThreadNum));
+    thread_num = theory::clia::getIntValue(*data);
 }
 
-void IncreExamplePool::generateExample() {
-    current_global.clear();
+#include "istool/basic/config.h"
+
+void IncreExampleCollector::collect(const Term &start, const std::unordered_map<std::string, Data> &_global) {
+    current_global = _global;
+    // LOG(INFO) << "collect " << start->toString();
+    _collectExample(start, ctx, this);
+}
+
+std::pair<Term, std::unordered_map<std::string, Data>> IncreExamplePool::generateStart() {
+    std::unordered_map<std::string, Data> global;
     for (auto& [inp_name, inp_ty]: input_list) {
         auto input_data = generator->getRandomData(inp_ty.get());
         ctx->addBinding(inp_name, std::make_shared<TmValue>(input_data));
-        current_global[inp_name] = input_data;
+        global[inp_name] = input_data;
     }
     auto& [start_name, params] = start_list[start_dist(generator->env->random_engine)];
     Term term = std::make_shared<TmVar>(start_name);
@@ -387,5 +416,92 @@ void IncreExamplePool::generateExample() {
         auto input_data = generator->getRandomData(param_type.get());
         term = std::make_shared<TmApp>(term, std::make_shared<TmValue>(input_data));
     }
-    _collectExample(term, ctx, this);
+    return {term, global};
 }
+
+namespace {
+    class _MultiThreadCollectorHolder {
+    public:
+        IncreExamplePool* pool;
+        std::mutex input_lock, num_lock;
+        int tau_id, target_num, thread_num, num;
+        std::queue<std::pair<Term, std::unordered_map<std::string, Data>>> input_queue;
+        TimeGuard* guard;
+
+        _MultiThreadCollectorHolder(IncreExamplePool* _pool, int _tau_id, int _target_num, TimeGuard* _guard):
+            pool(_pool), tau_id(_tau_id), target_num(_target_num), guard(_guard), thread_num(pool->thread_num) {
+            if (pool->example_pool.size() <= tau_id) num = 0; else num = pool->example_pool[tau_id].size();
+        }
+        int getCollectedNum(IncreExampleCollector* collector) {
+            if (collector->example_pool.size() <= tau_id) return 0;
+            return collector->example_pool[tau_id].size();
+        }
+        void collect() {
+            std::vector<std::thread> thread_list;
+
+            auto single_thread = [&](IncreExampleCollector* collector, int id) {
+                int pre_num = 0;
+                while (!guard || guard->getRemainTime() > 0) {
+                    num_lock.lock();
+                    if (num >= target_num) {
+                        num_lock.unlock(); break;
+                    }
+                    num_lock.unlock();
+
+                    input_lock.lock();
+                    if (input_queue.empty()) {
+                        int generate_num = thread_num * 100;
+                        for (int i = 0; i < generate_num; ++i) {
+                            input_queue.push(pool->generateStart());
+                        }
+                    }
+                    auto [start, global] = input_queue.front();
+                    input_queue.pop();
+                    input_lock.unlock();
+
+                    collector->collect(start, global);
+                    int current_num = getCollectedNum(collector);
+                    int incre_num = current_num - pre_num; pre_num = current_num;
+
+                    num_lock.lock();
+                    num += incre_num;
+                    num_lock.unlock();
+                }
+                return;
+            };
+
+            std::vector<IncreExampleCollector*> collector_list;
+
+            for (int i = 0; i < thread_num; ++i) {
+                auto* collector = new IncreExampleCollector(pool->cared_vars, pool->program.get());
+                collector_list.push_back(collector);
+                thread_list.emplace_back(single_thread, collector, i);
+            }
+            for (int i = 0; i < thread_num; ++i) {
+                thread_list[i].join();
+                pool->merge(collector_list[i]);
+            }
+        }
+
+    };
+}
+
+void IncreExamplePool::generateSingleExample() {
+    auto [term, global] = generateStart();
+    auto* collector = new IncreExampleCollector(cared_vars, program.get());
+
+    global::recorder.start("collect");
+    collector->collect(term, global);
+    merge(collector);
+    global::recorder.end("collect");
+}
+
+void IncreExamplePool::generateBatchedExample(int tau_id, int target_num, TimeGuard *guard) {
+    auto* holder = new _MultiThreadCollectorHolder(this, tau_id, target_num, guard);
+    global::recorder.start("collect");
+    holder->collect();
+    global::recorder.end("collect");
+    delete holder;
+}
+
+const std::string incre::KExampleThreadName = "KIncreExampleCollectNum";

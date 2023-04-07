@@ -257,23 +257,30 @@ namespace {
 #define TI std::make_shared<TyInt>()
 #define TARROW(s, t) std::make_shared<TyArrow>(s, t)
 
-    const TermList KBinaryIntOperator = {
-            BuildIntBinary(X), BuildIntBinary(Y), BuildIntBinary(OP("+", X, Y)),
-            BuildIntBinary(ITE(OP("<", X, Y), X, Y)), BuildIntBinary(ITE(OP("<", Y, X), X, Y)),
-            BuildIntBinary(OP("+", X, IVAL(1))), BuildIntBinary(OP("+", IVAL(1), Y))
-    };
-    const TermList KUnaryIntOperator = {
-            BuildIntUnary("x", X), BuildIntUnary("x", OP("+", X, IVAL(1))), BuildIntUnary("x", IVAL(1))
-    };
-    const std::vector<std::pair<Ty, TermList>> KOperatorPool = {
-            {TARROW(TI, TI), KUnaryIntOperator}, {TARROW(TI, TARROW(TI, TI)), KBinaryIntOperator}
-    };
+    TermList KBinaryIntOperator, KUnaryIntOperator;
+    std::vector<std::pair<Ty, TermList>> KOperatorPool;
+
+    void _initOperatorPool() {
+        if (!KBinaryIntOperator.empty()) return;
+        KBinaryIntOperator = {
+                BuildIntBinary(X), BuildIntBinary(Y), BuildIntBinary(OP("+", X, Y)),
+                BuildIntBinary(ITE(OP("<", X, Y), X, Y)), BuildIntBinary(ITE(OP("<", Y, X), X, Y)),
+                BuildIntBinary(OP("+", X, IVAL(1))), BuildIntBinary(OP("+", IVAL(1), Y))
+        };
+        KUnaryIntOperator = {
+                BuildIntUnary("x", X), BuildIntUnary("x", OP("+", X, IVAL(1))), BuildIntUnary("x", IVAL(1))
+        };
+        KOperatorPool = {
+                {TARROW(TI, TI), KUnaryIntOperator}, {TARROW(TI, TARROW(TI, TI)), KBinaryIntOperator}
+        };
+    }
 }
 
 FixedPoolFunctionGenerator::FixedPoolFunctionGenerator(Env *_env): BaseValueGenerator(_env) {
 }
 
 Data FixedPoolFunctionGenerator::getRandomData(TyData *type) {
+    _initOperatorPool();
     for (auto& [ty, pool]: KOperatorPool) {
         if (type->toString() == ty->toString()) {
             std::uniform_int_distribution<int> d(0, int(pool.size()) - 1);

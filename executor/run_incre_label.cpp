@@ -26,16 +26,17 @@ const std::unordered_map<std::string, int> KVerifyBaseNumConfig = {
 };
 
 int main(int argv, char** argc) {
-    auto name = "dac_mps";
+    auto name = "01knapsack";
 
     std::string path = config::KSourcePath + "tests/incre/benchmark/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
     std::string target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
     auto init_program = incre::parseFromF(path, true);
 
-
+    global::recorder.start("label");
     auto* label_solver = new autolabel::AutoLabelZ3Solver(init_program);
     auto res = label_solver->label();
+    global::recorder.end("label");
 
     res = incre::eliminateNestedAlign(res.get());
     incre::printProgram(res, label_path);
@@ -56,7 +57,7 @@ int main(int argv, char** argc) {
     auto* info = incre::buildIncreInfo(res, env.get());
 
     for (int i = 1; i <= 100; ++i) {
-        info->example_pool->generateExample();
+        info->example_pool->generateSingleExample();
     }
 
     for (auto& align_info: info->align_infos) {
@@ -68,13 +69,18 @@ int main(int argv, char** argc) {
         }
     }
 
+    // LOG(INFO) << "Pre execute time " << global::recorder.query("execute");
+
     auto* solver = new incre::IncreAutoLifterSolver(info, env);
     auto solution = solver->solve();
     solution.print();
+    // LOG(INFO) << "After execute time " << global::recorder.query("execute");
 
     auto full_res = incre::rewriteWithIncreSolution(info->program.get(), solution);
     full_res = incre::eliminateUnusedLet(full_res.get());
 
     incre::printProgram(full_res, target);
     incre::printProgram(full_res);
+
+    global::recorder.printAll();
 }

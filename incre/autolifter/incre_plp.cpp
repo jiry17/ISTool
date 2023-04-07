@@ -6,6 +6,7 @@
 #include "glog/logging.h"
 #include "istool/solver/enum/enum_util.h"
 #include "istool/incre/trans/incre_trans.h"
+#include <cassert>
 
 using namespace incre::autolifter;
 
@@ -49,9 +50,7 @@ void FExampleSpace::addExample() {
     example_list.emplace_back(local_input, global_input, example->oup);
 }
 int FExampleSpace::acquireExample(int target_num, TimeGuard *guard) {
-    while (pool->example_pool[tau_id].size() < target_num && guard->getRemainTime() > 0) {
-        pool->generateExample();
-    }
+    pool->generateBatchedExample(tau_id, target_num, guard);
     target_num = std::min(target_num, int(pool->example_pool[tau_id].size()));
     while (example_list.size() < target_num) {
         addExample();
@@ -67,6 +66,64 @@ FExampleSpace::FExampleSpace(IncreExamplePool *_pool, int _tau_id, const PEnv& _
     for (auto& [var_name, var_type]: pool->input_list) {
         global_input_list.emplace_back(var_name, incre::typeFromIncre(var_type));
     }
+}
+
+void FExampleSpace::extendAuxCache(const AuxProgram &program, DataList *cache_item, int length) {
+    assert(length <= example_list.size());
+    for (int i = cache_item->size(); i < length; ++i) {
+        cache_item->push_back(runAux(i, program));
+    }
+}
+void FExampleSpace::extendOupCache(const PProgram &program, const std::vector<int> &path, DataList *cache_item,
+                                   int length) {
+    assert(length <= example_list.size());
+    for (int i = cache_item->size(); i < length; ++i) {
+        cache_item->push_back(runOup(i, program.get(), path));
+    }
+}
+
+DataList *FExampleSpace::getAuxCache(const AuxProgram &program, int length) {
+    auto feature = aux2String(program);
+    if (aux_cache.find(feature) == aux_cache.end()) return nullptr;
+    auto* cache_item = aux_cache[feature];
+    extendAuxCache(program, cache_item, length);
+    return cache_item;
+}
+
+namespace {
+    std::string _path2String(const std::vector<int>& path) {
+        std::string res = "[";
+        for (int i = 0; i < path.size(); ++i) {
+            if (i) res += ","; res += std::to_string(path[i]);
+        }
+        return res + "]";
+    }
+
+    std::string _getOupFeature(const PProgram& program, const std::vector<int>& path) {
+        if (program) return program->toString() + "@" + _path2String(path);
+        return _path2String(path);
+    }
+}
+
+DataList* FExampleSpace::getOupCache(const PProgram &program, const std::vector<int> &path, int length) {
+    auto feature = _getOupFeature(program, path);
+    if (oup_cache.find(feature) == oup_cache.end()) return nullptr;
+    auto* cache_item = oup_cache[feature];
+    extendOupCache(program, path, cache_item, length);
+    return cache_item;
+}
+
+void FExampleSpace::registerAuxCache(const AuxProgram &program, const DataList &oup_list) {
+    auto feature = aux2String(program);
+    assert(aux_cache.find(feature) == aux_cache.end());
+    auto* cache_item = new DataList(oup_list);
+    aux_cache[feature] = cache_item;
+}
+void FExampleSpace::registerOupCache(const PProgram &program, const std::vector<int> &path, const DataList& oup_list) {
+    auto feature = _getOupFeature(program, path);
+    assert(oup_cache.find(feature) == oup_cache.end());
+    auto* cache_item = new DataList(oup_list);
+    oup_cache[feature] = cache_item;
 }
 
 void FExampleSpace::switchTo(int example_id) {
@@ -91,17 +148,26 @@ namespace {
     }
 }
 
+#include "istool/basic/config.h"
+
 Data FExampleSpace::runCompress(int example_id, Program *prog) {
     switchTo(example_id);
-    return env->run(prog, example_list[example_id].full_input);
+    global::recorder.start("execute");
+    auto res = env->run(prog, example_list[example_id].full_input);
+    global::recorder.end("execute");
+    return res;
 }
 Data FExampleSpace::runAux(int example_id, const Data& content, Program *prog) {
     switchTo(example_id);
-    return env->run(prog, example_list[example_id].getAuxInput(content));
+    global::recorder.start("execute");
+    auto res = env->run(prog, example_list[example_id].getAuxInput(content));
+    global::recorder.end("execute");
+    return res;
 }
 
 Data FExampleSpace::runAux(int example_id, const AuxProgram &aux) {
     auto compress = runCompress(example_id, aux.first.second.get());
+    Data res;
     if (aux.second.second) {
         auto* tv = dynamic_cast<VLabeledCompress*>(compress.get());
 #ifdef DEBUG
@@ -125,11 +191,22 @@ PLPTask::PLPTask(FExampleSpace *_example_space, const std::vector<GrammarEnumera
                  const std::vector<TypedProgramList> &_pre_res, GrammarEnumerateTool *_compress_grammar, const TypedProgram &_target,
                  const std::vector<int> &_path): example_space(_example_space), aux_grammar_list(_aux_grammar_list),
                  pre_res_list(_pre_res), compress_grammar(_compress_grammar), target(_target), path(_path) {
+    oup_cache = example_space->getOupCache(target.second, path, 0);
+    if (!oup_cache) {
+        example_space->registerOupCache(target.second, path, {});
+        oup_cache = example_space->getOupCache(target.second, path, 0);
+    }
+}
+
+void PLPTask::extendOupCache(int length) {
+    example_space->extendOupCache(target.second, path, oup_cache, length);
 }
 
 // TODO: add cache
 Data PLPTask::runOup(int example_id) {
-    return example_space->runOup(example_id, target.second.get(), path);
+    if (oup_cache->size() <= example_id) extendOupCache(example_id + 1);
+    return oup_cache->at(example_id);
+    //return example_space->runOup(example_id, target.second.get(), path);
 }
 Data PLPTask::runInp(int example_id, const AuxProgram& program) {
     return example_space->runAux(example_id, program);

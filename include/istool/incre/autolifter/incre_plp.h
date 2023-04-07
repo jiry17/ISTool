@@ -25,9 +25,23 @@ namespace incre::autolifter {
         std::string toString() const;
     };
 
+
     class FExampleSpace {
         void addExample();
+        Data runCompress(int example_id, Program* prog);
+        Data runAux(int example_id, const Data& content, Program* prog);
+
+        // cache
+        std::unordered_map<std::string, DataList*> aux_cache, oup_cache;
     public:
+        // cache util
+        void extendAuxCache(const AuxProgram& program, DataList* cache_item, int length);
+        void extendOupCache(const PProgram& program, const std::vector<int>& path, DataList* cache_item, int length);
+        DataList* getAuxCache(const AuxProgram& program, int length);
+        DataList* getOupCache(const PProgram& program, const std::vector<int>& path, int length);
+        void registerAuxCache(const AuxProgram& program, const DataList& oup_list);
+        void registerOupCache(const PProgram& program, const std::vector<int>& path, const DataList& oup_list);
+
         std::vector<std::pair<std::string, PType>> value_list, global_input_list;
         std::vector<IncreIOExample> example_list;
         Env* env;
@@ -39,8 +53,6 @@ namespace incre::autolifter {
         void switchTo(int example_id);
 
         Data runAux(int exmaple_id, const AuxProgram& aux);
-        Data runCompress(int example_id, Program* prog);
-        Data runAux(int example_id, const Data& content, Program* prog);
         std::string example2String(const IOExample& example);
         std::string example2String(int id);
         Data runOup(int example_id, Program* program, const std::vector<int>& path);
@@ -75,8 +87,10 @@ namespace incre::autolifter {
         std::vector<TypedProgramList> pre_res_list;
         TypedProgram target;
         std::vector<int> path;
+        DataList* oup_cache;
 
         Data runInp(int example_id, const AuxProgram& program);
+        void extendOupCache(int length);
         Data runOup(int example_id);
         IOExample getIO(int example_id, const std::vector<AuxProgram>& aux_list);
         int acquireExample(int target_num, int timeout);

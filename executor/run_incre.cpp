@@ -47,7 +47,7 @@ int main(int argv, char** argc) {
     incre::prepareEnv(env.get());
     auto* info = incre::buildIncreInfo(prog, env.get());
     for (int i = 1; i <= 100; ++i) {
-        info->example_pool->generateExample();
+        info->example_pool->generateSingleExample();
     }
 
     for (auto& align_info: info->align_infos) {

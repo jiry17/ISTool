@@ -93,7 +93,7 @@ namespace {
 namespace {
     int KDefaultComposedNum = 3;
     int KDefaultExtraTurnNum = 0;
-    int KDefaultVerifyBaseNum = 100;
+    int KDefaultVerifyBaseNum = 1000;
     int KDefaultExampleTimeOut = 10;
     int KDefaultEnlargeFactor = 2;
     bool KDefaultIsMergeVar = true;
@@ -271,6 +271,8 @@ namespace {
     }
 }
 
+#include "istool/basic/config.h"
+
 std::pair<int, int> IncrePLPSolver::verify(const std::vector<AuxProgram> &aux_list) {
     int total_size = 1;
     for (auto& [p_compress, p_aux]: aux_list) {
@@ -280,17 +282,33 @@ std::pair<int, int> IncrePLPSolver::verify(const std::vector<AuxProgram> &aux_li
     verify_num = std::max(verify_num, total_size * KVerifyBaseNum);
     verify_num = task->acquireExample(verify_num, KExampleTimeOut);
 
+    std::vector<DataList*> inp_cache_list(aux_list.size(), nullptr);
+    DataStorage new_inp_storage(aux_list.size());
+    for (int i = 0; i < aux_list.size(); ++i) {
+        inp_cache_list[i] = task->example_space->getAuxCache(aux_list[i], verify_num);
+    }
+    DataList* oup_cache = task->oup_cache; task->extendOupCache(verify_num);
+
     std::unordered_map<std::string, std::pair<Data, int>> verify_cache;
 
     auto deal_example = [&](int example_id) {
-        auto io_example = task->getIO(example_id, aux_list);
-        auto feature = data::dataList2String(io_example.first);
+        auto oup = oup_cache->at(example_id);
+        DataList inp_list(aux_list.size());
+        for (int i = 0; i < aux_list.size(); ++i) {
+            if (inp_cache_list[i]) inp_list[i] = inp_cache_list[i]->at(example_id);
+            else {
+                auto inp = task->example_space->runAux(example_id, aux_list[i]);
+                new_inp_storage[i].push_back(inp);
+                inp_list[i] = inp;
+            }
+        }
+        auto feature = data::dataList2String(inp_list);
         if (verify_cache.find(feature) == verify_cache.end()) {
-            verify_cache[feature] = {io_example.second, example_id};
+            verify_cache[feature] = {oup, example_id};
             return -1;
         } else {
             auto& [pre_oup, pre_id] = verify_cache[feature];
-            if (pre_oup == io_example.second) return -1;
+            if (pre_oup == oup) return -1;
             return pre_id;
         }
     };
@@ -300,13 +318,46 @@ std::pair<int, int> IncrePLPSolver::verify(const std::vector<AuxProgram> &aux_li
         auto pre_id = deal_example(verify_pos);
         if (pre_id >= 0) return {pre_id, verify_pos};
     }
+
+    for (int i = 0; i < aux_list.size(); ++i) {
+        if (!inp_cache_list[i]) {
+            DataList pre = new_inp_storage[i];
+            for (int j = 0; j < pre.size(); ++j) {
+                int pos = (verify_pos + j + 1) % verify_num;
+                new_inp_storage[i][pos] = pre[j];
+            }
+#ifdef DEBUG
+            for (int j = 0; j < 10 && j < verify_num; ++j) {
+                auto truth = task->example_space->runAux(j, aux_list[i]);
+                assert(truth == new_inp_storage[i][j]);
+            }
+#endif
+        }
+    }
+
     int pre_verify_num = verify_num;
     verify_num = verify_num * KExampleEnlargeFactor;
     verify_num = task->acquireExample(verify_num, KExampleTimeOut);
+
+    for (int i = 0; i < aux_list.size(); ++i) {
+        if (inp_cache_list[i]) {
+            task->example_space->extendAuxCache(aux_list[i], inp_cache_list[i], verify_num);
+        }
+    }
+    task->extendOupCache(verify_num);
+
     for (verify_pos = pre_verify_num; verify_pos < verify_num; ++verify_pos) {
         auto pre_id = deal_example(verify_pos);
         if (pre_id >= 0) return {pre_id, verify_pos};
     }
+
+    for (int i = 0; i < aux_list.size(); ++i) {
+        if (!inp_cache_list[i]) {
+            LOG(INFO) << "RegisterAux " << aux2String(aux_list[i]) << " " << new_inp_storage[i].size();
+            task->example_space->registerAuxCache(aux_list[i], new_inp_storage[i]);
+        }
+    }
+
     return {-1, -1};
 }
 

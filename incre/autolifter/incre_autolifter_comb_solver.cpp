@@ -83,29 +83,34 @@ namespace {
         TypedProgramList compress_program_list;
         int KExampleTimeOut = 10, current_pos, KExampleEnlargeFactor = 2;
 
+        std::vector<std::pair<AuxProgram, DataList*>> inp_cache_list;
+        std::vector<std::pair<std::pair<PProgram, std::vector<int>>, DataList*>> oup_cache_list;
+
         void insertExample(const IOExample& example) {
             example_list.push_back(example);
         }
-        Data runFRes(const FRes& res, int example_id, const Data& content) {
+        /*Data runFRes(const FRes& res, int example_id, const std::vector<int>& path) {
             if (res.component_list.empty()) return Data(std::make_shared<VUnit>());
             if (res.component_list.size() == 1) {
-                return base_example_space->runAux(example_id, content, res.component_list[0].program.second.get());
+                return base_example_space->runOup(example_id, res.component_list[0].program.second.get(), path);
             }
             DataList elements;
             for (auto& component: res.component_list) {
-                auto res = base_example_space->runAux(example_id, content, component.program.second.get());
+                auto res = base_example_space->runOup(example_id, component.program.second.get(), path);
                 elements.push_back(res);
             }
             return Data(std::make_shared<VTuple>(elements));
         }
-        Data runOutput(const Ty& type, int example_id, const Data& d) {
+        Data runOutput(const Ty& type, int example_id, const Data& d, std::vector<int>& path) {
             if (type->getType() == TyType::TUPLE) {
                 auto* tt = dynamic_cast<TyTuple*>(type.get());
                 auto* tv = dynamic_cast<VTuple*>(d.get());
                 assert(tt && tv && tt->fields.size() == tv->elements.size());
                 DataList elements(tt->fields.size());
                 for (int i = 0; i < tt->fields.size(); ++i) {
-                    elements[i] = runOutput(tt->fields[i], example_id, tv->elements[i]);
+                    path.push_back(i);
+                    elements[i] = runOutput(tt->fields[i], example_id, tv->elements[i], path);
+                    path.pop_back();
                 }
                 return BuildData(Product, elements);
             }
@@ -113,34 +118,90 @@ namespace {
                 auto* ct = dynamic_cast<TyLabeledCompress*>(type.get());
                 auto* cv = dynamic_cast<VCompress*>(d.get());
                 assert(ct && cv);
-                return runFRes(f_res_list[ct->id], example_id, cv->content);
+                return runFRes(f_res_list[ct->id], example_id, path);
             }
             return d;
+        }*/
+        Data runOutput(const Ty& type, int example_id, std::vector<int>& path, int& cache_id) {
+            if (type->getType() == TyType::TUPLE) {
+                auto* tt = dynamic_cast<TyTuple*>(type.get());
+                assert(tt);
+                DataList elements(tt->fields.size());
+                for (int i = 0; i < tt->fields.size(); ++i) {
+                    path.push_back(i);
+                    elements[i] = runOutput(tt->fields[i], example_id, path, cache_id);
+                    path.pop_back();
+                }
+                return BuildData(Product, elements);
+            }
+            if (type->getType() == TyType::COMPRESS) {
+                auto* ct = dynamic_cast<TyLabeledCompress*>(type.get());
+                assert(ct); int num = f_res_list[ct->id].component_list.size();
+                if (!num) return Data(std::make_shared<VUnit>());
+                if (num == 1) return oup_cache_list[cache_id++].second->at(example_id);
+                DataList elements(num);
+                // LOG(INFO) << "cache " << cache_id << " " << num << " " << oup_cache_list.size();
+                for (int i = 0; i < num; ++i) elements[i] = oup_cache_list[cache_id++].second->at(example_id);
+                return Data(std::make_shared<VTuple>(elements));
+            }
+            return oup_cache_list[cache_id++].second->at(example_id);
         }
         void buildExample(int example_id) {
 #ifdef DEBUG
             assert(example_id < base_example_space->example_list.size());
 #endif
-            auto& f_example = base_example_space->example_list[example_id];
-            DataList inp;
-
-            for (auto& [compress_type, compress_program]: compress_program_list) {
+            DataList inp(inp_cache_list.size());
+            for (int i = 0; i < inp_cache_list.size(); ++i) {
+                inp[i] = inp_cache_list[i].second->at(example_id);
+            }
+            /*for (auto& compress_program: compress_program_list) {
+                auto compress_type = compress_program.first;
                 auto* ltc = dynamic_cast<TLabeledCompress*>(compress_type.get());
-                auto compress_res = base_example_space->runCompress(example_id, compress_program.get());
                 if (!ltc) {
-                    inp.push_back(compress_res);
+                    AuxProgram aux = {compress_program, {nullptr, nullptr}};
+                    inp.push_back(base_example_space->runAux(example_id, aux));
                 } else {
-                    auto* lv = dynamic_cast<VLabeledCompress*>(compress_res.get());
-                    assert(lv && ltc->id == lv->id);
-                    for (auto& aux_program: f_res_list[lv->id].component_list) {
-                        auto aux_value = base_example_space->runAux(example_id, lv->content, aux_program.program.second.get());
-                        inp.push_back(aux_value);
+                    for (auto& aux_program: f_res_list[ltc->id].component_list) {
+                        AuxProgram aux = {compress_program, aux_program.program};
+                        inp.push_back(base_example_space->runAux(example_id, aux));
                     }
                 }
-            }
+            }*/
 
-            auto oup = runOutput(oup_ty, example_id, f_example.oup);
+            std::vector<int> path; int cache_id = 0;
+            auto oup = runOutput(oup_ty, example_id, path, cache_id);
             insertExample({inp, oup});
+        }
+
+        void collectOutputCache(const Ty& type, std::vector<int>& path) {
+            if (type->getType() == TyType::TUPLE) {
+                auto* tt = dynamic_cast<TyTuple*>(type.get());
+                for (int i = 0; i < tt->fields.size(); ++i) {
+                    path.push_back(i);
+                    collectOutputCache(tt->fields[i], path);
+                    path.pop_back();
+                }
+                return;
+            }
+            if (type->getType() == TyType::COMPRESS) {
+                auto* ct = dynamic_cast<TyLabeledCompress*>(type.get());
+                for (auto& component: f_res_list[ct->id].component_list) {
+                    auto* cache = base_example_space->getOupCache(component.program.second, path, 0);
+                    if (!cache) {
+                        LOG(INFO) << "Unknown cache";
+                        base_example_space->registerOupCache(component.program.second, path, {});
+                        cache = base_example_space->getOupCache(component.program.second, path, 0);
+                    }
+                    oup_cache_list.emplace_back(std::make_pair(component.program.second, path), cache);
+                }
+                return;
+            }
+            auto* cache = base_example_space->getOupCache(nullptr, path, 0); assert(cache);
+            oup_cache_list.emplace_back(std::make_pair(PProgram(nullptr), path), cache);
+        }
+        void extendCache(int target_num) {
+            for (auto& [aux, cache_item]: inp_cache_list) base_example_space->extendAuxCache(aux, cache_item, target_num);
+            for (auto& [comp, cache_item]: oup_cache_list) base_example_space->extendOupCache(comp.first, comp.second, cache_item, target_num);
         }
         CExampleSpace(int _align_id, FExampleSpace* _base_example_space, IncreAutoLifterSolver* source):
                 align_id(_align_id), base_example_space(_base_example_space) {
@@ -163,6 +224,37 @@ namespace {
                 }
             }
 
+            // Initialize cache list
+            for (auto& compress_program: compress_program_list) {
+                auto compress_type = compress_program.first;
+                auto* ltc = dynamic_cast<TLabeledCompress*>(compress_type.get());
+                if (!ltc) {
+                    AuxProgram aux = {compress_program, {nullptr, nullptr}};
+                    auto* cache_item = base_example_space->getAuxCache(aux, 0);
+                    if (!cache_item) {
+                        LOG(INFO) << "Unknown cache for " << aux2String(aux);
+                        base_example_space->registerAuxCache(aux, {});
+                        cache_item = base_example_space->getAuxCache(aux, 0);
+                    }
+                    inp_cache_list.emplace_back(aux, cache_item);
+                } else {
+                    for (auto& aux_program: f_res_list[ltc->id].component_list) {
+                        AuxProgram aux = {compress_program, aux_program.program};
+                        auto* cache_item = base_example_space->getAuxCache(aux, 0);
+                        if (!cache_item) {
+                            LOG(INFO) << "Unknown cache for " << aux2String(aux);
+                            base_example_space->registerAuxCache(aux, {});
+                            cache_item = base_example_space->getAuxCache(aux, 0);
+                        }
+                        inp_cache_list.emplace_back(aux, cache_item);
+                    }
+                }
+            }
+            std::vector<int> path;
+            collectOutputCache(oup_ty, path);
+            //LOG(INFO) << "build " << oup_ty->toString() << " " << oup_cache_list.size();
+
+            extendCache(current_pos);
             for (int i = 0; i < current_pos; ++i) {
                 buildExample(i);
             }
@@ -172,6 +264,7 @@ namespace {
             int target_num = current_pos * KExampleEnlargeFactor;
             auto* guard = new TimeGuard(KExampleTimeOut);
             target_num = base_example_space->acquireExample(target_num, guard);
+            extendCache(target_num);
             delete guard;
             for (;current_pos < target_num; ++current_pos) {
                 buildExample(current_pos);
@@ -280,10 +373,10 @@ namespace {
 
             SolverToken token = _getSolverToken(oup_type.get());
             PProgram main = _synthesis(grammar, component_example_list, example_space->env, token, example_space->inp_type_list);
-            LOG(INFO) << "Synthesize " << main->toString() << " from ";
+            /*LOG(INFO) << "Synthesize " << main->toString() << " from ";
             for (int i = 0; i < 10 && i < component_example_list.size(); ++i) {
                 LOG(INFO) << "  " << example::ioExample2String(component_example_list[i]);
-            }
+            }*/
             res_list.push_back(main);
         }
         return _mergeComponentProgram(example_space->oup_ty.get(), res_list, example_space->f_res_list, example_space->env.get());
@@ -359,8 +452,8 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
     int var_id = 0;
 
     for (auto& [compress_type, compress_program]: compress_res_list[align_id].compress_list) {
-        LOG(INFO) << "build compress " << compress_program->toString();
-        for (auto& param: compress_param_list) LOG(INFO) << "  param: " << param->toString();
+        // LOG(INFO) << "build compress " << compress_program->toString();
+        // for (auto& param: compress_param_list) LOG(INFO) << "  param: " << param->toString();
         auto compress_term = _buildProgram(compress_program, info->component_list, compress_param_list);
         if (!_isSymbolTerm(compress_term.get())) {
             std::string compress_name = "c" + std::to_string(var_id++);

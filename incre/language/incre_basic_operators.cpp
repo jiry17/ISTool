@@ -50,20 +50,32 @@ namespace {
                 std::make_shared<TyBool>(),std::make_shared<TyBool>()))));
     }
 
-    const static std::unordered_map<std::string, Term> basic_operator_map = {
+    /*const static std::unordered_map<std::string, Term> basic_operator_map = {
             {"+", buildPlus()}, {"-", buildMinus()}, {"*", buildTimes()},
             {"/", buildDiv()}, {"==", buildEq()}, {"<", buildLt()}, {">", buildGt()},
             {"and", buildAnd()}, {"or", buildOr()}, {"=", buildEq()}, {"not", buildNot()}
-    };
+    };*/
+
+    std::unordered_map<std::string, Term> KBasicOperatorMap;
+
+    void _initOperatorMap() {
+        if (!KBasicOperatorMap.empty()) return;
+        KBasicOperatorMap = {
+                {"+", buildPlus()}, {"-", buildMinus()}, {"*", buildTimes()},
+                {"/", buildDiv()}, {"==", buildEq()}, {"<", buildLt()}, {">", buildGt()},
+                {"and", buildAnd()}, {"or", buildOr()}, {"=", buildEq()}, {"not", buildNot()}
+        };
+    }
 }
 
 Term incre::getOperator(const std::string &name) {
-    auto it = basic_operator_map.find(name);
-    if (it == basic_operator_map.end()) {
+    _initOperatorMap();
+    auto it = KBasicOperatorMap.find(name);
+    if (it == KBasicOperatorMap.end()) {
         LOG(FATAL) << "Unknown operator " << name;
     }
     return it->second;
 }
 bool incre::isBasicOperator(const std::string &name) {
-    return basic_operator_map.find(name) != basic_operator_map.end();
+    return KBasicOperatorMap.find(name) != KBasicOperatorMap.end();
 }

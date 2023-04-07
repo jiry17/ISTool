@@ -16,9 +16,6 @@ SynthesisComponent::SynthesisComponent(ComponentType _type, const TypeList &_inp
 Term SynthesisComponent::buildTerm(const TermList &term_list) {
     return builder(term_list);
 }
-ComponentSemantics::ComponentSemantics(const Data &_data, const std::string &_name): ConstSemantics(_data) {
-    name = _name;
-}
 
 namespace {
     SynthesisComponent* _buildSynthesisComponent(Context* ctx, TypeContext* type_ctx, const std::string& name,
@@ -39,18 +36,6 @@ namespace {
             return std::make_shared<TmVar>(name);
         }, it->second);
     }
-
-    class TmAppSemantics: public FullExecutedSemantics {
-    public:
-        Context* ctx;
-        TmAppSemantics(Context* _ctx): FullExecutedSemantics("app"), ctx(_ctx) {}
-        virtual Data run(DataList&& inp_list, ExecuteInfo* info) {
-            assert(inp_list.size() == 2);
-            auto* fv = dynamic_cast<VFunction*>(inp_list[0].get());
-            return fv->run(std::make_shared<TmValue>(inp_list[1]), ctx);
-        }
-        virtual ~TmAppSemantics() = default;
-    };
 
     PType _replaceType(const PType& type) {
         if (dynamic_cast<TVar*>(type.get())) return theory::clia::getTInt();

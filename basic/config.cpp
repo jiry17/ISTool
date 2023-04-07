@@ -5,7 +5,7 @@
 #include "istool/basic/config.h"
 
 #ifdef LINUX
-const std::string config::KSourcePath = "/tmp/tmp.2KahekF3V8/";
+const std::string config::KSourcePath = "/home/jiry/2023S/ISTool/";
 #else
 const std::string config::KSourcePath = "/Users/pro/Desktop/work/2023S/ISTool/";
 #endif
