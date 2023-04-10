@@ -139,6 +139,7 @@ void ApplyComponent::insertComponent(std::unordered_map<std::string, NonTerminal
 }
 
 #include "istool/ext/deepcoder/deepcoder_semantics.h"
+#include "istool/incre/trans/incre_trans.h"
 
 TupleComponent::TupleComponent(int _priority): SynthesisComponent( -1, _priority) {
 }
@@ -198,6 +199,76 @@ ComponentPool::ComponentPool(const SynthesisComponentList &_align_list, const Sy
     std::sort(align_list.begin(), align_list.end(), _cmp_priority);
     std::sort(compress_list.begin(), compress_list.end(), _cmp_priority);
     std::sort(comb_list.begin(), comb_list.end(), _cmp_priority);
+}
+
+TypeLabeledDirectSemantics::TypeLabeledDirectSemantics(const PType &_type): NormalSemantics(_type->getName(), _type, {_type}), type(_type) {
+}
+Data TypeLabeledDirectSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    return inp_list[0];
+}
+
+namespace {
+    Grammar* _buildGrammar(const TypeList& inp_list, const SynthesisComponentList& component_list, const std::function<bool(Type*)>& is_oup, bool is_single) {
+        std::unordered_map<std::string, NonTerminal*> symbol_map;
+        for (int i = 0; i < inp_list.size(); ++i) {
+            auto* symbol = _getSymbol(symbol_map, inp_list[i]);
+            symbol->rule_list.push_back(new ConcreteRule(semantics::buildParamSemantics(i, inp_list[i]), {}));
+        }
+        for (auto& component: component_list) {
+            component->insertComponent(symbol_map);
+        }
+        NTList start_list, symbol_list;
+        for (auto& [_, symbol]: symbol_map) {
+            symbol_list.push_back(symbol);
+            if (is_oup(symbol->type.get())) start_list.push_back(symbol);
+        }
+        if (start_list.empty()) {
+            auto* dummy_symbol = new NonTerminal("start", type::getTBool());
+            return new Grammar(dummy_symbol, {dummy_symbol});
+        }
+        if (is_single) {
+            assert(start_list.size() == 1);
+            return new Grammar(start_list[0], symbol_list);
+        }
+        auto* start_symbol = new NonTerminal("start", type::getTVarA());
+        symbol_list.push_back(start_symbol);
+        for (auto* possible: start_list) {
+            auto sem = std::make_shared<TypeLabeledDirectSemantics>(possible->type);
+            start_symbol->rule_list.push_back(new ConcreteRule(sem, {possible}));
+        }
+        return new Grammar(start_symbol, symbol_list);
+    }
+
+    bool _isPrimaryType(Type* type) {
+        return dynamic_cast<TBool*>(type) || dynamic_cast<TInt*>(type);
+    }
+    bool _isCompressType(Type* type) {
+        return dynamic_cast<TCompress*>(type);
+    }
+}
+
+Grammar *ComponentPool::buildAlignGrammar(const TypeList &inp_list) {
+    return _buildGrammar(inp_list, align_list, _isPrimaryType, false);
+}
+
+Grammar *ComponentPool::buildCompressGrammar(const TypeList &inp_list, int command_id) {
+    SynthesisComponentList component_list;
+    for (auto& component: compress_list) {
+        if (component->command_id < command_id) {
+            component_list.push_back(component);
+        }
+    }
+    return _buildGrammar(inp_list, component_list, _isCompressType, false);
+}
+
+Grammar *ComponentPool::buildCombinatorGrammar(const TypeList &inp_list, const PType &oup_type, int command_id) {
+    SynthesisComponentList component_list;
+    for (auto& component: compress_list) {
+        if (component->command_id < command_id) {
+            component_list.push_back(component);
+        }
+    }
+    return _buildGrammar(inp_list, component_list, [&](Type* type){return type::equal(type, oup_type.get());}, true);
 }
 
 ComponentCollector::ComponentCollector(ComponentCollectorType _type): type(_type) {

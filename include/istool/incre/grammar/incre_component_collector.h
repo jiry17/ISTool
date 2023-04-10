@@ -65,11 +65,22 @@ namespace incre::grammar {
         ALIGN, COMPRESS, COMB
     };
 
+    struct TypeLabeledDirectSemantics: public NormalSemantics {
+    public:
+        PType type;
+        TypeLabeledDirectSemantics(const PType& _type);
+        virtual Data run(DataList&& inp_list, ExecuteInfo* info);
+        virtual ~TypeLabeledDirectSemantics() = default;
+    };
+
     class ComponentPool {
     public:
         SynthesisComponentList align_list, compress_list, comb_list;
         ComponentPool(const SynthesisComponentList& _align_list, const SynthesisComponentList& _compress_list, const SynthesisComponentList& _comb_list);
-        // TODO: add a grammar builder function
+
+        Grammar* buildAlignGrammar(const TypeList& inp_list);
+        Grammar* buildCompressGrammar(const TypeList& inp_list, int command_id);
+        Grammar* buildCombinatorGrammar(const TypeList& inp_list, const PType& oup_type, int command_id);
         ~ComponentPool() = default;
     };
 

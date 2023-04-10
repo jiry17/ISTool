@@ -60,14 +60,6 @@ namespace incre::autolifter {
         int acquireExample(int target_num, TimeGuard* guard);
     };
 
-    struct TypeLabeledDirectSemantics: public NormalSemantics {
-    public:
-        PType type;
-        TypeLabeledDirectSemantics(const PType& _type);
-        virtual Data run(DataList&& inp_list, ExecuteInfo* info);
-        virtual ~TypeLabeledDirectSemantics() = default;
-    };
-
     class GrammarEnumerateTool {
         void extend();
     public:
