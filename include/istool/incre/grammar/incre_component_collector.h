@@ -12,38 +12,59 @@ namespace incre::grammar {
     class SynthesisComponent {
     public:
         int command_id;
-        int priority;
-        SynthesisComponent(int command_id, int priority);
-        virtual void insertComponent(std::unordered_map<std::string, NonTerminal*>& symbol_map) = 0;
-        virtual Term buildTerm(const PSemantics& sem, const TermList& term_list) = 0;
+        SynthesisComponent(int command_id);
+        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map) = 0;
+        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map) = 0;
+        virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list) = 0;
         virtual ~SynthesisComponent() = default;
     };
     typedef std::shared_ptr<SynthesisComponent> PSynthesisComponent;
     typedef std::vector<PSynthesisComponent> SynthesisComponentList;
 
-    class ComponentSemantics: public ConstSemantics {
+    class IncreComponent: public SynthesisComponent {
     public:
-        ComponentSemantics(const Data& _data, const std::string& _name);
-        virtual ~ComponentSemantics() = default;
+        PType type;
+        Data data;
+        Term term;
+        std::string name;
+        IncreComponent(const std::string& _name, const PType& _type, const Data& _data, const Term& _term, int command_id);
+        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list);
+        ~IncreComponent() = default;
     };
 
-    class UserProvidedComponent: public SynthesisComponent {
+    class ConstComponent: public SynthesisComponent {
     public:
-        TypeList inp_types;
-        PType oup_type;
-        PSemantics semantics;
-        UserProvidedComponent(const TypeList& _inp_types, const PType& _oup_type, const PSemantics& _semantics, int command_id);
-        virtual Term buildTerm(const PSemantics& sem, const TermList& term_list);
-        virtual void insertComponent(std::unordered_map<std::string, NonTerminal*>& symbol_map);
-        ~UserProvidedComponent() = default;
+        PType type;
+        DataList const_list;
+        std::function<bool(Value*)> is_inside;
+        ConstComponent(const PType& _type, const DataList& _const_list, const std::function<bool(Value*)>& _is_inside);
+        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list);
+        ~ConstComponent() = default;
+    };
+
+    class BasicOperatorComponent: public SynthesisComponent {
+    public:
+        std::string name;
+        TypedSemantics* sem;
+        PSemantics _sem;
+        BasicOperatorComponent(const std::string& _name, const PSemantics& __semantics);
+        virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list);
+        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        ~BasicOperatorComponent() = default;
     };
 
 #define LanguageComponent(name) \
     class name ## Component: public SynthesisComponent { \
     public: \
-        name ## Component(int _priority); \
-        virtual Term buildTerm(const PSemantics& sem, const TermList& term_list); \
-        virtual void insertComponent(std::unordered_map<std::string, NonTerminal*>& symbol_map); \
+        name ## Component(); \
+        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map); \
+        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map); \
+        virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list); \
         ~name ## Component() = default;\
     }
 
@@ -55,9 +76,10 @@ namespace incre::grammar {
     public:
         bool is_only_full;
         Context* ctx;
-        ApplyComponent(int _priority, Context* ctx, bool _is_only_full);
-        virtual Term buildTerm(const PSemantics& sem, const TermList& term_list);
-        virtual void insertComponent(std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        ApplyComponent(Context* ctx, bool _is_only_full);
+        virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list);
+        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map);
         ~ApplyComponent() = default;
     };
 
@@ -77,6 +99,8 @@ namespace incre::grammar {
     public:
         SynthesisComponentList align_list, compress_list, comb_list;
         ComponentPool(const SynthesisComponentList& _align_list, const SynthesisComponentList& _compress_list, const SynthesisComponentList& _comb_list);
+        ComponentPool();
+        void print() const;
 
         Grammar* buildAlignGrammar(const TypeList& inp_list);
         Grammar* buildCompressGrammar(const TypeList& inp_list, int command_id);
@@ -84,17 +108,17 @@ namespace incre::grammar {
         ~ComponentPool() = default;
     };
 
-    enum class ComponentCollectorType {
-        DEFAULT, LABEL
+    enum ComponentCollectorType {
+        SOURCE = 0, LABEL = 1
     };
 
-    class ComponentCollector {
-    public:
-        ComponentCollectorType type;
-        ComponentCollector(ComponentCollectorType _type);
-        virtual ComponentPool collect(ProgramData* program) = 0;
-        virtual ~ComponentCollector() = default;
-    };
+    namespace collector {
+        ComponentPool collectComponentFromSource(Context* ctx, Env* env, ProgramData* program);
+        ComponentPool collectComponentFromLabel(Context* ctx, Env* env, ProgramData* program);
+        ComponentPool getBasicComponentPool(Context* ctx, Env* env, bool is_full_apply);
+        extern const std::string KCollectMethodName;
+    }
+    ComponentPool collectComponent(Context* ctx, Env* env, ProgramData* program);
 }
 
 #endif //ISTOOL_INCRE_COMPONENT_COLLECTOR_H

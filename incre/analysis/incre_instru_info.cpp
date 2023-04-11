@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/analysis/incre_instru_info.h"
+#include "istool/incre/grammar/incre_component_collector.h"
 #include "istool/incre/trans/incre_trans.h"
 #include "istool/ext/deepcoder/deepcoder_semantics.h"
 #include "istool/sygus/theory/theory.h"
@@ -36,12 +37,11 @@ void AlignTypeInfoData::print() const {
     }
 }
 
-IncreInfo::IncreInfo(const IncreProgram &_program, Context *_ctx, const AlignTypeInfoList &infos, IncreExamplePool *pool, const std::vector<SynthesisComponent *> &_component_list):
-    program(_program), ctx(_ctx), align_infos(infos), example_pool(pool), component_list(_component_list) {
+IncreInfo::IncreInfo(const IncreProgram &_program, Context *_ctx, const AlignTypeInfoList &infos, IncreExamplePool *pool, const grammar::ComponentPool& _pool):
+    program(_program), ctx(_ctx), align_infos(infos), example_pool(pool), component_pool(_pool) {
 }
 IncreInfo::~IncreInfo() {
     delete ctx; delete example_pool;
-    for (auto* component: component_list) delete component;
 }
 
 void incre::prepareEnv(Env *env) {
@@ -65,6 +65,6 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
     auto* pool = new IncreExamplePool(labeled_program, env, cared_vals);
 
     // build components
-    auto component_list = incre::collectComponentList(pool->ctx, env, incre::getComponentInfo(program));
-    return new IncreInfo(labeled_program, pool->ctx, align_info, pool, component_list);
+    auto component_pool = incre::grammar::collectComponent(pool->ctx, env, labeled_program.get());
+    return new IncreInfo(labeled_program, pool->ctx, align_info, pool, component_pool);
 }

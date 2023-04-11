@@ -9,6 +9,7 @@
 #include <cassert>
 
 using namespace incre::autolifter;
+using namespace incre::grammar;
 
 
 std::string FExampleSpace::example2String(const IOExample &example) {
@@ -269,13 +270,6 @@ namespace {
         assert(ts && ts->type);
         return {ts->type, program->sub_list[0]};
     }
-}
-
-TypeLabeledDirectSemantics::TypeLabeledDirectSemantics(const PType &_type):
-        NormalSemantics("@" + _type->getName(), _type, (TypeList){_type}), type(_type) {
-}
-Data TypeLabeledDirectSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
-    return inp_list[0];
 }
 
 void GrammarEnumerateTool::extend() {

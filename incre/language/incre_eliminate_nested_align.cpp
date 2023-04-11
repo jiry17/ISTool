@@ -174,9 +174,6 @@ namespace {
         auto* ta = dynamic_cast<TmAlign*>(term.get()); assert(ta);
         TermList movable_term; std::vector<std::string> tmp_names;
         _collectMovableTerms(ta->content, tmp_names, movable_term);
-        for (auto& movable: movable_term) {
-            LOG(INFO) << "Movable: " << movable->toString();
-        }
         assert(tmp_names.empty());
         if (movable_term.empty()) return term;
         std::unordered_map<TermData*, std::string> rewrite_map;
@@ -200,8 +197,6 @@ namespace {
 
     EliminateHead(Align) {
         auto content = _eliminateNestedAlign(term->content);
-        LOG(INFO) << "build new term for" << std::endl;
-        LOG(INFO) << content->toString();
         return _buildNewTerm(std::make_shared<TmAlign>(content));
     }
     EliminateHead(Label) {

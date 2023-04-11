@@ -53,13 +53,43 @@ namespace {
         _unfoldOutputType(type, path, res);
         return res;
     }
+
+    PType _getCompressType(IncreInfo* info, int compress_id) {
+        for (const auto& align_info: info->align_infos) {
+            for (auto&[name, ty]: align_info->inp_types) {
+                if (ty->getType() == TyType::COMPRESS) {
+                    auto *cty = dynamic_cast<TyLabeledCompress *>(ty.get());
+                    if (cty && cty->id == compress_id) return incre::typeFromIncre(cty->content);
+                }
+            }
+        }
+        LOG(FATAL) << "Compress #" << compress_id << " not found";
+    }
 }
 
 OutputUnit::OutputUnit(const std::vector<int> &_path, const Ty &_unit_type): path(_path), unit_type(_unit_type) {
 }
 
-GrammarEnumerateTool::GrammarEnumerateTool(Grammar *_grammar): grammar(_grammar), size_limit(grammar::getMaxSize(_grammar)) {
+GrammarEnumerateTool::GrammarEnumerateTool(Grammar *_grammar): grammar(_grammar), size_limit(::grammar::getMaxSize(_grammar)) {
     if (size_limit == -1) size_limit = 1e9;
+}
+
+Grammar * IncreAutoLifterSolver::buildAuxGrammar(int compress_id) {
+    TypeList inp_list = {_getCompressType(info, compress_id)};
+    for (auto& inp_type: global_input_type_list) inp_list.push_back(inp_type);
+    return info->component_pool.buildAlignGrammar(inp_list);
+}
+Grammar * IncreAutoLifterSolver::buildCompressGrammar(const TypeList &type_list, int align_id) {
+    int pos = info->align_infos[align_id]->command_id;
+    TypeList inp_list = type_list;
+    for (auto& inp_type: global_input_type_list) inp_list.push_back(inp_type);
+    return info->component_pool.buildCompressGrammar(inp_list, pos);
+}
+Grammar * IncreAutoLifterSolver::buildCombinatorGrammar(const TypeList &type_list, const PType& oup_type, int align_id) {
+    auto feature = std::to_string(align_id) + "@" + type::typeList2String(type_list) + "@" + oup_type->getName();
+    if (combine_grammar_map.count(feature)) return combine_grammar_map[feature];
+    int pos = info->align_infos[align_id]->command_id;
+    return info->component_pool.buildCombinatorGrammar(type_list, oup_type, pos);
 }
 
 IncreAutoLifterSolver::IncreAutoLifterSolver(IncreInfo *_info, const PEnv& _env): env(_env), IncreSolver(_info),
@@ -144,8 +174,6 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
             if (ltc) {
                 f_res_list[ltc->id].insert(aux_program);
             }
-            // LOG(INFO) << align_id <<"  " << compress_res_list.size() << " " << compress_program.first << " " << compress_program.second;
-            // LOG(INFO) << compress_program.first->getName() + "@" + compress_program.second->toString();
             compress_res_list[align_id].insert(compress_program);
         }
     };

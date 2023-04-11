@@ -332,7 +332,7 @@ namespace {
     PProgram _synthesis(Grammar* grammar, const IOExampleList& example_list, const PEnv& env, SolverToken token, const TypeList& inp_types) {
         const std::string default_name = "func";
         if (example_list.empty()) {
-            return grammar::getMinimalProgram(grammar);
+            return ::grammar::getMinimalProgram(grammar);
         }
         auto example_space = example::buildFiniteIOExampleSpace(example_list, default_name, env.get(), inp_types);
         auto info = std::make_shared<SynthInfo>(default_name, _getInpTypes(grammar), grammar->start->type, grammar);
@@ -384,35 +384,20 @@ namespace {
 }
 
 namespace {
-    Term _buildProgram(Program* program, const std::unordered_map<std::string, SynthesisComponent*>& component, const TermList& param_list) {
+    Term _buildSingleStep(const PSemantics& sem, const incre::grammar::SynthesisComponentList& component_list, const TermList& sub_list) {
+        for (auto& component: component_list) {
+            auto res = component->tryBuildTerm(sem, sub_list);
+            if (res) return res;
+        }
+        LOG(FATAL) << "Cannot build IncreTerm for semantics " << sem->getName();
+    }
+
+    Term _buildProgram(Program* program, const incre::grammar::SynthesisComponentList& component_list, const TermList& param_list) {
         auto *ps = dynamic_cast<ParamSemantics *>(program->semantics.get());
         if (ps) return param_list[ps->id];
         TermList sub_list;
-        for (const auto& sub: program->sub_list) sub_list.push_back(_buildProgram(sub.get(), component, param_list));
-        auto* as = dynamic_cast<AccessSemantics*>(program->semantics.get());
-        if (as) {
-            assert(sub_list.size() == 1);
-            return std::make_shared<TmProj>(sub_list[0], as->id + 1);
-        }
-        auto name = program->semantics->getName();
-        auto it = component.find(program->semantics->getName());
-        if (it != component.end()) {
-            return it->second->buildTerm(sub_list);
-        }
-        auto* cs = dynamic_cast<ConstSemantics*>(program->semantics.get());
-        if (cs) return std::make_shared<TmValue>(cs->w);
-        auto* pros = dynamic_cast<ProductSemantics*>(program->semantics.get());
-        if (pros) return std::make_shared<TmTuple>(sub_list);
-        LOG(FATAL) << "Unknown operator " << program->semantics->getName();
-    }
-
-    Term _buildProgram(const PProgram& program, const std::vector<SynthesisComponent*>& component_list,
-                       const TermList& param_list) {
-        std::unordered_map<std::string, SynthesisComponent*> component_map;
-        for (auto* component: component_list) {
-            component_map[component->semantics->getName()] = component;
-        }
-        return _buildProgram(program.get(), component_map, param_list);
+        for (const auto& sub: program->sub_list) sub_list.push_back(_buildProgram(sub.get(), component_list, param_list));
+        return _buildSingleStep(program->semantics, component_list, sub_list);
     }
 
     bool _isSymbolTerm(TermData* term) {
@@ -433,10 +418,8 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
 
     while (!res || !example_space->isValid(res)) {
         res = _synthesisCombinator(example_space, output_cases, this);
-        LOG(INFO) << "candidate program " << res->toString();
         example_space->extendExample();
     }
-    LOG(INFO) << "finished";
 
     // Build Param List
     TermList compress_param_list;
@@ -454,7 +437,7 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
     for (auto& [compress_type, compress_program]: compress_res_list[align_id].compress_list) {
         // LOG(INFO) << "build compress " << compress_program->toString();
         // for (auto& param: compress_param_list) LOG(INFO) << "  param: " << param->toString();
-        auto compress_term = _buildProgram(compress_program, info->component_list, compress_param_list);
+        auto compress_term = _buildProgram(compress_program.get(), info->component_pool.compress_list, compress_param_list);
         if (!_isSymbolTerm(compress_term.get())) {
             std::string compress_name = "c" + std::to_string(var_id++);
             binding_list.emplace_back(compress_name, compress_term);
@@ -478,7 +461,7 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
         }
     }
 
-    auto term = _buildProgram(res, info->component_list, combine_param_list);
+    auto term = _buildProgram(res.get(), info->component_pool.comb_list, combine_param_list);
     std::reverse(binding_list.begin(), binding_list.end());
     for (auto& [name, binding]: binding_list) {
         term = std::make_shared<TmLet>(name, binding, term);

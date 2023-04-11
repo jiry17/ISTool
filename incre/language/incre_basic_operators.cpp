@@ -37,6 +37,8 @@ namespace {
     BinaryOperator(Eq, Int, Bool, x == y, "==", BuildBinaryOp(Int, Int, Bool))
     BinaryOperator(Lt, Int, Bool, x < y, "<", BuildBinaryOp(Int, Int, Bool))
     BinaryOperator(Gt, Int, Bool, x > y, ">", BuildBinaryOp(Int, Int, Bool))
+    BinaryOperator(Leq, Int, Bool, x <= y, "<=", BuildBinaryOp(Int, Int, Bool))
+    BinaryOperator(Geq, Int, Bool, x >= y, ">=", BuildBinaryOp(Int, Int, Bool))
     BinaryOperator(And, Bool, Bool, x && y, "and", BuildBinaryOp(Bool, Bool, Bool))
     BinaryOperator(Or, Bool, Bool, x || y, "or", BuildBinaryOp(Bool, Bool, Bool))
 
@@ -63,7 +65,8 @@ namespace {
         KBasicOperatorMap = {
                 {"+", buildPlus()}, {"-", buildMinus()}, {"*", buildTimes()},
                 {"/", buildDiv()}, {"==", buildEq()}, {"<", buildLt()}, {">", buildGt()},
-                {"and", buildAnd()}, {"or", buildOr()}, {"=", buildEq()}, {"not", buildNot()}
+                {"and", buildAnd()}, {"or", buildOr()}, {"=", buildEq()}, {"not", buildNot()},
+                {"<=", buildLeq()}, {">=", buildGeq()}
         };
     }
 }

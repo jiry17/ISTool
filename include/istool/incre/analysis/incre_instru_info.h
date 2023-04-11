@@ -6,6 +6,7 @@
 #define ISTOOL_INCRE_INFO_H
 
 #include "istool/incre/language/incre_lookup.h"
+#include "istool/incre/grammar/incre_component_collector.h"
 #include "incre_instru_runtime.h"
 
 namespace incre {
@@ -26,15 +27,14 @@ namespace incre {
     typedef std::vector<AlignTypeInfo> AlignTypeInfoList;
 
 
-
     class IncreInfo {
     public:
         IncreProgram program;
         Context* ctx;
         AlignTypeInfoList align_infos;
         IncreExamplePool* example_pool;
-        std::vector<SynthesisComponent*> component_list;
-        IncreInfo(const IncreProgram& _program, Context* _ctx, const AlignTypeInfoList& infos, IncreExamplePool* pool, const std::vector<SynthesisComponent*>& component_list);
+        grammar::ComponentPool component_pool;
+        IncreInfo(const IncreProgram& _program, Context* _ctx, const AlignTypeInfoList& infos, IncreExamplePool* pool, const grammar::ComponentPool& _pool);
         ~IncreInfo();
     };
 }
@@ -45,7 +45,6 @@ namespace incre {
     // IncreProgram eliminateUnboundedCreate(const IncreProgram& program);
     IncreProgram labelCompress(const IncreProgram& program);
     AlignTypeInfoList collectAlignType(const IncreProgram& program);
-    std::vector<SynthesisComponent*> collectComponentList(Context* ctx, Env* env, const std::unordered_map<std::string, InputComponentInfo>& compress_map);
     void prepareEnv(Env* env);
     IncreInfo* buildIncreInfo(const IncreProgram& program, Env* env);
 }

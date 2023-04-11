@@ -16,7 +16,7 @@ namespace incre {
     };
 
     enum class CommandDecorate {
-        INPUT, START
+        INPUT, START, SYN_COMPRESS, SYN_COMBINE, SYN_ALIGN
     };
 
     typedef std::unordered_set<CommandDecorate> DecorateSet;

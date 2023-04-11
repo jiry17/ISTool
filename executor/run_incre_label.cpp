@@ -8,12 +8,9 @@
 #include "istool/incre/io/incre_printer.h"
 #include "istool/incre/autolabel/incre_autolabel_constraint_solver.h"
 #include "istool/incre/analysis/incre_instru_info.h"
-#include "istool/incre/autolifter/incre_aux_semantics.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
-#include "istool/solver/polygen/dnf_learner.h"
-#include "glog/logging.h"
+#include "istool/incre/grammar/incre_component_collector.h"
 #include <iostream>
-#include "glog/logging.h"
 #include "istool/solver/autolifter/composed_sf_solver.h"
 
 using namespace incre;
@@ -26,7 +23,7 @@ const std::unordered_map<std::string, int> KVerifyBaseNumConfig = {
 };
 
 int main(int argv, char** argc) {
-    auto name = "01knapsack";
+    std::string name = "dac_mss_deepcoder";
 
     std::string path = config::KSourcePath + "tests/incre/benchmark/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
@@ -44,6 +41,11 @@ int main(int argv, char** argc) {
 
     auto env = std::make_shared<Env>();
     incre::prepareEnv(env.get());
+    if (name.find("deepcoder") != std::string::npos) {
+        env->setConst(incre::grammar::collector::KCollectMethodName, BuildData(Int, incre::grammar::ComponentCollectorType::LABEL));
+    } else {
+        env->setConst(incre::grammar::collector::KCollectMethodName, BuildData(Int, incre::grammar::ComponentCollectorType::SOURCE));
+    }
 
     if (KComposeNumConfig.count(name) > 0) {
         int compose_num = KComposeNumConfig.find(name)->second;

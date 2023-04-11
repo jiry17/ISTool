@@ -34,16 +34,8 @@ void autolabel::collectAlignConstraint(ProgramData *program, Z3Context *ctx) {
         if (command->getType() != CommandType::BIND) continue;
         auto* cb = dynamic_cast<CommandBind*>(command.get());
         if (cb->binding->getType() != BindingType::TERM) continue;
-        if (cb->name == "dac") {
-            LOG(INFO) << "Step into DAC";
-            is_print = true;
-        }
         auto* tb = dynamic_cast<TermBinding*>(cb->binding.get());
         _collectCons(tb->term, ctx, ctx->ctx.bool_val(false));
-        if (cb->name == "dac") {
-            LOG(INFO) << "Step out DAC";
-            is_print = false;
-        }
     }
 }
 

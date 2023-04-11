@@ -66,7 +66,9 @@ void ProgramData::print() const {
 
 namespace {
     const std::unordered_map<CommandDecorate, std::string> KDecorateNameMap = {
-            {CommandDecorate::INPUT, "Input"}, {CommandDecorate::START, "Start"}
+            {CommandDecorate::INPUT, "Input"}, {CommandDecorate::START, "Start"},
+            {CommandDecorate::SYN_ALIGN, "Align"}, {CommandDecorate::SYN_COMBINE, "Combine"},
+            {CommandDecorate::SYN_COMPRESS, "Compress"}
     };
 }
 

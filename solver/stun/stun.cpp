@@ -73,6 +73,8 @@ namespace {
 
 std::pair<PSynthInfo, PSynthInfo> solver::divideSpecForSTUN(const PSynthInfo &info) {
     auto* g = info->grammar; auto* start = g->start;
+    LOG(INFO) << "comb grammar";
+    g->print();
     bool is_used_ite = false;
     NonTerminal* b = nullptr;
     for (auto* rule: start->rule_list) {
