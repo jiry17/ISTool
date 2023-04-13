@@ -94,6 +94,5 @@ ComponentPool collector::collectComponentFromSource(Context* ctx, Env* env, Prog
     delete type_ctx;
     LOG(INFO) << "Print Component Pool";
     pool.print();
-    int kk; std::cin >> kk;
     return pool;
 }

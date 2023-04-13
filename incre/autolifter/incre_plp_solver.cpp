@@ -167,11 +167,39 @@ std::vector<AuxProgram> IncrePLPSolver::unfoldComponents(const std::vector<AuxPr
     }
     return res;
 }
+#include "istool/basic/config.h"
 void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
+    global::recorder.start("extend-component");
     for (auto& unit: component_info_list) {
         auto is_valid = !(evaluate_util->execute(unit.program, example.first) == evaluate_util->execute(unit.program, example.second));
         unit.info.append(is_valid);
     }
+    global::recorder.end("extend-component");
+    LOG(INFO) << "#Example: " << example_list.size() << " " << "#Component: " << component_info_list.size();
+
+    // Get sum (map neg xs)
+    /*std::vector<std::string> cared_programs = {"Param2 -> app(sum,app(map,neg,Param0))", "Param2 -> app(sum,Param0)"};
+    std::vector<UnitInfo> unit_list;
+    for (auto& program: cared_programs) {
+        for (auto& unit: component_info_list) {
+            if (aux2String(unit.program) == program) {
+                LOG(INFO) << unit.info.toString() << " " << program;
+                unit_list.push_back(unit);
+            }
+        }
+    }
+    if (unit_list.size() == 2) {
+        for (int i = 0; i < example_list.size(); ++i) {
+            if (unit_list[0].info[i] != unit_list[1].info[i]) {
+                LOG(INFO) << "diff example " << example2String(example_list[i]);
+                LOG(INFO) << cared_programs[0] << " " << (evaluate_util->execute(unit_list[0].program, example.first)).toString() << " "
+                          << (evaluate_util->execute(unit_list[0].program, example.second)).toString();
+                LOG(INFO) << cared_programs[0] << " " << (evaluate_util->execute(unit_list[1].program, example.first)).toString() << " "
+                          << (evaluate_util->execute(unit_list[1].program, example.second)).toString();
+            }
+        }
+    }*/
+
     example_list.push_back(example);
 
     // clear tmp data structures in the previous turn

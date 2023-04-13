@@ -59,6 +59,7 @@ namespace {
         if (x->getType() == TyType::COMPRESS || y->getType() == TyType::COMPRESS) {
             ctx->addCons(x_label == y_label);
         }
+        // LOG(INFO) << x->toString() << " " << y->toString();
         assert(x_content->getType() == y_content->getType());
         switch (x_content->getType()) {
             case TyType::COMPRESS: assert(0);
@@ -163,11 +164,13 @@ namespace {
         func = autolabel::unfoldTypeWithZ3Label(func, ctx);
         auto param = _labelTerm(term->param, ctx);
         auto* at = dynamic_cast<TyArrow*>(func.get());
+        LOG(INFO) << "get type " << term->toString() << " " << at->toString() << " " << param->toString();
         assert(at); _align(at->source, param, ctx);
         return at->target;
     }
     void _bind(const Pattern& pattern, const Ty& init_type, Z3Context* ctx, std::vector<TypeContext::BindLog>& log_list) {
         auto type = autolabel::unfoldTypeWithZ3Label(init_type, ctx);
+        LOG(INFO) << "bind " << pattern->toString() << " " << type->toString();
         switch (pattern->getType()) {
             case PatternType::VAR: {
                 auto* pv = dynamic_cast<PtVar*>(pattern.get());
