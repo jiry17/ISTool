@@ -25,7 +25,7 @@ const std::unordered_map<std::string, int> KVerifyBaseNumConfig = {
 int main(int argv, char** argc) {
     std::string name = "synduce/combine/mts";
 
-    std::string path = config::KSourcePath + "tests/incre/benchmark/" + name + ".f";
+    std::string path = config::KSourcePath + "tests/incre-tests/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
     std::string target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
     auto init_program = incre::parseFromF(path, true);
