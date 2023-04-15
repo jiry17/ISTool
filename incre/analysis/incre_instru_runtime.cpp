@@ -362,6 +362,7 @@ IncreExamplePool::IncreExamplePool(const IncreProgram& _program, Env* env,
     for (int command_id = 0; command_id < program->commands.size(); ++command_id) {
         auto& command = program->commands[command_id];
         incre::run(command, ctx);
+        LOG(INFO) << command->toString();
 
         if (command->getType() == CommandType::BIND) {
             auto* cb = dynamic_cast<CommandBind*>(command.get());
@@ -399,6 +400,9 @@ IncreExamplePool::IncreExamplePool(const IncreProgram& _program, Env* env,
 
 void IncreExampleCollector::collect(const Term &start, const std::unordered_map<std::string, Data> &_global) {
     current_global = _global;
+    for (auto& [name, val]: current_global) {
+        ctx->addBinding(name, std::make_shared<TmValue>(val));
+    }
     // LOG(INFO) << "collect " << start->toString();
     _collectExample(start, ctx, this);
 }

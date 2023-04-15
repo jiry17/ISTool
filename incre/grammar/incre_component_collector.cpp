@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/grammar/incre_component_collector.h"
+#include <iostream>
 #include "glog/logging.h"
 
 using namespace incre;

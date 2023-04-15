@@ -31,11 +31,29 @@ namespace incre {
         virtual ~IncreDataGenerator() = default;
     };
 
-    class BaseValueGenerator: public IncreDataGenerator {
+    /*class BaseValueGenerator: public IncreDataGenerator {
     public:
         virtual Data getRandomData(TyData* type);
         BaseValueGenerator(Env* _env);
         virtual ~BaseValueGenerator() = default;
+    };*/
+
+    class SizeSafeValueGenerator: public IncreDataGenerator {
+    public:
+
+        struct SplitScheme {
+            std::string cons_name;
+            Ty cons_type;
+            std::vector<int> size_list;
+            SplitScheme(const std::string& _cons_name, const Ty& _cons_type, const std::vector<int>& _size_list);
+        };
+        typedef std::vector<SplitScheme> SplitList;
+
+        std::unordered_map<std::string, SplitList*> split_map;
+        SplitList* getPossibleSplit(TyInductive* type, int size);
+        SizeSafeValueGenerator(Env* _env);
+        virtual Data getRandomData(TyData* type);
+        virtual ~SizeSafeValueGenerator();
     };
 
     class FirstOrderFunctionGenerator: public BaseValueGenerator {

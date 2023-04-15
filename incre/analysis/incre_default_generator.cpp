@@ -157,6 +157,7 @@ namespace {
 
 Data BaseValueGenerator::getRandomData(TyData *type) {
     auto* ctx = new RandomContext(&env->random_engine);
+    LOG(INFO) << "generate for " << type->toString();
     int num = _getSize(type);
     if (num) {
         assert(num <= KSizeLimit);
@@ -172,8 +173,86 @@ Data BaseValueGenerator::getRandomData(TyData *type) {
 IncreDataGenerator::IncreDataGenerator(Env *_env): env(_env) {
 }
 
-BaseValueGenerator::BaseValueGenerator(Env* _env): IncreDataGenerator(_env) {
+/*BaseValueGenerator::BaseValueGenerator(Env* _env): IncreDataGenerator(_env) {
+}*/
+
+SizeSafeValueGenerator::SplitScheme::SplitScheme(const std::string &_cons_name, const Ty &_cons_type,
+                                                 const std::vector<int> &_size_list):
+                                                 cons_name(_cons_name), cons_type(_cons_type), size_list(_size_list) {
 }
+SizeSafeValueGenerator::SizeSafeValueGenerator(Env* _env): IncreDataGenerator(_env) {
+}
+SizeSafeValueGenerator::~SizeSafeValueGenerator() noexcept {
+    for (auto& [name, l]: split_map) delete l;
+}
+
+namespace {
+    void _collectSubInductive(TyData* type, std::vector<TyInductive*>& sub_list) {
+        if (type->getType() == TyType::IND) {
+            sub_list.push_back(dynamic_cast<TyInductive*>(type));
+            return;
+        }
+        if (type->getType() == TyType::TUPLE) {
+            auto* tt = dynamic_cast<TyTuple*>(type);
+            for (int i = 0; i < tt->fields.size(); ++i) {
+                _collectSubInductive(tt->fields[i].get(), sub_list);
+            }
+            return;
+        }
+    }
+
+    void _combineAll(int pos, int rem, const std::vector<std::vector<int>>& size_pool, std::vector<int>& sub_list,
+                     std::vector<std::vector<int>>& res) {
+        if (pos == size_pool.size()) {
+            if (rem == 0) res.push_back(sub_list);
+            return;
+        }
+        for (auto now: size_pool[pos]) {
+            if (now <= rem) {
+                sub_list[pos] = now;
+                _combineAll(pos + 1, rem - now, size_pool, sub_list, res);
+            }
+        }
+    }
+
+    std::vector<std::vector<int>> _combineAll(const std::vector<std::vector<int>>& size_pool, int target) {
+        std::vector<std::vector<int>> res;
+        std::vector<int> sub_list(size_pool.size());
+        _combineAll(0, target, size_pool, sub_list, res);
+        return res;
+    }
+}
+
+SizeSafeValueGenerator::SplitList *SizeSafeValueGenerator::getPossibleSplit(TyInductive *type, int size) {
+    auto feature = type->name + "@" + std::to_string(size);
+    if (split_map.count(feature)) return split_map[feature];
+    if (!size) return split_map[feature] = new SplitList();
+    auto* res = new SplitList();
+    for (auto& [cons_name, cons_type]: type->constructors) {
+        std::vector<TyInductive*> sub_list;
+        _collectSubInductive(cons_type.get(), sub_list);
+
+        std::vector<std::vector<int>> merge_list;
+        for (auto* sub: sub_list) {
+            std::vector<int> current_valid;
+            for (int i = 1; i < size; ++i) {
+                if (!getPossibleSplit(sub, i)->empty()) {
+                    current_valid.push_back(i);
+                }
+            }
+            merge_list.push_back(current_valid);
+        }
+
+        for (auto& valid_sub_list: _combineAll(merge_list, size - 1)) {
+            res->emplace_back(cons_name, cons_type, valid_sub_list);
+        }
+    }
+    return split_map[feature] = res;
+}
+
+SizeSafeValueGenerator::
+
+
 
 FirstOrderFunctionGenerator::FirstOrderFunctionGenerator(Env *_env): BaseValueGenerator(_env) {
 }
