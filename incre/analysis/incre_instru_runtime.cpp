@@ -410,14 +410,14 @@ void IncreExampleCollector::collect(const Term &start, const std::unordered_map<
 std::pair<Term, std::unordered_map<std::string, Data>> IncreExamplePool::generateStart() {
     std::unordered_map<std::string, Data> global;
     for (auto& [inp_name, inp_ty]: input_list) {
-        auto input_data = generator->getRandomData(inp_ty.get());
+        auto input_data = generator->getRandomData(inp_ty);
         ctx->addBinding(inp_name, std::make_shared<TmValue>(input_data));
         global[inp_name] = input_data;
     }
     auto& [start_name, params] = start_list[start_dist(generator->env->random_engine)];
     Term term = std::make_shared<TmVar>(start_name);
     for (auto& param_type: params) {
-        auto input_data = generator->getRandomData(param_type.get());
+        auto input_data = generator->getRandomData(param_type);
         term = std::make_shared<TmApp>(term, std::make_shared<TmValue>(input_data));
     }
     return {term, global};

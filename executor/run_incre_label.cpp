@@ -23,7 +23,7 @@ const std::unordered_map<std::string, int> KVerifyBaseNumConfig = {
 };
 
 int main(int argv, char** argc) {
-    std::string name = "synduce/nested_list/mtss";
+    std::string name = "synduce/terms/height";
 
     std::string path = config::KSourcePath + "incre-tests/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";

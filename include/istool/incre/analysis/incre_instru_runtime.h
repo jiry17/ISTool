@@ -27,16 +27,9 @@ namespace incre {
     public:
         Env* env;
         IncreDataGenerator(Env* _env);
-        virtual Data getRandomData(TyData* type) = 0;
+        virtual Data getRandomData(const Ty& type) = 0;
         virtual ~IncreDataGenerator() = default;
     };
-
-    /*class BaseValueGenerator: public IncreDataGenerator {
-    public:
-        virtual Data getRandomData(TyData* type);
-        BaseValueGenerator(Env* _env);
-        virtual ~BaseValueGenerator() = default;
-    };*/
 
     class SizeSafeValueGenerator: public IncreDataGenerator {
     public:
@@ -46,26 +39,28 @@ namespace incre {
             Ty cons_type;
             std::vector<int> size_list;
             SplitScheme(const std::string& _cons_name, const Ty& _cons_type, const std::vector<int>& _size_list);
+            std::string toString() const;
         };
         typedef std::vector<SplitScheme> SplitList;
 
         std::unordered_map<std::string, SplitList*> split_map;
-        SplitList* getPossibleSplit(TyInductive* type, int size);
+        std::unordered_map<std::string, Ty> ind_map;
+        SplitList* getPossibleSplit(const Ty& type, int size);
         SizeSafeValueGenerator(Env* _env);
-        virtual Data getRandomData(TyData* type);
+        virtual Data getRandomData(const Ty& type);
         virtual ~SizeSafeValueGenerator();
     };
 
-    class FirstOrderFunctionGenerator: public BaseValueGenerator {
+    class FirstOrderFunctionGenerator: public SizeSafeValueGenerator {
     public:
-        virtual Data getRandomData(TyData* type);
+        virtual Data getRandomData(const Ty& type);
         FirstOrderFunctionGenerator(Env* _env);
         virtual ~FirstOrderFunctionGenerator() = default;
     };
 
-    class FixedPoolFunctionGenerator: public BaseValueGenerator {
+    class FixedPoolFunctionGenerator: public SizeSafeValueGenerator {
     public:
-        virtual Data getRandomData(TyData* type);
+        virtual Data getRandomData(const Ty& type);
         FixedPoolFunctionGenerator(Env* _env);
         virtual ~FixedPoolFunctionGenerator() = default;
     };

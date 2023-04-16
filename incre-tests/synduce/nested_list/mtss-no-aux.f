@@ -25,16 +25,24 @@ sum = fix (
   end
 );
 
+nsum = fix (
+  \f: NList -> Int. \xs: NList.
+  match xs with
+    line a -> sum a
+  | ncons {h, t} -> + (sum h) (f t)
+  end
+);
+
 max = \a: Int. \b: Int. if < a b then b else a;
 
 spec = fix (
-  \f: NList -> {Int, Int}. \xs: NList.
+  \f: NList -> Int. \xs: NList.
   match xs with
-    line a -> {max 0 (sum a), sum a}
+    line a -> max 0 (sum a)
   | ncons {h, t} ->
     let hsum = sum h in
       let tres = f t in
-        {max (+ tres.1 hsum) 0, + tres.2 hsum}
+        max (+ tres hsum) 0
   end
 );
 

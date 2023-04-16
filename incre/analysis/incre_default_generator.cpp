@@ -70,28 +70,24 @@ namespace {
     struct RandomContext {
         std::minstd_rand* e;
         std::stack<int> size;
-        std::vector<std::pair<std::string, TyInductive*>> ctx;
+        std::vector<std::pair<std::string, Ty>> ctx;
         RandomContext(std::minstd_rand* _e): e(_e) {}
-        TyInductive* lookup(const std::string& name) {
+        Ty lookup(const std::string& name) {
             for (int i = int(ctx.size()); i; --i) {
                 auto& [tname, type] = ctx[i - 1];
                 if (tname == name) return type;
             }
             assert(0);
         }
-        void distributeSize(int num) {
-            assert(!size.empty());
-            int current = size.top(); size.pop();
-            if (num == 0) return; assert(current);
-            auto sub = _distributeSize(current - 1, num, e);
-            for (auto w: sub) size.push(w);
+        void clear() {
+            while (!size.empty()) size.pop();
         }
     };
 
-    Data _getRandomData(TyData* type, RandomContext* ctx);
+    Data _getRandomData(const Ty& type, RandomContext* ctx, SizeSafeValueGenerator* g);
 
-#define RandomCase(name) return _getRandomData(dynamic_cast<Ty ## name*>(type), ctx)
-#define RandomHead(name) Data _getRandomData(Ty ## name* type, RandomContext* ctx)
+#define RandomCase(name) return _getRandomData(dynamic_cast<Ty ## name*>(type.get()), type, ctx, g)
+#define RandomHead(name) Data _getRandomData(Ty ## name* type, const Ty& _type, RandomContext* ctx, SizeSafeValueGenerator* g)
 
     RandomHead(Int) {
         auto d = std::uniform_int_distribution<int>(KIntMin, KIntMax);
@@ -106,41 +102,29 @@ namespace {
     }
     RandomHead(Tuple) {
         DataList fields;
-        for (auto& sub: type->fields) fields.push_back(_getRandomData(sub.get(), ctx));
+        for (auto& sub: type->fields) fields.push_back(_getRandomData(sub, ctx, g));
         return BuildData(Product, fields);
     }
     RandomHead(Var) {
-        auto* ti = ctx->lookup(type->name);
-        return _getRandomData(ti, ctx);
+        return _getRandomData(ctx->lookup(type->name), ctx, g);
     }
     RandomHead(Inductive) {
-        ctx->ctx.emplace_back(type->name, type);
-        std::vector<int> valid_indices, reduce_indices, empty_indices;
-        int size = ctx->size.top();
-
-        for (int i = 0; i < type->constructors.size(); ++i) {
-            auto [cname, ctype] = type->constructors[i];
-            int current = _getSize(ctype.get());
-            if (current == 0) empty_indices.push_back(i);
-            if (!_isSelfRecursion(ctype.get(), type->name)) reduce_indices.push_back(i);
-            if ((current == 0 && size) || (current && size == 0)) continue;
-            valid_indices.push_back(i);
+        auto size = ctx->size.top(); ctx->size.pop();
+        ctx->ctx.emplace_back(type->name, _type);
+        auto cases = g->getPossibleSplit(_type, size);
+        if (cases->empty()) throw SemanticsError();
+        std::uniform_int_distribution<int> d(0, int(cases->size()) - 1);
+        auto selected_case = cases->at(d(*ctx->e));
+        for (int i = int(selected_case.size_list.size()) - 1; i >= 0; --i) {
+            ctx->size.push(selected_case.size_list[i]);
         }
-
-        if (valid_indices.empty()) {
-            if (size) valid_indices = empty_indices; else valid_indices = reduce_indices;
-        }
-        assert(!valid_indices.empty());
-        std::shuffle(valid_indices.begin(), valid_indices.end(), *(ctx->e));
-        int pos = valid_indices[0];
-        auto [cname, ctype] = type->constructors[pos];
-        ctx->distributeSize(_getSize(ctype.get()));
-        auto content = _getRandomData(ctype.get(), ctx);
+        auto sub_res = _getRandomData(selected_case.cons_type, ctx, g);
         ctx->ctx.pop_back();
-        return Data(std::make_shared<VInductive>(cname, content));
+        auto iv = std::make_shared<VInductive>(selected_case.cons_name, sub_res);
+        return Data(iv);
     }
 
-    Data _getRandomData(TyData* type, RandomContext* ctx) {
+    Data _getRandomData(const Ty& type, RandomContext* ctx, SizeSafeValueGenerator* g) {
         switch (type->getType()) {
             case TyType::INT: RandomCase(Int);
             case TyType::BOOL: RandomCase(Bool);
@@ -155,30 +139,18 @@ namespace {
     }
 }
 
-Data BaseValueGenerator::getRandomData(TyData *type) {
-    auto* ctx = new RandomContext(&env->random_engine);
-    LOG(INFO) << "generate for " << type->toString();
-    int num = _getSize(type);
-    if (num) {
-        assert(num <= KSizeLimit);
-        auto d = std::uniform_int_distribution<int>(num, KSizeLimit);
-        int start_size = d(env->random_engine);
-        ctx->size.push(start_size + 1);
-        ctx->distributeSize(num);
-    }
-    auto res = _getRandomData(type, ctx);
-    delete ctx;
-    return res;
-}
 IncreDataGenerator::IncreDataGenerator(Env *_env): env(_env) {
 }
-
-/*BaseValueGenerator::BaseValueGenerator(Env* _env): IncreDataGenerator(_env) {
-}*/
 
 SizeSafeValueGenerator::SplitScheme::SplitScheme(const std::string &_cons_name, const Ty &_cons_type,
                                                  const std::vector<int> &_size_list):
                                                  cons_name(_cons_name), cons_type(_cons_type), size_list(_size_list) {
+}
+
+std::string SizeSafeValueGenerator::SplitScheme::toString() const {
+    std::string res = cons_name + "@" + cons_type->toString();
+    for (auto& w: size_list) res += " " + std::to_string(w);
+    return res;
 }
 SizeSafeValueGenerator::SizeSafeValueGenerator(Env* _env): IncreDataGenerator(_env) {
 }
@@ -187,15 +159,23 @@ SizeSafeValueGenerator::~SizeSafeValueGenerator() noexcept {
 }
 
 namespace {
-    void _collectSubInductive(TyData* type, std::vector<TyInductive*>& sub_list) {
+    void _collectSubInductive(const Ty& type, TyList& sub_list,
+                              std::unordered_map<std::string, Ty>& known_type) {
         if (type->getType() == TyType::IND) {
-            sub_list.push_back(dynamic_cast<TyInductive*>(type));
+            sub_list.push_back(type);
+            auto* ti = dynamic_cast<TyInductive*>(type.get());
+            known_type[ti->name] = type;
+            return;
+        }
+        if (type->getType() == TyType::VAR) {
+            auto* tv = dynamic_cast<TyVar*>(type.get());
+            sub_list.push_back(known_type[tv->name]);
             return;
         }
         if (type->getType() == TyType::TUPLE) {
-            auto* tt = dynamic_cast<TyTuple*>(type);
+            auto* tt = dynamic_cast<TyTuple*>(type.get());
             for (int i = 0; i < tt->fields.size(); ++i) {
-                _collectSubInductive(tt->fields[i].get(), sub_list);
+                _collectSubInductive(tt->fields[i], sub_list, known_type);
             }
             return;
         }
@@ -223,20 +203,27 @@ namespace {
     }
 }
 
-SizeSafeValueGenerator::SplitList *SizeSafeValueGenerator::getPossibleSplit(TyInductive *type, int size) {
+SizeSafeValueGenerator::SplitList *SizeSafeValueGenerator::getPossibleSplit(const Ty& _type, int size) {
+    auto* type = dynamic_cast<TyInductive*>(_type.get());
+    if (!type) LOG(INFO) << "Expected TyInductive, but get " << type->toString();
     auto feature = type->name + "@" + std::to_string(size);
     if (split_map.count(feature)) return split_map[feature];
     if (!size) return split_map[feature] = new SplitList();
     auto* res = new SplitList();
     for (auto& [cons_name, cons_type]: type->constructors) {
-        std::vector<TyInductive*> sub_list;
-        _collectSubInductive(cons_type.get(), sub_list);
+        TyList sub_list;
+        _collectSubInductive(cons_type, sub_list, ind_map);
+        /*LOG(INFO) << "case for " << cons_name << " " << cons_type->toString() << " " << sub_list.size();
+        for (auto& sub_type: sub_list) {
+            LOG(INFO) << "  " << sub_type->toString();
+        }*/
 
         std::vector<std::vector<int>> merge_list;
-        for (auto* sub: sub_list) {
+        for (const auto& sub: sub_list) {
             std::vector<int> current_valid;
             for (int i = 1; i < size; ++i) {
-                if (!getPossibleSplit(sub, i)->empty()) {
+                //LOG(INFO) << "get for " << sub->toString() << " " << i << " " << getPossibleSplit(sub, i);
+                if (!(getPossibleSplit(sub, i)->empty())) {
                     current_valid.push_back(i);
                 }
             }
@@ -247,14 +234,64 @@ SizeSafeValueGenerator::SplitList *SizeSafeValueGenerator::getPossibleSplit(TyIn
             res->emplace_back(cons_name, cons_type, valid_sub_list);
         }
     }
+    /*LOG(INFO) << "Possible cases for " << feature;
+    for (auto& possible_case: *res) {
+        LOG(INFO) << "  " << possible_case.toString();
+    }*/
     return split_map[feature] = res;
 }
 
-SizeSafeValueGenerator::
+#include <iostream>
+
+Data SizeSafeValueGenerator::getRandomData(const Ty& type) {
+    auto* ctx = new RandomContext(&env->random_engine);
+    TyList sub_list;
+    _collectSubInductive(type, sub_list, ind_map);
+    if (sub_list.empty()) return _getRandomData(type, nullptr, nullptr);
+    auto d = std::uniform_int_distribution<int>(int(sub_list.size()), KSizeLimit);
+    std::vector<std::vector<int>> size_pool;
+    for (auto sub: sub_list) {
+        std::vector<int> current_valid;
+        for (int i = 1; i <= KSizeLimit; ++i) {
+            if (!getPossibleSplit(sub, i)->empty()) {
+                current_valid.push_back(i);
+            }
+        }
+        size_pool.push_back(current_valid);
+    }
+    /*LOG(INFO) << "Generator for " << type->toString();
+    for (int i = 0; i < sub_list.size(); ++i) {
+        std::cout << sub_list[i]->toString();
+        for (auto j: size_pool[i]) std::cout << " " << j;
+        std::cout << std::endl;
+    }*/
+    Data res;
+
+    while (1) {
+        try {
+            ctx->clear();
+            int start_size = d(env->random_engine);
+            auto cases = _combineAll(size_pool, start_size);
+            if (cases.empty()) continue;
+            auto d2 = std::uniform_int_distribution<int>(0, int(cases.size()) - 1);
+            auto& selected_case = cases[d2(env->random_engine)];
+            for (int i = int(selected_case.size()) - 1; i >= 0; --i) {
+                ctx->size.push(selected_case[i]);
+            }
+            res = _getRandomData(type, ctx, this);
+            break;
+        } catch (SemanticsError& e) {
+            continue;
+        }
+    }
+
+    delete ctx;
+    return res;
+}
 
 
 
-FirstOrderFunctionGenerator::FirstOrderFunctionGenerator(Env *_env): BaseValueGenerator(_env) {
+FirstOrderFunctionGenerator::FirstOrderFunctionGenerator(Env *_env): SizeSafeValueGenerator(_env) {
 }
 
 namespace {
@@ -290,15 +327,16 @@ namespace {
     }
 }
 
-Data FirstOrderFunctionGenerator::getRandomData(TyData *type) {
-    if (type->getType() != TyType::ARROW) return BaseValueGenerator::getRandomData(type);
+Data FirstOrderFunctionGenerator::getRandomData(const Ty& type) {
+    if (type->getType() != TyType::ARROW) return SizeSafeValueGenerator::getRandomData(type);
 
     std::vector<ComponentInfo> component_list;
     Ty oup_type;
     TyList param_list;
+    Ty current_type = type;
     while (type->getType() == TyType::ARROW) {
-        auto* at = dynamic_cast<TyArrow*>(type);
-        type = at->target.get(); oup_type = at->target;
+        auto* at = dynamic_cast<TyArrow*>(current_type.get());
+        current_type = at->target; oup_type = at->target;
         auto param_name = "v" + std::to_string(param_list.size());
         param_list.push_back(at->source);
         component_list.emplace_back((TyList){}, at->source, std::make_shared<TmVar>(param_name));
@@ -355,10 +393,10 @@ namespace {
     }
 }
 
-FixedPoolFunctionGenerator::FixedPoolFunctionGenerator(Env *_env): BaseValueGenerator(_env) {
+FixedPoolFunctionGenerator::FixedPoolFunctionGenerator(Env *_env): SizeSafeValueGenerator(_env) {
 }
 
-Data FixedPoolFunctionGenerator::getRandomData(TyData *type) {
+Data FixedPoolFunctionGenerator::getRandomData(const Ty& type) {
     _initOperatorPool();
     for (auto& [ty, pool]: KOperatorPool) {
         if (type->toString() == ty->toString()) {
@@ -366,5 +404,5 @@ Data FixedPoolFunctionGenerator::getRandomData(TyData *type) {
             return Data(std::make_shared<VAbsFunction>(pool[d(env->random_engine)]));
         }
     }
-    return BaseValueGenerator::getRandomData(type);
+    return SizeSafeValueGenerator::getRandomData(type);
 }

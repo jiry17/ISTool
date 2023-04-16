@@ -59,7 +59,6 @@ namespace {
         if (x->getType() == TyType::COMPRESS || y->getType() == TyType::COMPRESS) {
             ctx->addCons(x_label == y_label);
         }
-        // LOG(INFO) << x->toString() << " " << y->toString();
         assert(x_content->getType() == y_content->getType());
         switch (x_content->getType()) {
             case TyType::COMPRESS: assert(0);
@@ -215,7 +214,7 @@ namespace {
                 ctx->cancelBind(log_list[i]);
             }
         }
-        LOG(INFO) << "Align term " << term->toString();
+        LOG(INFO) << "Align term " << term->toString() << " " << content->toString();
         for (int i = 1; i < case_types.size(); ++i) {
             _align(case_types[0], case_types[i], ctx);
         }
