@@ -247,7 +247,12 @@ Data SizeSafeValueGenerator::getRandomData(const Ty& type) {
     auto* ctx = new RandomContext(&env->random_engine);
     TyList sub_list;
     _collectSubInductive(type, sub_list, ind_map);
-    if (sub_list.empty()) return _getRandomData(type, nullptr, nullptr);
+    // LOG(INFO) << "target type " << type->toString();
+    if (sub_list.empty()) {
+        auto res = _getRandomData(type, ctx, nullptr);
+        delete ctx;
+        return res;
+    }
     auto d = std::uniform_int_distribution<int>(int(sub_list.size()), KSizeLimit);
     std::vector<std::vector<int>> size_pool;
     for (auto sub: sub_list) {

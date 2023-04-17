@@ -439,6 +439,9 @@ ComponentPool incre::grammar::collector::getBasicComponentPool(Context* ctx, Env
     auto ic = std::make_shared<ConstComponent>(theory::clia::getTInt(), (DataList){BuildData(Int, 0)},
                                                [](Value* value)->bool {return dynamic_cast<IntValue*>(value);});
     RegisterAll(ic);
+    auto ib = std::make_shared<ConstComponent>(type::getTBool(), (DataList){},
+                                               [](Value* value) -> bool {return dynamic_cast<BoolValue*>(value);});
+    RegisterAll(ib);
 
     // insert language constructs
     RegisterAll(std::make_shared<IteComponent>());
