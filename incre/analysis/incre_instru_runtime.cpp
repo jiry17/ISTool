@@ -401,6 +401,7 @@ IncreExamplePool::IncreExamplePool(const IncreProgram& _program, Env* env,
 void IncreExampleCollector::collect(const Term &start, const std::unordered_map<std::string, Data> &_global) {
     current_global = _global;
     for (auto& [name, val]: current_global) {
+        // LOG(INFO) << "bind " << name << " " << val.toString();
         ctx->addBinding(name, std::make_shared<TmValue>(val));
     }
     // LOG(INFO) << "collect " << start->toString();

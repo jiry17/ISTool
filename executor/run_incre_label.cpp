@@ -16,15 +16,16 @@
 using namespace incre;
 
 const std::unordered_map<std::string, int> KComposeNumConfig = {
-        {"lsp/page21", 3}, {"lsp/page22-1", 4}, {"lsp/page22-2", 4}
+        {"lsp/page21", 3}, {"lsp/page22-1", 4}, {"lsp/page22-2", 4},
+        {"synduce/constraints/alist/most_frequent", 4}
 };
 const std::unordered_map<std::string, int> KVerifyBaseNumConfig = {
         {"lsp/page22-1", 1000}
 };
 
 int main(int argv, char** argc) {
-    std::string name = "synduce/unimodal_lists/search_no_optim";
-
+    //std::string name = "synduce/constraints/alist/most_frequent";
+    std::string name = "test";
     std::string path = config::KSourcePath + "incre-tests/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
     std::string target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";

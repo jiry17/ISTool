@@ -17,7 +17,7 @@ const std::string solver::lia::KMaxCostName = "LIA@MaxCost";
 
 namespace {
     const int KDefaultConstValue = 1;
-    const int KDefaultTermValue = 2;
+    const int KDefaultTermValue = 1;
     const int KDefaultMaxCost = 1e9;
 
     int _getDefaultConstMax(const PSynthInfo& info) {
@@ -146,8 +146,11 @@ FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, T
             }
         }
         if (is_constant) {
-            auto prog = program::buildConst(io_example_list[0].second);
-            return semantics::buildSingleContext(io_example_space->func_name, prog);
+            int w = theory::clia::getIntValue(io_example_list[0].second);
+            if (w <= KConstIntMax) {
+                auto prog = program::buildConst(io_example_list[0].second);
+                return semantics::buildSingleContext(io_example_space->func_name, prog);
+            }
         }
     }
     std::unordered_set<std::string> cache;

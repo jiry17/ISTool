@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/analysis/incre_instru_runtime.h"
+#include "istool/incre/language/incre_lookup.h"
 #include "glog/logging.h"
 #include <stack>
 
@@ -201,6 +202,17 @@ namespace {
         _combineAll(0, target, size_pool, sub_list, res);
         return res;
     }
+
+    bool _isRecursive(TyInductive* type) {
+        incre::match::MatchTask task;
+        task.type_matcher = [](TyData* type, const incre::match::MatchContext& ctx) -> bool {
+            return type->getType() == TyType::IND || type->getType() == TyType::VAR;
+        };
+        for (auto& [cons_name, cons_ty]: type->constructors) {
+            if (incre::match::match(cons_ty.get(), task)) return true;
+        }
+        return false;
+    }
 }
 
 SizeSafeValueGenerator::SplitList *SizeSafeValueGenerator::getPossibleSplit(const Ty& _type, int size) {
@@ -208,21 +220,24 @@ SizeSafeValueGenerator::SplitList *SizeSafeValueGenerator::getPossibleSplit(cons
     if (!type) LOG(INFO) << "Expected TyInductive, but get " << type->toString();
     auto feature = type->name + "@" + std::to_string(size);
     if (split_map.count(feature)) return split_map[feature];
+    if (!_isRecursive(type)) {
+        if (size) return split_map[feature] = new SplitList();
+        auto* res = new SplitList ();
+        for (auto& [cons_name, cons_type]: type->constructors) {
+            res->emplace_back(cons_name, cons_type, (std::vector<int>){});
+        }
+        return split_map[feature] = res;
+    }
     if (!size) return split_map[feature] = new SplitList();
     auto* res = new SplitList();
     for (auto& [cons_name, cons_type]: type->constructors) {
         TyList sub_list;
         _collectSubInductive(cons_type, sub_list, ind_map);
-        /*LOG(INFO) << "case for " << cons_name << " " << cons_type->toString() << " " << sub_list.size();
-        for (auto& sub_type: sub_list) {
-            LOG(INFO) << "  " << sub_type->toString();
-        }*/
 
         std::vector<std::vector<int>> merge_list;
         for (const auto& sub: sub_list) {
             std::vector<int> current_valid;
-            for (int i = 1; i < size; ++i) {
-                //LOG(INFO) << "get for " << sub->toString() << " " << i << " " << getPossibleSplit(sub, i);
+            for (int i = 0; i < size; ++i) {
                 if (!(getPossibleSplit(sub, i)->empty())) {
                     current_valid.push_back(i);
                 }
@@ -234,10 +249,6 @@ SizeSafeValueGenerator::SplitList *SizeSafeValueGenerator::getPossibleSplit(cons
             res->emplace_back(cons_name, cons_type, valid_sub_list);
         }
     }
-    /*LOG(INFO) << "Possible cases for " << feature;
-    for (auto& possible_case: *res) {
-        LOG(INFO) << "  " << possible_case.toString();
-    }*/
     return split_map[feature] = res;
 }
 
@@ -245,19 +256,21 @@ SizeSafeValueGenerator::SplitList *SizeSafeValueGenerator::getPossibleSplit(cons
 
 Data SizeSafeValueGenerator::getRandomData(const Ty& type) {
     auto* ctx = new RandomContext(&env->random_engine);
+    // LOG(INFO) << "Get random data for " << type->toString();
     TyList sub_list;
     _collectSubInductive(type, sub_list, ind_map);
     // LOG(INFO) << "target type " << type->toString();
     if (sub_list.empty()) {
         auto res = _getRandomData(type, ctx, nullptr);
         delete ctx;
+        // LOG(INFO) << "finished";
         return res;
     }
-    auto d = std::uniform_int_distribution<int>(int(sub_list.size()), KSizeLimit);
+    auto d = std::uniform_int_distribution<int>(0, KSizeLimit);
     std::vector<std::vector<int>> size_pool;
     for (auto sub: sub_list) {
         std::vector<int> current_valid;
-        for (int i = 1; i <= KSizeLimit; ++i) {
+        for (int i = 0; i <= KSizeLimit; ++i) {
             if (!getPossibleSplit(sub, i)->empty()) {
                 current_valid.push_back(i);
             }
@@ -289,7 +302,7 @@ Data SizeSafeValueGenerator::getRandomData(const Ty& type) {
             continue;
         }
     }
-
+    // LOG(INFO) << "finished";
     delete ctx;
     return res;
 }
