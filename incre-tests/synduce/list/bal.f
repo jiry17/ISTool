@@ -13,7 +13,7 @@ spec = fix (
     let min_cnt = result.2 in
     let bal = result.3 in
     let new_cnt = if (> h 0) then (+ cnt 1) else (- cnt 1) in
-    {new_cnt, min min_cnt new_cnt, and bal (>= cnt 0)}
+    {new_cnt, min min_cnt new_cnt, and bal (>= new_cnt 0)}
   end
 );
 
