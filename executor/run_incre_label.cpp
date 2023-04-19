@@ -33,7 +33,7 @@ int main(int argv, char** argc) {
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
     std::string target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
     auto init_program = incre::parseFromF(path, true);
-
+ 
     global::recorder.start("label");
     auto* label_solver = new autolabel::AutoLabelZ3Solver(init_program);
     auto res = label_solver->label();
