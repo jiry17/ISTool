@@ -14,7 +14,7 @@
 using namespace polygen;
 
 namespace {
-    const int KDefaultMaxTermNum = 3;
+    const int KDefaultMaxTermNum = 4;
     const int KDefaultExampleNum = 5;
     const int KDefaultRandomFactor = 5;
 

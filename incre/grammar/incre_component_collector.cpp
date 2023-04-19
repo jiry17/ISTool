@@ -106,7 +106,7 @@ void BasicOperatorComponent::insertComponent(const std::unordered_map<std::strin
 }
 
 Term BasicOperatorComponent::tryBuildTerm(const PSemantics &current_sem, const TermList &term_list) {
-    if (current_sem != _sem) return nullptr;
+    if (current_sem->getName() != name && current_sem->getName() != _sem->getName()) return nullptr;
     auto res = incre::getOperator(name);
     for (int i = 0; i < term_list.size(); ++i) {
         res = std::make_shared<TmApp>(res, term_list[i]);
@@ -426,7 +426,7 @@ ComponentPool incre::grammar::collectComponent(Context* ctx, Env* env, ProgramDa
 ComponentPool incre::grammar::collector::getBasicComponentPool(Context* ctx, Env* env, bool is_full_apply) {
     ComponentPool basic;
     // insert basic operator
-    const std::vector<std::string> op_list = {"+", "-", "*", "=", "<", "and", "or", "not"};
+    const std::vector<std::string> op_list = {"+", "-", "*", "=", "<", "and", "or", "!"};
     const std::unordered_set<std::string> all_used_op = {"+", "-"};
 
     for (auto op_name: op_list) {

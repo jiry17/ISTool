@@ -10,13 +10,15 @@ is_even = fix (
   end
 );
 
-spec = fix (
+max = \a: Int. \b: Int. if < a b then b else a;
+
+spec = \t: Tree. mod2 ((fix (
   \f: Tree -> Int. \t: Tree.
   match t with
-    elt a -> mod2 a
-  | node {a, l, r} -> + (mod2 a) (+ (f l) (f r))
+    elt a -> a
+  | node {a, l, r} -> max a (max (f l) (f r))
   end
-);
+)) t);
 
 target = fix (
   \f: Tree -> Compress Tree. \t: Tree.

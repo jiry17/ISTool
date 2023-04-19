@@ -61,7 +61,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
     IOExampleList io_example_list;
     Example counter_example;
     auto result = semantics::buildSingleContext(info->name, start);
-    LOG(INFO) << "synthesis " << result.toString();
+   // LOG(INFO) << "synthesis " << result.toString();
     if (v->verify(result, &counter_example)) {
         return result;
     }
@@ -69,27 +69,6 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
     io_example_list.push_back(io_space->getIOExample(counter_example));
     ProgramList term_list, condition_list;
     auto* env = spec->env.get();
-
-    /*// Init Term List
-    ProgramList params;
-    for (int i = 0; i < 7; ++i) params.push_back(program::buildParam(i, theory::clia::getTInt()));
-    term_list.push_back(params[0]);
-    term_list.push_back(params[4]);
-    term_list.push_back(std::make_shared<Program>(env->getSemantics("+"), (ProgramList){
-        std::make_shared<Program>(env->getSemantics("+"), (ProgramList){params[1], params[5]}),
-        program::buildConst(BuildData(Int, 1))
-    }));
-    term_list.push_back(std::make_shared<Program>(env->getSemantics("+"), (ProgramList){
-            std::make_shared<Program>(env->getSemantics("+"), (ProgramList){params[3], params[2]}),
-            program::buildConst(BuildData(Int, -1))
-    }));
-    term_list.push_back(std::make_shared<Program>(env->getSemantics("+"), (ProgramList){
-            std::make_shared<Program>(env->getSemantics("+"), (ProgramList){params[3], params[6]}),
-            program::buildConst(BuildData(Int, -1))
-    }));
-    for (int i = 0; i < 4; ++i) condition_list.push_back(program::buildConst(BuildData(Bool, true)));
-    for (const auto&p: term_list) LOG(INFO) << "term " << p->toString();
-    LOG(INFO) << example::ioExample2String(io_example_list[io_example_list.size() - 1]);*/
 
     while (true) {
         TimeCheck(guard);
@@ -102,7 +81,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             }
         }
         if (!is_occur) {
-            /*LOG(INFO) << "new term";*/
+            //LOG(INFO) << "new term";
             auto new_term = term_solver->synthesisTerms(example_list, guard);
             //for (const auto& p: new_term) std::cout << "  " << p->toString() << std::endl;
 
@@ -187,7 +166,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
         if (v->verify(result, &counter_example)) {
             return result;
         }
-        // LOG(INFO) << "Counter Example " << example::ioExample2String(io_space->getIOExample(counter_example));
+        //LOG(INFO) << "Counter Example " << example::ioExample2String(io_space->getIOExample(counter_example));
         example_list.push_back(counter_example);
         io_example_list.push_back(io_space->getIOExample(counter_example));
     }

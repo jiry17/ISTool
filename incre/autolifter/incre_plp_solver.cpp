@@ -527,7 +527,7 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
     std::cout << std::endl << std::endl << std::endl;
     LOG(INFO) << "solve " << task->example_space->tau_id;
     if (task->target.second) LOG(INFO) << "  " << task->target.second->toString();
-    for (int i = 0; i < task->aux_grammar_list.size(); ++i) {
+    /*for (int i = 0; i < task->aux_grammar_list.size(); ++i) {
         auto* grammar = task->aux_grammar_list[i];
         std::cout << "aux grammar " << i << std::endl;
         grammar->grammar->print();
@@ -535,7 +535,7 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
     }
     std::cout << "compress grammar" << std::endl;
     task->compress_grammar->grammar->print();
-    std::cout << std::endl;
+    std::cout << std::endl;*/
     auto counter_example = verify(unfoldComponents({}));
     if (counter_example.first == -1) return {};
     LOG(INFO) << "Counter example " << example2String(counter_example);

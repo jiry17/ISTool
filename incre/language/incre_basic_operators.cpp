@@ -66,7 +66,7 @@ namespace {
                 {"+", buildPlus()}, {"-", buildMinus()}, {"*", buildTimes()},
                 {"/", buildDiv()}, {"==", buildEq()}, {"<", buildLt()}, {">", buildGt()},
                 {"and", buildAnd()}, {"or", buildOr()}, {"=", buildEq()}, {"not", buildNot()},
-                {"<=", buildLeq()}, {">=", buildGeq()}
+                {"<=", buildLeq()}, {">=", buildGeq()}, {"!", buildNot()}
         };
     }
 }
