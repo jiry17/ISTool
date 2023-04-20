@@ -23,17 +23,17 @@ const std::unordered_map<std::string, int> KComposeNumConfig = {
         {"synduce/constraints/bst/most_frequent", 4}
 };
 const std::unordered_map<std::string, int> KVerifyBaseNumConfig = {
-        {"lsp/page22-1", 1000}
+        {"lsp/page22-1", 1000}, {"synduce/constraints/sortedlist/mss", 1000}
 };
 
 int main(int argv, char** argc) {
-    //std::string name = "synduce/constraints/sortedlist/largest_diff_poslist";
-    std::string name = "synduce/list/bal";
+    std::string name = "synduce/constraints/memo/proper_indexation_sum_lt_pos_v2";
+    //std::string name = "synduce/list/bal";
     std::string path = config::KSourcePath + "incre-tests/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
     std::string target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
     auto init_program = incre::parseFromF(path, true);
- 
+
     global::recorder.start("label");
     auto* label_solver = new autolabel::AutoLabelZ3Solver(init_program);
     auto res = label_solver->label();

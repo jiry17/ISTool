@@ -41,7 +41,7 @@ target = fix (
   end
 );
 
-/* Customized generator */
+/* Customized generator, not used */
 gen = fix (
   \f: Tree -> TreeMemo. \t: Tree.
   match t with
@@ -52,6 +52,6 @@ gen = fix (
   end
 );
 
-main = \t: Tree.
-  let mt = gen t in
+main = /*\t: Tree. let mt = gen t in*/
+  \mt: TreeMemo.
     if is_memo mt then spec (repr (target mt)) else 0;

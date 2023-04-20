@@ -23,7 +23,7 @@ spec = fix (
   \f: Tree -> Int. \t: Tree.
   match t with
     leaf w -> w
-  | node {w, l, r} -> min w (min (f l) (f r))
+  | node {w, l, r} -> + w (+ (f l) (f r))
   end
 );
 
@@ -35,5 +35,21 @@ target = fix (
   end
 );
 
-main = \t: Tree.
+/* Customized Generator
+
+Inductive List = elt Int | cons {Int, List};
+
+depth_lim = 4;
+gen = (fix (
+  \f: Int -> List -> Tree. \depth: Int. \xs: List.
+  match xs with
+    elt w -> leaf w
+  | cons {h, t} ->
+    if == 0 depth then leaf h else
+      let rem = - depth 1 in
+        node {h, f rem t, f rem t}
+  end
+)) depth_lim;*/
+
+main = \t: Tree. /*let t = gen xs in*/
   if is_sym t then spec (target t) else 0;

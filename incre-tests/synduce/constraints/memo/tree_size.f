@@ -31,11 +31,13 @@ target = fix (
   end
 );
 
-spec = \t: Tree.
+spec = fix (
+  \f: Tree -> Int. \t: Tree.
   match t with
     leaf a -> 1
-  | node {a, l, r} -> 1
-  end;
+  | node {a, l, r} -> + 1 (+ (f l) (f r))
+  end
+);
 
 /* Customized generator, not used */
 gen = fix (
