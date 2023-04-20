@@ -1,8 +1,6 @@
 Inductive Tree = leaf Int | node {Int, Tree, Tree};
 
-@Input x: Int;
-
-spec = \x: Int. (fix (
+spec = fix (
   \f: Int -> Tree -> Bool. \y: Int. \t: Tree.
   match t with
     leaf a -> > y a
@@ -11,14 +9,19 @@ spec = \x: Int. (fix (
     let r2 = (f a r) in
     and r1 (and r2 (> y a))
   end
-)) x;
+);
 
 repr = fix (
-  \f: Tree -> Compress Tree. \t: Tree.
+  \f: {Int, Tree} -> Compress {Int, Tree}. \t: {Int, Tree}.
   match t with
-    leaf a -> leaf a
-  | node {a, l, r} -> node {a, f l, f r}
+    {pre, leaf a} -> {pre, leaf a}
+  | {pre, node {a, l, r}} ->
+    let lres = f {a, l} in
+      let rres = f {a, r} in
+        {pre, node {a, lres.2, rres.2}}
   end
 );
 
-main = \t: Tree. spec x (repr t);
+main = \key: Int. \t: Tree.
+  let res = repr {key, t} in
+    spec key res.2;

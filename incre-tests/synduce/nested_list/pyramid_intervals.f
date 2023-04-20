@@ -1,48 +1,8 @@
 Inductive List = elt Int | cons {Int, List};
 Inductive NList = line List | ncons {List, NList};
-Inductive CNList = sglt List | cat {CNList, CNList};
 
 max = \a: Int. \b: Int. if < a b then b else a;
 min = \a: Int. \b: Int. if > a b then b else a;
-
-cton = fix (
-  \f: CNList -> NList.
-  let dec = fix (
-    \g: CNList -> CNList -> NList. \l: CNList. \c: CNList.
-    match c with
-      sglt x -> ncons {x, f l}
-    | cat {x, y} -> g (cat {y, l}) x
-    end
-  ) in \c: CNList.
-  match c with
-    sglt x -> line x
-  | cat {x, y} -> dec y x
-  end
-);
-
-lmax = fix (
-  \f: List -> Int. \xs: List.
-  match xs with
-    elt a -> a
-  | cons {hd, tl} -> max hd (f tl)
-  end
-);
-
-aux = fix (
-  \f: Int -> NList -> Bool. \prev: Int. \xs: NList.
-  match xs with
-    line a -> >= prev (lmax a)
-  | ncons {hd, tl} -> and (>= prev (lmax hd)) (f (lmax hd) tl)
-  end
-);
-
-is_sorted = fix (
-  \f: NList -> Bool. \xs: NList.
-  match xs with
-    line a -> true
-  | ncons {hd, tl} -> aux (lmax hd) tl
-  end
-);
 
 interval = fix (
   \f: List -> {Int, Int}. \xs: List.
@@ -68,18 +28,15 @@ spec = fix (
 );
 
 target = fix (
-  \f: CNList -> Compress CNList.
-  let tsum = fix (
-    \g: List -> Compress List. \xs: List.
-    match xs with
-      elt x -> elt x
-    | cons {h, t} -> cons {h, g t}
-    end
-  ) in \c: CNList.
-  match c with
-    sglt x -> sglt (tsum x)
-  | cat {l, r} -> cat {f l, f r}
+  \f: NList -> Compress NList. \xs: NList.
+  match xs with
+    line x ->
+      let info = interval x in /*This invocation is included in Synduce's template*/
+        xs
+  | ncons {h, t} ->
+      let info = interval h in /*This invocation is included in Synduce's template*/
+        ncons {h, f t}
   end
 );
 
-main = \c: CNList. spec (cton (target c));
+main = \xs: NList. spec (target xs);

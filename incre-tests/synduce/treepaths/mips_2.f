@@ -13,16 +13,22 @@ spec = (fix (
   end
 )) {0,0};
 
+tree_repr = fix (
+  \f: BTree -> Compress BTree. \t: BTree.
+  match t with
+    empty _ -> empty unit
+  | node {a, l, r} -> node {a, f l, f r}
+  end
+);
+
 repr = fix (
   \f: Zipper -> Compress BTree. \z: Zipper.
   match z with
     top _ -> empty unit
   | left {w, tree, zz} ->
-      let info = spec tree in /*This invocation is provided in Synduce's template*/
-        node {w, tree, f zz}
+      node {w, tree_repr tree, f zz}
   | right {w, tree, zz} ->
-      let info = spec tree in /*This invocation is provided in Synduce's template*/
-        node {w, f zz, tree}
+      node {w, f zz, tree_repr tree}
   end
 );
 
