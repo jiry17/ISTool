@@ -1,6 +1,8 @@
 Inductive List = nil Unit | cons {Int, List};
 Inductive CList = cnil Unit | single Int | concat {CList, CList};
 
+base = 10;
+
 spec = fix (
   \f: List -> {Int, Int}. \x: List.
   match x with

@@ -14,8 +14,8 @@ spec = fix (
 repr = fix (
   \f: NnfFormula -> Compress Formula. \x: NnfFormula.
   match x with
-    nfneglit b -> fnot (flit b)
-  | nflit b -> flit b
+    nflit b -> flit b
+  | nfneglit b -> fnot (flit b)
   | nfand {b1, b2} -> fand {f b1, f b2}
   | nfor {b1, b2} -> forr {f b1, f b2}
   end
