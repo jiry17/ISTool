@@ -31,8 +31,8 @@ const std::unordered_map<std::string, int> KVerifyBaseNumConfig = {
 };
 
 int main(int argv, char** argc) {
-    //std::string name = "synduce/constraints/memo/proper_indexation_sum_lt_pos_v2";
-    std::string name = "synduce/treepaths/mips";
+    //std::string name = "synduce/constraints/ensures/mtss_no_ensures";
+    std::string name = "synduce/list/minhom";
     std::string path = config::KSourcePath + "incre-tests/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
     std::string target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";

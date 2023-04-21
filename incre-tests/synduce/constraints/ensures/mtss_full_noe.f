@@ -39,11 +39,16 @@ spec = fix (
 );
 
 target = fix (
-  \f: CNList -> Compress CNList. \c: CNList.
+  \f: CNList -> Compress CNList.
+  let tsum = fix (
+    \g: List -> Compress List. \xs: List.
+    match xs with
+      elt x -> elt x
+    | cons {h, t} -> cons {h, g t}
+    end
+  ) in \c: CNList.
   match c with
-    sglt x ->
-    let info = sum x in /*This invocation is provided in Synduce's template*/
-      c
+    sglt x -> sglt (tsum x)
   | cat {l, r} -> cat {f l, f r}
   end
 );
