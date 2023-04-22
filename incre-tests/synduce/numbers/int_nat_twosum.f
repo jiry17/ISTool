@@ -1,5 +1,9 @@
 Inductive Nat = z Unit | s Nat;
 Inductive INat = positive Nat | negative Nat;
+Inductive TwoInats = twoinats {INat, INat};
+
+Inductive EInt = zero Unit | sub1 EInt | add1 EInt;
+Inductive TwoInts = twoints {EInt, EInt};
 
 nsum = fix (
   \f: Nat -> Int. \n: Nat.
@@ -15,9 +19,26 @@ itoint = \n: INat.
   | positive m -> nsum m
   end;
 
-Inductive EInt = zero Unit | sub1 EInt | add1 EInt;
+two_isum = \n: TwoInats. 
+  match n with
+    twoinats {n1, n2} -> + (itoint n1) (itoint n2)
+  end;
 
-repr = fix (
+target_eint = fix (
+  \f: EInt -> Compress EInt. \e: EInt.
+  match e with
+    zero _ -> zero unit
+  | add1 e' -> add1 (f e')
+  | sub1 e' -> sub1 (f e')
+  end
+);
+
+target_twoints = \x: TwoInts.
+  match x with
+    twoints {x1, x2} -> twoints {target_eint x1, target_eint x2}
+  end;
+
+irepr = fix (
   \f: EInt -> INat. \e: EInt.
   match e with
     zero _ -> positive (z unit)
@@ -38,13 +59,9 @@ repr = fix (
   end
 );
 
-target = fix (
-  \f: EInt -> Compress EInt. \e: EInt.
-  match e with
-    zero _ -> zero unit
-  | add1 e' -> add1 (f e')
-  | sub1 e' -> sub1 (f e')
-  end
-);
+repr = \x: TwoInts.
+  match x with
+    twoints {x1, x2} -> twoinats {irepr x1, irepr x2}
+  end;
 
-main = \x: EInt. itoint (repr (target x));
+main = \x: TwoInts. two_isum (repr (target_twoints x));
