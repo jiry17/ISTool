@@ -26,6 +26,7 @@ namespace incre {
     class IncreDataGenerator {
     public:
         Env* env;
+        int KSizeLimit;
         IncreDataGenerator(Env* _env);
         virtual Data getRandomData(const Ty& type) = 0;
         virtual ~IncreDataGenerator() = default;
@@ -99,6 +100,7 @@ namespace incre {
     };
 
     extern const std::string KExampleThreadName;
+    extern const std::string KDataSizeLimitName;
 }
 
 #endif //ISTOOL_INCRE_INSTRU_RUNTIME_H

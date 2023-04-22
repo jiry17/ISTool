@@ -510,3 +510,4 @@ void IncreExamplePool::generateBatchedExample(int tau_id, int target_num, TimeGu
 }
 
 const std::string incre::KExampleThreadName = "KIncreExampleCollectNum";
+const std::string incre::KDataSizeLimitName = "KIncreDataSizeLimit";
