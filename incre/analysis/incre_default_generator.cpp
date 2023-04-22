@@ -10,56 +10,10 @@
 using namespace incre;
 
 namespace {
-    const int KSizeLimit = 10;
+    const int KDefaultSizeLimit = 10;
     const int KTermSizeLimit = 3;
     const int KIntMin = -5;
     const int KIntMax = 5;
-
-    // TODO: Deal with nested inductive type
-
-    int _getSize(TyData* ty) {
-        switch (ty->getType()) {
-            case TyType::VAR:
-            case TyType::IND: return 1;
-            case TyType::ARROW: assert(0);
-            case TyType::INT:
-            case TyType::BOOL:
-            case TyType::UNIT: return 0;
-            case TyType::COMPRESS: {
-                auto* tc = dynamic_cast<TyCompress*>(ty);
-                return _getSize(tc->content.get());
-            }
-            case TyType::TUPLE: {
-                auto* tt = dynamic_cast<TyTuple*>(ty);
-                int res = 0;
-                for (const auto& field: tt->fields) res += _getSize(field.get());
-                return res;
-            }
-        }
-    }
-    bool _isSelfRecursion(TyData* ty, const std::string& name) {
-        switch (ty->getType()) {
-            case TyType::VAR: {
-                auto* tvar = dynamic_cast<TyVar*>(ty); return tvar->name == name;
-            }
-            case TyType::INT:
-            case TyType::BOOL:
-            case TyType::UNIT:
-            case TyType::IND: return false;
-            case TyType::COMPRESS: {
-                auto* tc = dynamic_cast<TyCompress*>(ty);
-                return _isSelfRecursion(tc->content.get(), name);
-            }
-            case TyType::ARROW: assert(0);
-            case TyType::TUPLE: {
-                auto* tt = dynamic_cast<TyTuple*>(ty);
-                for (const auto& field: tt->fields) {
-                    if (_isSelfRecursion(field.get(), name)) return true;
-                }
-                return false;
-            }
-        }
-    }
 
     std::vector<int> _distributeSize(int tot, int num, std::minstd_rand* e) {
         std::vector<int> res(num, 0);
@@ -141,6 +95,8 @@ namespace {
 }
 
 IncreDataGenerator::IncreDataGenerator(Env *_env): env(_env) {
+    auto* data = env->getConstRef(incre::KDataSizeLimitName, BuildData(Int, KDefaultSizeLimit));
+    KSizeLimit = theory::clia::getIntValue(*data);
 }
 
 SizeSafeValueGenerator::SplitScheme::SplitScheme(const std::string &_cons_name, const Ty &_cons_type,
