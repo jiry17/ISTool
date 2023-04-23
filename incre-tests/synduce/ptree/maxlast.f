@@ -4,13 +4,21 @@ Inductive PTree = pelt Int | pnode {Int, List}
 
 max = \a: Int. \b: Int. if < a b then b else a;
 
+last = fix (
+  \f: Tree -> Int. \t: Tree.
+  match t with
+    telt w -> w
+  | tnode {_, _, r} -> f r
+  end
+);
+
 repr = fix (
-  \f: Tree -> Compress PTree. \x: Tree.
+  \f: Tree -> PTree. \x: Tree.
   match x with
     telt a -> pelt a
   | tnode {a, l, r} -> 
     let repr_list = fix (
-        \g: Tree -> Compress List. \y: Tree.
+        \g: Tree -> List. \y: Tree.
         match y with
           telt a -> let z = pelt a in elt z
         | tnode {a, l, r} -> cons {pelt a, cons {f l, g r}}
@@ -36,4 +44,12 @@ spec = fix (
   end
 );
 
-main = \x: Tree. spec (repr x);
+target = fix (
+  \f: Tree -> Compress Tree. \t: Tree.
+  match t with
+    telt w -> t
+  | tnode {w, l, r} -> tnode {w, f l, f r}
+  end
+);
+
+main = \t: Tree. spec (repr (target t));

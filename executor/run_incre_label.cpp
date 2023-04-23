@@ -35,8 +35,8 @@ const std::unordered_map<std::string, int> KSizeLimitConfig = {
 };
 
 int main(int argv, char** argc) {
-    std::string name = "synduce/constraints/ensures/bal_2";
-    //std::string name = "synduce/list/msshom";
+    //std::string name = "synduce/constraints/ensures/bal_2";
+    std::string name = "synduce/ptree/maxsum";
     std::string path = config::KSourcePath + "incre-tests/" + name + ".f";
     std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
     std::string target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
