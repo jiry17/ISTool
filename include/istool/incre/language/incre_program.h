@@ -5,6 +5,7 @@
 #ifndef ISTOOL_INCRE_PROGRAM_H
 #define ISTOOL_INCRE_PROGRAM_H
 
+#include "istool/basic/env.h"
 #include "incre_term.h"
 #include "incre_type.h"
 #include "incre_context.h"
@@ -16,7 +17,18 @@ namespace incre {
     };
 
     enum class CommandDecorate {
-        INPUT, START, SYN_COMPRESS, SYN_COMBINE, SYN_ALIGN
+        INPUT, START, SYN_COMPRESS, SYN_COMBINE, SYN_ALIGN, SYN_NO_PARTIAL
+    };
+
+    enum class IncreConfig {
+        COMPOSE_NUM, /*Max components in align, default 3*/
+        VERIFY_BASE, /*Base number of examples in verification, default 1000*/
+        SAMPLE_SIZE, /*Max size of random data structures, default 10*/
+        SAMPLE_INT_MAX, /*Int Max of Sample, Default 5*/
+        SAMPLE_INT_MIN, /*Int Min of Sample, Default -5*/
+        NON_LINEAR, /*Whether consider * in synthesis, default false*/
+        EXTRA_GRAMMAR, /*Extra grammar considered in synthesis, default Fold*/
+        ENABLE_FOLD /*Whether consider `fold` operator on data structures in synthesis, default false*/
     };
 
     typedef std::unordered_set<CommandDecorate> DecorateSet;
@@ -63,10 +75,13 @@ namespace incre {
         virtual ~CommandDefInductive() = default;
     };
 
+    typedef std::unordered_map<IncreConfig, Data> IncreConfigMap;
+
     class ProgramData {
     public:
+        IncreConfigMap config_map;
         CommandList commands;
-        ProgramData(const CommandList& _commands);
+        ProgramData(const CommandList& _commands, const IncreConfigMap& config_map);
         void print() const;
         virtual ~ProgramData() = default;
     };
@@ -74,6 +89,18 @@ namespace incre {
 
     CommandDecorate string2Decorate(const std::string& s);
     std::string decorate2String(CommandDecorate deco);
+    IncreConfig string2ConfigType(const std::string& s);
+    void applyConfig(IncreConfig config, const Data& config_value, Env* env);
+    void applyConfig(ProgramData* program, Env* env);
+
+    namespace config_name {
+        extern const std::string KDataSizeLimitName;
+        extern const std::string KIsNonLinearName;
+        extern const std::string KExtraGrammarName;
+        extern const std::string KIsEnableFoldName;
+        extern const std::string KSampleIntMinName;
+        extern const std::string KSampleIntMaxName;
+    }
 }
 
 #endif //ISTOOL_INCRE_PROGRAM_H

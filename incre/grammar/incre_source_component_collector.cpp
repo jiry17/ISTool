@@ -13,10 +13,10 @@ using namespace incre::grammar;
 namespace {
     struct _UserProvidedComponentInfo {
         std::string name;
-        bool is_compress_related, is_recursive;
+        bool is_compress_related, is_recursive, is_partial;
         int command_id;
-        _UserProvidedComponentInfo(const std::string& _name, bool _is_compress_related, bool _is_recursive, int _command_id):
-            name(_name), is_compress_related(_is_compress_related), is_recursive(_is_recursive), command_id(_command_id) {
+        _UserProvidedComponentInfo(const std::string& _name, bool _is_compress_related, bool _is_recursive, bool _is_partial, int _command_id):
+            name(_name), is_compress_related(_is_compress_related), is_recursive(_is_recursive), is_partial(_is_partial), command_id(_command_id) {
         }
         ~_UserProvidedComponentInfo() = default;
     };
@@ -37,41 +37,40 @@ namespace {
 
         // Collect command id infos
         std::unordered_map<std::string, int> id_map;
+        std::unordered_map<std::string, bool> partial_map;
         for (int command_id = 0; command_id < program->commands.size(); ++command_id) {
             auto& command = program->commands[command_id];
             switch (command->getType()) {
                 case CommandType::IMPORT: break;
                 case CommandType::DEF_IND: {
                     auto* cd = dynamic_cast<CommandDefInductive*>(command.get());
-                    id_map[cd->type->name] = command_id;
                     for (auto& [cname, _]: cd->type->constructors) {
-                        id_map[cname] = command_id;
+                        id_map[cname] = command_id; partial_map[cname] = false;
                     }
                     break;
                 }
                 case CommandType::BIND: {
                     auto* cb = dynamic_cast<CommandBind*>(command.get());
                     id_map[cb->name] = command_id;
+                    partial_map[cb->name] = !command->isDecoratedWith(CommandDecorate::SYN_NO_PARTIAL);
                 }
             }
         }
 
         // Merge all infos
         _UserComponentInfoMap res;
-        assert(id_map.size() == compress_info.size() && id_map.size() == recursive_info.size());
         for (auto& [name, command_id]: id_map) {
-            assert(compress_info.count(name) && recursive_info.count(name));
-            res.insert({name, _UserProvidedComponentInfo(name, compress_info[name], recursive_info[name], command_id)});
+            assert(compress_info.count(name) && recursive_info.count(name) && partial_map.count(name));
+            res.insert({name, _UserProvidedComponentInfo(name, compress_info[name], recursive_info[name],
+                                                         partial_map[name], command_id)});
         }
         return res;
     }
 }
 
-ComponentPool collector::collectComponentFromSource(Context* ctx, Env* env, ProgramData *program) {
-    auto pool = collector::getBasicComponentPool(ctx, env, false);
-    LOG(INFO) << "Begin construct info map";
+ComponentPool collector::collectComponentFromSource(Context* ctx, ProgramData *program) {
+    ComponentPool pool;
     auto info_map = _constructInfoMap(program);
-    LOG(INFO) << "End construct info map";
     auto* type_ctx = new TypeContext(ctx);
     for (const auto& [name, binding]: ctx->binding_map) {
         if (binding->getType() != BindingType::TERM) continue;
@@ -82,7 +81,8 @@ ComponentPool collector::collectComponentFromSource(Context* ctx, Env* env, Prog
         auto component_type = incre::typeFromIncre(full_type);
         auto term = std::make_shared<TmVar>(name);
         auto component_value = incre::run(term, ctx);
-        auto component = std::make_shared<IncreComponent>(name, component_type, component_value, term, component_info.command_id);
+        auto component = std::make_shared<IncreComponent>(ctx, name, component_type, component_value, term,
+                                                          component_info.command_id, component_info.is_partial);
 
         if (component_info.is_compress_related) continue;
         if (!component_info.is_recursive) {

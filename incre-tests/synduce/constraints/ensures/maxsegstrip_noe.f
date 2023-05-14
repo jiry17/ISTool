@@ -1,3 +1,5 @@
+Config SampleSize = 20;
+
 Inductive List = elt Int | cons {Int, List};
 Inductive NList = line List | ncons {List, NList};
 Inductive CNList = sglt List | cat {CNList, CNList};

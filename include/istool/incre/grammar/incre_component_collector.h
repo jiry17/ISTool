@@ -9,61 +9,97 @@
 #include "istool/incre/language/incre.h"
 
 namespace incre::grammar {
+    typedef std::vector<PSemantics> SymbolContext;
+
+    class SymbolInfo {
+    public:
+        SymbolContext context;
+        PType type;
+        NonTerminal* symbol;
+        SymbolInfo(const SymbolContext& _context, const PType& _type, NonTerminal* _symbol);
+        ~SymbolInfo() = default;
+    };
+
+    class GrammarBuilder {
+    public:
+        std::unordered_map<std::string, int> info_map;
+        std::vector<SymbolInfo> info_list;
+        std::vector<SymbolContext> contexts;
+        void insertContext(const SymbolContext& context);
+        void insertInfo(const SymbolContext& context, const PType& type);
+        void insertTypeForAllContext(const PType& type);
+        std::vector<SymbolInfo> getSymbols(const std::function<bool(const SymbolInfo&)>& filter) const;
+        std::vector<SymbolInfo> getSymbols(const PType& type) const;
+        NonTerminal* getSymbol(const SymbolContext& context, const PType& type) const;
+        GrammarBuilder(const SymbolContext& init_context);
+    };
+
     class SynthesisComponent {
     public:
         int command_id;
         SynthesisComponent(int command_id);
-        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map) = 0;
-        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map) = 0;
+        virtual void extendContext(GrammarBuilder& builder) = 0;
+        virtual void insertComponent(const GrammarBuilder& builder) = 0;
+        virtual void extendNTMap(GrammarBuilder& builder) = 0;
         virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list) = 0;
         virtual ~SynthesisComponent() = default;
     };
     typedef std::shared_ptr<SynthesisComponent> PSynthesisComponent;
     typedef std::vector<PSynthesisComponent> SynthesisComponentList;
 
-    class IncreComponent: public SynthesisComponent {
+    class ContextFreeSynthesisComponent: public SynthesisComponent {
     public:
-        PType type;
+        ContextFreeSynthesisComponent(int command_id);
+        virtual void extendContext(GrammarBuilder& builder);
+        virtual ~ContextFreeSynthesisComponent() = default;
+    };
+
+    class IncreComponent: public ContextFreeSynthesisComponent {
+    public:
+        Context* ctx;
+        TypeList param_types;
+        PType res_type;
         Data data;
         Term term;
         std::string name;
-        IncreComponent(const std::string& _name, const PType& _type, const Data& _data, const Term& _term, int command_id);
-        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map);
-        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        bool is_partial;
+        IncreComponent(Context* _ctx, const std::string& _name, const PType& _type, const Data& _data, const Term& _term, int command_id, bool _is_partial);
+        virtual void insertComponent(const GrammarBuilder& symbol_map);
+        virtual void extendNTMap(GrammarBuilder& symbol_map);
         virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list);
         ~IncreComponent() = default;
     };
 
-    class ConstComponent: public SynthesisComponent {
+    class ConstComponent: public ContextFreeSynthesisComponent {
     public:
         PType type;
         DataList const_list;
         std::function<bool(Value*)> is_inside;
         ConstComponent(const PType& _type, const DataList& _const_list, const std::function<bool(Value*)>& _is_inside);
-        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map);
-        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        virtual void insertComponent(const GrammarBuilder& symbol_map);
+        virtual void extendNTMap(GrammarBuilder& symbol_map);
         virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list);
         ~ConstComponent() = default;
     };
 
-    class BasicOperatorComponent: public SynthesisComponent {
+    class BasicOperatorComponent: public ContextFreeSynthesisComponent {
     public:
         std::string name;
         TypedSemantics* sem;
         PSemantics _sem;
         BasicOperatorComponent(const std::string& _name, const PSemantics& __semantics);
         virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list);
-        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map);
-        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        virtual void insertComponent(const GrammarBuilder& symbol_map);
+        virtual void extendNTMap(GrammarBuilder& symbol_map);
         ~BasicOperatorComponent() = default;
     };
 
 #define LanguageComponent(name) \
-    class name ## Component: public SynthesisComponent { \
+    class name ## Component: public ContextFreeSynthesisComponent { \
     public: \
         name ## Component(); \
-        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map); \
-        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map); \
+        virtual void insertComponent(const GrammarBuilder& builder); \
+        virtual void extendNTMap(GrammarBuilder& builder); \
         virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list); \
         ~name ## Component() = default;\
     }
@@ -72,14 +108,14 @@ namespace incre::grammar {
     LanguageComponent(Tuple);
     LanguageComponent(Proj);
 
-    class ApplyComponent: public SynthesisComponent {
+    class ApplyComponent: public ContextFreeSynthesisComponent {
     public:
         bool is_only_full;
         Context* ctx;
         ApplyComponent(Context* ctx, bool _is_only_full);
         virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list);
-        virtual void extendNTMap(std::unordered_map<std::string, NonTerminal*>& symbol_map);
-        virtual void insertComponent(const std::unordered_map<std::string, NonTerminal*>& symbol_map);
+        virtual void extendNTMap(GrammarBuilder &builder);
+        virtual void insertComponent(const GrammarBuilder &builder);
         ~ApplyComponent() = default;
     };
 
@@ -105,6 +141,7 @@ namespace incre::grammar {
         Grammar* buildAlignGrammar(const TypeList& inp_list);
         Grammar* buildCompressGrammar(const TypeList& inp_list, int command_id);
         Grammar* buildCombinatorGrammar(const TypeList& inp_list, const PType& oup_type, int command_id);
+        void merge(const ComponentPool& pool);
         ~ComponentPool() = default;
     };
 
@@ -113,9 +150,11 @@ namespace incre::grammar {
     };
 
     namespace collector {
-        ComponentPool collectComponentFromSource(Context* ctx, Env* env, ProgramData* program);
-        ComponentPool collectComponentFromLabel(Context* ctx, Env* env, ProgramData* program);
-        ComponentPool getBasicComponentPool(Context* ctx, Env* env, bool is_full_apply);
+        ComponentPool collectComponentFromSource(Context* ctx, ProgramData* program);
+        ComponentPool collectComponentFromLabel(Context* ctx, ProgramData* program);
+        ComponentPool getBasicComponentPool(Context* ctx, Env* env);
+        ComponentPool collectExtraOperators(Context* ctx, const std::string& extra_name);
+        void loadExtraOperator(Context* ctx, Env* env, const std::string& extra_name);
         extern const std::string KCollectMethodName;
     }
     ComponentPool collectComponent(Context* ctx, Env* env, ProgramData* program);

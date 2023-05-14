@@ -8,9 +8,9 @@
 
 using namespace incre::grammar;
 
-ComponentPool collector::collectComponentFromLabel(Context *ctx, Env *env, ProgramData *program) {
+ComponentPool collector::collectComponentFromLabel(Context *ctx, ProgramData *program) {
     auto* type_ctx = new TypeContext(ctx);
-    ComponentPool res = collector::getBasicComponentPool(ctx, env, true);
+    ComponentPool res;
 
     for (int command_id = 0; command_id < program->commands.size(); ++command_id) {
         auto& command = program->commands[command_id];
@@ -21,7 +21,8 @@ ComponentPool collector::collectComponentFromLabel(Context *ctx, Env *env, Progr
         auto term = std::make_shared<TmVar>(cb->name);
         auto type = ctx->getType(cb->name);
         auto full_type = incre::unfoldBasicType(type, type_ctx);
-        auto component = std::make_shared<IncreComponent>(cb->name, incre::typeFromIncre(full_type), incre::run(term, ctx), term, command_id);
+        auto component = std::make_shared<IncreComponent>(ctx, cb->name, incre::typeFromIncre(full_type), incre::run(term, ctx),
+                                                          term, command_id, !command->isDecoratedWith(CommandDecorate::SYN_NO_PARTIAL));
         if (command->isDecoratedWith(CommandDecorate::SYN_COMPRESS)) {
             res.compress_list.push_back(component);
         }

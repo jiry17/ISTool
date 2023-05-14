@@ -1,3 +1,5 @@
+Config ComposeNum = 4;
+
 Inductive List = cons {Int, List} | nil Unit;
 Inductive CartTree = node {CartTree, Int, CartTree} | leaf Unit;
 Inductive CartPath = consNode {CartTree, CartPath} | nilNode Unit;
@@ -126,7 +128,7 @@ last = lambda default: Int. fix (
 isval = \l: List.
   match l with
     nil _ -> true
-  | _ -> > (+ (maximum l) (minimum l)) (length l)
+  | _ -> < (+ (maximum l) (minimum l)) (length l)
   end;
 
 order = \a: Int. \b: Int. (< b a);

@@ -57,7 +57,7 @@ namespace {
     int KDefaultMaxClauseNum = 5;
 
     int _getDefaultClauseNum(const PSynthInfo& info) {
-        if (info->inp_type_list.size() >= 10) return 2;
+        if (info->inp_type_list.size() >= 10) return 3;
         return KDefaultMaxClauseNum;
     }
 }

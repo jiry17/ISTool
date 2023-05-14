@@ -26,7 +26,7 @@ namespace incre {
     class IncreDataGenerator {
     public:
         Env* env;
-        int KSizeLimit;
+        int KSizeLimit, KIntMin, KIntMax;
         IncreDataGenerator(Env* _env);
         virtual Data getRandomData(const Ty& type) = 0;
         virtual ~IncreDataGenerator() = default;
@@ -75,6 +75,7 @@ namespace incre {
         IncreExampleCollector(const std::vector<std::unordered_set<std::string>>& _cared_vars, ProgramData* _program);
         void add(int tau_id, const std::unordered_map<std::string, Data>& local, const Data& oup);
         void collect(const Term& start, const std::unordered_map<std::string, Data>& _global);
+        void clear();
         ~IncreExampleCollector();
     };
 
@@ -83,6 +84,7 @@ namespace incre {
         std::vector<IncreExampleList> example_pool;
         std::vector<std::unordered_set<std::string>> cared_vars;
         IncreDataGenerator* generator;
+        std::vector<bool> is_already_finished;
         int thread_num;
         Context* ctx;
         IncreProgram program;
@@ -91,16 +93,31 @@ namespace incre {
         std::vector<std::pair<std::string, TyList>> start_list;
         std::uniform_int_distribution<int> start_dist;
 
-        void merge(IncreExampleCollector* collector);
+        void merge(IncreExampleCollector* collector, TimeGuard* guard);
+        virtual void insertExample(int pos, const IncreExample& new_example) = 0;
         std::pair<Term, std::unordered_map<std::string, Data>> generateStart();
         IncreExamplePool(const IncreProgram& _program, Env* env, const std::vector<std::unordered_set<std::string>>& _cared_vars);
         void generateSingleExample();
         void generateBatchedExample(int tau_id, int target_num, TimeGuard* guard);
-        ~IncreExamplePool();
+        virtual ~IncreExamplePool();
+    };
+
+    class DefaultIncreExamplePool: public IncreExamplePool {
+    public:
+        DefaultIncreExamplePool(const IncreProgram& _program, Env* env, const std::vector<std::unordered_set<std::string>>& _cared_vars);
+        virtual ~DefaultIncreExamplePool() = default;
+        virtual void insertExample(int pos, const IncreExample& new_example);
+    };
+
+    class NoDuplicatedIncreExamplePool: public IncreExamplePool {
+    public:
+        std::vector<std::unordered_set<std::string>> existing_example_set;
+        NoDuplicatedIncreExamplePool(const IncreProgram& _program, Env* env, const std::vector<std::unordered_set<std::string>>& _cared_vars);
+        virtual ~NoDuplicatedIncreExamplePool() = default;
+        virtual void insertExample(int pos, const IncreExample& new_example);
     };
 
     extern const std::string KExampleThreadName;
-    extern const std::string KDataSizeLimitName;
 }
 
 #endif //ISTOOL_INCRE_INSTRU_RUNTIME_H

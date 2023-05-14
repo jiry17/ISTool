@@ -216,7 +216,8 @@ namespace {
     }
     LabelTermHead(UnLabel) {
         LabelSub(content);
-        auto* ct = dynamic_cast<TyCompress*>(content_type.get());
+        auto full_type = incre::unfoldTypeWithLabeledCompress(content_type, ctx);
+        auto* ct = dynamic_cast<TyCompress*>(full_type.get());
         if (!ct) {
             LOG(FATAL) << "Only TyCompress can be unlabeled, but get " << content_type->toString();
         }
@@ -532,5 +533,5 @@ IncreProgram incre::labelCompress(const IncreProgram &program) {
         }
     }
     delete ctx; delete cs;
-    return std::make_shared<ProgramData>(final_commands);
+    return std::make_shared<ProgramData>(final_commands, program->config_map);
 }

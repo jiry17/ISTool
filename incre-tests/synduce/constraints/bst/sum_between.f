@@ -1,3 +1,5 @@
+Config ComposeNum = 4;
+
 Inductive Tree = leaf Int | node {Int, Tree, Tree};
 
 min = \a: Int. \b: Int. if < a b then a else b;

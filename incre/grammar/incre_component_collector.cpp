@@ -9,66 +9,209 @@
 using namespace incre;
 using namespace incre::grammar;
 
+SymbolInfo::SymbolInfo(const SymbolContext &_context, const PType &_type, NonTerminal *_symbol):
+  context(_context), type(_type), symbol(_symbol) {
+}
+
+GrammarBuilder::GrammarBuilder(const SymbolContext &init_context): contexts({init_context}) {
+}
+
+std::vector<SymbolInfo> GrammarBuilder::getSymbols(const std::function<bool(const SymbolInfo &)> &filter) const {
+    std::vector<SymbolInfo> res;
+    for (auto& info: info_list) {
+        if (filter(info)) res.push_back(info);
+    }
+    return res;
+}
+
+namespace {
+    std::string _context2String(const SymbolContext& context) {
+        std::vector<std::string> name_list;
+        for (auto& sem: context) name_list.push_back(sem->getName());
+        std::sort(name_list.begin(), name_list.end());
+        std::string res = "[";
+        for (int i = 0; i < name_list.size(); ++i) {
+            if (i) res += ",";
+            res += name_list[i];
+        }
+        return res + "]";
+    }
+}
+
+std::vector<SymbolInfo> GrammarBuilder::getSymbols(const PType &type) const {
+    auto filter = [type](const SymbolInfo& info) {
+        return type->getName() == info.type->getName();
+    };
+    auto res = getSymbols(filter);
+    return res;
+}
+
+NonTerminal *GrammarBuilder::getSymbol(const SymbolContext &context, const PType &type) const {
+    auto feature = _context2String(context) + "@" + type->getName();
+    auto it = info_map.find(feature);
+    if (it == info_map.end()) return nullptr;
+    return info_list[it->second].symbol;
+}
+
+void GrammarBuilder::insertContext(const SymbolContext &context) {
+    auto feature = _context2String(context);
+    for (auto& existing: contexts) {
+        if (_context2String(existing) == feature) return;
+    }
+    contexts.push_back(context);
+}
+
+void GrammarBuilder::insertInfo(const SymbolContext &context, const PType &type) {
+    auto feature = _context2String(context) + "@" + type->getName();
+    if (info_map.find(feature) == info_map.end()) {
+        auto* symbol = new NonTerminal(feature, type);
+        info_map[feature] = info_list.size();
+        info_list.emplace_back(context, type, symbol);
+    }
+}
+
+void GrammarBuilder::insertTypeForAllContext(const PType &type) {
+    for (auto& context: contexts) {
+        insertInfo(context, type);
+    }
+}
+
 SynthesisComponent::SynthesisComponent(int _command_id): command_id(_command_id){
+}
+
+ContextFreeSynthesisComponent::ContextFreeSynthesisComponent(int command_id): SynthesisComponent(command_id) {
+}
+void ContextFreeSynthesisComponent::extendContext(GrammarBuilder &builder) {
+    return;
 }
 
 #include "istool/sygus/theory/basic/clia/clia_semantics.h"
 #include "istool/ext/deepcoder/data_type.h"
 
-namespace {
-    NonTerminal* _getSymbol(const std::unordered_map<std::string, NonTerminal *> &symbol_map, Type* type) {
-        auto feature = type->getName();
-        auto it = symbol_map.find(feature);
-        if (it != symbol_map.end()) return it->second;
-        return nullptr;
+IncreComponent::IncreComponent(Context* _ctx, const std::string &_name, const PType &_type, const Data &_data, const Term& _term, int _command_id, bool _is_partial):
+        ContextFreeSynthesisComponent(_command_id), ctx(_ctx), name(_name), data(_data), term(_term), is_partial(_is_partial) {
+    res_type = _type;
+    while (1) {
+        auto* ta = dynamic_cast<TArrow*>(res_type.get());
+        if (!ta) break; assert(ta->inp_types.size() == 1);
+        param_types.push_back(ta->inp_types[0]);
+        res_type = ta->oup_type;
     }
-
-    void _insertSymbol(std::unordered_map<std::string, NonTerminal*>& symbol_map, const PType& type) {
-        auto feature = type->getName();
-        if (symbol_map.find(feature) != symbol_map.end()) return;
-        symbol_map[feature] = new NonTerminal(feature, type);
-    }
-
-    NTList _getAllSymbols(const std::unordered_map<std::string, NonTerminal*>& symbol_map) {
-        NTList res;
-        for (auto& [_, symbol]: symbol_map) res.push_back(symbol);
-        return res;
+}
+void IncreComponent::extendNTMap(GrammarBuilder &builder) {
+    builder.insertTypeForAllContext(res_type);
+    if (is_partial) {
+        auto partial_output = res_type;
+        for (int i = int(param_types.size()) - 1; i >= 0; --i) {
+            partial_output = std::make_shared<TArrow>((TypeList){param_types[i]}, partial_output);
+            builder.insertTypeForAllContext(partial_output);
+        }
+    } else {
+        auto full_type = res_type;
+        for (int i = int(param_types.size()) - 1; i >= 0; --i) {
+            full_type = std::make_shared<TArrow>((TypeList){param_types[i]}, full_type);
+        }
+        builder.insertTypeForAllContext(full_type);
     }
 }
 
-IncreComponent::IncreComponent(const std::string &_name, const PType &_type, const Data &_data, const Term& _term, int _command_id):
-        SynthesisComponent(_command_id), name(_name), type(_type), data(_data), term(_term) {
-}
-void IncreComponent::extendNTMap(std::unordered_map<std::string, NonTerminal *> &symbol_map) {
-    _insertSymbol(symbol_map, type);
-}
-void IncreComponent::insertComponent(const std::unordered_map<std::string, NonTerminal *> &symbol_map) {
-    auto* symbol = _getSymbol(symbol_map, type.get());
-    if (symbol) {
-        auto sem = semantics::buildConstSemantics(data); sem->name = name;
-        symbol->rule_list.push_back(new ConcreteRule(sem, {}));
+class IncreOperatorSemantics: public FullExecutedSemantics {
+public:
+    Context* ctx;
+    Data base;
+    IncreOperatorSemantics(const std::string& name, const Data& _base, Context* _ctx):
+        FullExecutedSemantics(name), base(_base), ctx(_ctx) {}
+    virtual Data run(DataList&& inp_list, ExecuteInfo* info) {
+        Data current = base;
+        for (auto& param: inp_list) {
+            auto* fv = dynamic_cast<VFunction*>(current.get());
+            current = fv->run(std::make_shared<TmValue>(param), ctx);
+        }
+        return current;
+    }
+    virtual ~IncreOperatorSemantics() = default;
+};
+
+void IncreComponent::insertComponent(const GrammarBuilder &builder) {
+    auto sem = std::make_shared<IncreOperatorSemantics>(name, data, ctx);
+    {
+        auto full_type = res_type;
+        for (int i = int(param_types.size()) - 1; i >= 0; --i) {
+            full_type = std::make_shared<TArrow>((TypeList) {param_types[i]}, full_type);
+        }
+        // LOG(INFO) << "full type " << name << " " << full_type->getName();
+        auto info_list = builder.getSymbols(full_type);
+        for (auto& info: info_list) {
+            info.symbol->rule_list.push_back(new ConcreteRule(sem, {}));
+        }
+    }
+    if (is_partial) {
+        for (int i = 0; i < param_types.size(); ++i) {
+            auto partial_res_type = res_type;
+            for (int j = int(param_types.size()) - 1; j > i; --j) {
+                partial_res_type = std::make_shared<TArrow>((TypeList){param_types[j]}, partial_res_type);
+            }
+            auto info_list = builder.getSymbols(partial_res_type);
+            for (auto& info: info_list) {
+                NTList param_list; bool is_valid = true;
+                for (int j = 0; j <= i; ++j) {
+                    auto* symbol = builder.getSymbol(info.context, param_types[j]);
+                    if (!symbol) {
+                        is_valid = false; break;
+                    }
+                    param_list.push_back(symbol);
+                }
+                if (is_valid) {
+                    info.symbol->rule_list.push_back(new ConcreteRule(sem, param_list));
+                }
+            }
+        }
+    } else {
+        if (param_types.empty()) return;
+        auto info_list = builder.getSymbols(res_type);
+        for (auto& info: info_list) {
+            NTList param_list; bool is_valid = true;
+            for (auto &param_type: param_types) {
+                auto* param_symbol = builder.getSymbol(info.context, param_type);
+                if (!param_symbol) {
+                    is_valid = false; break;
+                }
+                param_list.push_back(param_symbol);
+            }
+            if (is_valid) {
+                assert(param_list.size() == param_types.size());
+                info.symbol->rule_list.push_back(new ConcreteRule(sem, param_list));
+            }
+        }
     }
 }
 Term IncreComponent::tryBuildTerm(const PSemantics &sem, const TermList &term_list) {
-    auto* cs = dynamic_cast<ConstSemantics*>(sem.get());
+    /*auto* cs = dynamic_cast<ConstSemantics*>(sem.get());
     if (!cs || sem->getName() != name) return nullptr;
-    return term;
+    return term;*/
+    auto* os = dynamic_cast<IncreOperatorSemantics*>(sem.get());
+    if (!os || sem->getName() != name) return nullptr;
+    auto res = term;
+    for (auto& param: term_list) res = std::make_shared<TmApp>(res, param);
+    return res;
 }
 
 ConstComponent::ConstComponent(const PType &_type, const DataList &_const_list,
                                const std::function<bool(Value *)> &_is_inside):
-                               type(_type), const_list(_const_list), is_inside(_is_inside), SynthesisComponent(-1) {
+                               type(_type), const_list(_const_list), is_inside(_is_inside), ContextFreeSynthesisComponent(-1) {
 }
 
-void ConstComponent::extendNTMap(std::unordered_map<std::string, NonTerminal *> &symbol_map) {
-    _insertSymbol(symbol_map, type);
+void ConstComponent::extendNTMap(GrammarBuilder &builder) {
+    builder.insertTypeForAllContext(type);
 }
 
-void ConstComponent::insertComponent(const std::unordered_map<std::string, NonTerminal *> &symbol_map) {
+void ConstComponent::insertComponent(const GrammarBuilder &builder) {
     for (auto& data: const_list) {
         auto sem = semantics::buildConstSemantics(data);
-        auto* symbol = _getSymbol(symbol_map, type.get()); assert(symbol);
-        symbol->rule_list.push_back(new ConcreteRule(sem, {}));
+        auto info_list = builder.getSymbols(type);
+        for (auto& info: info_list) {
+            info.symbol->rule_list.push_back(new ConcreteRule(sem, {}));
+        }
     }
 }
 Term ConstComponent::tryBuildTerm(const PSemantics &sem, const TermList &term_list) {
@@ -78,7 +221,7 @@ Term ConstComponent::tryBuildTerm(const PSemantics &sem, const TermList &term_li
 }
 
 BasicOperatorComponent::BasicOperatorComponent(const std::string &_name, const PSemantics &__sem):
-    SynthesisComponent(-1), name(_name), _sem(__sem){
+    ContextFreeSynthesisComponent(-1), name(_name), _sem(__sem){
     sem = dynamic_cast<TypedSemantics*>(_sem.get()); assert(sem);
 }
 
@@ -89,20 +232,23 @@ namespace {
     }
 }
 
-void BasicOperatorComponent::extendNTMap(std::unordered_map<std::string, NonTerminal *> &symbol_map) {
-    _insertSymbol(symbol_map, _replace(sem->oup_type));
+void BasicOperatorComponent::extendNTMap(GrammarBuilder &builder) {
+    builder.insertTypeForAllContext(_replace(sem->oup_type));
 }
 
-void BasicOperatorComponent::insertComponent(const std::unordered_map<std::string, NonTerminal *> &symbol_map) {
-    auto target = _getSymbol(symbol_map, _replace(sem->oup_type).get());
-    if (!target) return;
-    NTList param_list;
-    for (auto& inp_type: sem->inp_type_list) {
-        auto param_symbol = _getSymbol(symbol_map, _replace(inp_type).get());
-        if (!param_symbol) return;
-        param_list.push_back(param_symbol);
+void BasicOperatorComponent::insertComponent(const GrammarBuilder &builder) {
+    auto info_list = builder.getSymbols(_replace(sem->oup_type));
+    for (auto& info: info_list) {
+        NTList param_list; bool is_valid = true;
+        for (auto& inp_type: sem->inp_type_list) {
+            auto* symbol = builder.getSymbol(info.context, _replace(inp_type));
+            if (!symbol) {
+                is_valid = false; break;
+            }
+            param_list.push_back(symbol);
+        }
+        info.symbol->rule_list.push_back(new ConcreteRule(_sem, param_list));
     }
-    target->rule_list.push_back(new ConcreteRule(_sem, param_list));
 }
 
 Term BasicOperatorComponent::tryBuildTerm(const PSemantics &current_sem, const TermList &term_list) {
@@ -114,17 +260,17 @@ Term BasicOperatorComponent::tryBuildTerm(const PSemantics &current_sem, const T
     return res;
 }
 
-IteComponent::IteComponent(): SynthesisComponent(-1) {
+IteComponent::IteComponent(): ContextFreeSynthesisComponent(-1) {
 }
 
-void IteComponent::extendNTMap(std::unordered_map<std::string, NonTerminal *> &symbol_map) {
+void IteComponent::extendNTMap(GrammarBuilder &builder) {
 }
-void IteComponent::insertComponent(const std::unordered_map<std::string, NonTerminal *> &symbol_map) {
+void IteComponent::insertComponent(const GrammarBuilder& builder) {
     auto ti = theory::clia::getTInt(), tb = type::getTBool();
-    auto* term = _getSymbol(symbol_map, ti.get());
-    auto* cond = _getSymbol(symbol_map, tb.get());
-    if (term && cond) {
-        term->rule_list.push_back(new ConcreteRule(std::make_shared<IteSemantics>(), {cond, term, term}));
+    auto info_list = builder.getSymbols(ti);
+    for (auto& info: info_list) {
+        auto* cond = builder.getSymbol(info.context, tb);
+        if (cond) info.symbol->rule_list.push_back(new ConcreteRule(std::make_shared<IteSemantics>(), {cond, info.symbol, info.symbol}));
     }
 }
 Term IteComponent::tryBuildTerm(const PSemantics& sem, const TermList &term_list) {
@@ -149,7 +295,7 @@ public:
 };
 
 ApplyComponent::ApplyComponent(Context* _ctx, bool _is_only_full): is_only_full(_is_only_full),
-    SynthesisComponent(-1), ctx(_ctx) {
+    ContextFreeSynthesisComponent(-1), ctx(_ctx) {
 }
 Term ApplyComponent::tryBuildTerm(const PSemantics& sem, const TermList &term_list) {
     if (!dynamic_cast<TmAppSemantics*>(sem.get())) return nullptr;
@@ -160,52 +306,48 @@ Term ApplyComponent::tryBuildTerm(const PSemantics& sem, const TermList &term_li
     return current;
 }
 
-void ApplyComponent::extendNTMap(std::unordered_map<std::string, NonTerminal *> &symbol_map) {
+void ApplyComponent::extendNTMap(GrammarBuilder &builder) {
     if (is_only_full) {
-        auto symbol_list = _getAllSymbols(symbol_map);
-        for (auto* func: symbol_list) {
-            auto current = func->type;
+        for (auto& info: builder.info_list) {
+            auto current = info.type;
             while (1) {
                 auto* ta = dynamic_cast<TArrow*>(current.get());
                 if (!ta) {
-                    _insertSymbol(symbol_map, current);
+                    builder.insertInfo(info.context, current);
                     break;
                 }
                 assert(ta->inp_types.size() == 1);
-                _insertSymbol(symbol_map, ta->inp_types[0]);
                 current = ta->oup_type;
             }
         }
     } else {
-        auto symbol_list = _getAllSymbols(symbol_map);
-        for (auto* func: symbol_list) {
-            auto current = func->type;
+        for (auto& info: builder.info_list) {
+            auto current = info.type;
             while (1) {
-                _insertSymbol(symbol_map, current);
+                builder.insertInfo(info.context, current);
                 auto* ta = dynamic_cast<TArrow*>(current.get());
                 if (!ta) break;
-                _insertSymbol(symbol_map, ta->inp_types[0]);
+                builder.insertInfo(info.context, ta->inp_types[0]);
                 assert(ta->inp_types.size() == 1);
                 current = ta->oup_type;
             }
         }
     }
 }
-void ApplyComponent::insertComponent(const std::unordered_map<std::string, NonTerminal *> &symbol_map) {
+void ApplyComponent::insertComponent(const GrammarBuilder &builder) {
     auto semantics = std::make_shared<TmAppSemantics>(ctx);
     if (is_only_full) {
-        auto symbol_list = _getAllSymbols(symbol_map);
-        for (auto* func: symbol_list) {
-            auto current = func->type;
-            NTList param_list = {func};
+        for (auto& info: builder.info_list) {
+            auto current = info.type;
+            NTList param_list = {info.symbol};
             while (1) {
                 auto* ta = dynamic_cast<TArrow*>(current.get());
                 if (!ta) break; assert(ta->inp_types.size() == 1);
-                param_list.push_back(_getSymbol(symbol_map, ta->inp_types[0].get()));
+                param_list.push_back(builder.getSymbol(info.context, ta->inp_types[0]));
                 current = ta->oup_type;
             }
             if (param_list.size() == 1) continue;
-            auto* res = _getSymbol(symbol_map, current.get());
+            auto* res = builder.getSymbol(info.context, current);
 
             bool is_valid = res;
             for (auto* param: param_list) {
@@ -214,13 +356,13 @@ void ApplyComponent::insertComponent(const std::unordered_map<std::string, NonTe
             if (is_valid) res->rule_list.push_back(new ConcreteRule(semantics, param_list));
         }
     } else {
-        for (auto* func: _getAllSymbols(symbol_map)) {
-            auto current = func->type;
+        for (auto& info: builder.info_list) {
+            auto current = info.type;
             auto* ta = dynamic_cast<TArrow*>(current.get());
             if (!ta) continue; assert(ta->inp_types.size() == 1);
-            auto param = _getSymbol(symbol_map, ta->inp_types[0].get());
-            auto res = _getSymbol(symbol_map, ta->oup_type.get());
-            if (param && res) res->rule_list.push_back(new ConcreteRule(semantics, {func, param}));
+            auto param = builder.getSymbol(info.context, ta->inp_types[0]);
+            auto res = builder.getSymbol(info.context, ta->oup_type);
+            if (param && res) res->rule_list.push_back(new ConcreteRule(semantics, {info.symbol, param}));
         }
     }
 }
@@ -228,35 +370,33 @@ void ApplyComponent::insertComponent(const std::unordered_map<std::string, NonTe
 #include "istool/ext/deepcoder/deepcoder_semantics.h"
 #include "istool/incre/trans/incre_trans.h"
 
-TupleComponent::TupleComponent(): SynthesisComponent( -1) {
+TupleComponent::TupleComponent(): ContextFreeSynthesisComponent( -1) {
 }
 
-void TupleComponent::extendNTMap(std::unordered_map<std::string, NonTerminal *> &symbol_map) {
-    auto symbol_list = _getAllSymbols(symbol_map);
-    for (auto* symbol: symbol_list) {
-        auto* tp = dynamic_cast<TProduct*>(symbol->type.get());
+void TupleComponent::extendNTMap(GrammarBuilder &builder) {
+    for (auto& info: builder.info_list) {
+        auto* tp = dynamic_cast<TProduct*>(info.type.get());
         if (tp) {
             for (auto& sub_type: tp->sub_types) {
-                _insertSymbol(symbol_map, sub_type);
+                builder.insertInfo(info.context, sub_type);
             }
         }
     }
 }
-void TupleComponent::insertComponent(const std::unordered_map<std::string, NonTerminal *> &symbol_map) {
+void TupleComponent::insertComponent(const GrammarBuilder &builder) {
     auto sem = std::make_shared<ProductSemantics>();
-    for (auto* symbol: _getAllSymbols(symbol_map)) {
-        auto* tp = dynamic_cast<TProduct*>(symbol->type.get());
+    for (auto& info: builder.info_list) {
+        auto* tp = dynamic_cast<TProduct*>(info.type.get());
         if (!tp) continue;
         NTList param_list;
         for (auto& sub_type: tp->sub_types) {
-            param_list.push_back(_getSymbol(symbol_map, sub_type.get()));
+            param_list.push_back(builder.getSymbol(info.context, sub_type));
         }
-
         bool is_valid = true;
         for (auto* param: param_list) {
             if (!param) is_valid = false;
         }
-        if (is_valid) symbol->rule_list.push_back(new ConcreteRule(sem, param_list));
+        if (is_valid) info.symbol->rule_list.push_back(new ConcreteRule(sem, param_list));
     }
 }
 Term TupleComponent::tryBuildTerm(const PSemantics& sem, const TermList &term_list) {
@@ -264,28 +404,27 @@ Term TupleComponent::tryBuildTerm(const PSemantics& sem, const TermList &term_li
     return std::make_shared<TmTuple>(term_list);
 }
 
-ProjComponent::ProjComponent(): SynthesisComponent(-1) {
+ProjComponent::ProjComponent(): ContextFreeSynthesisComponent(-1) {
 }
 
-void ProjComponent::extendNTMap(std::unordered_map<std::string, NonTerminal *> &symbol_map) {
-    auto symbol_list = _getAllSymbols(symbol_map);
-    for (auto* symbol: symbol_list) {
-        auto* tp = dynamic_cast<TProduct*>(symbol->type.get());
+void ProjComponent::extendNTMap(GrammarBuilder &builder) {
+    for (auto& info: builder.info_list) {
+        auto* tp = dynamic_cast<TProduct*>(info.type.get());
         if (tp) {
             for (auto& sub_type: tp->sub_types) {
-                _insertSymbol(symbol_map, sub_type);
+                builder.insertInfo(info.context, sub_type);
             }
         }
     }
 }
-void ProjComponent::insertComponent(const std::unordered_map<std::string, NonTerminal *> &symbol_map) {
-    for (auto* symbol: _getAllSymbols(symbol_map)) {
-        auto* tp = dynamic_cast<TProduct*>(symbol->type.get());
+void ProjComponent::insertComponent(const GrammarBuilder &builder) {
+    for (auto& info: builder.info_list) {
+        auto* tp = dynamic_cast<TProduct*>(info.type.get());
         if (!tp) continue;
         for (int i = 0; i < tp->sub_types.size(); ++i) {
             auto sem = std::make_shared<AccessSemantics>(i);
-            auto* target = _getSymbol(symbol_map, tp->sub_types[i].get());
-            if (target) target->rule_list.push_back(new ConcreteRule(sem, {symbol}));
+            auto* target = builder.getSymbol(info.context, tp->sub_types[i]);
+            if (target) target->rule_list.push_back(new ConcreteRule(sem, {info.symbol}));
         }
     }
 }
@@ -311,7 +450,7 @@ void ComponentPool::print() const {
         std::cout << "Components for " << name << ":" << std::endl;
         for (auto& comp: comp_list) {
             auto* uc = dynamic_cast<IncreComponent*>(comp.get());
-            if (uc) std::cout << "  " << uc->term->toString() << " " << uc->type->getName() << " " << uc->command_id << std::endl;
+            if (uc) std::cout << "  " << uc->term->toString() << " " << type::typeList2String(uc->param_types) << " -> " << uc->res_type->getName() << " " << uc->command_id << std::endl;
             auto* bc = dynamic_cast<BasicOperatorComponent*>(comp.get());
             if (bc) std::cout << "  " << bc->_sem->getName() << " " << type::typeList2String(bc->sem->inp_type_list) << " " << bc->sem->oup_type->getName() << std::endl;
         }
@@ -327,28 +466,47 @@ Data TypeLabeledDirectSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
 
 namespace {
     Grammar* _buildGrammar(const TypeList& inp_list, const SynthesisComponentList& component_list, const std::function<bool(Type*)>& is_oup, bool is_single) {
-        std::unordered_map<std::string, NonTerminal*> symbol_map;
+        SymbolContext init_context;
         for (int i = 0; i < inp_list.size(); ++i) {
-            _insertSymbol(symbol_map, inp_list[i]);
-            auto* symbol = _getSymbol(symbol_map, inp_list[i].get());
-            symbol->rule_list.push_back(new ConcreteRule(semantics::buildParamSemantics(i, inp_list[i]), {}));
+            init_context.push_back(semantics::buildParamSemantics(i, inp_list[i]));
         }
+        GrammarBuilder builder(init_context);
+
+        while (true) {
+            int pre_size = builder.contexts.size();
+            for (auto& component: component_list) component->extendContext(builder);
+            if (builder.contexts.size() == pre_size) break;
+        }
+
+        for (auto& context: builder.contexts) {
+            for (auto& sem: context) {
+                auto* ts = dynamic_cast<TypedSemantics*>(sem.get());
+                assert(ts);
+                builder.insertInfo(context, ts->oup_type);
+                auto* symbol = builder.getSymbol(context, ts->oup_type);
+                symbol->rule_list.push_back(new ConcreteRule(sem, {}));
+            }
+        }
+
         int pre_size;
         do {
-            pre_size = symbol_map.size();
+            pre_size = builder.info_list.size();
             for (auto& component: component_list) {
-                component->extendNTMap(symbol_map);
+                component->extendNTMap(builder);
             }
-        } while (pre_size < symbol_map.size());
-
+        } while (pre_size < builder.info_list.size());
 
         for (auto& component: component_list) {
-            component->insertComponent(symbol_map);
+            component->insertComponent(builder);
         }
+
+        auto init_symbols = builder.getSymbols([&](const SymbolInfo& info) {
+            return _context2String(info.context) == _context2String(init_context);
+        });
         NTList start_list, symbol_list;
-        for (auto& [_, symbol]: symbol_map) {
-            symbol_list.push_back(symbol);
-            if (is_oup(symbol->type.get())) start_list.push_back(symbol);
+        for (auto& info: builder.info_list) symbol_list.push_back(info.symbol);
+        for (auto& info: init_symbols) {
+            if (is_oup(info.type.get())) start_list.push_back(info.symbol);
         }
         if (start_list.empty()) {
             auto* dummy_symbol = new NonTerminal("start", type::getTBool());
@@ -405,34 +563,96 @@ Grammar *ComponentPool::buildCombinatorGrammar(const TypeList &inp_list, const P
     return _buildGrammar(inp_list, component_list, [&](Type* type){return type::equal(type, oup_type.get());}, true);
 }
 
+#include <unordered_set>
+
+namespace {
+    void _merge(SynthesisComponentList& x, const SynthesisComponentList& y) {
+        std::unordered_set<std::string> component_set;
+        for (auto& existing_component: x) {
+            auto* ic = dynamic_cast<IncreComponent*>(existing_component.get());
+            if (ic) component_set.insert(ic->name);
+        }
+        for (auto& new_component: y) {
+            auto* ic = dynamic_cast<IncreComponent*>(new_component.get());
+            if (ic) {
+                if (component_set.find(ic->name) == component_set.end()) {
+                    component_set.insert(ic->name);
+                    x.push_back(new_component);
+                }
+            } else x.push_back(new_component);
+        }
+    }
+}
+
+void ComponentPool::merge(const ComponentPool &pool) {
+    _merge(comb_list, pool.comb_list); _merge(align_list, pool.align_list);
+    _merge(compress_list, pool.compress_list);
+}
+
 const std::string incre::grammar::collector::KCollectMethodName = "Collector@CollectMethodName";
 
 namespace {
     const ComponentCollectorType default_type = ComponentCollectorType::LABEL;
 }
 
+#include "istool/sygus/theory/basic/string/str.h"
+
 ComponentPool incre::grammar::collectComponent(Context* ctx, Env* env, ProgramData* program) {
     auto* ref = env->getConstRef(collector::KCollectMethodName, BuildData(Int, default_type));
     auto collector_type = static_cast<ComponentCollectorType>(theory::clia::getIntValue(*ref));
+
+    ComponentPool base_res = collector::getBasicComponentPool(ctx, env), source_res, extra_res;
     switch (collector_type) {
-        case ComponentCollectorType::LABEL: return collector::collectComponentFromLabel(ctx, env, program);
-        case ComponentCollectorType::SOURCE: return collector::collectComponentFromSource(ctx, env, program);
+        case ComponentCollectorType::LABEL: {
+            source_res = collector::collectComponentFromLabel(ctx, program);
+            break;
+        }
+        case ComponentCollectorType::SOURCE: {
+            source_res = collector::collectComponentFromSource(ctx, program);
+            break;
+        }
     }
+
+    auto extra = env->getConstRef(incre::config_name::KExtraGrammarName, BuildData(String, "Fold"));
+    auto name = theory::string::getStringValue(*extra);
+    if (!name.empty()) {
+        collector::loadExtraOperator(ctx, env, name);
+        extra_res = collector::collectExtraOperators(ctx, name);
+    }
+
+    auto* is_fold = env->getConstRef(incre::config_name::KIsEnableFoldName, BuildData(Bool, false));
+    if (is_fold->isTrue()) {
+        collector::loadExtraOperator(ctx, env, "Fold");
+        extra_res.merge(collector::collectExtraOperators(ctx, "Fold"));
+    }
+
+    base_res.merge(extra_res);
+    base_res.merge(source_res);
+    return base_res;
 }
 
 #define RegisterComponent(type, comp) basic.type ## _list.push_back(comp)
 #define RegisterAll(comp) RegisterComponent(comb, comp), RegisterComponent(align, comp), RegisterComponent(compress, comp)
 
-ComponentPool incre::grammar::collector::getBasicComponentPool(Context* ctx, Env* env, bool is_full_apply) {
+ComponentPool incre::grammar::collector::getBasicComponentPool(Context* ctx, Env* env) {
     ComponentPool basic;
     // insert basic operator
-    const std::vector<std::string> op_list = {"+", "-", "*", "=", "<", "and", "or", "!"};
+    std::vector<std::string> op_list = {"+", "-", "=", "<", "and", "or", "!"};
+
     const std::unordered_set<std::string> all_used_op = {"+", "-"};
 
     for (auto op_name: op_list) {
         auto sem = env->getSemantics(op_name);
         auto comp = std::make_shared<BasicOperatorComponent>(op_name, sem);
         if (all_used_op.find(op_name) != all_used_op.end()) RegisterAll(comp); else RegisterComponent(comb, comp);
+    }
+
+    {
+        auto time_sem = env->getSemantics("*");
+        PSynthesisComponent comp = std::make_shared<BasicOperatorComponent>("*", time_sem);
+        auto* is_use_time = env->getConstRef(incre::config_name::KIsNonLinearName, BuildData(Bool, false));
+        if (!is_use_time->isTrue()) comp->command_id = 1e9;
+        RegisterComponent(comb, comp);
     }
 
     // insert const operator
@@ -447,6 +667,6 @@ ComponentPool incre::grammar::collector::getBasicComponentPool(Context* ctx, Env
     RegisterAll(std::make_shared<IteComponent>());
     RegisterAll(std::make_shared<ProjComponent>());
     RegisterAll(std::make_shared<TupleComponent>());
-    RegisterAll(std::make_shared<ApplyComponent>(ctx, is_full_apply));
+    // RegisterAll(std::make_shared<ApplyComponent>(ctx, is_full_apply));
     return basic;
 }

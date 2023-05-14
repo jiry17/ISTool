@@ -201,14 +201,39 @@ Command incre::json2command(const Json::Value &full_node) {
     LOG(FATAL) << "Unknown command " << node;
 }
 
+#include "istool/sygus/theory/basic/string/string_value.h"
+
+namespace {
+    Data _configValue2Data(const Json::Value& node) {
+        auto type = node["type"].asString();
+        if (type == "int") {
+            return BuildData(Int, node["value"].asInt());
+        }
+        if (type == "bool") {
+            return BuildData(Bool, node["value"].asBool());
+        }
+        if (type == "string") {
+            return BuildData(String, node["value"].asString());
+        }
+        LOG(FATAL) << "Unknown config value " << node;
+    }
+}
+
 incre::IncreProgram incre::json2program(const Json::Value &node) {
     CommandList commands;
+    IncreConfigMap config_map;
     for (auto& sub_node: node) {
+        if (sub_node["node"]["type"].asString() == "config") {
+            auto command_node = sub_node["node"];
+            auto value = _configValue2Data(command_node["value"]);
+            config_map[incre::string2ConfigType(command_node["name"].asString())] = value;
+            continue;
+        }
         auto command = incre::json2command(sub_node);
         if (!command) continue;
         commands.push_back(command);
     }
-    return std::make_shared<incre::ProgramData>(commands);
+    return std::make_shared<incre::ProgramData>(commands, config_map);
 }
 
 incre::IncreProgram incre::jsonFile2program(const std::string &path) {

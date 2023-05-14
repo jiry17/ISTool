@@ -1,3 +1,5 @@
+Config ComposeNum = 4;
+
 Inductive Tree = nil Unit | node {Int, Tree, Tree};
 
 max = \a: Int. \b: Int. if < a b then b else a;

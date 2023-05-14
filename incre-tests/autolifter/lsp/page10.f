@@ -34,7 +34,6 @@ rev = lambda x: List. (fix (lambda f: List->List->List. lambda x: List. lambda y
 
 max = lambda x: Int. lambda y: Int. if (< x y) then y else x;
 inf = 100;
-gap = 5;
 
 /* Task */
 
@@ -62,6 +61,7 @@ cond1 = lambda x: List.
     cons {h, t} -> not (> h (minimum t))
   | _ -> true
   end;
+@Input gap: Int;
 cond2 = lambda x: List. let ma = maximum x in
   let mi = minimum x in not (< (+ mi gap) ma);
 isval = lambda x: List. (and (cond1 x) (cond2 x));

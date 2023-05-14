@@ -130,5 +130,5 @@ IncreProgram autolabel::constructLabel(ProgramData *program, const z3::model &mo
         auto new_bind = std::make_shared<TermBinding>(new_term);
         commands.push_back(std::make_shared<CommandBind>(cb->name, new_bind, cb->decorate_set));
     }
-    return std::make_shared<ProgramData>(commands);
+    return std::make_shared<ProgramData>(commands, program->config_map);
 }

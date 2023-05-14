@@ -74,6 +74,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
         TimeCheck(guard);
         auto last_example = example_list[example_list.size() - 1];
         auto last_io_example = io_example_list[example_list.size() - 1];
+        LOG(INFO) << "counter example " << example::ioExample2String(last_io_example);
         bool is_occur = false;
         for (const auto& term: term_list) {
             if (example::satisfyIOExample(term.get(), last_io_example, env)) {
@@ -81,7 +82,14 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             }
         }
         if (!is_occur) {
-            //LOG(INFO) << "new term";
+            LOG(INFO) << "new term";
+            /*for (auto& example: example_list) {
+                LOG(INFO) << "term example " << data::dataList2String(example);
+            }*/
+            //LOG(INFO) << term_solver;
+            for (auto& term: term_list) {
+                LOG(INFO) << "  " << term->toString();
+            }
             auto new_term = term_solver->synthesisTerms(example_list, guard);
             //for (const auto& p: new_term) std::cout << "  " << p->toString() << std::endl;
 
@@ -162,6 +170,7 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
         }
 
         auto merge = _mergeIte(term_list, condition_list, spec->env.get());
+        LOG(INFO) << "current " << merge->toString();
         result = semantics::buildSingleContext(info->name, merge);
         if (v->verify(result, &counter_example)) {
             return result;

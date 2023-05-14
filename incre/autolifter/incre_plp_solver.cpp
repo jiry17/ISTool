@@ -146,8 +146,12 @@ UnitInfo IncrePLPSolver::init(const AuxProgram& program) {
     Bitset info(example_list.size(), false);
 
     for (int i = 0; i < example_list.size(); ++i) {
-        if (!(evaluate_util->execute(program, example_list[i].first) == evaluate_util->execute(program, example_list[i].second))) {
-            info.set(i, true);
+        try {
+            if (!(evaluate_util->execute(program, example_list[i].first) ==
+                  evaluate_util->execute(program, example_list[i].second))) {
+                info.set(i, true);
+            }
+        } catch (const SemanticsError& e) {
         }
     }
     return {program, info};
@@ -171,8 +175,13 @@ std::vector<AuxProgram> IncrePLPSolver::unfoldComponents(const std::vector<AuxPr
 void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
     global::recorder.start("extend-component");
     for (auto& unit: component_info_list) {
-        auto is_valid = !(evaluate_util->execute(unit.program, example.first) == evaluate_util->execute(unit.program, example.second));
-        unit.info.append(is_valid);
+        try {
+            auto is_valid = !(evaluate_util->execute(unit.program, example.first) ==
+                              evaluate_util->execute(unit.program, example.second));
+            unit.info.append(is_valid);
+        } catch (const SemanticsError& e) {
+            unit.info.append(false);
+        }
     }
     global::recorder.end("extend-component");
     LOG(INFO) << "#Example: " << example_list.size() << " " << "#Component: " << component_info_list.size();
@@ -276,6 +285,7 @@ void IncrePLPSolver::getMoreComponent() {
     }
 
     for (auto& unit: _randomMerge(unit_storage, env)) {
+        //LOG(INFO) << "new component " << aux2String(unit.program) << " " << unit.info.toString();
         component_info_list.push_back(unit);
     }
 }
@@ -341,10 +351,15 @@ std::pair<int, int> IncrePLPSolver::verify(const std::vector<AuxProgram> &aux_li
         }
     };
 
-    for (int _ = 0; _ < verify_num; ++_) {
+    LOG(INFO) << "Prepare finished";
+
+    for (int try_num = 0; try_num < verify_num; ++try_num) {
         verify_pos = (verify_pos + 1) % verify_num;
         auto pre_id = deal_example(verify_pos);
-        if (pre_id >= 0) return {pre_id, verify_pos};
+        if (pre_id >= 0) {
+            LOG(INFO) << "Find a counterexample after " << try_num << "/" << verify_num;
+            return {pre_id, verify_pos};
+        }
     }
 
     for (int i = 0; i < aux_list.size(); ++i) {
@@ -571,7 +586,7 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
         TimeCheck(guard);
         auto candidate_result = unfoldComponents(synthesisFromExample(guard));
         LOG(INFO) << "Candidate result " << _unitList2String(candidate_result);
-
+        LOG(INFO) << KComposedNum;
         counter_example = verify(candidate_result);
         if (counter_example.first == -1) return candidate_result;
         addExample(counter_example);

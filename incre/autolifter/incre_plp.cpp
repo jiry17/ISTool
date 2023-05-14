@@ -78,6 +78,7 @@ void FExampleSpace::extendAuxCache(const AuxProgram &program, DataList *cache_it
 void FExampleSpace::extendOupCache(const PProgram &program, const std::vector<int> &path, DataList *cache_item,
                                    int length) {
     assert(length <= example_list.size());
+    LOG(INFO) << "Extend from " << cache_item->size() << " to " << length;
     for (int i = cache_item->size(); i < length; ++i) {
         cache_item->push_back(runOup(i, program.get(), path));
     }

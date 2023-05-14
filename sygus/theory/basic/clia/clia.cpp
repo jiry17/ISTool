@@ -27,3 +27,7 @@ void theory::loadCLIATheory(Env *env) {
     auto* ext = type::getTypeExtension(env);
     ext->registerTypeInfo(new IntValueTypeInfo());
 }
+
+void theory::clia::setIntINF(Env *env, int inf) {
+    env->getConstRef(clia::KINFName, BuildData(Int, inf));
+}

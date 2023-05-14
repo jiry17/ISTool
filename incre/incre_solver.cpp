@@ -175,5 +175,5 @@ IncreProgram incre::rewriteWithIncreSolution(ProgramData *program, const IncreSo
     for (const auto& command: program->commands) {
         res.push_back(_rewriteCommand(command.get(), solution));
     }
-    return std::make_shared<ProgramData>(res);
+    return std::make_shared<ProgramData>(res, program->config_map);
 }

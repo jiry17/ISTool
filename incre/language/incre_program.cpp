@@ -57,7 +57,8 @@ std::string CommandDefInductive::contentToString() const {
     return res + ";";
 }
 
-ProgramData::ProgramData(const CommandList &_commands): commands(_commands) {}
+ProgramData::ProgramData(const CommandList &_commands, const IncreConfigMap& _config_map):
+    commands(_commands), config_map(_config_map) {}
 void ProgramData::print() const {
     for (auto& command: commands) {
         std::cout << command->toString() << std::endl;
@@ -68,7 +69,7 @@ namespace {
     const std::unordered_map<CommandDecorate, std::string> KDecorateNameMap = {
             {CommandDecorate::INPUT, "Input"}, {CommandDecorate::START, "Start"},
             {CommandDecorate::SYN_ALIGN, "Align"}, {CommandDecorate::SYN_COMBINE, "Combine"},
-            {CommandDecorate::SYN_COMPRESS, "Compress"}
+            {CommandDecorate::SYN_COMPRESS, "Extract"}, {CommandDecorate::SYN_NO_PARTIAL, "NoPartial"}
     };
 }
 
@@ -83,4 +84,63 @@ std::string incre::decorate2String(CommandDecorate deco) {
     auto it = KDecorateNameMap.find(deco);
     assert(it != KDecorateNameMap.end());
     return it->second;
+}
+
+namespace {
+    const std::unordered_map<IncreConfig, std::string> KConfigNameMap = {
+            {IncreConfig::COMPOSE_NUM, "ComposeNum"},
+            {IncreConfig::VERIFY_BASE, "VerifyBase"},
+            {IncreConfig::NON_LINEAR, "NonLinear"},
+            {IncreConfig::SAMPLE_SIZE, "SampleSize"},
+            {IncreConfig::EXTRA_GRAMMAR, "ExtraGrammar"},
+            {IncreConfig::ENABLE_FOLD, "EnableFold"},
+            {IncreConfig::SAMPLE_INT_MIN, "SampleIntMin"},
+            {IncreConfig::SAMPLE_INT_MAX, "SampleIntMax"}
+    };
+}
+
+IncreConfig incre::string2ConfigType(const std::string &s) {
+    for (auto& [config, name]: KConfigNameMap) {
+        if (name == s) return config;
+    }
+    LOG(FATAL) << "Unknown Config " << s;
+}
+
+
+#include "istool/solver/autolifter/composed_sf_solver.h"
+
+const std::string config_name::KDataSizeLimitName = "incre@data-size-limit";
+const std::string config_name::KExtraGrammarName = "incre@extra-grammar";
+const std::string config_name::KIsNonLinearName = "incre@is-non-linear";
+const std::string config_name::KIsEnableFoldName = "incre@is-enable-fold";
+const std::string config_name::KSampleIntMaxName = "incre@sample-int-max";
+const std::string config_name::KSampleIntMinName = "incre@sample-int-min";
+
+namespace {
+    std::unordered_map<IncreConfig, std::string> KConfigEnvNameMap;
+
+    void _constructEnvNameMap() {
+        KConfigEnvNameMap = {
+            {IncreConfig::COMPOSE_NUM, solver::autolifter::KComposedNumName},
+            {IncreConfig::NON_LINEAR, config_name::KIsNonLinearName},
+            {IncreConfig::VERIFY_BASE, solver::autolifter::KOccamExampleNumName},
+            {IncreConfig::SAMPLE_SIZE, config_name::KDataSizeLimitName},
+            {IncreConfig::EXTRA_GRAMMAR, config_name::KExtraGrammarName},
+            {IncreConfig::ENABLE_FOLD, config_name::KIsEnableFoldName},
+            {IncreConfig::SAMPLE_INT_MIN, config_name::KSampleIntMinName},
+            {IncreConfig::SAMPLE_INT_MAX, config_name::KSampleIntMaxName}
+        };
+    }
+}
+
+void incre::applyConfig(IncreConfig config, const Data &config_value, Env *env) {
+    if (KConfigEnvNameMap.empty()) _constructEnvNameMap();
+    env->setConst(KConfigEnvNameMap[config], config_value);
+}
+
+void incre::applyConfig(ProgramData *program, Env *env) {
+    if (KConfigEnvNameMap.empty()) _constructEnvNameMap();
+    for (auto& [incre_type, _]: KConfigEnvNameMap) {
+        applyConfig(incre_type, program->config_map[incre_type], env);
+    }
 }

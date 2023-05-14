@@ -44,17 +44,19 @@ namespace {
             case TermType::VAR:
             case TermType::VALUE:
             case TermType::WILDCARD:
-            case TermType::FIX:
-            case TermType::ABS:
             case TermType::ALIGN:
                 LOG(FATAL) << "Unexpected TermType: " << term->toString();
             case TermType::LABEL:
             case TermType::UNLABEL:
             case TermType::APP:
             case TermType::PROJ:
+            case TermType::FIX:
             case TermType::TUPLE: {
                 auto sub_terms = incre::getSubTerms(term.get());
                 for (auto& sub: sub_terms) _collectMovableTerms(sub, tmp_names, leaves);
+                return;
+            }
+            case TermType::ABS: {
                 return;
             }
             case TermType::LET: {
@@ -144,6 +146,14 @@ namespace {
         auto f = _rewriteTerm(term->f, rewrite_map);
         return std::make_shared<TmIf>(c, t, f);
     }
+    RewriteHead(Fix) {
+        auto content = _rewriteTerm(term->content, rewrite_map);
+        return std::make_shared<TmFix>(content);
+    }
+    RewriteHead(Abs) {
+        auto content = _rewriteTerm(term->content, rewrite_map);
+        return std::make_shared<TmAbs>(term->name, term->type, content);
+    }
 
     Term _rewriteTerm(const Term& term, const std::unordered_map<TermData*, std::string>& rewrite_map) {
         auto it = rewrite_map.find(term.get());
@@ -155,9 +165,9 @@ namespace {
             case TermType::VAR:
                 return term;
             case TermType::WILDCARD:
-            case TermType::ABS:
-            case TermType::FIX:
                 LOG(FATAL) << "Unexpected TermType: " << term->toString();
+            case TermType::ABS: RewriteCase(Abs);
+            case TermType::FIX: RewriteCase(Fix);
             case TermType::ALIGN: RewriteCase(Align);
             case TermType::LABEL: RewriteCase(Label);
             case TermType::UNLABEL: RewriteCase(UnLabel);
@@ -286,5 +296,5 @@ IncreProgram incre::eliminateNestedAlign(ProgramData *program) {
         auto new_bind = std::make_shared<TermBinding>(new_term);
         commands.push_back(std::make_shared<CommandBind>(cb->name, new_bind, cb->decorate_set));
     }
-    return std::make_shared<ProgramData>(commands);
+    return std::make_shared<ProgramData>(commands, program->config_map);
 }

@@ -413,12 +413,28 @@ namespace {
 Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
     auto* example_space = new CExampleSpace(align_id, example_space_list[align_id], this);
     auto output_cases = _collectOutputCase(align_id, this);
-    LOG(INFO) << "Output cases " << output_cases.size();
-    for (auto& component: output_cases) {
-        std::cout << "  " << _path2String(component.path) << " ";
-        if (!component.program.second) std::cout << "null" << std::endl;
-        else std::cout << component.program.second->toString() << std::endl;
+    {
+        LOG(INFO) << "Synthesize for align@" << align_id;
+        LOG(INFO) << "Output cases " << output_cases.size();
+        for (auto &component: output_cases) {
+            std::cout << "  " << _path2String(component.path) << " ";
+            if (!component.program.second) std::cout << "null" << std::endl;
+            else std::cout << component.program.second->toString() << std::endl;
+        }
+        LOG(INFO) << "Input list";
+        int input_id = 0;
+        for (auto &[type, prog]: example_space->compress_program_list) {
+            auto *ltc = dynamic_cast<TLabeledCompress *>(type.get());
+            if (ltc) {
+                for (auto &align_prog: f_res_list[ltc->id].component_list) {
+                    std::cout << "  [" << input_id++ << "] " << prog->toString() << " -> " << align_prog.program.second->toString() << std::endl;
+                }
+            } else {
+                std::cout << "  [" << input_id++ << "] " << prog->toString() << std::endl;
+            }
+        }
     }
+
     PProgram res = nullptr;
 
     while (!res || !example_space->isValid(res)) {

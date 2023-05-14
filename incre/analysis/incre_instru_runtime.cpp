@@ -32,15 +32,32 @@ IncreExampleCollector::~IncreExampleCollector() {
     delete ctx;
 }
 void IncreExampleCollector::add(int tau_id, const std::unordered_map<std::string, Data> &local, const Data &oup) {
-    while (example_pool.size() <= tau_id) example_pool.emplace_back();
+    assert(example_pool.size() > tau_id);
     example_pool[tau_id].push_back(std::make_shared<IncreExampleData>(tau_id, local, current_global, oup));
 }
+void IncreExampleCollector::clear() {
+    for (int i = 0; i < example_pool.size(); ++i) {
+        example_pool[i].clear();
+    }
+}
 
-void IncreExamplePool::merge(IncreExampleCollector *collector) {
-    while (collector->example_pool.size() > example_pool.size()) example_pool.emplace_back();
+void IncreExamplePool::insertExample(int pos, const IncreExample& example) {
+    while (pos >= example_pool.size()) {
+        example_pool.emplace_back();
+
+    }
+}
+
+
+void IncreExamplePool::merge(IncreExampleCollector *collector, TimeGuard* guard) {
+    int count = 0;
     for (int i = 0; i < collector->example_pool.size(); ++i) {
         for (auto& example: collector->example_pool[i]) {
-            example_pool[i].push_back(example);
+            insertExample(i, example);
+            ++count;
+            if (count % 100 == 0 && guard && guard->getRemainTime() < 0) {
+                return;
+            }
         }
     }
 }
@@ -217,6 +234,8 @@ namespace {
     }
     CollectHead(Match) {
         CollectSub(def);
+        /*LOG(INFO) << term->toString();
+        LOG(INFO) << def.toString();*/
         for (auto& [pt, branch]: term->cases) {
             if (isMatch(def, pt)) {
                 auto binds = bindPattern(def, pt);
@@ -351,13 +370,14 @@ namespace {
 }
 
 IncreExampleCollector::IncreExampleCollector(const std::vector<std::unordered_set<std::string>> &_cared_vars,
-                                             ProgramData* _program): cared_vars(_cared_vars) {
+                                             ProgramData* _program): cared_vars(_cared_vars), example_pool(_cared_vars.size()) {
     ctx = _buildCollectContext(_program, this);
 }
 
 IncreExamplePool::IncreExamplePool(const IncreProgram& _program, Env* env,
                                    const std::vector<std::unordered_set<std::string>> &_cared_vars):
-                                   program(_program), cared_vars(_cared_vars) {
+                                   program(_program), cared_vars(_cared_vars), example_pool(_cared_vars.size()),
+                                   is_already_finished(_cared_vars.size(), false) {
     generator = new FixedPoolFunctionGenerator(env); ctx = new Context();
     for (int command_id = 0; command_id < program->commands.size(); ++command_id) {
         auto& command = program->commands[command_id];
@@ -396,15 +416,38 @@ IncreExamplePool::IncreExamplePool(const IncreProgram& _program, Env* env,
     thread_num = theory::clia::getIntValue(*data);
 }
 
+DefaultIncreExamplePool::DefaultIncreExamplePool(const IncreProgram &_program, Env *env,
+                                                 const std::vector<std::unordered_set<std::string>> &_cared_vars):
+                                                 IncreExamplePool(_program, env, _cared_vars) {
+}
+void DefaultIncreExamplePool::insertExample(int pos, const IncreExample &new_example) {
+    assert(pos < example_pool.size());
+    example_pool[pos].push_back(new_example);
+}
+
+NoDuplicatedIncreExamplePool::NoDuplicatedIncreExamplePool(const IncreProgram &_program, Env *env,
+                                                           const std::vector<std::unordered_set<std::string>> &_cared_vars):
+        IncreExamplePool(_program, env, _cared_vars), existing_example_set(_cared_vars.size()) {
+}
+
+void NoDuplicatedIncreExamplePool::insertExample(int pos, const IncreExample &new_example) {
+    assert(pos < example_pool.size() && pos < existing_example_set.size());
+    auto feature = new_example->toString();
+    if (existing_example_set[pos].find(feature) == existing_example_set[pos].end()) {
+        existing_example_set[pos].insert(feature);
+        example_pool[pos].push_back(new_example);
+    }
+}
+
 #include "istool/basic/config.h"
 
 void IncreExampleCollector::collect(const Term &start, const std::unordered_map<std::string, Data> &_global) {
     current_global = _global;
     for (auto& [name, val]: current_global) {
-        // LOG(INFO) << "bind " << name << " " << val.toString();
+        /*LOG(INFO) << "bind " << name << " " << val.toString();*/
         ctx->addBinding(name, std::make_shared<TmValue>(val));
     }
-    // LOG(INFO) << "collect " << start->toString();
+    //LOG(INFO) << "collect " << start->toString();
     _collectExample(start, ctx, this);
 }
 
@@ -425,33 +468,49 @@ std::pair<Term, std::unordered_map<std::string, Data>> IncreExamplePool::generat
 }
 
 namespace {
+    const int KMaxFailedAttempt = 500;
+
     class _MultiThreadCollectorHolder {
     public:
         IncreExamplePool* pool;
-        std::mutex input_lock, num_lock;
-        int tau_id, target_num, thread_num, num;
+        std::mutex input_lock, res_lock;
+        int tau_id, target_num, thread_num;
+        bool is_finished = false;
+        int attempt_num = 0;
         std::queue<std::pair<Term, std::unordered_map<std::string, Data>>> input_queue;
         TimeGuard* guard;
 
         _MultiThreadCollectorHolder(IncreExamplePool* _pool, int _tau_id, int _target_num, TimeGuard* _guard):
             pool(_pool), tau_id(_tau_id), target_num(_target_num), guard(_guard), thread_num(pool->thread_num) {
-            if (pool->example_pool.size() <= tau_id) num = 0; else num = pool->example_pool[tau_id].size();
-        }
-        int getCollectedNum(IncreExampleCollector* collector) {
-            if (collector->example_pool.size() <= tau_id) return 0;
-            return collector->example_pool[tau_id].size();
         }
         void collect() {
             std::vector<std::thread> thread_list;
 
             auto single_thread = [&](IncreExampleCollector* collector, int id) {
-                int pre_num = 0;
+                int previous_num = 0;
                 while (!guard || guard->getRemainTime() > 0) {
-                    num_lock.lock();
-                    if (num >= target_num) {
-                        num_lock.unlock(); break;
+                    /*LOG(INFO) << "Remain time " << guard->getRemainTime();*/
+                    if (res_lock.try_lock()) {
+                        int pre_size = pool->example_pool[tau_id].size();
+
+                        int total_size = 0;
+                        for (auto& example_list: collector->example_pool) {
+                            total_size += example_list.size();
+                        }
+                        pool->merge(collector, guard);
+                        collector->clear();
+                        if (pool->example_pool[tau_id].size() == pre_size) {
+                            attempt_num += previous_num;
+                            if (attempt_num >= KMaxFailedAttempt) {
+                                is_finished = true;
+                                pool->is_already_finished[tau_id] = true;
+                            }
+                        } else attempt_num = 0;
+                        if (pool->example_pool[tau_id].size() >= target_num || is_finished) {
+                            res_lock.unlock(); break;
+                        }
+                        res_lock.unlock();
                     }
-                    num_lock.unlock();
 
                     input_lock.lock();
                     if (input_queue.empty()) {
@@ -464,13 +523,10 @@ namespace {
                     input_queue.pop();
                     input_lock.unlock();
 
+                    int pre_size = collector->example_pool[tau_id].size();
                     collector->collect(start, global);
-                    int current_num = getCollectedNum(collector);
-                    int incre_num = current_num - pre_num; pre_num = current_num;
-
-                    num_lock.lock();
-                    num += incre_num;
-                    num_lock.unlock();
+                    if (collector->example_pool[tau_id].size() != pre_size)
+                        attempt_num++;
                 }
                 return;
             };
@@ -483,8 +539,7 @@ namespace {
                 thread_list.emplace_back(single_thread, collector, i);
             }
             for (int i = 0; i < thread_num; ++i) {
-                thread_list[i].join();
-                pool->merge(collector_list[i]);
+                thread_list[i].join(); delete collector_list[i];
             }
         }
 
@@ -497,17 +552,19 @@ void IncreExamplePool::generateSingleExample() {
 
     global::recorder.start("collect");
     collector->collect(term, global);
-    merge(collector);
+    merge(collector, nullptr);
     global::recorder.end("collect");
 }
 
 void IncreExamplePool::generateBatchedExample(int tau_id, int target_num, TimeGuard *guard) {
+    if (is_already_finished[tau_id] || target_num < example_pool[tau_id].size()) return;
+    if (guard) LOG(INFO) << "Start generate " << guard->getRemainTime();
     auto* holder = new _MultiThreadCollectorHolder(this, tau_id, target_num, guard);
     global::recorder.start("collect");
     holder->collect();
     global::recorder.end("collect");
+    if (guard) LOG(INFO) << "Generate finished";
     delete holder;
 }
 
 const std::string incre::KExampleThreadName = "KIncreExampleCollectNum";
-const std::string incre::KDataSizeLimitName = "KIncreDataSizeLimit";

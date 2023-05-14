@@ -11,6 +11,7 @@
 namespace theory {
     namespace clia {
         extern const std::string KINFName;
+        void setIntINF(Env* env, int inf);
     }
     void loadCLIATheory(Env* env);
 }

@@ -12,8 +12,8 @@ using namespace incre;
 namespace {
     const int KDefaultSizeLimit = 10;
     const int KTermSizeLimit = 3;
-    const int KIntMin = -5;
-    const int KIntMax = 5;
+    const int KDefaultIntMin = -5;
+    const int KDefaultIntMax = 5;
 
     std::vector<int> _distributeSize(int tot, int num, std::minstd_rand* e) {
         std::vector<int> res(num, 0);
@@ -45,7 +45,7 @@ namespace {
 #define RandomHead(name) Data _getRandomData(Ty ## name* type, const Ty& _type, RandomContext* ctx, SizeSafeValueGenerator* g)
 
     RandomHead(Int) {
-        auto d = std::uniform_int_distribution<int>(KIntMin, KIntMax);
+        auto d = std::uniform_int_distribution<int>(g->KIntMin, g->KIntMax);
         return BuildData(Int, d(*(ctx->e)));
     }
     RandomHead(Bool) {
@@ -95,8 +95,12 @@ namespace {
 }
 
 IncreDataGenerator::IncreDataGenerator(Env *_env): env(_env) {
-    auto* data = env->getConstRef(incre::KDataSizeLimitName, BuildData(Int, KDefaultSizeLimit));
+    auto* data = env->getConstRef(incre::config_name::KDataSizeLimitName, BuildData(Int, KDefaultSizeLimit));
     KSizeLimit = theory::clia::getIntValue(*data);
+    data = env->getConstRef(incre::config_name::KSampleIntMinName, BuildData(Int, KDefaultIntMin));
+    KIntMin = theory::clia::getIntValue(*data);
+    data = env->getConstRef(incre::config_name::KSampleIntMaxName, BuildData(Int, KDefaultIntMax));
+    KIntMax = theory::clia::getIntValue(*data);
 }
 
 SizeSafeValueGenerator::SplitScheme::SplitScheme(const std::string &_cons_name, const Ty &_cons_type,
@@ -215,9 +219,8 @@ Data SizeSafeValueGenerator::getRandomData(const Ty& type) {
     // LOG(INFO) << "Get random data for " << type->toString();
     TyList sub_list;
     _collectSubInductive(type, sub_list, ind_map);
-    // LOG(INFO) << "target type " << type->toString();
     if (sub_list.empty()) {
-        auto res = _getRandomData(type, ctx, nullptr);
+        auto res = _getRandomData(type, ctx, this);
         delete ctx;
         // LOG(INFO) << "finished";
         return res;

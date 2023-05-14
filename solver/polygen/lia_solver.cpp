@@ -16,7 +16,7 @@ const std::string solver::lia::KTermIntMaxName = "LIA@TermIntMax";
 const std::string solver::lia::KMaxCostName = "LIA@MaxCost";
 
 namespace {
-    const int KDefaultConstValue = 1;
+    const int KDefaultConstValue = 2;
     const int KDefaultTermValue = 2;
     const int KDefaultMaxCost = 1e9;
 

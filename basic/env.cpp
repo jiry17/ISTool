@@ -18,6 +18,7 @@ int Env::setRandomSeed(int seed) {
 }
 
 Data * Env::getConstRef(const std::string &name, const Data& default_value) {
+    //LOG(INFO) << "Get " << this << " " << name; int kk; std::cin >> kk;
     if (const_pool.find(name) == const_pool.end()) {
         const_pool[name] = new Data(default_value);
     }
@@ -29,6 +30,7 @@ Data * Env::getConstRef(const std::string &name, const Data& default_value) {
 }
 
 void Env::setConst(const std::string &name, const Data &value) {
+    //LOG(INFO) << "Set " << this << " " << name; int kk; std::cin >> kk;
     if (const_pool.find(name) == const_pool.end()) {
         const_pool[name] = new Data();
     }

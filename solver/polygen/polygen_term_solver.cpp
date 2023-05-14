@@ -345,7 +345,7 @@ namespace {
 }
 
 ProgramList PolyGenTermSolver::getTerms() {
-    std::set<std::vector<int>> calculated_set;
+    std::set<std::tuple<int, int, int>> calculated_set;
     std::vector<int> progress(1, 0);
     int si_limit = 1;
     while (1) {
