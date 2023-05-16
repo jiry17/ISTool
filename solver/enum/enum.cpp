@@ -113,7 +113,6 @@ FunctionContext solver::enumerate(const std::vector<PSynthInfo> &info_list, cons
     std::vector<NTList> direct_order_list;
     for (const auto& info: info_list) direct_order_list.push_back(_getDirectOrder(info->grammar));
 
-
     for (int size = 1; size <= c.size_limit; ++size) {
         TimeCheck(c.guard);
         for (int pos = 0; pos < info_list.size(); ++pos) {

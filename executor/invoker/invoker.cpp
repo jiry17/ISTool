@@ -9,43 +9,58 @@
 InvokeConfig::~InvokeConfig() {
     for (auto& item: item_map) delete item.second;
 }
+InvokeConfig::InvokeConfig(const InvokeConfig &config) {
+    for (auto& info: config.item_map) {
+        item_map[info.first] = new InvokeConfigItem(*info.second);
+    }
+}
 
-InvokeConfig::InvokeConfigItem::InvokeConfigItem(void *_data, std::function<void (void *)> _free_operator):
-    data(_data), free_operator(_free_operator) {
+InvokeConfig::InvokeConfigItem::InvokeConfigItem(void *_data, std::function<void(void *)> _free_operator,
+                                                 std::function<void *(void *)> _copy_operator):
+                                                 data(_data), free_operator(_free_operator), copy_operator(_copy_operator) {
+}
+InvokeConfig::InvokeConfigItem::InvokeConfigItem(const InvokeConfigItem &item):
+    data(item.copy_operator(item.data)), free_operator(item.free_operator), copy_operator(item.copy_operator) {
 }
 InvokeConfig::InvokeConfigItem::~InvokeConfigItem() {
     free_operator(data);
 }
 
-#define RegisterSolverBuilder(name) solver = invoker::single::build ## name(spec, v, config); break
+#define RegisterSolverBuilder(name) return invoker::single::build ## name(spec, v, config)
 
-FunctionContext invoker::synthesis(Specification *spec, Verifier *v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config) {
-    Solver* solver = nullptr;
-    switch (solver_token) {
+Solver *invoker::builderSolver(Specification *spec, Verifier *v, SolverToken token, const InvokeConfig &config) {
+    switch (token) {
         case SolverToken::COMPONENT_BASED_SYNTHESIS:
-            RegisterSolverBuilder(CBS);
+        RegisterSolverBuilder(CBS);
         case SolverToken::OBSERVATIONAL_EQUIVALENCE:
-            RegisterSolverBuilder(OBE);
+        RegisterSolverBuilder(OBE);
         case SolverToken::EUSOLVER:
-            RegisterSolverBuilder(EuSolver);
+        RegisterSolverBuilder(EuSolver);
         case SolverToken::VANILLA_VSA:
-            RegisterSolverBuilder(VanillaVSA);
+        RegisterSolverBuilder(VanillaVSA);
         case SolverToken::POLYGEN:
-            RegisterSolverBuilder(PolyGen);
+        RegisterSolverBuilder(PolyGen);
         case SolverToken::MAXFLASH:
-            RegisterSolverBuilder(MaxFlash);
+        RegisterSolverBuilder(MaxFlash);
         case SolverToken::EXTERNAL_EUSOLVER:
-            RegisterSolverBuilder(ExternalEuSolver);
+        RegisterSolverBuilder(ExternalEuSolver);
         case SolverToken::EXTERNAL_CVC5:
-            RegisterSolverBuilder(ExternalCVC5);
+        RegisterSolverBuilder(ExternalCVC5);
         case SolverToken::POLYGEN_CONDITION:
-            RegisterSolverBuilder(CondSolver);
+        RegisterSolverBuilder(CondSolver);
         default:
             LOG(FATAL) << "Unknown solver token";
     }
-    auto res = solver->synthesis(guard);
-    delete solver;
-    return res;
+}
+
+FunctionContext invoker::synthesis(Specification *spec, Verifier *v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config) {
+    if (solver_token == SolverToken::MULTI_THREAD) return multi::synthesis(spec, v, config, guard);
+    else {
+        auto* solver = builderSolver(spec, v, solver_token, config);
+        auto res = solver->synthesis(guard);
+        delete solver;
+        return res;
+    }
 }
 
 std::pair<int, FunctionContext> invoker::getExampleNum(Specification *spec, Verifier *v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config) {

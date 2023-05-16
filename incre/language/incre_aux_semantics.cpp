@@ -291,7 +291,7 @@ namespace {
                 return incre::run(res, ctx);
             }
         }
-        LOG(FATAL) << "Cannot match " << v.toString() << " using " << term->toString();
+        throw SemanticsError();
     }
 
     RunHead(Tuple) {

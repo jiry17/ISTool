@@ -27,7 +27,9 @@ std::vector<SymbolInfo> GrammarBuilder::getSymbols(const std::function<bool(cons
 namespace {
     std::string _context2String(const SymbolContext& context) {
         std::vector<std::string> name_list;
-        for (auto& sem: context) name_list.push_back(sem->getName());
+        for (auto& sem: context) {
+            name_list.push_back(sem->getName());
+        }
         std::sort(name_list.begin(), name_list.end());
         std::string res = "[";
         for (int i = 0; i < name_list.size(); ++i) {
@@ -308,12 +310,13 @@ Term ApplyComponent::tryBuildTerm(const PSemantics& sem, const TermList &term_li
 
 void ApplyComponent::extendNTMap(GrammarBuilder &builder) {
     if (is_only_full) {
-        for (auto& info: builder.info_list) {
-            auto current = info.type;
+        int pre_size = builder.info_list.size();
+        for (int i = 0; i < pre_size; ++i) {
+            auto current = builder.info_list[i].type;
             while (1) {
                 auto* ta = dynamic_cast<TArrow*>(current.get());
                 if (!ta) {
-                    builder.insertInfo(info.context, current);
+                    builder.insertInfo(builder.info_list[i].context, current);
                     break;
                 }
                 assert(ta->inp_types.size() == 1);
@@ -321,13 +324,14 @@ void ApplyComponent::extendNTMap(GrammarBuilder &builder) {
             }
         }
     } else {
-        for (auto& info: builder.info_list) {
-            auto current = info.type;
+        int pre_size = builder.info_list.size();
+        for (int i = 0; i < pre_size; ++i) {
+            auto current = builder.info_list[i].type;
             while (1) {
-                builder.insertInfo(info.context, current);
+                builder.insertInfo(builder.info_list[i].context, current);
                 auto* ta = dynamic_cast<TArrow*>(current.get());
                 if (!ta) break;
-                builder.insertInfo(info.context, ta->inp_types[0]);
+                builder.insertInfo(builder.info_list[i].context, ta->inp_types[0]);
                 assert(ta->inp_types.size() == 1);
                 current = ta->oup_type;
             }
@@ -374,11 +378,11 @@ TupleComponent::TupleComponent(): ContextFreeSynthesisComponent( -1) {
 }
 
 void TupleComponent::extendNTMap(GrammarBuilder &builder) {
-    for (auto& info: builder.info_list) {
-        auto* tp = dynamic_cast<TProduct*>(info.type.get());
+    for (int i = 0; i < builder.info_list.size(); ++i) {
+        auto* tp = dynamic_cast<TProduct*>(builder.info_list[i].type.get());
         if (tp) {
             for (auto& sub_type: tp->sub_types) {
-                builder.insertInfo(info.context, sub_type);
+                builder.insertInfo(builder.info_list[i].context, sub_type);
             }
         }
     }
@@ -408,11 +412,11 @@ ProjComponent::ProjComponent(): ContextFreeSynthesisComponent(-1) {
 }
 
 void ProjComponent::extendNTMap(GrammarBuilder &builder) {
-    for (auto& info: builder.info_list) {
-        auto* tp = dynamic_cast<TProduct*>(info.type.get());
+    for (int i = 0; i < builder.info_list.size(); ++i) {
+        auto* tp = dynamic_cast<TProduct*>(builder.info_list[i].type.get());
         if (tp) {
             for (auto& sub_type: tp->sub_types) {
-                builder.insertInfo(info.context, sub_type);
+                builder.insertInfo(builder.info_list[i].context, sub_type);
             }
         }
     }
@@ -468,6 +472,7 @@ namespace {
     Grammar* _buildGrammar(const TypeList& inp_list, const SynthesisComponentList& component_list, const std::function<bool(Type*)>& is_oup, bool is_single) {
         SymbolContext init_context;
         for (int i = 0; i < inp_list.size(); ++i) {
+            LOG(INFO) << "Param " << i << " " << inp_list[i]->getName();
             init_context.push_back(semantics::buildParamSemantics(i, inp_list[i]));
         }
         GrammarBuilder builder(init_context);
@@ -529,6 +534,10 @@ namespace {
 
     bool _isPrimaryType(Type* type) {
         return dynamic_cast<TBool*>(type) || dynamic_cast<TInt*>(type);
+        /*auto* tp = dynamic_cast<TProduct*>(type);
+        if (!tp) return false;
+        for (auto& sub: tp->sub_types) if (!_isPrimaryType(sub.get())) return false;
+        return true;*/
     }
     bool _isCompressType(Type* type) {
         return dynamic_cast<TCompress*>(type);

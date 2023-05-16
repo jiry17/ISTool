@@ -248,7 +248,7 @@ namespace {
                 return res_res;
             }
         }
-        assert(0);
+        throw SemanticsError();
     }
     CollectHead(Tuple) {
         DataList fields;

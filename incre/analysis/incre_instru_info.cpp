@@ -44,8 +44,11 @@ IncreInfo::~IncreInfo() {
     delete ctx; delete example_pool;
 }
 
+#include "istool/incre/language/incre_term.h"
+
 void incre::prepareEnv(Env *env) {
     theory::loadBasicSemantics(env, TheoryToken::CLIA);
+    incre::initBasicOperators(env);
     ext::ho::loadDeepCoderSemantics(env);
 }
 

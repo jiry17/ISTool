@@ -21,7 +21,15 @@ CEGISSolver::~CEGISSolver() {
 FunctionContext CEGISSolver::synthesis(TimeGuard* guard) {
     std::vector<Example> example_list;
     while (1) {
+        TimeCheck(guard);
         auto res = pbe_solver->synthesis(example_list, guard);
+        if (res.empty()) {
+            auto* new_solver = solver::relaxSolver(pbe_solver);
+            if (new_solver) {
+                delete pbe_solver; pbe_solver = new_solver;
+                continue;
+            } else return res;
+        }
         LOG(INFO) << "Candidate result " << res.toString();
 #ifdef DEBUG
         for (auto& example: example_list) assert(spec->example_space->satisfyExample(res, example));

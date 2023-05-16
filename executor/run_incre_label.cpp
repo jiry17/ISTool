@@ -12,37 +12,37 @@
 #include "istool/incre/grammar/incre_component_collector.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include <iostream>
-#include "istool/solver/polygen/polygen_term_solver.h"
 
 using namespace incre;
 
 int main(int argv, char** argc) {
-    //std::string name = "synduce/constraints/ensures/maxsegstrip_noe";
-    //std::string name = "autolifter/segment-tree/3rd-min-neg";
-    std::string name = "dp/15-4";
-    //std::string name = "moti-example";
-    std::string path = config::KSourcePath + "incre-tests/" + name + ".f";
-    std::string label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
-    std::string target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
+    std::string path, label_path, target;
+    if (argv <= 1) {
+        std::string name = "synduce/tree/poly";
+        path = config::KSourcePath + "incre-tests/" + name + ".f";
+        label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
+        target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
+    } else {
+        path = std::string(argc[1]);
+        label_path = std::string(argc[2]);
+        target = std::string(argc[3]);
+    }
+
+    auto env = std::make_shared<Env>();
+    incre::prepareEnv(env.get());
+
     auto init_program = incre::parseFromF(path, true);
 
     global::recorder.start("label");
     auto* label_solver = new autolabel::AutoLabelZ3Solver(init_program);
     auto res = label_solver->label();
     global::recorder.end("label");
+    incre::applyConfig(res.get(), env.get());
 
     res = incre::eliminateNestedAlign(res.get());
     incre::printProgram(res, label_path);
     incre::printProgram(res);
-
-    auto env = std::make_shared<Env>();
-    incre::prepareEnv(env.get());
-    incre::applyConfig(res.get(), env.get());
-    if (name.find("deepcoder") != std::string::npos) {
-        env->setConst(incre::grammar::collector::KCollectMethodName, BuildData(Int, incre::grammar::ComponentCollectorType::LABEL));
-    } else {
-        env->setConst(incre::grammar::collector::KCollectMethodName, BuildData(Int, incre::grammar::ComponentCollectorType::SOURCE));
-    }
+    env->setConst(incre::grammar::collector::KCollectMethodName, BuildData(Int, incre::grammar::ComponentCollectorType::SOURCE));
     env->setConst(theory::clia::KINFName, BuildData(Int, 50000));
 
     auto* info = incre::buildIncreInfo(res, env.get());

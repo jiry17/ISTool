@@ -32,6 +32,12 @@ public:
     virtual ~PBESolver() = default;
 };
 
+// An interface for a solver in a complex system to iterative enlarge its scope.
+class IterativeSolver {
+public:
+    virtual void* relax(TimeGuard *guard) = 0;
+};
+
 class CEGISSolver: public VerifiedSolver {
 public:
     PBESolver* pbe_solver;
@@ -39,6 +45,11 @@ public:
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr);
     virtual ~CEGISSolver();
 };
+
+namespace solver {
+    Solver* relaxSolver(Solver* solver, TimeGuard* guard = nullptr);
+    PBESolver* relaxSolver(PBESolver* solver, TimeGuard* guard = nullptr);
+}
 
 typedef std::function<Solver*(Specification*, Verifier*)> SolverBuilder;
 typedef std::function<PBESolver*(Specification*)> PBESolverBuilder;

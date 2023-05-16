@@ -14,7 +14,8 @@ namespace incre::autolifter {
     struct UnitInfo {
         AuxProgram program;
         Bitset info;
-        UnitInfo(const AuxProgram& _program, const Bitset& _info);
+        bool is_error;
+        UnitInfo(const AuxProgram& _program, const Bitset& _info, bool _is_error = false);
     };
 
     class AuxProgramEvaluateUtil {
@@ -36,8 +37,10 @@ namespace incre::autolifter {
         Env* env;
         PLPTask* task;
         std::vector<std::pair<int, int>> example_list;
+        std::vector<int> error_example_list;
 
         void addExample(const std::pair<int, int>& example);
+        void addErrorExample(int example_id);
         std::vector<UnitInfo> mergeUnits(int compress_size, int aux_size);
 
         // Used to get components

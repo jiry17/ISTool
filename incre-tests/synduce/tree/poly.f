@@ -1,8 +1,10 @@
 Config ComposeNum = 4;
+Config NonLinear = true;
+Config SampleIntMax = 3;
+Config SampleIntMin = -3;
+Config SampleSize = 6;
 
 Inductive Tree = nil Unit | node {Int, Tree, Tree};
-
-max = \a: Int. \b: Int. if < a b then b else a;
 
 @Input x: Int;
 
@@ -20,7 +22,8 @@ repr = fix (
   \f: Tree -> Compress Tree. \t: Tree.
   match t with
     nil _ -> nil unit
-  | node {a, l, r} -> node {a, f l, f r}
+  | node {a, l, r} ->
+    node {a, f l, f r}
   end
 );
 

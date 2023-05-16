@@ -8,6 +8,7 @@
 #include "incre_type.h"
 #include "incre_pattern.h"
 #include "istool/basic/data.h"
+#include "istool/basic/env.h"
 
 namespace incre {
     enum class TermType {
@@ -135,6 +136,7 @@ namespace incre {
         virtual ~TmAlign() = default;
     };
 
+    void initBasicOperators(Env* env);
     Term getOperator(const std::string& name);
     bool isBasicOperator(const std::string& name);
     TermList getSubTerms(TermData* term);

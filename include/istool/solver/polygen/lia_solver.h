@@ -5,16 +5,18 @@
 #ifndef ISTOOL_LIA_SOLVER_H
 #define ISTOOL_LIA_SOLVER_H
 
-#include "istool/solver/iterative_solver.h"
+#include "istool/solver/solver.h"
 #include "istool/ext/z3/z3_extension.h"
 #include "gurobi_c++.h"
 
 struct LIAResult {
 public:
-    bool status;
+    enum class Status {
+        SUCCESS, INFEASIBLE, TIMEOUT
+    } status;
     int c_val;
     std::vector<int> param_list;
-    LIAResult();
+    LIAResult(Status status);
     LIAResult(const std::vector<int>& _param_list, int _c_val);
     Data run(const Example& example) const;
     std::string toString() const;
@@ -34,7 +36,7 @@ public:
 
     // configure
     int KTermIntMax, KConstIntMax, KMaxCost;
-    double KRelaxTimeLimit = 0.1;
+    double KRelaxTimeLimit = 0.1, KGurobiTimeOut;
 };
 
 namespace solver {
@@ -42,6 +44,7 @@ namespace solver {
         extern const std::string KTermIntMaxName;
         extern const std::string KConstIntMaxName;
         extern const std::string KMaxCostName;
+        extern const std::string KDefaultGurobiTimeOutName;
         LIAResult solveLIA(GRBEnv& env, const std::vector<IOExample>& example_list, Z3Extension* ext, int t_max, int c_max, int cost_limit, TimeGuard* guard = nullptr);
         PProgram adjustLIAResultIntoGrammar(const PProgram& x, Grammar* grammar);
         LIASolver* liaSolverBuilder(Specification* spec);

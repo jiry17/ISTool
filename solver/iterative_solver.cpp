@@ -2,7 +2,7 @@
 // Created by pro on 2022/1/5.
 //
 
-#include "istool/solver/iterative_solver.h"
+#include "istool/solver/solver.h"
 
 Solver * solver::relaxSolver(Solver *solver, TimeGuard *guard) {
     auto* is = dynamic_cast<IterativeSolver*>(solver);

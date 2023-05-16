@@ -174,6 +174,7 @@ Data FExampleSpace::runAux(int example_id, const AuxProgram &aux) {
         auto* tv = dynamic_cast<VLabeledCompress*>(compress.get());
 #ifdef DEBUG
         auto* mid_type = dynamic_cast<TLabeledCompress*>(aux.first.first.get());
+        // LOG(INFO) << aux2String(aux) << " " << compress.toString();
         assert(tv && mid_type && tv->id == mid_type->id);
 #endif
         return runAux(example_id, tv->content, aux.second.second.get());

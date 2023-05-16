@@ -1,10 +1,14 @@
 Config SampleIntMin = 0;
+Config ComposeNum = 5;
 
 Inductive List = nil Unit | cons {Int, List};
 Point = {Int, Int};
 Inductive PointList = ponil Unit | pocons {Point, PointList};
 Plan = {PointList, PointList};
 Inductive PlanList = pnil Unit | pcons {Compress Plan, PlanList};
+
+sqr = \x: Int. * x x;
+dis = \x: Point. \y: Point. + (sqr (- x.1 y.1)) (sqr (- x.2 y.2));
 
 head = \xs: PointList.
   match xs with
@@ -37,10 +41,6 @@ generate = fix (
 ) 0;
 
 /*Evaluate*/
-
-sqr = \x: Int. * x x;
-dis = \x: Point. \y: Point. + (sqr (- x.1 y.1)) (sqr (- x.2 y.2));
-dis2 = \a: Int. \b: Int. \c: Int. \d: Int. dis {a, b} {c, d};
 
 eval_plist = fix (
   \f: Point -> PointList -> Int. \pre: Point. \xs: PointList.

@@ -5,6 +5,7 @@
 #include "istool/solver/polygen/polygen_cegis.h"
 #include "istool/basic/semantics.h"
 #include "glog/logging.h"
+#include "istool/sygus/theory/basic/clia/clia_semantics.h"
 
 CEGISPolyGen::~CEGISPolyGen() {
     delete term_solver;
@@ -24,18 +25,18 @@ CEGISPolyGen::CEGISPolyGen(Specification *spec, const PSynthInfo &term_info, con
     }
 }
 
-namespace {
-    PProgram _mergeIte(const ProgramList& term_list, const ProgramList& cond_list, Env* env) {
-        int n = cond_list.size();
-        auto res = term_list[n];
-        auto ite_semantics = env->getSemantics("ite");
-        for (int i = n - 1; i >= 0; --i) {
-            ProgramList sub_list = {cond_list[i], term_list[i], res};
-            res = std::make_shared<Program>(ite_semantics, sub_list);
-        }
-        return res;
+PProgram solver::polygen::constructDecisionList(const ProgramList &term_list, const ProgramList& cond_list) {
+    auto n = cond_list.size(); assert(term_list.size() == n + 1);
+    auto res = term_list[n];
+    auto ite_semantics = std::make_shared<IteSemantics>();
+    for (int i = n - 1; i >= 0; --i) {
+        ProgramList sub_list = {cond_list[i], term_list[i], res};
+        res = std::make_shared<Program>(ite_semantics, sub_list);
     }
+    return res;
+}
 
+namespace {
     PProgram _handleSemanticsErrorInMid(const PProgram& c, const IOExampleList& example_list, Env* env) {
         bool is_exist_error = false;
         for (auto& example: example_list) {
@@ -51,7 +52,69 @@ namespace {
     }
 }
 
-#include "istool/sygus/theory/basic/clia/clia.h"
+ProgramList solver::polygen::updateConditionList(const ProgramList &term_list, const ProgramList &cond_list,
+                                                 const IOExampleList& examples, PolyGenConditionSolver *solver,
+                                                 TimeGuard* guard) {
+    IOExampleList rem_example = examples; auto* env = solver->spec->env.get();
+    ProgramList new_cond_list = cond_list;
+    for (int i = 0; i + 1 < term_list.size(); ++i) {
+        IOExampleList positive_list, negative_list, mid_list;
+        auto current_term = term_list[i];
+        for (const auto& current_example: rem_example) {
+            if (example::satisfyIOExample(current_term.get(), current_example, env)) {
+                bool is_mid = false;
+                for (int j = i + 1; j < term_list.size(); ++j) {
+                    if (example::satisfyIOExample(term_list[j].get(), current_example, env)) {
+                        is_mid = true;
+                        break;
+                    }
+                }
+                if (is_mid) {
+                    mid_list.push_back(current_example);
+                } else positive_list.push_back(current_example);
+            } else negative_list.push_back(current_example);
+        }
+
+        auto condition = new_cond_list[i];
+        bool is_valid = true;
+        for (const auto& example: positive_list) {
+            try {
+                if (!env->run(condition.get(), example.first).isTrue()) {
+                    is_valid = false;
+                    break;
+                }
+            } catch (SemanticsError& e) {
+                is_valid = false;
+            }
+        }
+        if (is_valid) {
+            try {
+                for (const auto &example: negative_list) {
+                    if (env->run(condition.get(), example.first).isTrue()) {
+                        is_valid = false;
+                        break;
+                    }
+                }
+            } catch (SemanticsError& e) {
+                is_valid = false;
+            }
+        }
+
+        if (!is_valid) {
+            condition = solver->getCondition(term_list, positive_list, negative_list, guard);
+        }
+        condition = _handleSemanticsErrorInMid(condition, mid_list, env);
+
+        new_cond_list[i] = condition;
+        rem_example = negative_list;
+        for (const auto& example: mid_list) {
+            if (!env->run(condition.get(), example.first).isTrue()) {
+                rem_example.push_back(example);
+            }
+        }
+    }
+    return new_cond_list;
+}
 
 FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
     // LOG(INFO) << "start";
@@ -111,65 +174,10 @@ FunctionContext CEGISPolyGen::synthesis(TimeGuard *guard) {
             term_list = new_term;
             condition_list = new_condition;
         }
-        IOExampleList rem_example = io_example_list;
-        for (int i = 0; i + 1 < term_list.size(); ++i) {
-            IOExampleList positive_list, negative_list, mid_list;
-            auto current_term = term_list[i];
-            for (const auto& current_example: rem_example) {
-                if (example::satisfyIOExample(current_term.get(), current_example, env)) {
-                    bool is_mid = false;
-                    for (int j = i + 1; j < term_list.size(); ++j) {
-                        if (example::satisfyIOExample(term_list[j].get(), current_example, env)) {
-                            is_mid = true;
-                            break;
-                        }
-                    }
-                    if (is_mid) {
-                        mid_list.push_back(current_example);
-                    } else positive_list.push_back(current_example);
-                } else negative_list.push_back(current_example);
-            }
 
-            auto condition = condition_list[i];
-            bool is_valid = true;
-            for (const auto& example: positive_list) {
-                try {
-                    if (!env->run(condition.get(), example.first).isTrue()) {
-                        is_valid = false;
-                        break;
-                    }
-                } catch (SemanticsError& e) {
-                    is_valid = false;
-                }
-            }
-            if (is_valid) {
-                try {
-                    for (const auto &example: negative_list) {
-                        if (env->run(condition.get(), example.first).isTrue()) {
-                            is_valid = false;
-                            break;
-                        }
-                    }
-                } catch (SemanticsError& e) {
-                    is_valid = false;
-                }
-            }
+        condition_list = solver::polygen::updateConditionList(term_list, condition_list, io_example_list, cond_solver, guard);
 
-            if (!is_valid) {
-                condition = cond_solver->getCondition(term_list, positive_list, negative_list, guard);
-            }
-            condition = _handleSemanticsErrorInMid(condition, mid_list, env);
-
-            condition_list[i] = condition;
-            rem_example = negative_list;
-            for (const auto& example: mid_list) {
-                if (!env->run(condition.get(), example.first).isTrue()) {
-                    rem_example.push_back(example);
-                }
-            }
-        }
-
-        auto merge = _mergeIte(term_list, condition_list, spec->env.get());
+        auto merge = solver::polygen::constructDecisionList(term_list, condition_list);
         LOG(INFO) << "current " << merge->toString();
         result = semantics::buildSingleContext(info->name, merge);
         if (v->verify(result, &counter_example)) {

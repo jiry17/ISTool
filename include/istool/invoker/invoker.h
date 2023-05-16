@@ -9,6 +9,7 @@
 #include "istool/basic/time_guard.h"
 #include "istool/basic/verifier.h"
 #include "istool/solver/solver.h"
+#include "multithread_guard.h"
 #include "glog/logging.h"
 
 enum class SolverToken {
@@ -20,7 +21,8 @@ enum class SolverToken {
     VANILLA_VSA,
     POLYGEN,
     POLYGEN_CONDITION,
-    EXTERNAL_CVC5
+    EXTERNAL_CVC5,
+    MULTI_THREAD
 };
 
 class InvokeConfig {
@@ -28,7 +30,9 @@ class InvokeConfig {
     public:
         void* data;
         std::function<void(void*)> free_operator;
-        InvokeConfigItem(void* _data, std::function<void(void*)> _free_operator);
+        std::function<void*(void*)> copy_operator;
+        InvokeConfigItem(void* _data, std::function<void(void*)> _free_operator, std::function<void*(void*)> _copy_operator);
+        InvokeConfigItem(const InvokeConfigItem& item);
         ~InvokeConfigItem();
     };
 public:
@@ -38,7 +42,8 @@ public:
         auto it = item_map.find(name);
         if (it != item_map.end()) delete it->second;
         auto free_operator = [](void* w){delete static_cast<T*>(w);};
-        auto* item = new InvokeConfigItem(new T(w), free_operator);
+        auto copy_operator = [](void* w){return new T(*(static_cast<T*>(w)));};
+        auto* item = new InvokeConfigItem(new T(w), free_operator, copy_operator);
         item_map[name] = item;
     }
     template<class T> T access(const std::string& name, const T& default_w) const {
@@ -50,6 +55,8 @@ public:
         }
         return *res;
     }
+    InvokeConfig() = default;
+    InvokeConfig(const InvokeConfig& config);
     ~InvokeConfig();
 };
 
@@ -110,8 +117,14 @@ namespace invoker {
          *   Default: ext::vsa::getSizeModel()
          */
         Solver* buildMaxFlash(Specification* spec, Verifier* v, const InvokeConfig& config);
+
+        /**
+         * @config "is_staged"
+         *   Whether synthesize terms and conditions in two separate CEGIS rounds, deafult false
+         */
         Solver* buildPolyGen(Specification* spec, Verifier* v, const InvokeConfig& config);
         Solver* buildCondSolver(Specification* spec, Verifier* v, const InvokeConfig& config);
+        Solver* buildLIASolver(Specification* spec, Verifier* v, const InvokeConfig& config);
 
         /**
          * @config "memory"
@@ -123,6 +136,17 @@ namespace invoker {
         Solver* buildExternalCVC5(Specification* spec, Verifier* v, const InvokeConfig& config);
     }
 
+    namespace multi {
+        typedef std::function<Solver*(Specification*, Verifier*)> SolverBuilder;
+        /**
+         * @config "solver_list"
+         * Type: std::vector<SolverBuilder>
+         * The list of solvers to be run in parallel
+         */
+        FunctionContext synthesis(Specification* spec, Verifier* v, const InvokeConfig& config, TimeGuard* guard);
+    }
+
+    Solver* builderSolver(Specification* spec, Verifier* v, SolverToken token, const InvokeConfig& config);
     FunctionContext synthesis(Specification* spec, Verifier* v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config={});
     std::pair<int, FunctionContext> getExampleNum(Specification* spec, Verifier* v, SolverToken solver_token, TimeGuard* guard, const InvokeConfig& config={});
     SolverToken string2TheoryToken(const std::string& name);

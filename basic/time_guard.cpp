@@ -22,7 +22,7 @@ double TimeGuard::getRemainTime() const {
     return time_limit - getPeriod();
 }
 
-void TimeGuard::check() const {
+void TimeGuard::check() {
     if (getRemainTime() < 0) throw TimeOutError();
 }
 

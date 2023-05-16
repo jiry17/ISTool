@@ -18,10 +18,10 @@ public:
     timeval start_time;
     double time_limit;
     TimeGuard(double _time_limit);
-    void check() const;
+    virtual void check();
     double getRemainTime() const;
     double getPeriod() const;
-    ~TimeGuard() = default;
+    virtual ~TimeGuard() = default;
 };
 
 class TimeRecorder {

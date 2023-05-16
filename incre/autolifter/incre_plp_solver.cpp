@@ -12,7 +12,7 @@ using solver::autolifter::MaximalInfoList;
 using solver::autolifter::EnumerateInfo;
 
 
-UnitInfo::UnitInfo(const AuxProgram &_program, const Bitset &_info): program(_program), info(_info) {
+UnitInfo::UnitInfo(const AuxProgram &_program, const Bitset &_info, bool _is_error): program(_program), info(_info), is_error(_is_error) {
 }
 
 AuxProgramEvaluateUtil::AuxProgramEvaluateUtil(PLPTask *_task): task(_task) {
@@ -143,8 +143,14 @@ namespace {
 }
 
 UnitInfo IncrePLPSolver::init(const AuxProgram& program) {
+    for (auto& example: error_example_list) {
+        try {
+            evaluate_util->execute(program, example);
+        } catch (SemanticsError& e) {
+            return {program, {}, true};
+        }
+    }
     Bitset info(example_list.size(), false);
-
     for (int i = 0; i < example_list.size(); ++i) {
         try {
             if (!(evaluate_util->execute(program, example_list[i].first) ==
@@ -152,6 +158,7 @@ UnitInfo IncrePLPSolver::init(const AuxProgram& program) {
                 info.set(i, true);
             }
         } catch (const SemanticsError& e) {
+            return {program, {}, true};
         }
     }
     return {program, info};
@@ -172,20 +179,38 @@ std::vector<AuxProgram> IncrePLPSolver::unfoldComponents(const std::vector<AuxPr
     return res;
 }
 #include "istool/basic/config.h"
+void IncrePLPSolver::addErrorExample(int example_id) {
+    global::recorder.start("extend-component");
+    for (auto& unit: component_info_list) {
+        if (unit.is_error) continue;
+        try {
+            evaluate_util->execute(unit.program, example_id);
+        } catch (const SemanticsError& e) {
+            unit.is_error = true;
+        }
+    }
+}
+
 void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
     global::recorder.start("extend-component");
     for (auto& unit: component_info_list) {
+        if (unit.is_error) continue;
         try {
             auto is_valid = !(evaluate_util->execute(unit.program, example.first) ==
                               evaluate_util->execute(unit.program, example.second));
             unit.info.append(is_valid);
         } catch (const SemanticsError& e) {
-            unit.info.append(false);
+            unit.is_error = true;
         }
     }
     global::recorder.end("extend-component");
     LOG(INFO) << "#Example: " << example_list.size() << " " << "#Component: " << component_info_list.size();
 
+    /*for (auto& unit: component_info_list) {
+        if (dynamic_cast<TBool*>(unit.program.first.first.get()) && aux2String(unit.program).size() <= 13) {
+            LOG(INFO) << unit.info.toString() << " " << aux2String(unit.program);
+        }
+    }*/
     // Get sum (map neg xs)
     /*std::vector<std::string> cared_programs = {"Param2 -> app(sum,app(map,neg,Param0))", "Param2 -> app(sum,Param0)"};
     std::vector<UnitInfo> unit_list;
@@ -285,7 +310,10 @@ void IncrePLPSolver::getMoreComponent() {
     }
 
     for (auto& unit: _randomMerge(unit_storage, env)) {
-        //LOG(INFO) << "new component " << aux2String(unit.program) << " " << unit.info.toString();
+        /*if (dynamic_cast<TBool*>(unit.program.first.first.get())) {
+            LOG(INFO) << "new bool component " << aux2String(unit.program) << " " << unit.info.toString();
+            int kk; std::cin >> kk;
+        }*/
         component_info_list.push_back(unit);
     }
 }
@@ -335,9 +363,13 @@ std::pair<int, int> IncrePLPSolver::verify(const std::vector<AuxProgram> &aux_li
         for (int i = 0; i < aux_list.size(); ++i) {
             if (inp_cache_list[i]) inp_list[i] = inp_cache_list[i]->at(example_id);
             else {
-                auto inp = task->example_space->runAux(example_id, aux_list[i]);
-                new_inp_storage[i].push_back(inp);
-                inp_list[i] = inp;
+                try {
+                    auto inp = task->example_space->runAux(example_id, aux_list[i]);
+                    new_inp_storage[i].push_back(inp);
+                    inp_list[i] = inp;
+                } catch (const SemanticsError &e) {
+                    return example_id;
+                }
             }
         }
         auto feature = data::dataList2String(inp_list);
@@ -469,9 +501,12 @@ solver::autolifter::EnumerateInfo * IncrePLPSolver::getNextComponent(int k, Time
     while (maximal_list.size() <= k) maximal_list.emplace_back();
     while (k && working_list[k].empty()) --k;
     if (k == 0) {
-        while (next_component_id == component_info_list.size()) getMoreComponent();
-
-        return new EnumerateInfo({next_component_id++});
+        while (1) {
+            while (next_component_id < component_info_list.size() && component_info_list[next_component_id].is_error) ++next_component_id;
+            if (next_component_id < component_info_list.size()) {
+                return new EnumerateInfo({next_component_id++});
+            } else getMoreComponent();
+        }
     }
     auto* res = working_list[k].front(); working_list[k].pop();
     return res;
