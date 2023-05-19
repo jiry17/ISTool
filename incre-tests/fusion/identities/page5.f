@@ -1,4 +1,5 @@
 Config SampleSize = 5;
+Config NonLinear = true;
 
 Inductive List = nil Unit | cons {Int, List};
 Inductive NList = single List | ncons {List, NList};

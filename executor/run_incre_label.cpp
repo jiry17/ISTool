@@ -18,7 +18,7 @@ using namespace incre;
 int main(int argv, char** argc) {
     std::string path, label_path, target;
     if (argv <= 1) {
-        std::string name = "synduce/tree/poly";
+        std::string name = "dp/15-7";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
@@ -27,6 +27,8 @@ int main(int argv, char** argc) {
         label_path = std::string(argc[2]);
         target = std::string(argc[3]);
     }
+
+    TimeGuard* global_guard = new TimeGuard(1e9);
 
     auto env = std::make_shared<Env>();
     incre::prepareEnv(env.get());
@@ -74,4 +76,6 @@ int main(int argv, char** argc) {
     incre::printProgram(full_res);
 
     global::recorder.printAll();
+    std::cout << global_guard->getPeriod() << std::endl;
+    std::cout << "Success" << std::endl;
 }
