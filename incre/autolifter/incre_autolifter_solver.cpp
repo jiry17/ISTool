@@ -238,5 +238,9 @@ IncreSolution IncreAutoLifterSolver::solve() {
     global::recorder.start("syn-comb");
     solveCombinators();
     global::recorder.end("syn-comb");
-    return {f_type_list, comb_list};
+    if (env->getConstRef(config_name::KPrintAlignName, BuildData(Bool, false))->isTrue()) {
+        auto repr_list = buildFRes();
+        return {f_type_list, comb_list, repr_list};
+    }
+    return {f_type_list, comb_list, {}};
 }

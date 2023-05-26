@@ -18,7 +18,7 @@ using namespace incre;
 int main(int argv, char** argc) {
     std::string path, label_path, target;
     if (argv <= 1) {
-        std::string name = "dp/15-7";
+        std::string name = "synduce/list/mtshom";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
@@ -69,7 +69,7 @@ int main(int argv, char** argc) {
     solution.print();
     // LOG(INFO) << "After execute time " << global::recorder.query("execute");
 
-    auto full_res = incre::rewriteWithIncreSolution(info->program.get(), solution);
+    auto full_res = incre::rewriteWithIncreSolution(info->program.get(), solution, env.get());
     full_res = incre::eliminateUnusedLet(full_res.get());
 
     incre::printProgram(full_res, target);

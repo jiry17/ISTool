@@ -594,3 +594,46 @@ void IncreAutoLifterSolver::solveCombinators() {
         comb_list.push_back(synthesisCombinator(pass_id));
     }
 }
+
+namespace {
+    PType _getCompressType(IncreInfo *info, int compress_id) {
+        for (const auto &align_info: info->align_infos) {
+            for (auto &[name, ty]: align_info->inp_types) {
+                if (ty->getType() == TyType::COMPRESS) {
+                    auto *cty = dynamic_cast<TyLabeledCompress *>(ty.get());
+                    if (cty && cty->id == compress_id) return incre::typeFromIncre(cty->content);
+                }
+            }
+        }
+        LOG(FATAL) << "Compress #" << compress_id << " not found";
+    }
+}
+
+TermList IncreAutoLifterSolver::buildFRes() {
+    TermList result;
+    for (int compress_id = 0; compress_id < f_res_list.size(); ++compress_id) {
+        auto compress_type = _getCompressType(info, compress_id);
+        std::string compress_name = "ds";
+        TermList param_list; param_list.push_back(std::make_shared<TmVar>(compress_name));
+        for (auto& [var_name, var_type]: info->example_pool->input_list) {
+            param_list.push_back(std::make_shared<TmVar>(var_name));
+        }
+
+        TermList fields;
+        for (auto& component_info: f_res_list[compress_id].component_list) {
+            LOG(INFO) << component_info.program.second->toString();
+            fields.push_back(_buildProgram(component_info.program.second.get(), info->component_pool.align_list, param_list));
+        }
+
+        if (fields.empty()) {
+            auto data = Data(std::make_shared<VUnit>());
+            result.push_back(std::make_shared<TmValue>(data));
+        } else if (fields.size() == 1) {
+            result.push_back(std::make_shared<TmAbs>(compress_name, typeToIncre(compress_type.get()), fields[0]));
+        } else {
+            auto res = std::make_shared<TmTuple>(fields);
+            result.push_back(std::make_shared<TmAbs>(compress_name, typeToIncre(compress_type.get()), res));
+        }
+    }
+    return result;
+}

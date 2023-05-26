@@ -28,7 +28,8 @@ namespace incre {
         SAMPLE_INT_MIN, /*Int Min of Sample, Default -5*/
         NON_LINEAR, /*Whether consider * in synthesis, default false*/
         EXTRA_GRAMMAR, /*Extra grammar considered in synthesis, default Fold*/
-        ENABLE_FOLD /*Whether consider `fold` operator on data structures in synthesis, default false*/
+        ENABLE_FOLD, /*Whether consider `fold` operator on data structures in synthesis, default false*/
+        PRINT_ALIGN /*Whether print align results to the result*/
     };
 
     typedef std::unordered_set<CommandDecorate> DecorateSet;
@@ -100,6 +101,7 @@ namespace incre {
         extern const std::string KIsEnableFoldName;
         extern const std::string KSampleIntMinName;
         extern const std::string KSampleIntMaxName;
+        extern const std::string KPrintAlignName;
     }
 }
 

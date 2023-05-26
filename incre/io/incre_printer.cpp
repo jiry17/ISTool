@@ -59,7 +59,8 @@ void incre::printTy(const std::shared_ptr<TyData> &ty) {
     } else if (ty->getType() == TyType::IND) {
         if (debug) std::cout << "[IND]" << std::endl;
         auto* ty_ind = dynamic_cast<TyInductive*>(ty.get());
-        std::cout << ty_ind->name << " = ";
+        std::cout << ty_ind->name;
+        /*std::cout << ty_ind->name << " = ";
         bool flag = false;
         for (auto& ind_cons : ty_ind->constructors) {
             if (flag) {
@@ -69,7 +70,7 @@ void incre::printTy(const std::shared_ptr<TyData> &ty) {
             }
             std::cout << ind_cons.first << " ";
             printTy(ind_cons.second);
-        }
+        }*/
     } else if (ty->getType() == TyType::COMPRESS) {
         if (debug) std::cout << "[COMPRESS]" << std::endl;
         auto* ty_compress = dynamic_cast<TyCompress*>(ty.get());

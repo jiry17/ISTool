@@ -12,7 +12,8 @@ namespace incre {
     struct IncreSolution {
         TyList compress_type_list;
         TermList align_list;
-        IncreSolution(const TyList& _compress_type_list, const TermList& align_list);
+        TermList repr_list;
+        IncreSolution(const TyList& _compress_type_list, const TermList& align_list, const TermList& repr_list);
         void print() const;
     };
 
@@ -24,7 +25,7 @@ namespace incre {
         virtual ~IncreSolver() = default;
     };
 
-    IncreProgram rewriteWithIncreSolution(ProgramData* program, const IncreSolution& solution);
+    IncreProgram rewriteWithIncreSolution(ProgramData* program, const IncreSolution& solution, Env* env);
 }
 
 #endif //ISTOOL_INCRE_SOLVER_H

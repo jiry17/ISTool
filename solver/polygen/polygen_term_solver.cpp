@@ -5,7 +5,6 @@
 #include "istool/solver/polygen/polygen_term_solver.h"
 #include "istool/basic/bitset.h"
 #include "istool/sygus/theory/basic/clia/clia_value.h"
-#include "istool/solver/iterative_solver.h"
 #include <random>
 #include <algorithm>
 #include "glog/logging.h"
