@@ -61,7 +61,7 @@ const auto KDefaultPrepare = [](Grammar* g, Env* env, const IOExample& io_exampl
 };
 
 int main(int argc, char** argv) {
-    auto benchmark_name = config::KSourcePath + "/tests/string/phone-1.sl";
+    auto benchmark_name = config::KSourcePath + "/tests/1.sl";
 
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
     auto* v = sygus::getVerifier(spec);
