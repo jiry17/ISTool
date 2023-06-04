@@ -606,6 +606,12 @@ namespace {
 
 #include "istool/sygus/theory/basic/string/str.h"
 
+Grammar *incre::grammar::builder::buildGrammar(const TypeList &inp_list, const SynthesisComponentList &component_list,
+                                               const PType &oup) {
+    auto func = [&](Type* type) {return type::equal(type, oup.get());};
+    return _buildGrammar(inp_list, component_list, func, true);
+}
+
 ComponentPool incre::grammar::collectComponent(Context* ctx, Env* env, ProgramData* program) {
     auto* ref = env->getConstRef(collector::KCollectMethodName, BuildData(Int, default_type));
     auto collector_type = static_cast<ComponentCollectorType>(theory::clia::getIntValue(*ref));

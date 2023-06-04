@@ -141,6 +141,7 @@ namespace incre::grammar {
         Grammar* buildAlignGrammar(const TypeList& inp_list);
         Grammar* buildCompressGrammar(const TypeList& inp_list, int command_id);
         Grammar* buildCombinatorGrammar(const TypeList& inp_list, const PType& oup_type, int command_id);
+
         void merge(const ComponentPool& pool);
         ~ComponentPool() = default;
     };
@@ -156,6 +157,9 @@ namespace incre::grammar {
         ComponentPool collectExtraOperators(Context* ctx, const std::string& extra_name);
         void loadExtraOperator(Context* ctx, Env* env, const std::string& extra_name);
         extern const std::string KCollectMethodName;
+    }
+    namespace builder {
+        Grammar *buildGrammar(const TypeList &inp_list, const SynthesisComponentList &component_list, const PType& oup);
     }
     ComponentPool collectComponent(Context* ctx, Env* env, ProgramData* program);
 }

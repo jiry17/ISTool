@@ -12,6 +12,7 @@
 #include "istool/incre/grammar/incre_component_collector.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include <iostream>
+#include "glog/logging.h"
 
 using namespace incre;
 
@@ -61,6 +62,19 @@ int main(int argv, char** argc) {
             std::cout << "  " << example_list[i]->toString() << std::endl;
         }
     }
+
+    /*
+    TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
+    for (int i = 0; i < info->align_infos.size(); ++i) {
+        auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
+        LOG(INFO) << "Hole grammar for #" << i;
+        for (auto& param: param_list) {
+            std::cout << param << " ";
+        }
+        std::cout << std::endl;
+        grammar->print();
+    }
+    int kk; std::cin >> kk;*/
 
     // LOG(INFO) << "Pre execute time " << global::recorder.query("execute");
 
