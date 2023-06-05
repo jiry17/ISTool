@@ -28,3 +28,6 @@ target_link_libraries(run_incre ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
 
 add_executable(run_incre_label run_incre_label.cpp)
 target_link_libraries(run_incre_label ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
+
+add_executable(run_incre_grisette run_incre_grisette.cpp)
+target_link_libraries(run_incre_grisette ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})

@@ -72,6 +72,9 @@ namespace incre {
         Term synthesisCombinator(int align_id);
         TermList comb_list;
         void solveCombinators();
+
+        // print to Haskell
+        void printToHaskell() const;
     };
 }
 

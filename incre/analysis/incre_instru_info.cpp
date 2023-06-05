@@ -64,6 +64,12 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
             cared_vals[info->getId()].insert(name);
         }
     }
+    for (auto& val: cared_vals) {
+        for (auto& name: val) {
+            std::cout << name;
+        }
+        std::cout << std::endl;
+    }
 
     auto* pool = new NoDuplicatedIncreExamplePool(labeled_program, env, cared_vals);
 

@@ -453,17 +453,21 @@ void IncreExampleCollector::collect(const Term &start, const std::unordered_map<
 
 std::pair<Term, std::unordered_map<std::string, Data>> IncreExamplePool::generateStart() {
     std::unordered_map<std::string, Data> global;
+    // std::cout << "zyw: generateStart, inp_name = " << std::endl;
     for (auto& [inp_name, inp_ty]: input_list) {
+        std::cout << inp_name << std::endl;
         auto input_data = generator->getRandomData(inp_ty);
         ctx->addBinding(inp_name, std::make_shared<TmValue>(input_data));
         global[inp_name] = input_data;
     }
     auto& [start_name, params] = start_list[start_dist(generator->env->random_engine)];
+    // std::cout << "zyw: generateStart, start_name = " << start_name << std::endl;
     Term term = std::make_shared<TmVar>(start_name);
     for (auto& param_type: params) {
         auto input_data = generator->getRandomData(param_type);
         term = std::make_shared<TmApp>(term, std::make_shared<TmValue>(input_data));
     }
+    // std::cout << "zyw: generateStart " << term->toString() << std::endl;
     return {term, global};
 }
 

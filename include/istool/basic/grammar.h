@@ -50,6 +50,7 @@ public:
     void removeUseless();
     void indexSymbol() const;
     void print() const;
+    void printToHaskell() const;
     ~Grammar();
 };
 

@@ -24,6 +24,13 @@ ConcreteRule::ConcreteRule(const PSemantics &_semantics, const NTList &_param_li
 }
 std::string ConcreteRule::toString() const {
     std::string res = semantics->getName();
+    /*
+    std::vector<std::string> sub_exp = std::vector<std::string>(param_list.size());
+    for (int i = 0; i < param_list.size(); ++i) {
+        sub_exp[i] = "a";
+    }
+    std::cout << "zyw: semanticsString: " << semantics->buildProgramString(sub_exp) << std::endl;
+    */
     if (param_list.empty()) return res;
     for (int i = 0; i < param_list.size(); ++i) {
         if (i) res += ","; else res += "(";
@@ -129,7 +136,17 @@ void Grammar::print() const {
     std::cout << "start: " << start->name << std::endl;
     for (auto* node: symbol_list) {
         std::cout << "node: " << node->name << std::endl;
-        for (auto* rule: node->rule_list) {
+        for (auto *rule: node->rule_list) {
+            std::cout << "  " << rule->toString() << std::endl;
+        }
+    }
+}
+
+void Grammar::printToHaskell() const {
+    std::cout << "start: " << start->name << std::endl;
+    for (auto* node: symbol_list) {
+        std::cout << "node: " << node->name << std::endl;
+        for (auto *rule: node->rule_list) {
             std::cout << "  " << rule->toString() << std::endl;
         }
     }
