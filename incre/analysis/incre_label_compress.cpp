@@ -535,3 +535,41 @@ IncreProgram incre::labelCompress(const IncreProgram &program) {
     delete ctx; delete cs;
     return std::make_shared<ProgramData>(final_commands, program->config_map);
 }
+
+Ty incre::getFinalType(const Ty &type, const TyList &final_ty_list) {
+    switch (type->getType()) {
+        case TyType::INT:
+        case TyType::UNIT:
+        case TyType::VAR:
+        case TyType::BOOL: return type;
+        case TyType::COMPRESS: {
+            auto* lct = dynamic_cast<TyLabeledCompress*>(type.get());
+            assert(lct); int id = lct->id;
+            assert(id >= 0 && id < final_ty_list.size());
+            return final_ty_list[id];
+        }
+        case TyType::TUPLE: {
+            auto* tt = dynamic_cast<TyTuple*>(type.get());
+            TyList fields;
+            for (auto& field: tt->fields) {
+                fields.push_back(getFinalType(field, final_ty_list));
+            }
+            return std::make_shared<TyTuple>(fields);
+        }
+        case TyType::ARROW: {
+            auto* ta = dynamic_cast<TyArrow*>(type.get());
+            auto source = getFinalType(ta->source, final_ty_list);
+            auto target = getFinalType(ta->target, final_ty_list);
+            return std::make_shared<TyArrow>(source, target);
+        }
+        case TyType::IND: {
+            auto* ti = dynamic_cast<TyInductive*>(type.get());
+            std::vector<std::pair<std::string, Ty>> cons_list;
+            for (auto& [name, cons_ty]: ti->constructors) {
+                auto new_cons_ty = getFinalType(cons_ty, final_ty_list);
+                cons_list.emplace_back(name, new_cons_ty);
+            }
+            return std::make_shared<TyInductive>(ti->name, cons_list);
+        }
+    }
+}

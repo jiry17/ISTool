@@ -77,3 +77,36 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
     auto component_pool = incre::grammar::collectComponent(pool->ctx, env, labeled_program.get());
     return new IncreInfo(labeled_program, pool->ctx, align_info, pool, component_pool);
 }
+
+std::pair<std::vector<std::string>, Grammar *> incre::buildFinalGrammar(IncreInfo *info, int align_id, const TyList &final_compress_list) {
+    int command_id = info->align_infos[align_id]->command_id;
+
+    grammar::SynthesisComponentList component_list;
+    std::unordered_set<grammar::SynthesisComponent*> used_map;
+    for (auto& component: info->component_pool.compress_list) {
+        if (used_map.find(component.get()) != used_map.end()) continue;
+        used_map.insert(component.get());
+        component_list.push_back(component);
+    }
+    for (auto& component: info->component_pool.comb_list) {
+        if (used_map.find(component.get()) != used_map.end()) continue;
+        used_map.insert(component.get());
+        component_list.push_back(component);
+    }
+
+    TypeList inp_type_list;
+    std::vector<std::string> param_names;
+    for (auto& [name, var_ty]: info->align_infos[align_id]->inp_types) {
+        auto type = incre::typeFromIncre(incre::getFinalType(var_ty, final_compress_list));
+        inp_type_list.push_back(type); param_names.push_back(name);
+    }
+    for (auto& [name, inp_ty]: info->example_pool->input_list) {
+        auto type = incre::typeFromIncre(incre::getFinalType(inp_ty, final_compress_list));
+        inp_type_list.push_back(type); param_names.push_back(name);
+    }
+
+    auto oup_type = incre::typeFromIncre(incre::getFinalType(info->align_infos[align_id]->oup_type, final_compress_list));
+    auto grammar = grammar::builder::buildGrammar(inp_type_list, component_list, oup_type);
+
+    return std::make_pair(param_names, grammar);
+}

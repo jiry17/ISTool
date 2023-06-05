@@ -44,9 +44,11 @@ namespace incre {
     void checkAllLabelBounded(ProgramData* program);
     // IncreProgram eliminateUnboundedCreate(const IncreProgram& program);
     IncreProgram labelCompress(const IncreProgram& program);
+    Ty getFinalType(const Ty& type, const TyList& final_ty_list);
     AlignTypeInfoList collectAlignType(const IncreProgram& program);
     void prepareEnv(Env* env);
     IncreInfo* buildIncreInfo(const IncreProgram& program, Env* env);
+    std::pair<std::vector<std::string>, Grammar*> buildFinalGrammar(IncreInfo* info, int align_id, const TyList& final_compress_list);
 }
 
 

@@ -9,8 +9,8 @@
 
 using namespace incre;
 
-IncreSolution::IncreSolution(const TyList &_compress_type_list, const TermList &_align_list):
-    compress_type_list(_compress_type_list), align_list(_align_list) {
+IncreSolution::IncreSolution(const TyList &_compress_type_list, const TermList &_align_list, const TermList &_repr_list):
+    compress_type_list(_compress_type_list), align_list(_align_list), repr_list(_repr_list) {
 }
 void IncreSolution::print() const {
     for (int i = 0; i < compress_type_list.size(); ++i) std::cout << "compress #" << i << ": " << compress_type_list[i]->toString() << std::endl;
@@ -170,10 +170,19 @@ namespace {
     }
 }
 
-IncreProgram incre::rewriteWithIncreSolution(ProgramData *program, const IncreSolution &solution) {
+IncreProgram incre::rewriteWithIncreSolution(ProgramData *program, const IncreSolution &solution, Env* env) {
     CommandList res;
     for (const auto& command: program->commands) {
         res.push_back(_rewriteCommand(command.get(), solution));
+    }
+    LOG(INFO) << env->getConstRef(config_name::KPrintAlignName, BuildData(Bool, false))->toString() << " " << solution.repr_list.size();
+    if (env->getConstRef(config_name::KPrintAlignName, BuildData(Bool, false))->isTrue()) {
+        for (int i = 0; i < solution.repr_list.size(); ++i) {
+            std::string name = "align" + std::to_string(i);
+            auto bind = std::make_shared<TermBinding>(solution.repr_list[i]);
+            auto command = std::make_shared<CommandBind>(name, bind, DecorateSet());
+            res.push_back(command);
+        }
     }
     return std::make_shared<ProgramData>(res, program->config_map);
 }

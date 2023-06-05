@@ -12,13 +12,14 @@
 #include "istool/incre/grammar/incre_component_collector.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include <iostream>
+#include "glog/logging.h"
 
 using namespace incre;
 
 int main(int argv, char** argc) {
     std::string path, label_path, target;
     if (argv <= 1) {
-        std::string name = "zyw/sum_pre";
+        std::string name = "dp/15-7";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
@@ -71,6 +72,19 @@ int main(int argv, char** argc) {
         std::cout << "zyw: example_list end!" << std::endl;
     }
 
+    /*
+    TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
+    for (int i = 0; i < info->align_infos.size(); ++i) {
+        auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
+        LOG(INFO) << "Hole grammar for #" << i;
+        for (auto& param: param_list) {
+            std::cout << param << " ";
+        }
+        std::cout << std::endl;
+        grammar->print();
+    }
+    int kk; std::cin >> kk;*/
+
     // LOG(INFO) << "Pre execute time " << global::recorder.query("execute");
 
     auto* solver = new incre::IncreAutoLifterSolver(info, env);
@@ -80,7 +94,7 @@ int main(int argv, char** argc) {
     std::cout << "zyw: solution.print() end!" << std::endl;
     // LOG(INFO) << "After execute time " << global::recorder.query("execute");
 
-    auto full_res = incre::rewriteWithIncreSolution(info->program.get(), solution);
+    auto full_res = incre::rewriteWithIncreSolution(info->program.get(), solution, env.get());
     full_res = incre::eliminateUnusedLet(full_res.get());
 
     incre::printProgram(full_res, target);

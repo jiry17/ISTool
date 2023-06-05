@@ -95,7 +95,8 @@ namespace {
             {IncreConfig::EXTRA_GRAMMAR, "ExtraGrammar"},
             {IncreConfig::ENABLE_FOLD, "EnableFold"},
             {IncreConfig::SAMPLE_INT_MIN, "SampleIntMin"},
-            {IncreConfig::SAMPLE_INT_MAX, "SampleIntMax"}
+            {IncreConfig::SAMPLE_INT_MAX, "SampleIntMax"},
+            {IncreConfig::PRINT_ALIGN, "PrintAlign"}
     };
 }
 
@@ -115,6 +116,7 @@ const std::string config_name::KIsNonLinearName = "incre@is-non-linear";
 const std::string config_name::KIsEnableFoldName = "incre@is-enable-fold";
 const std::string config_name::KSampleIntMaxName = "incre@sample-int-max";
 const std::string config_name::KSampleIntMinName = "incre@sample-int-min";
+const std::string config_name::KPrintAlignName = "incre@print-align";
 
 namespace {
     std::unordered_map<IncreConfig, std::string> KConfigEnvNameMap;
@@ -128,7 +130,8 @@ namespace {
             {IncreConfig::EXTRA_GRAMMAR, config_name::KExtraGrammarName},
             {IncreConfig::ENABLE_FOLD, config_name::KIsEnableFoldName},
             {IncreConfig::SAMPLE_INT_MIN, config_name::KSampleIntMinName},
-            {IncreConfig::SAMPLE_INT_MAX, config_name::KSampleIntMaxName}
+            {IncreConfig::SAMPLE_INT_MAX, config_name::KSampleIntMaxName},
+            {IncreConfig::PRINT_ALIGN, config_name::KPrintAlignName}
         };
     }
 }

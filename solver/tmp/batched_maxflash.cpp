@@ -49,6 +49,7 @@ double BatchedMaxFlashEdge::updateLowerBound() {
         updateTopState();
         lower_bound = Q.top()->prob;
     }
+    return lower_bound;
 }
 void BatchedMaxFlashEdge::extendTopState() {
     auto* top = Q.top(); Q.pop();

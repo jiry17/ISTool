@@ -265,7 +265,7 @@ namespace {
             }
         }
         virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list) {
-            LOG(FATAL) << "Fold component should not be used in the final program";
+            return {};
         }
         virtual ~FoldComponent() = default;
     };
