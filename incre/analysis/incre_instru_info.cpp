@@ -80,12 +80,12 @@ std::pair<std::vector<std::string>, Grammar *> incre::buildFinalGrammar(IncreInf
     for (auto& component: info->component_pool.compress_list) {
         if (used_map.find(component->name) != used_map.end()) continue;
         used_map.insert(component->name);
-        component_list.push_back(component);
+        if (component->command_id < command_id) component_list.push_back(component);
     }
     for (auto& component: info->component_pool.comb_list) {
         if (used_map.find(component->name) != used_map.end()) continue;
         used_map.insert(component->name);
-        component_list.push_back(component);
+        if (component->command_id < command_id) component_list.push_back(component);
     }
 
     TypeList inp_type_list;

@@ -19,7 +19,7 @@ using namespace incre;
 int main(int argv, char** argc) {
     std::string path, label_path, target;
     if (argv <= 1) {
-        std::string name = "synduce/list/sumhom";
+        std::string name = "test";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";

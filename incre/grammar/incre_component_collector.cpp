@@ -469,7 +469,7 @@ Data TypeLabeledDirectSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
 }
 
 namespace {
-    Grammar* _buildGrammar(const TypeList& inp_list, const SynthesisComponentList& component_list, const std::function<bool(Type*)>& is_oup, bool is_single) {
+    Grammar* _buildGrammar(const TypeList& inp_list, const SynthesisComponentList& component_list, const std::function<bool(Type*)>& is_oup, const PType& single_oup) {
         SymbolContext init_context;
         for (int i = 0; i < inp_list.size(); ++i) {
             LOG(INFO) << "Param " << i << " " << inp_list[i]->getName();
@@ -494,6 +494,7 @@ namespace {
         }
 
         int pre_size;
+        if (single_oup) builder.insertInfo(init_context, single_oup);
         do {
             pre_size = builder.info_list.size();
             for (auto& component: component_list) {
@@ -517,7 +518,7 @@ namespace {
             auto* dummy_symbol = new NonTerminal("start", type::getTBool());
             return new Grammar(dummy_symbol, {dummy_symbol});
         }
-        if (is_single) {
+        if (single_oup) {
             assert(start_list.size() == 1);
             auto* grammar = new Grammar(start_list[0], symbol_list, true);
             return grammar;
@@ -548,7 +549,7 @@ namespace {
 }
 
 Grammar *ComponentPool::buildAlignGrammar(const TypeList &inp_list) {
-    return _buildGrammar(inp_list, align_list, _isPrimaryType, false);
+    return _buildGrammar(inp_list, align_list, _isPrimaryType, nullptr);
 }
 
 Grammar *ComponentPool::buildCompressGrammar(const TypeList &inp_list, int command_id) {
@@ -558,7 +559,7 @@ Grammar *ComponentPool::buildCompressGrammar(const TypeList &inp_list, int comma
             component_list.push_back(component);
         }
     }
-    return _buildGrammar(inp_list, component_list, _isCompressOrPrimaryType, false);
+    return _buildGrammar(inp_list, component_list, _isCompressOrPrimaryType, nullptr);
 }
 
 Grammar *ComponentPool::buildCombinatorGrammar(const TypeList &inp_list, const PType &oup_type, int command_id) {
@@ -569,7 +570,7 @@ Grammar *ComponentPool::buildCombinatorGrammar(const TypeList &inp_list, const P
             component_list.push_back(component);
         }
     }
-    return _buildGrammar(inp_list, component_list, [&](Type* type){return type::equal(type, oup_type.get());}, true);
+    return _buildGrammar(inp_list, component_list, [&](Type* type){return type::equal(type, oup_type.get());}, oup_type);
 }
 
 #include <unordered_set>
@@ -608,8 +609,9 @@ namespace {
 
 Grammar *incre::grammar::builder::buildGrammar(const TypeList &inp_list, const SynthesisComponentList &component_list,
                                                const PType &oup) {
+    LOG(INFO) << "Oup type " << oup->getName();
     auto func = [&](Type* type) {return type::equal(type, oup.get());};
-    return _buildGrammar(inp_list, component_list, func, true);
+    return _buildGrammar(inp_list, component_list, func, oup);
 }
 
 ComponentPool incre::grammar::collectComponent(Context* ctx, Env* env, ProgramData* program) {
