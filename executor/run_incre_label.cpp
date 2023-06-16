@@ -19,7 +19,7 @@ using namespace incre;
 int main(int argv, char** argc) {
     std::string path, label_path, target;
     if (argv <= 1) {
-        std::string name = "synduce/list/mtshom";
+        std::string name = "synduce/list/sumhom";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
@@ -62,8 +62,7 @@ int main(int argv, char** argc) {
             std::cout << "  " << example_list[i]->toString() << std::endl;
         }
     }
-
-    /*
+    
     TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
     for (int i = 0; i < info->align_infos.size(); ++i) {
         auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
@@ -74,7 +73,7 @@ int main(int argv, char** argc) {
         std::cout << std::endl;
         grammar->print();
     }
-    int kk; std::cin >> kk;*/
+    int kk; std::cin >> kk;
 
     // LOG(INFO) << "Pre execute time " << global::recorder.query("execute");
 

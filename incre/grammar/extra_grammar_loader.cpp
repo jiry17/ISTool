@@ -199,7 +199,7 @@ namespace {
     public:
         Ty _type; TyInductive* type;
         TyList target_types;
-        FoldComponent(const Ty& __type, const TyList& _targets): SynthesisComponent(-1),
+        FoldComponent(const Ty& __type, const TyList& _targets): SynthesisComponent(-1, "fold"),
             _type(__type), target_types(_targets) {
             assert(__type->getType() == TyType::IND);
             type = dynamic_cast<TyInductive*>(_type.get());
