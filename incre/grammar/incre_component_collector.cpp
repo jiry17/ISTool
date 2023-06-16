@@ -78,10 +78,10 @@ void GrammarBuilder::insertTypeForAllContext(const PType &type) {
     }
 }
 
-SynthesisComponent::SynthesisComponent(int _command_id): command_id(_command_id){
+SynthesisComponent::SynthesisComponent(int _command_id, const std::string& _name): command_id(_command_id), name(_name){
 }
 
-ContextFreeSynthesisComponent::ContextFreeSynthesisComponent(int command_id): SynthesisComponent(command_id) {
+ContextFreeSynthesisComponent::ContextFreeSynthesisComponent(int command_id, const std::string& _name): SynthesisComponent(command_id, _name) {
 }
 void ContextFreeSynthesisComponent::extendContext(GrammarBuilder &builder) {
     return;
@@ -91,7 +91,7 @@ void ContextFreeSynthesisComponent::extendContext(GrammarBuilder &builder) {
 #include "istool/ext/deepcoder/data_type.h"
 
 IncreComponent::IncreComponent(Context* _ctx, const std::string &_name, const PType &_type, const Data &_data, const Term& _term, int _command_id, bool _is_partial):
-        ContextFreeSynthesisComponent(_command_id), ctx(_ctx), name(_name), data(_data), term(_term), is_partial(_is_partial) {
+        ContextFreeSynthesisComponent(_command_id, _name), ctx(_ctx), data(_data), term(_term), is_partial(_is_partial) {
     res_type = _type;
     while (1) {
         auto* ta = dynamic_cast<TArrow*>(res_type.get());
@@ -200,7 +200,7 @@ Term IncreComponent::tryBuildTerm(const PSemantics &sem, const TermList &term_li
 
 ConstComponent::ConstComponent(const PType &_type, const DataList &_const_list,
                                const std::function<bool(Value *)> &_is_inside):
-                               type(_type), const_list(_const_list), is_inside(_is_inside), ContextFreeSynthesisComponent(-1) {
+                               type(_type), const_list(_const_list), is_inside(_is_inside), ContextFreeSynthesisComponent(-1, _type->getName()) {
 }
 
 void ConstComponent::extendNTMap(GrammarBuilder &builder) {
@@ -223,7 +223,7 @@ Term ConstComponent::tryBuildTerm(const PSemantics &sem, const TermList &term_li
 }
 
 BasicOperatorComponent::BasicOperatorComponent(const std::string &_name, const PSemantics &__sem):
-    ContextFreeSynthesisComponent(-1), name(_name), _sem(__sem){
+    ContextFreeSynthesisComponent(-1, _name), _sem(__sem){
     sem = dynamic_cast<TypedSemantics*>(_sem.get()); assert(sem);
 }
 
@@ -262,7 +262,7 @@ Term BasicOperatorComponent::tryBuildTerm(const PSemantics &current_sem, const T
     return res;
 }
 
-IteComponent::IteComponent(): ContextFreeSynthesisComponent(-1) {
+IteComponent::IteComponent(): ContextFreeSynthesisComponent(-1, "ite") {
 }
 
 void IteComponent::extendNTMap(GrammarBuilder &builder) {
@@ -297,7 +297,7 @@ public:
 };
 
 ApplyComponent::ApplyComponent(Context* _ctx, bool _is_only_full): is_only_full(_is_only_full),
-    ContextFreeSynthesisComponent(-1), ctx(_ctx) {
+    ContextFreeSynthesisComponent(-1, "apply"), ctx(_ctx) {
 }
 Term ApplyComponent::tryBuildTerm(const PSemantics& sem, const TermList &term_list) {
     if (!dynamic_cast<TmAppSemantics*>(sem.get())) return nullptr;
@@ -374,7 +374,7 @@ void ApplyComponent::insertComponent(const GrammarBuilder &builder) {
 #include "istool/ext/deepcoder/deepcoder_semantics.h"
 #include "istool/incre/trans/incre_trans.h"
 
-TupleComponent::TupleComponent(): ContextFreeSynthesisComponent( -1) {
+TupleComponent::TupleComponent(): ContextFreeSynthesisComponent( -1, "prod") {
 }
 
 void TupleComponent::extendNTMap(GrammarBuilder &builder) {
@@ -408,7 +408,7 @@ Term TupleComponent::tryBuildTerm(const PSemantics& sem, const TermList &term_li
     return std::make_shared<TmTuple>(term_list);
 }
 
-ProjComponent::ProjComponent(): ContextFreeSynthesisComponent(-1) {
+ProjComponent::ProjComponent(): ContextFreeSynthesisComponent(-1, "proj") {
 }
 
 void ProjComponent::extendNTMap(GrammarBuilder &builder) {

@@ -82,15 +82,15 @@ std::pair<std::vector<std::string>, Grammar *> incre::buildFinalGrammar(IncreInf
     int command_id = info->align_infos[align_id]->command_id;
 
     grammar::SynthesisComponentList component_list;
-    std::unordered_set<grammar::SynthesisComponent*> used_map;
+    std::unordered_set<std::string> used_map;
     for (auto& component: info->component_pool.compress_list) {
-        if (used_map.find(component.get()) != used_map.end()) continue;
-        used_map.insert(component.get());
+        if (used_map.find(component->name) != used_map.end()) continue;
+        used_map.insert(component->name);
         component_list.push_back(component);
     }
     for (auto& component: info->component_pool.comb_list) {
-        if (used_map.find(component.get()) != used_map.end()) continue;
-        used_map.insert(component.get());
+        if (used_map.find(component->name) != used_map.end()) continue;
+        used_map.insert(component->name);
         component_list.push_back(component);
     }
 

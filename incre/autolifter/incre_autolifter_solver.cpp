@@ -113,27 +113,22 @@ IncreAutoLifterSolver::IncreAutoLifterSolver(IncreInfo *_info, const PEnv& _env)
         aux_grammar_list[i] = new GrammarEnumerateTool(buildAuxGrammar(i));
     }
 
-    std::cout << "zyw: print grammar in solver!" << std::endl;
     int num = 0;
     for (auto& grammar_enum: compress_grammar_list) {
         std::cout << "num = " << num++ << std::endl;
         auto& grammar = grammar_enum->grammar;
         grammar->print();
     }
-    std::cout << "zyw: aux begin!" << std::endl;
     num = 0;
     for (auto& grammar_enum: aux_grammar_list) {
         std::cout << "num = " << num++ << std::endl;
         auto& grammar = grammar_enum->grammar;
         grammar->print();
     }
-    std::cout << "zyw: print grammar end!" << std::endl;
-    std::cout << "zyw: print grammar map begin!" << std::endl;
     for (auto& [name, grammar]: combine_grammar_map) {
         std::cout << name << " " << std::endl;
         grammar->print();
     }
-    std::cout << "zyw: print grammar map end!" << std::endl;
 #ifdef DEBUG
     for (int i = 0; i < info->align_infos.size(); ++i) assert(info->align_infos[i]->getId() == i);
 #endif
@@ -266,21 +261,4 @@ IncreSolution IncreAutoLifterSolver::solve() {
         return {f_type_list, comb_list, repr_list};
     }
     return {f_type_list, comb_list, {}};
-}
-
-void IncreAutoLifterSolver::printToHaskell() const {
-    std::cout << "zyw: print grammar in solver!" << std::endl;
-    int num = 0;
-    for (auto& grammar_enum: compress_grammar_list) {
-        std::cout << "num = " << num++ << std::endl;
-        auto& grammar = grammar_enum->grammar;
-        grammar->printToHaskell();
-    }
-    std::cout << "zyw: aux begin!" << std::endl;
-    num = 0;
-    for (auto& grammar_enum: aux_grammar_list) {
-        std::cout << "num = " << num++ << std::endl;
-        auto& grammar = grammar_enum->grammar;
-        grammar->printToHaskell();
-    }
 }

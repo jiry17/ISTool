@@ -5,9 +5,9 @@
 #include "istool/basic/config.h"
 
 #ifdef LINUX
-const std::string config::KSourcePath = "/home/jiry/zyw/ISTool_230519/";
+const std::string config::KSourcePath = "/home/jiry/zyw/ISTool_230605/";
 #else
-const std::string config::KSourcePath = "/home/jiry/zyw/ISTool_230519/";
+const std::string config::KSourcePath = "/home/jiry/zyw/ISTool_230605/";
 #endif
 const std::string config::KEuSolverPath = "/home/jiry/my-euphony";
 const std::string config::KCVC5Path = "/home/jiry/2021A/cvc5";

@@ -21,6 +21,15 @@ std::string Semantics::buildProgramString(const std::vector<std::string> &sub_li
     return res + ")";
 }
 
+std::string Semantics::buildProgramStringToHaskell(const std::vector<std::string> &sub_list) {
+    std::string res = name;
+    for (int i = 0; i < sub_list.size(); ++i) {
+        res += " ";
+        res += sub_list[i];
+    }
+    return res;
+}
+
 FullExecutedSemantics::FullExecutedSemantics(const std::string &name): Semantics(name) {}
 Data FullExecutedSemantics::run(const std::vector<std::shared_ptr<Program>> &sub_list, ExecuteInfo *info) {
     DataList res;

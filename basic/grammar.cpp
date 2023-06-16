@@ -24,19 +24,26 @@ ConcreteRule::ConcreteRule(const PSemantics &_semantics, const NTList &_param_li
 }
 std::string ConcreteRule::toString() const {
     std::string res = semantics->getName();
-    /*
-    std::vector<std::string> sub_exp = std::vector<std::string>(param_list.size());
-    for (int i = 0; i < param_list.size(); ++i) {
-        sub_exp[i] = "a";
-    }
-    std::cout << "zyw: semanticsString: " << semantics->buildProgramString(sub_exp) << std::endl;
-    */
     if (param_list.empty()) return res;
     for (int i = 0; i < param_list.size(); ++i) {
-        if (i) res += ","; else res += "(";
+        if (i) res += " "; else res += "(";
         res += param_list[i]->name;
     }
     return res + ")";
+}
+
+std::string ConcreteRule::toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num) const {
+    std::string res = semantics->getName();
+    if (param_list.empty()) return res;
+    for (int i = 0; i < param_list.size(); ++i) {
+        res += " ";
+        if (name_to_expr_num.find(param_list[i]->name) == name_to_expr_num.end()) {
+            name_to_expr_num[param_list[i]->name] = next_expr_num++;
+        }
+        res += "Expr";
+        res += (name_to_expr_num[param_list[i]->name] + '0');
+    }
+    return res;
 }
 PProgram ConcreteRule::buildProgram(const ProgramList &sub_list) {
     return std::make_shared<Program>(semantics, sub_list);
@@ -133,16 +140,6 @@ void Grammar::indexSymbol() const {
 }
 
 void Grammar::print() const {
-    std::cout << "start: " << start->name << std::endl;
-    for (auto* node: symbol_list) {
-        std::cout << "node: " << node->name << std::endl;
-        for (auto *rule: node->rule_list) {
-            std::cout << "  " << rule->toString() << std::endl;
-        }
-    }
-}
-
-void Grammar::printToHaskell() const {
     std::cout << "start: " << start->name << std::endl;
     for (auto* node: symbol_list) {
         std::cout << "node: " << node->name << std::endl;

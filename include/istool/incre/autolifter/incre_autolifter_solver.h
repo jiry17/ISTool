@@ -73,9 +73,6 @@ namespace incre {
         TermList comb_list;
         void solveCombinators();
         TermList buildFRes();
-
-         // print to Haskell
-        void printToHaskell() const;
     };
 }
 

@@ -13,6 +13,7 @@ public:
     ComposedRule(const PProgram& sketch, const NTList& param_list);
     virtual PProgram buildProgram(const ProgramList& sub_list);
     virtual std::string toString() const;
+    virtual std::string toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num) const;
     virtual Rule* clone(const NTList& new_param_list);
     virtual ~ComposedRule() = default;
 };

@@ -4,6 +4,7 @@
 
 #include "istool/incre/io/incre_to_haskell.h"
 #include "istool/basic/config.h"
+#include "istool/basic/grammar.h"
 #include "istool/incre/language/incre.h"
 #include "glog/logging.h"
 #include <fstream>
@@ -525,9 +526,68 @@ void incre::postOutput(const std::vector<std::pair<Term, Data>> &io_pairs) {
     std::cout << "ioPair pairs" << std::endl;
 }
 
+void incre::ruleToHaskell(Rule *rule) {
+
+}
+/*
+data AExpr
+  = I SymInteger
+  | Var (UnionM Ident)
+  | Add (UnionM AExpr) (UnionM AExpr)
+  | AList List
+  | If (UnionM BExpr) (UnionM AExpr) (UnionM AExpr)
+  deriving stock (Generic, Show)
+  deriving (Mergeable, EvaluateSym, ToCon AExpr)
+    via (Default AExpr)
+
+data BExpr
+  = BEq (UnionM AExpr) (UnionM AExpr)
+  | BFalse
+  | BTrue
+  deriving stock (Generic, Show)
+  deriving (Mergeable, EvaluateSym, ToCon BExpr)
+    via (Default BExpr)
+    */
+
+void incre::grammarToHaskell(Grammar *grammar) {
+    grammar->print();
+
+    std::unordered_map<std::string, int> name_to_expr_num;
+    int next_expr_num = 1;
+
+    name_to_expr_num[grammar->start->name] = 0;
+    std::cout << "start: Expr0" << std::endl;
+    for (auto* node: grammar->symbol_list) {
+        if (name_to_expr_num.find(node->name) == name_to_expr_num.end()) {
+            name_to_expr_num[node->name] = next_expr_num++;
+        }
+        std::cout << "node: Expr" << name_to_expr_num[node->name] << std::endl;
+        for (auto *rule: node->rule_list) {
+            std::cout << "  " << rule->toHaskell(name_to_expr_num, next_expr_num) << std::endl;
+        }
+    }
+
+    for (auto* node: grammar->symbol_list) {
+        std::cout << "data Expr" << name_to_expr_num[node->name] << std::endl;
+        bool flag = false;
+        for (auto* rule: node->rule_list) {
+            if (!flag) {
+                std::cout << "  = ";
+                flag = true;
+            } else {
+                std::cout << "  | ";
+            }
+            std::cout << rule->toHaskell(name_to_expr_num, next_expr_num) << std::endl;
+        }
+        std::cout << "  deriving stock (Generic, Show)" << std::endl
+            << "  deriving (Mergeable, EvaluateSym, ToCon Expr" << name_to_expr_num[node->name] << ")"
+            << std::endl << "    via (Default Expr" << name_to_expr_num[node->name] << ")" << std::endl;
+    }
+}
+
 void incre::programToHaskell(const std::shared_ptr<ProgramData> &prog, 
     const std::vector<std::pair<Term, Data>> &io_pairs, 
-    const std::vector<std::shared_ptr<AlignTypeInfoData>> &align_infos,
+    incre::IncreInfo *info,
     const incre::IncreAutoLifterSolver *solver, const std::string &path) {
     construct.clear();
     std::ofstream outFile(path);
@@ -550,11 +610,24 @@ void incre::programToHaskell(const std::shared_ptr<ProgramData> &prog,
         << "------program space begin----" << std::endl;
     
     // output program space
-    for (auto& align_info: align_infos) {
+    for (auto& align_info: info->align_infos) {
         std::cout << "zyw: align_info->print()" << std::endl;
         align_info->print();
     }
-    solver->printToHaskell();
+
+    // get program space
+    std::cout << "zyw: print grammar begin!" << std::endl;
+    TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
+    for (int i = 0; i < info->align_infos.size(); ++i) {
+        auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
+        std::cout << std::endl << "Hole grammar for #" << i << std::endl;
+        for (auto& param: param_list) {
+            std::cout << param << " ";
+        }
+        std::cout << std::endl;
+        grammarToHaskell(grammar);
+    }
+    std::cout << "zyw: print grammar end!" << std::endl;
 
     std::cout << std::endl << "------program space end----" << std::endl << std::endl
         << "------spec begin-------" << std::endl;

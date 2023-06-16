@@ -27,6 +27,7 @@ public:
     Rule(const NTList& _param_list);
     virtual PProgram buildProgram(const ProgramList& sub_list) = 0;
     virtual std::string toString() const = 0;
+    virtual std::string toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num) const = 0;
     virtual Rule* clone(const NTList& new_param_list) = 0;
     virtual ~Rule() = default;
 };
@@ -38,6 +39,7 @@ public:
     virtual int getSize() const {return 1;}
     virtual PProgram buildProgram(const ProgramList& sub_list);
     virtual std::string toString() const;
+    virtual std::string toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num) const;
     virtual Rule* clone(const NTList& new_param_list);
     ~ConcreteRule() = default;
 };
@@ -50,7 +52,6 @@ public:
     void removeUseless();
     void indexSymbol() const;
     void print() const;
-    void printToHaskell() const;
     ~Grammar();
 };
 

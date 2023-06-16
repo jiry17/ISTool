@@ -20,9 +20,11 @@ namespace incre {
     void commandToHaskell(const std::shared_ptr<CommandData> &command);
     void preOutput();
     void postOutput(const std::vector<std::pair<Term, Data>> &io_pairs);
+    void ruleToHaskell(Rule *rule);
+    void grammarToHaskell(Grammar *grammar);
     void programToHaskell(const std::shared_ptr<ProgramData> &prog, 
         const std::vector<std::pair<Term, Data>> &io_pairs, 
-        const std::vector<std::shared_ptr<AlignTypeInfoData>> &align_infos,
+        incre::IncreInfo *info,
         const incre::IncreAutoLifterSolver *solver, const std::string &path);
 }
 

@@ -37,7 +37,8 @@ namespace incre::grammar {
     class SynthesisComponent {
     public:
         int command_id;
-        SynthesisComponent(int command_id);
+        std::string name;
+        SynthesisComponent(int command_id, const std::string& _name);
         virtual void extendContext(GrammarBuilder& builder) = 0;
         virtual void insertComponent(const GrammarBuilder& builder) = 0;
         virtual void extendNTMap(GrammarBuilder& builder) = 0;
@@ -49,7 +50,7 @@ namespace incre::grammar {
 
     class ContextFreeSynthesisComponent: public SynthesisComponent {
     public:
-        ContextFreeSynthesisComponent(int command_id);
+        ContextFreeSynthesisComponent(int command_id, const std::string& _name);
         virtual void extendContext(GrammarBuilder& builder);
         virtual ~ContextFreeSynthesisComponent() = default;
     };
@@ -61,7 +62,6 @@ namespace incre::grammar {
         PType res_type;
         Data data;
         Term term;
-        std::string name;
         bool is_partial;
         IncreComponent(Context* _ctx, const std::string& _name, const PType& _type, const Data& _data, const Term& _term, int command_id, bool _is_partial);
         virtual void insertComponent(const GrammarBuilder& symbol_map);
@@ -84,7 +84,6 @@ namespace incre::grammar {
 
     class BasicOperatorComponent: public ContextFreeSynthesisComponent {
     public:
-        std::string name;
         TypedSemantics* sem;
         PSemantics _sem;
         BasicOperatorComponent(const std::string& _name, const PSemantics& __semantics);

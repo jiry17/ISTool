@@ -14,6 +14,7 @@
 #include "istool/incre/grammar/incre_component_collector.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include <iostream>
+#include "glog/logging.h"
 
 using namespace incre;
 
@@ -43,13 +44,14 @@ int main(int argv, char** argc) {
     incre::applyConfig(res.get(), env.get());
 
     res = incre::eliminateNestedAlign(res.get());
+    incre::printProgram(res, label_path);
     env->setConst(incre::grammar::collector::KCollectMethodName, BuildData(Int, incre::grammar::ComponentCollectorType::SOURCE));
     env->setConst(theory::clia::KINFName, BuildData(Int, 50000));
 
     auto* info = incre::buildIncreInfo(res, env.get());
-
     // set context in example_pool
     info->example_pool->generateSingleExample();
+
     // get io pairs
     std::vector<std::pair<Term, Data>> io_pairs;
     for (int i = 0; i < 5; ++i) {
@@ -76,7 +78,7 @@ int main(int argv, char** argc) {
     auto* solver = new incre::IncreAutoLifterSolver(info, env);
 
     // final output
-    incre::programToHaskell(res, io_pairs, info->align_infos, solver, label_path);
+    incre::programToHaskell(res, io_pairs, info, solver, target);
 
     global::recorder.printAll();
     std::cout << global_guard->getPeriod() << std::endl;
