@@ -526,9 +526,6 @@ void incre::postOutput(const std::vector<std::pair<Term, Data>> &io_pairs) {
     std::cout << "ioPair pairs" << std::endl;
 }
 
-void incre::ruleToHaskell(Rule *rule) {
-
-}
 /*
 data AExpr
   = I SymInteger
@@ -539,36 +536,18 @@ data AExpr
   deriving stock (Generic, Show)
   deriving (Mergeable, EvaluateSym, ToCon AExpr)
     via (Default AExpr)
-
-data BExpr
-  = BEq (UnionM AExpr) (UnionM AExpr)
-  | BFalse
-  | BTrue
-  deriving stock (Generic, Show)
-  deriving (Mergeable, EvaluateSym, ToCon BExpr)
-    via (Default BExpr)
-    */
-
-void incre::grammarToHaskell(Grammar *grammar) {
-    grammar->print();
-
-    std::unordered_map<std::string, int> name_to_expr_num;
-    int next_expr_num = 1;
-
+*/
+void incre::grammarToHaskell(Grammar *grammar, int func_num,
+        std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num) {
     name_to_expr_num[grammar->start->name] = 0;
-    std::cout << "start: Expr0" << std::endl;
+    next_expr_num = 1;
     for (auto* node: grammar->symbol_list) {
         if (name_to_expr_num.find(node->name) == name_to_expr_num.end()) {
             name_to_expr_num[node->name] = next_expr_num++;
         }
-        std::cout << "node: Expr" << name_to_expr_num[node->name] << std::endl;
-        for (auto *rule: node->rule_list) {
-            std::cout << "  " << rule->toHaskell(name_to_expr_num, next_expr_num) << std::endl;
-        }
     }
-
     for (auto* node: grammar->symbol_list) {
-        std::cout << "data Expr" << name_to_expr_num[node->name] << std::endl;
+        std::cout << "data Expr" << func_num << "_" << name_to_expr_num[node->name] << std::endl;
         bool flag = false;
         for (auto* rule: node->rule_list) {
             if (!flag) {
@@ -577,11 +556,26 @@ void incre::grammarToHaskell(Grammar *grammar) {
             } else {
                 std::cout << "  | ";
             }
-            std::cout << rule->toHaskell(name_to_expr_num, next_expr_num) << std::endl;
+            std::cout << rule->toHaskell(name_to_expr_num, next_expr_num, func_num) << std::endl;
         }
         std::cout << "  deriving stock (Generic, Show)" << std::endl
             << "  deriving (Mergeable, EvaluateSym, ToCon Expr" << name_to_expr_num[node->name] << ")"
             << std::endl << "    via (Default Expr" << name_to_expr_num[node->name] << ")" << std::endl;
+        std::cout << std::endl;
+    }
+}
+
+void incre::evalToHaskell(Grammar *grammar, int func_num,
+        std::unordered_map<std::string, int>& name_to_expr_num) {
+    for (auto* node: grammar->symbol_list) {
+        std::string node_name = std::to_string(func_num);
+        node_name += "_"; node_name += std::to_string(name_to_expr_num[node->name]);
+        std::cout << "eval" << node_name << " :: SymIntEnv -> SymBoolEnv -> Expr"
+            << node_name << " -> " << node->type->getName() << std::endl;
+        for (auto* rule: node->rule_list) {
+            std::cout << "eval" << node_name << " env1 env2 (";
+            std::cout << ") = ";
+        }
     }
 }
 
@@ -609,14 +603,15 @@ void incre::programToHaskell(const std::shared_ptr<ProgramData> &prog,
     std::cout << std::endl << "------type def end------" << std::endl << std::endl
         << "------program space begin----" << std::endl;
     
-    // output program space
+    // get var for each space
     for (auto& align_info: info->align_infos) {
         std::cout << "zyw: align_info->print()" << std::endl;
         align_info->print();
     }
 
     // get program space
-    std::cout << "zyw: print grammar begin!" << std::endl;
+    std::vector<std::unordered_map<std::string, int> > name_to_expr_num;
+    std::vector<int> next_expr_num;
     TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
     for (int i = 0; i < info->align_infos.size(); ++i) {
         auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
@@ -625,9 +620,16 @@ void incre::programToHaskell(const std::shared_ptr<ProgramData> &prog,
             std::cout << param << " ";
         }
         std::cout << std::endl;
-        grammarToHaskell(grammar);
+        name_to_expr_num.push_back(std::unordered_map<std::string, int>());
+        next_expr_num.push_back(0);
+        grammarToHaskell(grammar, i, name_to_expr_num[i], next_expr_num[i]);
     }
-    std::cout << "zyw: print grammar end!" << std::endl;
+
+    // output eval function
+    for (int i = 0; i < info->align_infos.size(); ++i) {
+        auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
+        evalToHaskell(grammar, i, name_to_expr_num[i]);
+    }
 
     std::cout << std::endl << "------program space end----" << std::endl << std::endl
         << "------spec begin-------" << std::endl;

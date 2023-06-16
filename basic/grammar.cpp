@@ -32,8 +32,27 @@ std::string ConcreteRule::toString() const {
     return res + ")";
 }
 
-std::string ConcreteRule::toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num) const {
+std::string ConcreteRule::toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num, int func_num) const {
     std::string res = semantics->getName();
+    // modify constructor
+    if (res == "+") res = "Cadd";
+    else if (res == "-") res = "Csub";
+    else if (res == "*") res = "Cmul";
+    else if (res == "=") res = "Ceq";
+    else if (res == "<") res = "Cless";
+    else if (res == "&&") res = "Cand";
+    else if (res == "||") res = "Cor";
+    else if (res == "!") res = "Cnot";
+    else if (res == "0") res = "Czero";
+    else if (res == "1") res = "Cone";
+    else if (!(res[0] >= 'a' && res[0] <= 'z' || res[0] >= 'A' && res[0] <= 'Z')) {
+        std::cout << "error: res is not a letter!" << std::endl;
+        return res;
+    }
+    else res[0] = std::toupper(res[0]);
+    // change name of semantics
+    semantics->name = res;
+
     if (param_list.empty()) return res;
     for (int i = 0; i < param_list.size(); ++i) {
         res += " ";
@@ -41,6 +60,8 @@ std::string ConcreteRule::toHaskell(std::unordered_map<std::string, int>& name_t
             name_to_expr_num[param_list[i]->name] = next_expr_num++;
         }
         res += "Expr";
+        res += (func_num + '0');
+        res += "_";
         res += (name_to_expr_num[param_list[i]->name] + '0');
     }
     return res;

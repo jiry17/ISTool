@@ -23,6 +23,25 @@ std::string Semantics::buildProgramString(const std::vector<std::string> &sub_li
 
 std::string Semantics::buildProgramStringToHaskell(const std::vector<std::string> &sub_list) {
     std::string res = name;
+    // modify constructor
+    if (res == "+") res = "Cadd";
+    else if (res == "-") res = "Csub";
+    else if (res == "*") res = "Cmul";
+    else if (res == "=") res = "Ceq";
+    else if (res == "<") res = "Cless";
+    else if (res == "&&") res = "Cand";
+    else if (res == "||") res = "Cor";
+    else if (res == "!") res = "Cnot";
+    else if (res == "0") res = "Czero";
+    else if (res == "1") res = "Cone";
+    else if (!(res[0] >= 'a' && res[0] <= 'z' || res[0] >= 'A' && res[0] <= 'Z')) {
+        std::cout << "error: res is not a letter!" << std::endl;
+        return res;
+    }
+    else res[0] = std::toupper(res[0]);
+    // change name of semantics
+    name = res;
+
     for (int i = 0; i < sub_list.size(); ++i) {
         res += " ";
         res += sub_list[i];

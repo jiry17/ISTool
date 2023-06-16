@@ -20,8 +20,9 @@ namespace incre {
     void commandToHaskell(const std::shared_ptr<CommandData> &command);
     void preOutput();
     void postOutput(const std::vector<std::pair<Term, Data>> &io_pairs);
-    void ruleToHaskell(Rule *rule);
-    void grammarToHaskell(Grammar *grammar);
+    void grammarToHaskell(Grammar *grammar, int func_num,
+        std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num);
+    void evalToHaskell(Grammar *grammar, int func_num, std::unordered_map<std::string, int>& name_to_expr_num);
     void programToHaskell(const std::shared_ptr<ProgramData> &prog, 
         const std::vector<std::pair<Term, Data>> &io_pairs, 
         incre::IncreInfo *info,

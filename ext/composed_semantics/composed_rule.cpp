@@ -21,17 +21,22 @@ namespace {
     }
 
     std::string _buildSketchToHaskell(Program* sketch, const NTList param_list,
-            std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num) {
+            std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num,
+            int func_num) {
         for (auto &param: param_list) {
             if (name_to_expr_num.find(param->name) == name_to_expr_num.end()) {
                 name_to_expr_num[param->name] == next_expr_num++;
+                param->name = "Expr";
+                param->name += (func_num+'0');
+                param->name += "_";
+                param->name += (name_to_expr_num[param->name]+'0');
             }
         }
         auto* ps = dynamic_cast<ParamSemantics*>(sketch->semantics.get());
         if (ps) return param_list[ps->id]->name;
         std::vector<std::string> sub_list(sketch->sub_list.size());
         for (int i = 0; i < sketch->sub_list.size(); ++i) {
-            sub_list[i] = _buildSketch(sketch->sub_list[i].get(), param_list);
+            sub_list[i] = _buildSketchToHaskell(sketch->sub_list[i].get(), param_list, name_to_expr_num, next_expr_num, func_num);
         }
         return sketch->semantics->buildProgramStringToHaskell(sub_list);
     }
@@ -41,8 +46,8 @@ std::string ComposedRule::toString() const {
     return _buildSketch(composed_sketch.get(), param_list);
 }
 
-std::string ComposedRule::toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num) const {
-    return _buildSketchToHaskell(composed_sketch.get(), param_list, name_to_expr_num, next_expr_num);
+std::string ComposedRule::toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num, int func_num) const {
+    return _buildSketchToHaskell(composed_sketch.get(), param_list, name_to_expr_num, next_expr_num, func_num);
 }
 
 PProgram ComposedRule::buildProgram(const ProgramList &sub_list) {
