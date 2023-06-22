@@ -91,6 +91,46 @@ namespace incre {
         virtual ~VPartialOpFunction() = default;
     };
 
+    class EnvAddress {
+    public:
+        std::string name;
+        Data v;
+        EnvAddress* next;
+        EnvAddress(const std::string& _name, const Data& _v, EnvAddress* _next): name(_name), v(_v), next(_next) {
+        }
+    };
+
+    class AddressHolder {
+    public:
+        std::vector<EnvAddress*> address_list;
+        ~AddressHolder();
+        EnvAddress* extend(EnvAddress* pre, const std::string& name, const Data& v);
+        void recover(int size);
+        Data lookup(EnvAddress* env, const std::string& _name);
+    };
+
+    class EnvContext {
+    public:
+        AddressHolder* holder;
+        EnvAddress *start;
+        std::unordered_map<std::string, EnvAddress*> hole_map;
+        EnvContext(AddressHolder* holder);
+        void initGlobal(const std::unordered_map<std::string, Data>& global_map);
+        ~EnvContext();
+    };
+
+    class VClosure: public Value {
+    public:
+        EnvAddress* env;
+        std::string name;
+        Term term;
+
+        virtual std::string toString() const;
+        virtual bool equal(Value* value) const;
+        VClosure(EnvAddress* _env, const std::string& _name, const Term& _term): env(_env), name(_name), term(_term) {
+        }
+    };
+
     Ty getValueType(Value* value);
 }
 

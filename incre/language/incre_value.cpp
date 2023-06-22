@@ -121,3 +121,50 @@ Ty incre::getValueType(Value *v) {
     if (vo) return vo->type;
     LOG(FATAL) << "User cannot write " << v->toString() << " directly.";
 }
+
+AddressHolder::~AddressHolder() {
+    for (auto* ad: address_list) delete ad;
+}
+
+EnvAddress *AddressHolder::extend(EnvAddress *pre, const std::string &name, const Data &v) {
+    auto* ad = new EnvAddress(name, v, pre);
+    address_list.push_back(ad);
+    return ad;
+}
+
+void AddressHolder::recover(int size) {
+    assert(address_list.size() >= size);
+    for (int i = size; i < address_list.size(); ++i) {
+        delete address_list[i];
+    }
+    address_list.resize(size);
+}
+
+Data AddressHolder::lookup(EnvAddress* env, const std::string &_name) {
+    while (env) {
+        if (env->name == _name) return env->v;
+        env = env->next;
+    }
+    LOG(FATAL) << "Name " << _name << " not found";
+}
+
+std::string VClosure::toString() const {
+    LOG(FATAL) << "VClosure::toString() should not be invoked";
+}
+
+bool VClosure::equal(Value *value) const {
+    LOG(FATAL) << "VClosure::equal() should not be invoked";
+}
+
+EnvContext::EnvContext(AddressHolder *_holder): holder(_holder), start(nullptr) {
+}
+EnvContext::~EnvContext() {
+    delete holder;
+}
+
+void EnvContext::initGlobal(const std::unordered_map<std::string, Data> &global_map) {
+    for (auto& [name, v]: global_map) {
+        auto it = hole_map.find(name); assert(it != hole_map.end());
+        it->second->v = v;
+    }
+}

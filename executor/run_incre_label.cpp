@@ -19,7 +19,8 @@ using namespace incre;
 int main(int argv, char** argc) {
     std::string path, label_path, target;
     if (argv <= 1) {
-        std::string name = "test";
+        //std::string name = "dp/01knapsack";
+        std::string name = "autolifter/dac/mts";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
@@ -54,6 +55,20 @@ int main(int argv, char** argc) {
         info->example_pool->generateSingleExample();
     }
 
+    /*auto* ctx = incre::run(res);
+    auto* env_ctx = incre::envRun(res.get());
+    for (int i = 1; i <= 10; ++i) {
+        auto [term, global] = info->example_pool->generateStart();
+        env_ctx->initGlobal(global);
+        for (auto& [name, v]: global) {
+            ctx->addBinding(name, std::make_shared<TmValue>(v));
+        }
+        auto v1 = incre::run(term, ctx), v2 = incre::envRun(term, env_ctx->start, env_ctx->holder);
+        LOG(INFO) << v1.toString() << " " << v2.toString() << " " << term->toString();
+        assert(v1 == v2);
+    }
+    return 0;*/
+
     for (auto& align_info: info->align_infos) {
         align_info->print();
         if (align_info->getId() >= info->example_pool->example_pool.size()) continue;
@@ -63,7 +78,7 @@ int main(int argv, char** argc) {
         }
     }
     
-    TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
+    /*TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
     for (int i = 0; i < info->align_infos.size(); ++i) {
         auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
         LOG(INFO) << "Hole grammar for #" << i;
@@ -73,7 +88,7 @@ int main(int argv, char** argc) {
         std::cout << std::endl;
         grammar->print();
     }
-    int kk; std::cin >> kk;
+    int kk; std::cin >> kk;*/
 
     // LOG(INFO) << "Pre execute time " << global::recorder.query("execute");
 

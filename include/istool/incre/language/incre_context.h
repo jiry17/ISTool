@@ -72,6 +72,8 @@ namespace incre {
         Ty lookup(const std::string& name);
         virtual void cancelBind(const BindLog& log);
     };
+
+
 }
 
 #endif //ISTOOL_INCRE_CONTEXT_H

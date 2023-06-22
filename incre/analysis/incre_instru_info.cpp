@@ -65,7 +65,8 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
         }
     }
 
-    auto* pool = new NoDuplicatedIncreExamplePool(labeled_program, env, cared_vals);
+    auto builder = getCollectorBuilder(CollectorType::SUBSTITUE);
+    auto* pool = new NoDuplicatedIncreExamplePool(labeled_program, env, cared_vals, builder);
 
     // build components
     auto component_pool = incre::grammar::collectComponent(pool->ctx, env, labeled_program.get());

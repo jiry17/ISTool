@@ -23,6 +23,15 @@ namespace incre {
     void run(const IncreProgram& program, Context* ctx);
     Context* run(const IncreProgram& program);
 
+    struct ExternalEnvRunRule {
+        std::function<Data(const Term&, EnvAddress*, AddressHolder*, const std::unordered_map<TermType, ExternalEnvRunRule>&)> func;
+    };
+    typedef std::unordered_map<TermType, ExternalEnvRunRule> ExternalEnvRuleMap;
+    Data envRun(const Term& term, EnvAddress* env, AddressHolder* holder, const ExternalEnvRuleMap& map = {});
+    void envRun(const Command& command, EnvContext* ctx, const ExternalEnvRuleMap& map = {});
+    void envRun(ProgramData* program, EnvContext* ctx, const ExternalEnvRuleMap& map = {});
+    EnvContext* envRun(ProgramData* program, const ExternalEnvRuleMap& = {});
+
     struct ExternalTypeRule {
         std::function<Ty(const Term&, TypeContext*, const std::unordered_map<TermType, ExternalTypeRule>&)> func;
     };
