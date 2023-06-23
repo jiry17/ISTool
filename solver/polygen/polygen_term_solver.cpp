@@ -357,7 +357,7 @@ ProgramList PolyGenTermSolver::getTerms() {
                     cache.push_back(new TermSolverCache());
                     progress.push_back(0);
                 } else {
-                    LOG(INFO) << "relax failed " << domain_solver_list.size();
+                    TimeCheck(guard);
                     continue;
                 }
             }

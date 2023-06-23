@@ -364,6 +364,7 @@ std::pair<int, int> IncrePLPSolver::verify(const std::vector<AuxProgram> &aux_li
             if (inp_cache_list[i]) inp_list[i] = inp_cache_list[i]->at(example_id);
             else {
                 try {
+                    // LOG(INFO) << task->example_space->example_list[example_id].toString();
                     auto inp = task->example_space->runAux(example_id, aux_list[i]);
                     new_inp_storage[i].push_back(inp);
                     inp_list[i] = inp;
@@ -621,7 +622,7 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
         TimeCheck(guard);
         auto candidate_result = unfoldComponents(synthesisFromExample(guard));
         LOG(INFO) << "Candidate result " << _unitList2String(candidate_result);
-        LOG(INFO) << KComposedNum;
+        LOG(INFO) << KComposedNum << std::endl;
         counter_example = verify(candidate_result);
         if (counter_example.first == -1) return candidate_result;
         addExample(counter_example);

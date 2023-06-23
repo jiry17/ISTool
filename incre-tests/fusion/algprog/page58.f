@@ -1,3 +1,6 @@
+Config SampleIntMin = -2;
+Config SampleIntMax = 2;
+Config NonLinear = true;
 Inductive List = nil Unit | cons {Int, List};
 
 tri = \op: Int -> Int. fix (

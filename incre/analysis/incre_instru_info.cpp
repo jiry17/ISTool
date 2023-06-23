@@ -37,7 +37,7 @@ void AlignTypeInfoData::print() const {
     }
 }
 
-IncreInfo::IncreInfo(const IncreProgram &_program, Context *_ctx, const AlignTypeInfoList &infos, IncreExamplePool *pool, const grammar::ComponentPool& _pool):
+IncreInfo::IncreInfo(const IncreProgram &_program, EnvContext *_ctx, const AlignTypeInfoList &infos, IncreExamplePool *pool, const grammar::ComponentPool& _pool):
     program(_program), ctx(_ctx), align_infos(infos), example_pool(pool), component_pool(_pool) {
 }
 IncreInfo::~IncreInfo() {
@@ -52,10 +52,13 @@ void incre::prepareEnv(Env *env) {
     ext::ho::loadDeepCoderSemantics(env);
 }
 
+#include "istool/incre/io/incre_printer.h"
+
 IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
     //auto labeled_program = incre::eliminateUnboundedCreate(program);
     incre::checkAllLabelBounded(program.get());
     auto labeled_program = incre::labelCompress(program);
+
     auto align_info = incre::collectAlignType(labeled_program);
     std::vector<std::unordered_set<std::string>> cared_vals(align_info.size());
     for (const auto& info: align_info) {
@@ -65,11 +68,11 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
         }
     }
 
-    auto builder = getCollectorBuilder(CollectorType::SUBSTITUE);
+    auto builder = getCollectorBuilder(CollectorType::ENV);
     auto* pool = new NoDuplicatedIncreExamplePool(labeled_program, env, cared_vals, builder);
 
     // build components
-    auto component_pool = incre::grammar::collectComponent(pool->ctx, env, labeled_program.get());
+    auto component_pool = incre::grammar::collectComponent(pool->ctx, pool->type_ctx, env, labeled_program.get());
     return new IncreInfo(labeled_program, pool->ctx, align_info, pool, component_pool);
 }
 

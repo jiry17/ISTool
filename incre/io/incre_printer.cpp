@@ -5,6 +5,7 @@
 #include "istool/incre/io/incre_printer.h"
 #include "istool/incre/language/incre.h"
 #include "glog/logging.h"
+#include "istool/incre/analysis/incre_instru_type.h"
 #include <fstream>
 #include <iostream>
 
@@ -258,8 +259,10 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
         std::cout << "end" << std::endl;
     } else if (term->getType() == TermType::LABEL) {
         auto* tm_label = dynamic_cast<TmLabel*>(term.get());
+        auto* labeled_label = dynamic_cast<TmLabeledLabel*>(term.get());
         auto need_bracket = _isNeedBracket(tm_label->content->getType());
-        std::cout << "label ";
+        std::cout << "label";
+        if (labeled_label) std::cout << "@" << labeled_label->id << " "; else std::cout << " ";
         if (need_bracket) std::cout << "(";
         printTerm(tm_label->content);
         if (need_bracket) std::cout << ")";
@@ -274,8 +277,11 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
         std::cout << " ";
     } else if (term->getType() == TermType::ALIGN) {
         auto* tm_align = dynamic_cast<TmAlign*>(term.get());
+        auto* labeled_align = dynamic_cast<TmLabeledAlign*>(term.get());
         auto need_bracket = _isNeedBracket(tm_align->content->getType());
-        std::cout << "align ";
+        std::cout << "align";
+        if (labeled_align) std::cout << "@" << labeled_align->id;
+        std::cout << " ";
         if (need_bracket) std::cout << "(";
         printTerm(tm_align->content);
         if (need_bracket) std::cout << ")";

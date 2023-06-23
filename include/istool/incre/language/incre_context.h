@@ -71,6 +71,7 @@ namespace incre {
         virtual BindLog bind(const std::string& name, const Ty& type);
         Ty lookup(const std::string& name);
         virtual void cancelBind(const BindLog& log);
+        ~TypeContext();
     };
 
 

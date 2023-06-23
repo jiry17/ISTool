@@ -49,13 +49,7 @@ namespace {
     }
     RunHead(App) {
         NRec(func); NRec(param);
-        auto* cv = dynamic_cast<VClosure*>(func.get());
-        if (cv) {
-            return _invokeClosure(cv, param, holder, ext_map);
-        }
-        assert(dynamic_cast<VOpFunction*>(func.get()) || dynamic_cast<VPartialOpFunction*>(func.get()));
-        auto* vf = dynamic_cast<VFunction*>(func.get());
-        return vf->run(std::make_shared<TmValue>(param), nullptr);
+        return incre::runApp(func, param, holder, ext_map);
     }
     RunHead(Proj) {
         NRec(content);
@@ -121,6 +115,15 @@ Data incre::envRun(const Term &term, EnvAddress* env, AddressHolder* holder, con
     return _run(term, env, holder, map);
 }
 
+Data incre::runApp(const Data &func, const Data &param, AddressHolder *holder, const ExternalEnvRuleMap &map) {
+    auto* cv = dynamic_cast<VClosure*>(func.get());
+    if (cv) {
+        return _invokeClosure(cv, param, holder, map);
+    }
+    assert(dynamic_cast<VOpFunction*>(func.get()) || dynamic_cast<VPartialOpFunction*>(func.get()));
+    auto* vf = dynamic_cast<VFunction*>(func.get());
+    return vf->run(std::make_shared<TmValue>(param), nullptr);
+}
 
 
 Data _buildConstructor(const std::string& name, const Ty& type) {

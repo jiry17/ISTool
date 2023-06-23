@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/language/incre_program.h"
+#include "istool/solver/polygen/polygen_term_solver.h"
 #include "glog/logging.h"
 #include <iostream>
 
@@ -96,7 +97,8 @@ namespace {
             {IncreConfig::ENABLE_FOLD, "EnableFold"},
             {IncreConfig::SAMPLE_INT_MIN, "SampleIntMin"},
             {IncreConfig::SAMPLE_INT_MAX, "SampleIntMax"},
-            {IncreConfig::PRINT_ALIGN, "PrintAlign"}
+            {IncreConfig::PRINT_ALIGN, "PrintAlign"},
+            {IncreConfig::TERM_NUM, "TermNum"}
     };
 }
 
@@ -124,6 +126,7 @@ namespace {
     void _constructEnvNameMap() {
         KConfigEnvNameMap = {
             {IncreConfig::COMPOSE_NUM, solver::autolifter::KComposedNumName},
+            {IncreConfig::TERM_NUM, solver::polygen::KMaxTermNumName},
             {IncreConfig::NON_LINEAR, config_name::KIsNonLinearName},
             {IncreConfig::VERIFY_BASE, solver::autolifter::KOccamExampleNumName},
             {IncreConfig::SAMPLE_SIZE, config_name::KDataSizeLimitName},

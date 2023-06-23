@@ -27,7 +27,7 @@ EnvBasedExampleCollector::EnvBasedExampleCollector(const std::vector<std::unorde
     };
     ext_map[TermType::LABEL] = (ExternalEnvRunRule){label_rule};
     ext_map[TermType::ALIGN] = (ExternalEnvRunRule){align_rule};
-    ctx = incre::envRun(_program);
+    ctx = incre::envRun(_program, ext_map);
 }
 
 void EnvBasedExampleCollector::collect(const Term &start, const std::unordered_map<std::string, Data> &_global) {

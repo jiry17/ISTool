@@ -1,3 +1,6 @@
+Config NonLinear = true;
+Config SampleSize = 6;
+
 Inductive List = nil Unit | cons {Int, List};
 Inductive CList = cnil Unit | single Int | concat {CList, CList};
 

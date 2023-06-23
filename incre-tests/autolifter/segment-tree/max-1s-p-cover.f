@@ -1,4 +1,7 @@
 Config ExtraGrammar = "AutoLifter";
+Config VerifyBase = 3000;
+Config SampleSize = 15;
+Config ComposeNum = 4;
 
 Inductive List = nil Unit | cons {Int, List};
 Tag = Int; Result = Compress List; NodeInfo = {Tag, Result};
@@ -123,11 +126,11 @@ fit_list = fix (
   \f: List -> List. \xs: List.
   match xs with
     nil _ -> xs
-  | cons {h, t} -> cons {fit_int h, t}
+  | cons {h, t} -> cons {fit_int h, f t}
   end
 );
 fit_ops = fix (
-  \f: OpList -> OpList. \xs: List.
+  \f: OpList -> OpList. \xs: OpList.
   match xs with
     onil _ -> xs
   | ocons {update {l, r, tag}, t} ->
@@ -151,7 +154,7 @@ max1s_with_pos = fix (\f: Int -> Int -> List -> {Int, Int}. \pre: Int. \i: Int. 
   end
 ) 0 0;
 
-main = \raw_init: List. \raw_ops = OpList.
+main = \raw_init: List. \raw_ops: OpList.
   let init = fit_list raw_init in
   let ops = fit_ops raw_ops in
     solve merge_tag default_tag apply_tag max1s_with_pos init ops;

@@ -381,7 +381,6 @@ SubstituteBasedExampleCollector::SubstituteBasedExampleCollector(
         IncreExampleCollector(_cared_vars, _program) {
     ctx = _buildCollectContext(_program, this);
 }
-
 SubstituteBasedExampleCollector::~SubstituteBasedExampleCollector() noexcept {
     delete ctx;
 }
@@ -394,18 +393,28 @@ IncreExamplePool::IncreExamplePool(const IncreProgram& _program, Env* env,
                                    const std::vector<std::unordered_set<std::string>> &_cared_vars, const CollectorBuilder& _builder):
                                    program(_program), cared_vars(_cared_vars), example_pool(_cared_vars.size()),
                                    is_already_finished(_cared_vars.size(), false), builder(_builder) {
-    generator = new FixedPoolFunctionGenerator(env); ctx = new Context();
+    generator = new FixedPoolFunctionGenerator(env);
+
+    auto label_rule = [](const Term& term, EnvAddress* env, AddressHolder* holder, const ExternalEnvRuleMap& map) -> Data {
+        auto* lt = dynamic_cast<TmLabeledLabel*>(term.get()); assert(lt);
+        auto res = incre::envRun(lt->content, env, holder, map);
+        return Data(std::make_shared<VLabeledCompress>(res, lt->id));
+    };
+    ExternalEnvRuleMap tmp_ext;
+    tmp_ext[TermType::LABEL] = (ExternalEnvRunRule){label_rule};
+
+    ctx = incre::envRun(program.get(), tmp_ext);
+    auto* tmp_ctx = new Context();
     for (int command_id = 0; command_id < program->commands.size(); ++command_id) {
         auto& command = program->commands[command_id];
-        incre::run(command, ctx);
-        LOG(INFO) << command->toString();
+        incre::run(command, tmp_ctx);
 
         if (command->getType() == CommandType::BIND) {
             auto* cb = dynamic_cast<CommandBind*>(command.get());
-            auto type = ctx->getType(cb->name);
-            auto* type_ctx = new TypeContext(ctx);
-            type = incre::unfoldBasicType(type, type_ctx);
-            delete type_ctx;
+            auto type = tmp_ctx->getType(cb->name);
+            auto* tmp_type_ctx = new TypeContext(tmp_ctx);
+            type = incre::unfoldBasicType(type, tmp_type_ctx);
+            delete tmp_type_ctx;
             if (cb->isDecoratedWith(CommandDecorate::INPUT)) {
                 if (_isCompressRelevant(type.get())) {
                     LOG(FATAL) << "The input should not be compressed, but get " << type->toString();
@@ -426,6 +435,9 @@ IncreExamplePool::IncreExamplePool(const IncreProgram& _program, Env* env,
             }
         }
     }
+
+    type_ctx = new TypeContext(tmp_ctx);
+    delete tmp_ctx;
 
     start_dist = std::uniform_int_distribution<int>(0, int(start_list.size()) - 1);
     auto data = env->getConstRef(incre::KExampleThreadName, BuildData(Int, KDefaultThreadNum));
@@ -461,7 +473,7 @@ std::pair<Term, std::unordered_map<std::string, Data>> IncreExamplePool::generat
     std::unordered_map<std::string, Data> global;
     for (auto& [inp_name, inp_ty]: input_list) {
         auto input_data = generator->getRandomData(inp_ty);
-        ctx->addBinding(inp_name, std::make_shared<TmValue>(input_data));
+        // ctx->addBinding(inp_name, std::make_shared<TmValue>(input_data));
         global[inp_name] = input_data;
     }
     auto& [start_name, params] = start_list[start_dist(generator->env->random_engine)];
@@ -570,6 +582,7 @@ void IncreExamplePool::generateBatchedExample(int tau_id, int target_num, TimeGu
     global::recorder.start("collect");
     holder->collect();
     global::recorder.end("collect");
+    if (example_pool[tau_id].size() < target_num) is_already_finished[tau_id] = true;
     if (guard) LOG(INFO) << "Generate finished";
     delete holder;
 }

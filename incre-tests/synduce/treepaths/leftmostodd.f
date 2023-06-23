@@ -1,3 +1,5 @@
+Config ComposeNum = 4;
+
 Inductive BTree = empty Unit | node {Int, BTree, BTree};
 Inductive Zipper = top Unit | left {Int, BTree, Zipper} | right {Int, BTree, Zipper};
 
@@ -16,24 +18,31 @@ spec = fix (
   end
 );
 
-tree_repr = fix (
+repr = fix (
+  \f: Zipper -> BTree. \z: Zipper.
+  match z with
+    top _ -> empty unit
+  | left {w, tree, zz} ->
+      node {w, tree, f zz}
+  | right {w, tree, zz} ->
+      node {w, f zz, tree}
+  end
+);
+
+tree_rec = fix (
   \f: BTree -> Compress BTree. \t: BTree.
   match t with
     empty _ -> empty unit
   | node {a, l, r} -> node {a, f l, f r}
   end
 );
-
-repr = fix (
-  \f: Zipper -> Compress BTree. \z: Zipper.
+zip_rec = fix (
+  \f: Zipper -> Compress Zipper. \z: Zipper.
   match z with
-    top _ -> empty unit
-  | left {w, tree, zz} ->
-      node {w, tree_repr tree, f zz}
-  | right {w, tree, zz} ->
-    let tw = spec tree in
-      node {w, f zz, tree_repr tree}
+    top _ -> top unit
+  | left {w, tree, zz} -> left {w, tree_rec tree, f zz}
+  | right {w, tree, zz} -> right {w, tree_rec tree, f zz}
   end
 );
 
-main = \z: Zipper. spec (repr z);
+main = \z: Zipper. spec (repr (zip_rec z));

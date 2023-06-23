@@ -1,3 +1,5 @@
+Config NonLinear = true;
+
 Inductive List = nil Unit | cons {Int, List};
 Inductive IndexedList = inil Unit | icons {Int, Int, IndexedList};
 

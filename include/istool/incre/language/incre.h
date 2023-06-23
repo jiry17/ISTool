@@ -27,6 +27,7 @@ namespace incre {
         std::function<Data(const Term&, EnvAddress*, AddressHolder*, const std::unordered_map<TermType, ExternalEnvRunRule>&)> func;
     };
     typedef std::unordered_map<TermType, ExternalEnvRunRule> ExternalEnvRuleMap;
+    Data runApp(const Data& func, const Data& param, AddressHolder* holder, const ExternalEnvRuleMap& map = {});
     Data envRun(const Term& term, EnvAddress* env, AddressHolder* holder, const ExternalEnvRuleMap& map = {});
     void envRun(const Command& command, EnvContext* ctx, const ExternalEnvRuleMap& map = {});
     void envRun(ProgramData* program, EnvContext* ctx, const ExternalEnvRuleMap& map = {});

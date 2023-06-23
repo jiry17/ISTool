@@ -8,8 +8,7 @@
 
 using namespace incre::grammar;
 
-ComponentPool collector::collectComponentFromLabel(Context *ctx, ProgramData *program) {
-    auto* type_ctx = new TypeContext(ctx);
+ComponentPool collector::collectComponentFromLabel(EnvContext *env_ctx, TypeContext* type_ctx, ProgramData *program) {
     ComponentPool res;
 
     for (int command_id = 0; command_id < program->commands.size(); ++command_id) {
@@ -19,20 +18,24 @@ ComponentPool collector::collectComponentFromLabel(Context *ctx, ProgramData *pr
         auto* tb = dynamic_cast<TermBinding*>(cb->binding.get());
         if (!tb) continue;
         auto term = std::make_shared<TmVar>(cb->name);
-        auto type = ctx->getType(cb->name);
+        auto type = type_ctx->lookup(cb->name);
         auto full_type = incre::unfoldBasicType(type, type_ctx);
-        auto component = std::make_shared<IncreComponent>(ctx, cb->name, incre::typeFromIncre(full_type), incre::run(term, ctx),
-                                                          term, command_id, !command->isDecoratedWith(CommandDecorate::SYN_NO_PARTIAL));
+
+        auto val = incre::envRun(term, env_ctx->start, env_ctx->holder);
+
+        auto normal_component = std::make_shared<IncreComponent>(cb->name, incre::typeFromIncre(full_type),
+                                                          val, term, command_id, !command->isDecoratedWith(CommandDecorate::SYN_NO_PARTIAL), false);
+        auto parallel_component = std::make_shared<IncreComponent>(cb->name, incre::typeFromIncre(full_type),
+                                                                   val, term, command_id, !command->isDecoratedWith(CommandDecorate::SYN_NO_PARTIAL), true);
         if (command->isDecoratedWith(CommandDecorate::SYN_COMPRESS)) {
-            res.compress_list.push_back(component);
+            res.compress_list.push_back(normal_component);
         }
         if (command->isDecoratedWith(CommandDecorate::SYN_COMBINE)) {
-            res.comb_list.push_back(component);
+            res.comb_list.push_back(parallel_component);
         }
         if (command->isDecoratedWith(CommandDecorate::SYN_ALIGN)) {
-            res.align_list.push_back(component);
+            res.align_list.push_back(normal_component);
         }
     }
-    delete type_ctx;
     return res;
 }

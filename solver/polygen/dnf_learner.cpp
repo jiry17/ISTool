@@ -1,4 +1,4 @@
-//
+  //
 // Created by pro on 2022/1/7.
 //
 
@@ -259,6 +259,11 @@ namespace {
         return {id_list, P, N};
     }
 }
+
+/*std::vector<polygen::ClausePlan> DNFLearner::getAllClause(int l, int r, const std::vector<polygen::PCmpInfo> &info_list,
+                                                          const Bitset &rem_list, int lim) {
+
+}*/
 
 // TODO: replace this part by foldl
 std::vector<polygen::ClausePlan> DNFLearner::getAllClause(int l, int r, const std::vector<polygen::PCmpInfo> &info_list,

@@ -90,8 +90,8 @@ void ContextFreeSynthesisComponent::extendContext(GrammarBuilder &builder) {
 #include "istool/sygus/theory/basic/clia/clia_semantics.h"
 #include "istool/ext/deepcoder/data_type.h"
 
-IncreComponent::IncreComponent(Context* _ctx, const std::string &_name, const PType &_type, const Data &_data, const Term& _term, int _command_id, bool _is_partial):
-        ContextFreeSynthesisComponent(_command_id, _name), ctx(_ctx), data(_data), term(_term), is_partial(_is_partial) {
+IncreComponent::IncreComponent( const std::string &_name, const PType &_type, const Data &_data, const Term& _term, int _command_id, bool _is_partial, bool _is_parallel):
+        ContextFreeSynthesisComponent(_command_id, _name), data(_data), term(_term), is_partial(_is_partial), is_parallel(_is_parallel) {
     res_type = _type;
     while (1) {
         auto* ta = dynamic_cast<TArrow*>(res_type.get());
@@ -119,23 +119,32 @@ void IncreComponent::extendNTMap(GrammarBuilder &builder) {
 
 class IncreOperatorSemantics: public FullExecutedSemantics {
 public:
-    Context* ctx;
     Data base;
-    IncreOperatorSemantics(const std::string& name, const Data& _base, Context* _ctx):
-        FullExecutedSemantics(name), base(_base), ctx(_ctx) {}
+    AddressHolder* holder;
+    IncreOperatorSemantics(const std::string& name, const Data& _base, bool is_parallel):
+        FullExecutedSemantics(name), base(_base) {
+        if (!is_parallel) holder = new AddressHolder(); else holder = nullptr;
+    }
     virtual Data run(DataList&& inp_list, ExecuteInfo* info) {
         Data current = base;
+        auto* tmp_holder = holder ? holder : new AddressHolder();
         for (auto& param: inp_list) {
-            auto* fv = dynamic_cast<VFunction*>(current.get());
-            current = fv->run(std::make_shared<TmValue>(param), ctx);
+            current = incre::runApp(current, param, tmp_holder);
+        }
+        if (holder) {
+            if (holder->address_list.size() >= 1e5) holder->recover(0);
+        } else {
+            delete tmp_holder;
         }
         return current;
     }
-    virtual ~IncreOperatorSemantics() = default;
+    virtual ~IncreOperatorSemantics() {
+        delete holder;
+    }
 };
 
 void IncreComponent::insertComponent(const GrammarBuilder &builder) {
-    auto sem = std::make_shared<IncreOperatorSemantics>(name, data, ctx);
+    auto sem = std::make_shared<IncreOperatorSemantics>(name, data, is_parallel);
     {
         auto full_type = res_type;
         for (int i = int(param_types.size()) - 1; i >= 0; --i) {
@@ -614,18 +623,18 @@ Grammar *incre::grammar::builder::buildGrammar(const TypeList &inp_list, const S
     return _buildGrammar(inp_list, component_list, func, oup);
 }
 
-ComponentPool incre::grammar::collectComponent(Context* ctx, Env* env, ProgramData* program) {
+ComponentPool incre::grammar::collectComponent(EnvContext* env_ctx, TypeContext* ctx, Env* env, ProgramData* program) {
     auto* ref = env->getConstRef(collector::KCollectMethodName, BuildData(Int, default_type));
     auto collector_type = static_cast<ComponentCollectorType>(theory::clia::getIntValue(*ref));
 
-    ComponentPool base_res = collector::getBasicComponentPool(ctx, env), source_res, extra_res;
+    ComponentPool base_res = collector::getBasicComponentPool(env), source_res, extra_res;
     switch (collector_type) {
         case ComponentCollectorType::LABEL: {
-            source_res = collector::collectComponentFromLabel(ctx, program);
+            source_res = collector::collectComponentFromLabel(env_ctx, ctx, program);
             break;
         }
         case ComponentCollectorType::SOURCE: {
-            source_res = collector::collectComponentFromSource(ctx, program);
+            source_res = collector::collectComponentFromSource(env_ctx, ctx, program);
             break;
         }
     }
@@ -633,14 +642,14 @@ ComponentPool incre::grammar::collectComponent(Context* ctx, Env* env, ProgramDa
     auto extra = env->getConstRef(incre::config_name::KExtraGrammarName, BuildData(String, "Fold"));
     auto name = theory::string::getStringValue(*extra);
     if (!name.empty()) {
-        collector::loadExtraOperator(ctx, env, name);
-        extra_res = collector::collectExtraOperators(ctx, name);
+        collector::loadExtraOperator(env_ctx, ctx, env, name);
+        extra_res = collector::collectExtraOperators(env_ctx, ctx, name);
     }
 
     auto* is_fold = env->getConstRef(incre::config_name::KIsEnableFoldName, BuildData(Bool, false));
     if (is_fold->isTrue()) {
-        collector::loadExtraOperator(ctx, env, "Fold");
-        extra_res.merge(collector::collectExtraOperators(ctx, "Fold"));
+        collector::loadExtraOperator(env_ctx, ctx, env, "Fold");
+        extra_res.merge(collector::collectExtraOperators(env_ctx, ctx, "Fold"));
     }
 
     base_res.merge(extra_res);
@@ -651,7 +660,7 @@ ComponentPool incre::grammar::collectComponent(Context* ctx, Env* env, ProgramDa
 #define RegisterComponent(type, comp) basic.type ## _list.push_back(comp)
 #define RegisterAll(comp) RegisterComponent(comb, comp), RegisterComponent(align, comp), RegisterComponent(compress, comp)
 
-ComponentPool incre::grammar::collector::getBasicComponentPool(Context* ctx, Env* env) {
+ComponentPool incre::grammar::collector::getBasicComponentPool(Env* env) {
     ComponentPool basic;
     // insert basic operator
     std::vector<std::string> op_list = {"+", "-", "=", "<", "and", "or", "!"};

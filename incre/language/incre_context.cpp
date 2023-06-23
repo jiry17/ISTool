@@ -4,6 +4,7 @@
 
 #include "istool/incre/language/incre_context.h"
 #include "glog/logging.h"
+#include "glog/logging.h"
 
 using namespace incre;
 
@@ -69,6 +70,8 @@ TypeContext::BindLog TypeContext::bind(const std::string &name, const Ty &type) 
 void TypeContext::cancelBind(const BindLog &log) {
     if (!log.binding) binding_map.erase(log.name);
     else binding_map[log.name] = log.binding;
+}
+TypeContext::~TypeContext() {
 }
 
 Ty TypeContext::lookup(const std::string &name) {

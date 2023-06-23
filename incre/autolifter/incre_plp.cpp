@@ -131,9 +131,11 @@ void FExampleSpace::registerOupCache(const PProgram &program, const std::vector<
 void FExampleSpace::switchTo(int example_id) {
     if (current_example_id == example_id) return;
     current_example_id = example_id;
+    std::unordered_map<std::string, Data> global_map;
     for (int i = 0; i < global_input_list.size(); ++i) {
-        pool->ctx->addBinding(global_input_list[i].first, std::make_shared<TmValue>(example_list[example_id].global_input[i]));
+        global_map[global_input_list[i].first] = example_list[example_id].global_input[i];
     }
+    pool->ctx->initGlobal(global_map);
 }
 
 namespace {
@@ -155,14 +157,18 @@ namespace {
 Data FExampleSpace::runCompress(int example_id, Program *prog) {
     switchTo(example_id);
     global::recorder.start("execute");
+    int pre_size = pool->ctx->holder->address_list.size();
     auto res = env->run(prog, example_list[example_id].full_input);
+    pool->ctx->holder->recover(pre_size);
     global::recorder.end("execute");
     return res;
 }
 Data FExampleSpace::runAux(int example_id, const Data& content, Program *prog) {
     switchTo(example_id);
     global::recorder.start("execute");
+    int pre_size = pool->ctx->holder->address_list.size();
     auto res = env->run(prog, example_list[example_id].getAuxInput(content));
+    pool->ctx->holder->recover(pre_size);
     global::recorder.end("execute");
     return res;
 }
@@ -174,6 +180,7 @@ Data FExampleSpace::runAux(int example_id, const AuxProgram &aux) {
         auto* tv = dynamic_cast<VLabeledCompress*>(compress.get());
 #ifdef DEBUG
         auto* mid_type = dynamic_cast<TLabeledCompress*>(aux.first.first.get());
+        // LOG(INFO) << compress.toString() <<"  " << tv;
         // LOG(INFO) << aux2String(aux) << " " << compress.toString();
         assert(tv && mid_type && tv->id == mid_type->id);
 #endif

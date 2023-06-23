@@ -1,3 +1,5 @@
+Config NonLinear = true;
+
 Inductive List = nil Unit | cons {Int, List};
 Inductive CList = cnil Unit | single Int | concat {CList, CList};
 

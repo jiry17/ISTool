@@ -52,7 +52,7 @@ namespace incre::autolifter {
         FExampleSpace(IncreExamplePool* _pool, int _tau_id, const PEnv& _env, AlignTypeInfoData* pass_info);
         void switchTo(int example_id);
 
-        Data runAux(int exmaple_id, const AuxProgram& aux);
+        Data runAux(int example_id, const AuxProgram& aux);
         std::string example2String(const IOExample& example);
         std::string example2String(int id);
         Data runOup(int example_id, Program* program, const std::vector<int>& path);

@@ -93,6 +93,7 @@ namespace incre {
     public:
         EnvContext* ctx;
         ExternalEnvRuleMap ext_map;
+        static ExternalEnvRuleMap buildRuleMap();
         EnvBasedExampleCollector(const std::vector<std::unordered_set<std::string>>& _cared_vars, ProgramData* _program);
         virtual void collect(const Term& start, const std::unordered_map<std::string, Data>& _global);
         ~EnvBasedExampleCollector();
@@ -107,7 +108,8 @@ namespace incre {
         IncreDataGenerator* generator;
         std::vector<bool> is_already_finished;
         int thread_num;
-        Context* ctx;
+        EnvContext* ctx;
+        TypeContext* type_ctx;
         IncreProgram program;
 
         std::vector<std::pair<std::string, Ty>> input_list;

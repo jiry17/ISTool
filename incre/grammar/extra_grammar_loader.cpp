@@ -25,10 +25,10 @@ namespace {
         return config::KSourcePath + "incre-tests/autolifter/autolifter-base.f";
     }
 
-    ComponentPool _loadAutoLifterOperator(Context* ctx) {
+    ComponentPool _loadAutoLifterOperator(EnvContext* env_ctx, TypeContext* type_ctx) {
         auto path = _getAutoLifterPath();
         auto program = incre::parseFromF(path, false);
-        auto component_pool = incre::grammar::collector::collectComponentFromLabel(ctx, program.get());
+        auto component_pool = incre::grammar::collector::collectComponentFromLabel(env_ctx, type_ctx, program.get());
         _clearCommandId(component_pool);
         return component_pool;
     }
@@ -310,13 +310,12 @@ namespace {
         return false;
     }
 
-    ComponentPool _loadFoldOperator(Context *ctx) {
-        TyList ind_list; auto* type_ctx = new TypeContext(ctx);
+    ComponentPool _loadFoldOperator(TypeContext *type_ctx) {
+        TyList ind_list;
         std::unordered_set<std::string> ind_name_map;
-        for (auto& [name, bind]: ctx->binding_map) {
-            auto tb = dynamic_cast<TypeBinding*>(bind.get());
-            if (!tb || tb->type->getType() != TyType::IND) continue;
-            auto full_type = unfoldBasicType(tb->type, type_ctx);
+        for (auto& [name, ty]: type_ctx->binding_map) {
+            if (ty->getType() != TyType::IND) continue;
+            auto full_type = unfoldBasicType(ty, type_ctx);
             assert(full_type->getType() == TyType::IND);
             auto* ti = dynamic_cast<TyInductive*>(full_type.get());
             if (_isMutualRec(ti)) continue;
@@ -345,35 +344,38 @@ namespace {
     }
 }
 
-ComponentPool collector::collectExtraOperators(Context *ctx, const std::string &extra_name) {
+ComponentPool collector::collectExtraOperators(EnvContext* env_ctx, TypeContext *type_ctx, const std::string &extra_name) {
     if (extra_name == "AutoLifter") {
-        return _loadAutoLifterOperator(ctx);
+        return _loadAutoLifterOperator(env_ctx, type_ctx);
     }
     if (extra_name == "Fold") {
-        return _loadFoldOperator(ctx);
+        return _loadFoldOperator(type_ctx);
     }
     LOG(FATAL) << "Unknown extra grammar " << extra_name;
 }
 
 namespace {
-    void _loadAutoLifterOperators(Context* ctx) {
+    void _loadAutoLifterOperators(EnvContext* env_ctx, TypeContext* type_ctx) {
         auto path = _getAutoLifterPath();
         auto program = parseFromF(path, false);
         auto* extra_ctx = run(program);
         LOG(INFO) << "Loading AutoLifter operators";
         for (auto& [name, binding]: extra_ctx->binding_map) {
-            if (ctx->binding_map.find(name) != ctx->binding_map.end()) {
+            if (type_ctx->binding_map.find(name) != type_ctx->binding_map.end()) {
                 LOG(WARNING) << "Duplicated operator " << name;
             } else {
-                ctx->binding_map[name] = binding;
+                auto* tb = dynamic_cast<TermBinding*>(binding.get());
+                if (!tb) continue;
+                type_ctx->bind(name, tb->type);
             }
         }
+        incre::envRun(program.get(), env_ctx);
     }
 }
 
-void collector::loadExtraOperator(Context *ctx, Env* env, const std::string &extra_name) {
+void collector::loadExtraOperator(EnvContext* env_ctx, TypeContext *type_ctx, Env* env, const std::string &extra_name) {
     if (extra_name == "AutoLifter") {
-        _loadAutoLifterOperators(ctx); return;
+        _loadAutoLifterOperators(env_ctx, type_ctx); return;
     }
     if (extra_name == "Fold") {
         ext::ho::registerTmpExecuteInfo(env); return;

@@ -1,4 +1,5 @@
 Config ExtraGrammar = "AutoLifter";
+Config TermNum = 6;
 
 Inductive List = cons {Int, List} | nil Unit;
 
