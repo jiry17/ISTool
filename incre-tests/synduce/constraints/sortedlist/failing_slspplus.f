@@ -49,7 +49,7 @@ sorted =
   end
 );
 
-spec = fix (
+spec = \xs: NList. (fix (
   \f: NList -> {Int, Bool}. \xs: NList.
   match xs with
     line a -> {max 0 (lsum a), >= (lsum a) 0}
@@ -61,7 +61,7 @@ spec = fix (
         and res.2 (>= line_sum 0)
         }
   end
-);
+) xs).1;
 
 target =
   let list_repr = fix (
@@ -80,4 +80,4 @@ target =
     end
   );
 
-main = \c: CList. if sorted c then spec (c2n (target c)) else {0, false};
+main = \c: CList. if sorted c then spec (c2n (target c)) else 0;

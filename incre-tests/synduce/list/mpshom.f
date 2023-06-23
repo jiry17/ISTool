@@ -1,9 +1,10 @@
+Config ExtraGrammar = "AutoLifter";
 Inductive List = nil Unit | cons {Int, List};
 Inductive CList = cnil Unit | single Int | concat {CList, CList};
 
 max = \a: Int. \b: Int. if < a b then b else a;
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int}. \xs: List.
   match xs with
     nil _ -> {0, 0}
@@ -13,7 +14,7 @@ spec = fix (
     let new_sum = + hd result.2 in
     {new_mps, new_sum}
   end
-);
+) xs).1;
 
 cat = fix (
   \f: List -> List -> List. \xs: List. \ys: List.

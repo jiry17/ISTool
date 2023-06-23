@@ -17,7 +17,7 @@ repr = fix (
   end
 );
 
-spec = fix (
+spec = \xs: SList. (fix (
   \f: SList -> {Int, Int, Bool}. \xs: SList.
   match xs with
     elt a -> {a, a, true}
@@ -25,6 +25,6 @@ spec = fix (
     let result = f tl in
     {hd, result.2, and result.3 (< hd result.1)}
   end
-);
+) xs).3;
 
 main = \xs: CList. spec (repr xs);

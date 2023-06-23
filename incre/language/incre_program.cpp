@@ -98,7 +98,8 @@ namespace {
             {IncreConfig::SAMPLE_INT_MIN, "SampleIntMin"},
             {IncreConfig::SAMPLE_INT_MAX, "SampleIntMax"},
             {IncreConfig::PRINT_ALIGN, "PrintAlign"},
-            {IncreConfig::TERM_NUM, "TermNum"}
+            {IncreConfig::TERM_NUM, "TermNum"},
+            {IncreConfig::CLAUSE_NUM, "ClauseNum"}
     };
 }
 
@@ -111,6 +112,7 @@ IncreConfig incre::string2ConfigType(const std::string &s) {
 
 
 #include "istool/solver/autolifter/composed_sf_solver.h"
+#include "istool/solver/polygen/dnf_learner.h"
 
 const std::string config_name::KDataSizeLimitName = "incre@data-size-limit";
 const std::string config_name::KExtraGrammarName = "incre@extra-grammar";
@@ -134,7 +136,8 @@ namespace {
             {IncreConfig::ENABLE_FOLD, config_name::KIsEnableFoldName},
             {IncreConfig::SAMPLE_INT_MIN, config_name::KSampleIntMinName},
             {IncreConfig::SAMPLE_INT_MAX, config_name::KSampleIntMaxName},
-            {IncreConfig::PRINT_ALIGN, config_name::KPrintAlignName}
+            {IncreConfig::PRINT_ALIGN, config_name::KPrintAlignName},
+            {IncreConfig::CLAUSE_NUM, solver::polygen::KMaxClauseNumName}
         };
     }
 }

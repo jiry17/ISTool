@@ -1,3 +1,4 @@
+Config ExtraGrammar = "AutoLifter";
 Inductive List = nil Unit | cons {Int, Int, List};
 Inductive SList = snil Unit | scons {Int, SList};
 
@@ -27,7 +28,7 @@ is_sorted = fix (
 min = \a: Int. \b: Int. if < a b then a else b;
 max = \a: Int. \b: Int. if < a b then b else a;
 
-spec = fix (
+spec = \xs: SList. (fix (
   \f: SList -> {Int, Int}. \xs: SList.
   match xs with
     snil _ -> {0, 0}
@@ -35,7 +36,7 @@ spec = fix (
     let res = f t in
       {max h res.1, max res.2 (min h res.1)}
   end
-);
+) xs).2;
 
 target = fix (
   \f: List -> Compress List. \c: List.
@@ -46,4 +47,4 @@ target = fix (
 );
 
 main = \xs: List.
-  if is_sorted xs then spec (repr (target xs)) else {0, 0};
+  if is_sorted xs then spec (repr (target xs)) else 0;

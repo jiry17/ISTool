@@ -29,7 +29,7 @@ repr = fix (
 min = \a: Int. \b: Int. if < a b then a else b;
 max = \a: Int. \b: Int. if < a b then b else a;
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int}. \xs: List.
   match xs with
     nil _ -> {0, 0}
@@ -37,7 +37,7 @@ spec = fix (
     let res = f t in
       {max h res.1, max res.2 (min res.1 h)}
   end
-);
+) xs).2;
 
 target = fix (
   \f: CList -> Compress CList. \xs: CList.
@@ -48,4 +48,4 @@ target = fix (
   end
 );
 
-main = \xs: CList. if allpos xs then spec (repr (target xs)) else {0, 0};
+main = \xs: CList. if allpos xs then spec (repr (target xs)) else 0;

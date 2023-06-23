@@ -9,7 +9,6 @@ mpath = fix (
     empty _ -> 0
   | node {a, l, r} -> + a (max (f l) (f r))
   end
-);
 
 repr = fix (
   \f: Zipper -> BTree. \z: Zipper.

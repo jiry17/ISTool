@@ -42,7 +42,7 @@ is_parti =
     end
   );
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Bool}. \xs: List.
   match xs with
     elt w -> {max 0 w, >= w 0}
@@ -51,7 +51,7 @@ spec = fix (
       let cond = and (>= h 0) res.2 in
         {if cond then + res.1 h else res.1, cond}
   end
-);
+) xs).1;
 
 target = fix (
   \f: CList -> Compress CList. \xs: CList.
@@ -115,4 +115,4 @@ gen = \c: CList. let xs = sort (flatten c) in
 
 main = \xs: CList.
   let inp = xs in
-    if is_parti inp then spec (repr (target inp)) else {0, false};
+    if is_parti inp then spec (repr (target inp)) else 0;

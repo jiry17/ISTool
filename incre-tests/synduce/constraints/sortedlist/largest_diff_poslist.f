@@ -24,7 +24,7 @@ is_pos = fix (
 max = \x: Int. \y: Int. if < x y then y else x;
 min = \x: Int. \y: Int. if > x y then y else x;
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int, Int}. \xs: List.
   match xs with
     elt x -> {0, x, x}
@@ -34,7 +34,7 @@ spec = fix (
         let newmin = min h res.3 in
           {max res.1 (- newmax newmin), newmax, newmin}
   end
-);
+) xs).1;
 
 last = fix (
   \f: List -> Int. \xs: List.
@@ -54,4 +54,4 @@ target = fix (
   end
 );
 
-main = \xs: List. if and (is_sorted xs) (is_pos xs) then spec (target xs) else {0, 0, 0};
+main = \xs: List. if and (is_sorted xs) (is_pos xs) then spec (target xs) else 0;

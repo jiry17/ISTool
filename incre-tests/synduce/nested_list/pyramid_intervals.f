@@ -16,7 +16,7 @@ interval = fix (
   end
 );
 
-spec = fix (
+spec = \xs: NList. (fix (
   \f: NList -> {Int, Int, Bool}. \xs: NList.
   match xs with
     line a -> 
@@ -27,7 +27,7 @@ spec = fix (
     let r2 = interval hd in
     {min r1.1 r2.1, max r1.2 r2.2, and r1.3 (and (<= r1.1 r2.1) (<= r1.2 r2.2))}
   end
-);
+) xs).3;
 
 target = fix (
   \f: NList -> Compress NList. \xs: NList.

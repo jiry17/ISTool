@@ -30,6 +30,7 @@ namespace incre {
         EXTRA_GRAMMAR, /*Extra grammar considered in synthesis, default Fold*/
         ENABLE_FOLD, /*Whether consider `fold` operator on data structures in synthesis, default false*/
         TERM_NUM, /* Number of terms considered by PolyGen*/
+        CLAUSE_NUM, /* Number of terms considered by PolyGen*/
         PRINT_ALIGN /*Whether print align results to the result*/
     };
 

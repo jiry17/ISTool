@@ -30,6 +30,7 @@ namespace {
             // todo: handle SemanticsError
             DataList term_results;
             for (const auto& term: term_list) {
+                if (dynamic_cast<ParamSemantics*>(term->semantics.get())) continue;
                 try {
                     term_results.push_back(env->run(term.get(), example_list[i].first));
                 } catch (SemanticsError& e) {
@@ -60,8 +61,12 @@ PProgram PolyGenConditionSolver::getCondition(const ProgramList &term_list, cons
     if (!KIsUseTerm) cond_info = info;
     else {
         auto term_type = spec->info_list[0]->oup_type;
-        for (const auto& term: term_list) inp_types.push_back(term_type);
-        cond_info = _insertTermsToInfo(info, int(term_list.size()), term_type);
+        int extra_num = 0;
+        for (const auto& term: term_list) {
+            if (dynamic_cast<ParamSemantics*>(term->semantics.get())) continue;
+            inp_types.push_back(term_type); ++extra_num;
+        }
+        cond_info = _insertTermsToInfo(info, extra_num, term_type);
     }
     IOExampleList io_example_list;
     for (const auto& example: pos_list) {
@@ -87,9 +92,10 @@ PProgram PolyGenConditionSolver::getCondition(const ProgramList &term_list, cons
 
     if (KIsUseTerm) {
         int n = info->inp_type_list.size();
-        ProgramList param_list(n + int(term_list.size()));
-        for (int i = 0; i < term_list.size(); ++i) {
-            param_list[i + n] = term_list[i];
+        ProgramList param_list(n);
+        for (auto& term: term_list) {
+            if (dynamic_cast<ParamSemantics*>(term->semantics.get())) continue;
+            param_list.push_back(term);
         }
 
         res = program::rewriteParam(res, param_list);

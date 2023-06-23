@@ -39,7 +39,7 @@ is_bst = fix (
 
 @Input lim: Int;
 
-spec = fix (
+spec = \t: Tree. (fix (
   \f: Tree -> {Bool, Int}. \t: Tree.
   match t with
     leaf x -> {<= x lim, x}
@@ -48,7 +48,7 @@ spec = fix (
       let sum = + a (+ lres.2 rres.2) in
         {and (<= sum lim) (and lres.1 rres.1), sum}
   end
-);
+) t).1;
 
 drop_tag = fix (
   \f: MTree -> Tree. \t: MTree.
@@ -83,4 +83,4 @@ target = fix (
 
 main = \t: Tree.
   let inp = add_tag t in
-    if is_bst inp then spec (drop_tag (target inp)) else {false, 0};
+    if is_bst inp then spec (drop_tag (target inp)) else false;

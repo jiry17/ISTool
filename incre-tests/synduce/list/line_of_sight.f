@@ -3,7 +3,7 @@ Inductive CList = elt Int | cat {CList, CList};
 
 max = \a: Int. \b: Int. if < a b then b else a;
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int, Bool}. \xs: List.
   match xs with
     single a -> {a, a, true}
@@ -11,7 +11,7 @@ spec = fix (
     let result = f tl in
     {hd, max result.2 hd, > hd result.2}
   end
-);
+) xs).3;
 
 cat_list = fix (
   \f: List -> List -> List. \xs: List. \ys: List.

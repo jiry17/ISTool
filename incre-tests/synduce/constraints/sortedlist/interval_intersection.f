@@ -23,7 +23,7 @@ inter = \a: Int. \b: Int. fix (
   end
 );
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Bool, Int, Int}. \xs: List.
   match xs with
     elt {a, b} -> {false, a, b}
@@ -31,7 +31,7 @@ spec = fix (
     let res = f t in
       {or res.1 (inter a b t), a, b}
   end
-);
+) xs).1;
 
 target = fix (
   \f: List -> Compress List. \xs: List.
@@ -41,4 +41,4 @@ target = fix (
   end
 );
 
-main = \xs: List. if sorted xs then spec (target xs) else {false, 0, 0};
+main = \xs: List. if sorted xs then spec (target xs) else false;
