@@ -1,5 +1,3 @@
-Config ComposeNum = 4;
-
 Inductive List = elt Int | cons {Int, List};
 Inductive Pos = one Unit | s Pos;
 Inductive AList = aelt {Int, Pos} | acons {Int, Pos, AList};

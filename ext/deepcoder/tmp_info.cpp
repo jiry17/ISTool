@@ -13,7 +13,7 @@ void TmpExecuteInfo::clear(const std::string &name) {
 Data TmpExecuteInfo::get(const std::string &name, bool is_strict) {
     auto it = tmp_value_map.find(name);
     if (it == tmp_value_map.end()) {
-        if (is_strict) assert(0);
+        if (is_strict) throw ExecutionNotDefinedError();
         return {};
     }
     return it->second;

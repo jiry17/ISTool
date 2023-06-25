@@ -279,6 +279,20 @@ namespace {
         assert(ts && ts->type);
         return {ts->type, program->sub_list[0]};
     }
+
+    class _RuleBasedOptimizer: public Optimizer {
+    public:
+        static const std::unordered_set<std::string> KComOpSet, KAssocOpSet;
+        virtual void clear() {
+        }
+        virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p) {
+            auto sem_name = p->semantics->getName();
+        }
+
+    };
+
+    const std::unordered_set<std::string> _RuleBasedOptimizer::KComOpSet = {"+", "*", "||", "&&", "max", "min"};
+    const std::unordered_set<std::string> _RuleBasedOptimizer::KAssocOpSet = {"+", "*", "||", "&&", "max", "min"};
 }
 
 void GrammarEnumerateTool::extend() {

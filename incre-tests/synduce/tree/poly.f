@@ -1,4 +1,3 @@
-Config ComposeNum = 4;
 Config NonLinear = true;
 Config SampleIntMax = 3;
 Config SampleIntMin = -3;

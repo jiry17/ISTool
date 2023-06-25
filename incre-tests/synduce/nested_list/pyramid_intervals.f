@@ -1,4 +1,4 @@
-Config ComposeNum = 5;
+Config ComposeNum = 4;
 
 Inductive List = elt Int | cons {Int, List};
 Inductive NList = line List | ncons {List, NList};

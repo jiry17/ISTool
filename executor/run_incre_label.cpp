@@ -20,9 +20,9 @@ int main(int argv, char** argc) {
     std::string path, label_path, target;
     if (argv <= 1) {
         //std::string name = "dp/01knapsack";
-        //std::string name = "synduce/constraints/bst/sum_between";
-        //std::string name = "autolifter/dac/2nd-min";
-        std::string name = "autolifter/single-pass/max_1s_p";
+        //std::string name = "synduce/nested_list/pyramid_intervals";
+        std::string name = "autolifter/dac/balanced";
+        //std::string name = "autolifter/dac/mps_p";
         //std::string name = "fusion/shortcut/page8";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";

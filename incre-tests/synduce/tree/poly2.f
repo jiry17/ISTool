@@ -1,4 +1,3 @@
-Config ComposeNum = 4;
 Config NonLinear = true;
 
 Inductive Tree = nil Unit | node {Int, Tree, Tree};

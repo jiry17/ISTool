@@ -1,5 +1,3 @@
-Config ComposeNum = 4;
-
 Inductive BTree = empty Unit | node {Int, BTree, BTree};
 Inductive Zipper = top Unit | left {Int, BTree, Zipper} | right {Int, BTree, Zipper};
 

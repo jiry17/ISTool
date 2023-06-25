@@ -53,6 +53,7 @@ void incre::prepareEnv(Env *env) {
 }
 
 #include "istool/incre/io/incre_printer.h"
+#include "istool/ext/deepcoder/data_type.h"
 
 IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
     //auto labeled_program = incre::eliminateUnboundedCreate(program);
@@ -74,6 +75,33 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
     // build components
     auto component_pool = incre::grammar::collectComponent(pool->ctx, pool->type_ctx, env, labeled_program.get());
     return new IncreInfo(labeled_program, pool->ctx, align_info, pool, component_pool);
+}
+
+namespace {
+    Data _getDummyData(Type* type) {
+        auto* tu = dynamic_cast<TBot*>(type);
+        if (tu) return Data(std::make_shared<VUnit>());
+        auto* ti = dynamic_cast<TInt*>(type);
+        if (ti) return BuildData(Int, 0);
+        auto* tb = dynamic_cast<TBool*>(type);
+        if (tb) return BuildData(Bool, false);
+        auto* tt = dynamic_cast<TProduct*>(type);
+        if (tt) {
+            DataList fields;
+            for (auto& sub_type: tt->sub_types) {
+                fields.push_back(_getDummyData(sub_type.get()));
+            }
+            return BuildData(Product, fields);
+        }
+        return {};
+    }
+
+    Rule* _generateDummyRule(Type* type) {
+        auto v = _getDummyData(type);
+        if (v.isNull()) return nullptr;
+        auto sem = semantics::buildConstSemantics(v);
+        return new ConcreteRule(sem, {});
+    }
 }
 
 std::pair<std::vector<std::string>, Grammar *> incre::buildFinalGrammar(IncreInfo *info, int align_id, const TyList &final_compress_list) {
@@ -105,6 +133,47 @@ std::pair<std::vector<std::string>, Grammar *> incre::buildFinalGrammar(IncreInf
 
     auto oup_type = incre::typeFromIncre(incre::getFinalType(info->align_infos[align_id]->oup_type, final_compress_list));
     auto grammar = grammar::builder::buildGrammar(inp_type_list, component_list, oup_type);
+
+    grammar->indexSymbol();
+    std::vector<bool> is_remove(grammar->symbol_list.size(), false);
+    for (auto* symbol: grammar->symbol_list) {
+        auto v = _getDummyData(symbol->type.get());
+        if (v.isNull()) {
+            is_remove[symbol->id] = true;
+        }
+    }
+    int now = 0;
+    for (auto* symbol: grammar->symbol_list) {
+        if (is_remove[symbol->id]) continue;
+        grammar->symbol_list[now++] = symbol;
+        int rnow = 0;
+        for (auto* rule: symbol->rule_list) {
+            bool is_remain = true;
+            for (auto* sub_symbol: rule->param_list) {
+                if (is_remove[sub_symbol->id]) {
+                    is_remain = false;
+                }
+            }
+            if (is_remain) symbol->rule_list[rnow++] = rule;
+        }
+        symbol->rule_list.resize(rnow);
+    }
+    grammar->symbol_list.resize(now);
+    grammar->removeUseless();
+
+    for (auto* symbol: grammar->symbol_list) {
+        bool is_end = false;
+        for (auto* rule: symbol->rule_list) {
+            if (rule->param_list.empty()) {
+                is_end = true; break;
+            }
+        }
+        if (!is_end) {
+            auto* rule = _generateDummyRule(symbol->type.get());
+            if (!rule) continue;
+            symbol->rule_list.push_back(rule);
+        }
+    }
 
     return std::make_pair(param_names, grammar);
 }

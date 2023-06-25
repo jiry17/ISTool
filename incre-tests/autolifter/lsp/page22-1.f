@@ -1,4 +1,3 @@
-Config ComposeNum = 4;
 Config ClauseNum = 2;
 
 Inductive List = cons {Int, List} | nil Unit;

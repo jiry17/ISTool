@@ -617,32 +617,6 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
     LOG(INFO) << "Counter example " << example2String(counter_example);
     addExample(counter_example);
 
-    /*if (task->example_space->tau_id == 0) {
-        TypedProgram compress_program(task->example_space->value_list[1].second, program::buildParam(1));
-        std::vector<AuxProgram> aux_list;
-        auto param0 = program::buildParam(0);
-        for (auto op_name: {"run", "minimum", "length"}) {
-            auto sem = _getSemantics(task->aux_grammar_list[0]->grammar, op_name);
-            auto sem_prog = std::make_shared<Program>(sem, (ProgramList){});
-            auto app = _getSemantics(task->aux_grammar_list[0]->grammar, "app");
-            auto prog = std::make_shared<Program>(app, (ProgramList){sem_prog, param0});
-            TypedProgram aux_program(theory::clia::getTInt(), prog);
-            aux_list.emplace_back(compress_program, aux_program);
-        }
-        aux_list = unfoldComponents(aux_list);
-        LOG(INFO) << "test components " << _unitList2String(aux_list);
-        counter_example = verify(aux_list);
-        LOG(INFO) << "conuter example " << counter_example.first << " " << counter_example.second;
-        if (counter_example.first != -1) {
-            LOG(INFO) << "  " << example2String(counter_example);
-            for (auto unit: aux_list) {
-                std::cout << "  " << task->runInp(counter_example.first, unit).toString() << " " <<
-                          task->runInp(counter_example.second,unit).toString() << std::endl;
-            }
-        }
-        int kk; std::cin >> kk;
-    }*/
-
     while (true) {
         TimeCheck(guard);
         auto candidate_result = unfoldComponents(synthesisFromExample(guard));

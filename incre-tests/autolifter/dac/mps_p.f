@@ -1,6 +1,4 @@
 Config ExtraGrammar = "AutoLifter";
-Config ComposeNum = 4;
-Config VerifyBase = 5000;
 
 Inductive List = cons {Int, List} | nil Unit;
 

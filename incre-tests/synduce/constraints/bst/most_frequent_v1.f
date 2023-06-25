@@ -1,5 +1,3 @@
-Config ComposeNum = 4;
-
 Inductive List = elt Int | cons {Int, List};
 Inductive Pos = one Unit | s Pos;
 Inductive Map = value {Int, Pos} | node {Int, Map, Map};

@@ -18,7 +18,6 @@ const std::string config::KIncreParserPath = "/home/jiry/2023S/IncreLanguage/";
 const std::string config::KIncreParserPath = "/Users/pro/Desktop/work/2023S/IncreLanguage/";
 #endif
 
-const bool config::KIsObservationalEquivalence = true;
 const bool config::KIsDefaultSelf = true;
 
 

@@ -1,5 +1,3 @@
-Config ComposeNum = 4;
-
 Inductive List = cons {Int, List} | nil Unit;
 Inductive CartTree = node {CartTree, Int, CartTree} | leaf Unit;
 Inductive CartPath = consNode {CartTree, CartPath} | nilNode Unit;
