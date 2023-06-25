@@ -8,7 +8,7 @@ Inductive Tree = nil Unit | node {Int, Tree, Tree};
 
 @Input x: Int;
 
-spec = (fix (
+spec = \t: Tree. (fix (
   \f: {Int, Int} -> Tree -> {Int, Int}. \s: {Int, Int}. \t: Tree.
   match t with
     nil _ -> s
@@ -16,7 +16,7 @@ spec = (fix (
     let result = (f s l) in
     f {+ result.1 (* result.2 a), * result.2 x} r
   end
-)) {0,1};
+) {0,1} t).1;
 
 repr = fix (
   \f: Tree -> Compress Tree. \t: Tree.

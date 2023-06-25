@@ -481,7 +481,6 @@ namespace {
     Grammar* _buildGrammar(const TypeList& inp_list, const SynthesisComponentList& component_list, const std::function<bool(Type*)>& is_oup, const PType& single_oup) {
         SymbolContext init_context;
         for (int i = 0; i < inp_list.size(); ++i) {
-            LOG(INFO) << "Param " << i << " " << inp_list[i]->getName();
             init_context.push_back(semantics::buildParamSemantics(i, inp_list[i]));
         }
         GrammarBuilder builder(init_context);

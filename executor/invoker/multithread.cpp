@@ -8,26 +8,18 @@
 
 void MultiThreadTimeGuard::check() {
     if (lock.try_lock()) {
-        if (is_finished)
-        LOG(INFO) << "check lock " << is_finished;
         if (is_finished) {
-            if (is_finished)
-            LOG(INFO) << "check unlock";
             lock.unlock();
             throw TimeOutError();
         }
-        if (is_finished)
-        LOG(INFO) << "check unlock";
         lock.unlock();
     }
     TimeGuard::check();
 }
 
 void MultiThreadTimeGuard::finish() {
-    LOG(INFO) << "finish lock";
     lock.lock();
     is_finished = true;
-    LOG(INFO) << "finish unlock";
     lock.unlock();
 }
 
@@ -60,7 +52,6 @@ FunctionContext invoker::multi::synthesis(Specification *spec, Verifier *v, cons
     auto run = [&](Solver* solver, int ind) -> void {
         try {
             auto current_res = solver->synthesis(multi_guard);
-            LOG(INFO) << "Finished " << ind << " " << (current_res.empty() ? "fail" : "success");
             if (!current_res.empty()) {
                 res_lock.lock();
                 res = current_res;

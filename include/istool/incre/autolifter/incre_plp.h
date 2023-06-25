@@ -78,6 +78,7 @@ namespace incre::autolifter {
         GrammarEnumerateTool* compress_grammar;
         std::vector<TypedProgramList> pre_res_list;
         TypedProgram target;
+        int oup_compress_id;
         std::vector<int> path;
         DataList* oup_cache;
 
@@ -89,7 +90,7 @@ namespace incre::autolifter {
 
         PLPTask(FExampleSpace* _example_space, const std::vector<GrammarEnumerateTool*>& _aux_grammar_list,
                 const std::vector<TypedProgramList>& _pre_res,
-                GrammarEnumerateTool* _compress_grammar, const TypedProgram& _target, const std::vector<int>& _path);
+                GrammarEnumerateTool* _compress_grammar, const TypedProgram& _target, const std::vector<int>& _path, bool _oup_compress_id);
     };
 
     Data eliminateCompress(const Data& data);

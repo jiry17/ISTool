@@ -199,8 +199,8 @@ Data FExampleSpace::runOup(int example_id, Program *program, const std::vector<i
 
 PLPTask::PLPTask(FExampleSpace *_example_space, const std::vector<GrammarEnumerateTool *> &_aux_grammar_list,
                  const std::vector<TypedProgramList> &_pre_res, GrammarEnumerateTool *_compress_grammar, const TypedProgram &_target,
-                 const std::vector<int> &_path): example_space(_example_space), aux_grammar_list(_aux_grammar_list),
-                 pre_res_list(_pre_res), compress_grammar(_compress_grammar), target(_target), path(_path) {
+                 const std::vector<int> &_path, bool _oup_compress_id): example_space(_example_space), aux_grammar_list(_aux_grammar_list),
+                 pre_res_list(_pre_res), compress_grammar(_compress_grammar), target(_target), path(_path), oup_compress_id(_oup_compress_id) {
     oup_cache = example_space->getOupCache(target.second, path, 0);
     if (!oup_cache) {
         example_space->registerOupCache(target.second, path, {});

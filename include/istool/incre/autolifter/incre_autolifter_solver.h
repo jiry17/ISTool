@@ -47,7 +47,7 @@ namespace incre {
 
         std::vector<autolifter::GrammarEnumerateTool*> compress_grammar_list, aux_grammar_list;
         std::unordered_map<std::string, Grammar*> combine_grammar_map;
-        autolifter::PLPRes solvePLPTask(AlignTypeInfoData* info, const autolifter::TypedProgram& target, const std::vector<int>& path);
+        autolifter::PLPRes solvePLPTask(AlignTypeInfoData* info, const autolifter::TypedProgram& target, const autolifter::OutputUnit& unit);
         Grammar* buildAuxGrammar(int compress_id);
         Grammar* buildCompressGrammar(const TypeList& type_list, int align_id);
     public:

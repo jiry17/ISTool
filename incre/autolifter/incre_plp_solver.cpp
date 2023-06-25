@@ -4,6 +4,7 @@
 
 #include "istool/incre/autolifter/incre_plp_solver.h"
 #include "glog/logging.h"
+#include "istool/basic/config.h"
 #include "istool/incre/trans/incre_trans.h"
 #include <iostream>
 
@@ -63,19 +64,34 @@ namespace {
             if (is_include_direct) {
                 if (!program.second.first && sp) return {};
             }
-            if (!sp || !program.second.first) return {program};
-            int param_id = sp->id; assert(compress_var_id.count(param_id));
-            int compress_id = compress_var_id[param_id];
-            auto it = compress_var_pool.find(compress_id);
-            assert(it != compress_var_pool.end());
-            if (param_id != it->second.first) return {};
+            if (!program.second.first) return {program};
 
-            std::vector<AuxProgram> res;
-            for (int var_id: it->second.second) {
-                auto compress_program = std::make_pair(program.first.first, program::buildParam(var_id, sp->oup_type));
-                res.emplace_back(compress_program, program.second);
+            std::vector<AuxProgram> result = {program};
+            std::vector<TypedProgram> extract_list = {program.first};
+            // Programs derived from the same var
+            if (sp) {
+                int param_id = sp->id; assert(compress_var_id.count(param_id));
+                int compress_id = compress_var_id[param_id];
+                auto it = compress_var_pool.find(compress_id);
+                assert(it != compress_var_pool.end());
+                if (param_id != it->second.first) return {};
+
+                for (int var_id: it->second.second) {
+                    if (var_id == sp->id) continue;
+                    auto compress_program = std::make_pair(program.first.first, program::buildParam(var_id, sp->oup_type));
+                    extract_list.push_back(compress_program);
+                    result.emplace_back(compress_program, program.second);
+                }
             }
-            return res;
+
+            auto* tc = dynamic_cast<incre::TLabeledCompress*>(program.first.first.get());
+            if (config::KIsDefaultSelf && tc && tc->id == task->oup_compress_id) {
+                for (auto& extract: extract_list) {
+                    result.emplace_back(extract, task->target);
+                }
+            }
+
+            return result;
         }
         virtual std::vector<AuxProgram> getDefaultAuxPrograms() {
             return default_list;
@@ -170,13 +186,22 @@ std::string IncrePLPSolver::example2String(const std::pair<int, int> &example) {
 }
 
 std::vector<AuxProgram> IncrePLPSolver::unfoldComponents(const std::vector<AuxProgram> &program_list) {
-    std::vector<AuxProgram> res = evaluate_util->getDefaultAuxPrograms();
+    std::unordered_set<std::string> existing_set;
+    std::vector<AuxProgram> result;
+    auto insert = [&](const AuxProgram& program) {
+        auto feature = autolifter::aux2String(program);
+        if (existing_set.find(feature) != existing_set.end()) return;
+        existing_set.insert(feature);
+        result.push_back(program);
+    };
+
+    for (auto& program: evaluate_util->getDefaultAuxPrograms()) insert(program);
     for (auto& program: program_list) {
         for (auto& derived_program: evaluate_util->constructAuxProgram(program)) {
-            res.push_back(derived_program);
+            insert(derived_program);
         }
     }
-    return res;
+    return result;
 }
 #include "istool/basic/config.h"
 void IncrePLPSolver::addErrorExample(int example_id) {

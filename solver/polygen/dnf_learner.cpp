@@ -403,9 +403,9 @@ FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, 
         if (io_example.second.isTrue()) positive_list.push_back(io_example.first);
         else negative_list.push_back(io_example.first);
     }
-    for (int i = 0; i < 10 && i < example_list.size(); ++i) {
+    /*for (int i = 0; i < 10 && i < example_list.size(); ++i) {
         LOG(INFO) << "example " << data::dataList2String(example_list[i]);
-    }
+    }*/
 
     std::set<std::pair<int, int>> visited_set;
     int or_limit = 1;
@@ -416,7 +416,7 @@ FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, 
         }
         for (int clause_num = 1; clause_num <= or_limit; ++clause_num) {
             for (int si = 0; si < info_storage.size(); ++si) {
-                LOG(INFO) << "solve " << clause_num << " " << si;
+                // LOG(INFO) << "solve " << clause_num << " " << si;
                 if (visited_set.find({clause_num, si}) != visited_set.end()) continue;
                 TimeCheck(guard);
                 visited_set.insert({clause_num, si});
