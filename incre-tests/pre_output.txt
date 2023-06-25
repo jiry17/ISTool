@@ -14,45 +14,14 @@ module Main where
 import Grisette
 import Utils.Timing
 import GHC.Generics
+import Data.Hashable
+import Data.Maybe
 import Data.Proxy
+import Control.DeepSeq
 import Control.Monad.Except
 
 type Ident = String
-
--- store int var from context
-newtype SymIntEnv = SymIntEnv {unSymIntEnv :: [(Ident, SymInteger)]}
-    deriving (Show, Generic)
-    deriving (EvaluateSym) via (Default SymIntEnv)
-
-newtype IntEnv = IntEnv {unIntEnv :: [(Ident, Integer)]}
-    deriving (Show, Generic)
-    deriving (ToCon SymIntEnv) via (Default IntEnv)
-
--- store bool var from context
-newtype SymBoolEnv = SymBoolEnv {unSymBoolEnv :: [(Ident, SymInteger)]}
-    deriving (Show, Generic)
-    deriving (EvaluateSym) via (Default SymBoolEnv)
-
-newtype BoolEnv = BoolEnv {unBoolEnv :: [(Ident, Integer)]}
-    deriving (Show, Generic)
-    deriving (ToCon SymBoolEnv) via (Default BoolEnv)
-
-instance Mergeable SymIntEnv where
-    rootStrategy = SimpleStrategy $ \cond (SymIntEnv l) (SymIntEnv r) -> SymIntEnv $ go cond l r
-        where
-            go _ [] [] = []
-            go cond ((li, lv) : l) ((ri, rv) : r)
-                | li == ri = (ri, mrgIte cond lv rv) : go cond l r
-            go _ _ _ = error "Should not happen"
-
-instance Mergeable SymBoolEnv where
-    rootStrategy = SimpleStrategy $ \cond (SymBoolEnv l) (SymBoolEnv r) -> SymBoolEnv $ go cond l r
-        where
-            go _ [] [] = []
-            go cond ((li, lv) : l) ((ri, rv) : r)
-                | li == ri = (ri, mrgIte cond lv rv) : go cond l r
-            go _ _ _ = error "Should not happen"
-
+      
 data Unit =
       Unit
     deriving stock (Generic, Show)
@@ -60,5 +29,3 @@ data Unit =
         via (Default Unit)
 
 ------pre output end-----
-
-------type def begin----

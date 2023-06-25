@@ -1,5 +1,5 @@
 //
-// Created by 赵雨薇 on 2023/5/19.
+// Created by zyw on 2023/5/19.
 //
 
 #include "istool/solver/autolifter/composed_sf_solver.h"
@@ -37,6 +37,7 @@ int main(int argv, char** argc) {
     incre::prepareEnv(env.get());
 
     auto init_program = incre::parseFromF(path, true);
+    // label
     global::recorder.start("label");
     auto* label_solver = new autolabel::AutoLabelZ3Solver(init_program);
     auto res = label_solver->label();
@@ -45,6 +46,7 @@ int main(int argv, char** argc) {
 
     res = incre::eliminateNestedAlign(res.get());
     incre::printProgram(res, label_path);
+
     env->setConst(incre::grammar::collector::KCollectMethodName, BuildData(Int, incre::grammar::ComponentCollectorType::SOURCE));
     env->setConst(theory::clia::KINFName, BuildData(Int, 50000));
 
@@ -78,7 +80,9 @@ int main(int argv, char** argc) {
     auto* solver = new incre::IncreAutoLifterSolver(info, env);
 
     // final output
-    incre::programToHaskell(res, io_pairs, info, solver, target);
+    // TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
+    TyList final_type_list = {std::make_shared<TyInt>()};
+    incre::programToHaskell(res, io_pairs, info, solver, target, final_type_list);
 
     global::recorder.printAll();
     std::cout << global_guard->getPeriod() << std::endl;

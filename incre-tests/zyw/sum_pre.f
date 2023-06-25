@@ -1,4 +1,3 @@
-
 Inductive List = nil Unit | cons {Int, List};
 
 sum = fix (

@@ -17,6 +17,7 @@ namespace incre {
         virtual std::string getName();
         virtual PType clone(const TypeList &params);
         virtual bool equal(Type* t);
+        virtual std::string getHaskellName();
         TIncreInductive(const Ty& _type);
     };
 
@@ -29,6 +30,7 @@ namespace incre {
         virtual std::string getBaseName();
         virtual TypeList getParams();
         virtual PType clone(const TypeList& params);
+        virtual std::string getHaskellName();
     };
 
     class TLabeledCompress: public TCompress {

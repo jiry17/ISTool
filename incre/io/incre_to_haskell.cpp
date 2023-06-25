@@ -1,10 +1,11 @@
 //
-// Created by 赵雨薇 on 2023/5/19.
+// Created by zyw on 2023/5/19.
 //
 
 #include "istool/incre/io/incre_to_haskell.h"
 #include "istool/basic/config.h"
 #include "istool/basic/grammar.h"
+#include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/language/incre.h"
 #include "glog/logging.h"
 #include <fstream>
@@ -19,10 +20,12 @@ int floor_num_haskell = 0;
 std::set<std::string> construct;
 // some func names need to be modified because are reserved words. 
 // modification method: add "'" after name
-std::set<std::string> modified_func_name = {"main", "sum"};
+std::set<std::string> modified_func_name = {"main", "sum", "min", "max"};
 // pre_func_name is the actual func name, post_func_name is used in fix term
 std::string pre_func_name, post_func_name;
 bool in_fix_func = false;
+std::vector<std::string> eval_string_for_each_hole;
+int hole_num_now = 0;
 
 namespace {
     bool _isNeedBracket(TermType def_type) {
@@ -48,7 +51,7 @@ namespace {
     }
 }
 
-void incre::tyToHaskell(const std::shared_ptr<TyData> &ty) {
+void incre::tyToHaskell(const std::shared_ptr<TyData> &ty, bool &in_def_ind) {
     if (debug_haskell) std::cout << std::endl << "[zyw: tyToHaskell] ";
     if (ty->getType() == TyType::INT) {
         if (debug_haskell) std::cout << std::endl;
@@ -67,13 +70,27 @@ void incre::tyToHaskell(const std::shared_ptr<TyData> &ty) {
         if (debug_haskell) std::cout << "[TUPLE]" << std::endl;
         auto* ty_tuple = dynamic_cast<TyTuple*>(ty.get());
         bool flag = false;
-        for (auto& tuple_field : ty_tuple->fields) {
-            if (flag) {
-                std::cout << " ";
-                tyToHaskell(tuple_field);
-            } else {
-                tyToHaskell(tuple_field);
-                flag = true;
+        if (!in_def_ind) {
+            std::cout << "(";
+            for (auto& tuple_field : ty_tuple->fields) {
+                if (flag) {
+                    std::cout << ", ";
+                    tyToHaskell(tuple_field);
+                } else {
+                    tyToHaskell(tuple_field);
+                    flag = true;
+                }
+            }
+            std::cout << ")";
+        } else {
+            for (auto& tuple_field : ty_tuple->fields) {
+                if (flag) {
+                    std::cout << " ";
+                    tyToHaskell(tuple_field);
+                } else {
+                    tyToHaskell(tuple_field);
+                    flag = true;
+                }
             }
         }
     } else if (ty->getType() == TyType::IND) {
@@ -172,17 +189,20 @@ void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
     } else if (term->getType() == TermType::IF) {
         if (debug_haskell) std::cout << "[IF]" << std::endl;
         auto* tm_if = dynamic_cast<TmIf*>(term.get());
-        std::cout << "if (";
+        std::cout << "mrgIte (";
         termToHaskell(tm_if->c);
-        std::cout << ") ";
+        std::cout << ")";
         floor_num_haskell++;
-        printSpace(floor_num_haskell);
-        std::cout << "then ";
-        termToHaskell(tm_if->t);
         std::cout << std::endl;
         printSpace(floor_num_haskell);
-        std::cout << "else ";
+        std::cout << "(";
+        termToHaskell(tm_if->t);
+        std::cout << ")";
+        std::cout << std::endl;
+        printSpace(floor_num_haskell);
+        std::cout << "(";
         termToHaskell(tm_if->f);
+        std::cout << ")";
         std::cout << std::endl;
         floor_num_haskell--;
     } else if (term->getType() == TermType::VAR) {
@@ -233,10 +253,13 @@ void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
         bool need_bracket = !(content_type == incre::TermType::VALUE ||
                               content_type == incre::TermType::VAR || content_type == incre::TermType::TUPLE
                               || content_type == incre::TermType::PROJ);
+        if (tm_proj->id == 1) std::cout << "(fst ";
+        else if (tm_proj->id == 2) std::cout << "(snd ";
+        else LOG(FATAL) << "Unknown PROJ->ID";
         if (need_bracket) std::cout << "(";
         termToHaskell(tm_proj->content);
         if (need_bracket) std::cout << ")";
-        std::cout << "." << tm_proj->id;
+        std::cout << ")";
     } else if (term->getType() == TermType::ABS) {
         if (debug_haskell) std::cout << "[ABS]" << std::endl;
         auto* tm_abs = dynamic_cast<TmAbs*>(term.get());
@@ -330,11 +353,16 @@ void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
     } else if (term->getType() == TermType::ALIGN) {
         auto* tm_align = dynamic_cast<TmAlign*>(term.get());
         auto need_bracket = _isNeedBracket(tm_align->content->getType());
-        std::cout << "align ";
+        if (hole_num_now > eval_string_for_each_hole.size()) {
+            LOG(FATAL) << "not enough eval string for hole, hole_num_now = " << hole_num_now; 
+        }
+        std::cout << eval_string_for_each_hole[hole_num_now++];
+        /*
         if (need_bracket) std::cout << "(";
         termToHaskell(tm_align->content);
         if (need_bracket) std::cout << ")";
         std::cout << " ";
+        */
     } else {
         LOG(FATAL) << "Unknown term";
     }
@@ -469,7 +497,7 @@ void incre::commandToHaskell(const std::shared_ptr<CommandData> &command) {
         if (debug_haskell) std::cout << std::endl << "zyw: def_name = " << def_name << std::endl;
         std::cout << "data ";
         floor_num_haskell++;
-        tyToHaskell(command_def->_type);
+        tyToHaskell(command_def->_type, true);
         floor_num_haskell--;
         outputDeriving(def_name);
     } else {
@@ -480,6 +508,21 @@ void incre::commandToHaskell(const std::shared_ptr<CommandData> &command) {
 // some output before processing commands, read from incre-tests/pre_output.txt
 void incre::preOutput() {
     std::string pre_output_path = config::KSourcePath + "incre-tests/pre_output.txt";
+    std::ifstream pre_output_file(pre_output_path);
+    if (pre_output_file.is_open()) {
+        std::string line;
+        while (std::getline(pre_output_file, line)) {
+            std::cout << line << '\n';
+        }
+        pre_output_file.close();
+    } else {
+        std::cout << "Unable to open pre_output_file\n";
+    }
+}
+
+// output the define of data RefEnv
+void incre::outputRefEnv() {
+    std::string pre_output_path = config::KSourcePath + "incre-tests/output_RefEnv.txt";
     std::ifstream pre_output_file(pre_output_path);
     if (pre_output_file.is_open()) {
         std::string line;
@@ -526,6 +569,122 @@ void incre::postOutput(const std::vector<std::pair<Term, Data>> &io_pairs) {
     std::cout << "ioPair pairs" << std::endl;
 }
 
+void incre::envToHaskell(std::vector<std::pair<std::vector<std::string>, Grammar* > > &final_grammar, std::vector<std::pair<PType, int> > &env_type_list) {
+    bool flag = false;
+    for (auto [_, grammar]: final_grammar) {
+        for (auto* node: grammar->symbol_list) {
+            for (auto* rule: node->rule_list) {
+                std::string semantics_name = rule->getSemanticsName();
+                if (semantics_name.substr(0, 5) == "Param") {
+                    std::string name_now = node->type->getHaskellName();
+                    flag = false;
+                    for (auto type: env_type_list) {
+                        if (name_now == (type.first)->getHaskellName()) {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    if (!flag) {
+                        env_type_list.push_back(std::make_pair(node->type, env_type_list.size()));
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+/*
+data EnvValue
+    = Env1 SymInteger
+    | Env2 SymBool
+    | Env3 (SymInteger, SymInteger)
+    deriving (Show, Generic)
+    deriving (EvaluateSym) via (Default EnvValue)*/
+    std::cout << "data EnvValue" << std::endl;
+    for (int i = 0; i < env_type_list.size(); ++i) {
+        if (!i) {
+            std::cout << "  =";
+        } else {
+            std::cout << "  |";
+        }
+        std::cout <<" Env" <<  std::to_string(i) << " " << env_type_list[i].first->getHaskellName() << std::endl;
+    }
+    std::cout << "  deriving (Show, Generic)" << std::endl << "  deriving (EvaluateSym) via (Default EnvValue)" << std::endl << std::endl;
+
+/*
+instance Mergeable EnvValue where
+  rootStrategy =
+    SortedStrategy
+      ( \case
+          Env1 _ -> 0 :: Int
+          Env2 _ -> 1
+          Env3 _ -> 2
+      )
+      ( htmemo $ \case
+          0 -> SimpleStrategy $ \cond (Env1 l) (Env1 r) -> Env1 $ mrgIte cond l r
+          1 -> SimpleStrategy $ \cond (Env2 l) (Env2 r) -> Env2 $ mrgIte cond l r
+          2 -> SimpleStrategy $ \cond (Env3 l) (Env3 r) -> Env3 $ mrgIte cond l r
+          _ -> error "Should not happen"
+      )
+
+instance SimpleMergeable EnvValue where
+  mrgIte cond l r = go cond l r
+    where
+      go cond (Env1 l) (Env1 r) = Env1 $ mrgIte cond l r
+      go cond (Env2 l) (Env2 r) = Env2 $ mrgIte cond l r
+      go cond (Env3 l) (Env3 r) = Env3 $ mrgIte cond l r
+      go _ _ _ = error "Should not happen"
+
+$(makeUnionWrapper "u" ''EnvValue)
+*/
+    std::cout << "instance Mergeable EnvValue where" << std::endl;
+    std::cout << "  rootStrategy =" << std::endl;
+    std::cout << "    SortedStrategy" << std::endl;
+    std::cout << "      ( \\case" << std::endl;
+    for (int i = 0; i < env_type_list.size(); ++i) {
+        std::cout << "          Env" << std::to_string(i) << " _ -> " << std::to_string(i) << " :: Int" << std::endl;
+    }
+    std::cout << "      )" << std::endl;
+    std::cout << "      ( htmemo $ \\case" << std::endl;
+    for (int i = 0; i < env_type_list.size(); ++i) {
+        std::cout << "          " << std::to_string(i);
+        std::cout << " -> SimpleStrategy $ \\cond (Env" << std::to_string(i) << " l) (Env" << std::to_string(i);
+        std::cout << " r) -> Env" << std::to_string(i) << " $ mrgIte cond l r" << std::endl;
+    }
+    std::cout << "          _ -> error \"Should not happen\"" << std::endl;
+    std::cout << "      )" << std::endl << std::endl;
+
+    std::cout << "instance SimpleMergeable EnvValue where" << std::endl;
+    std::cout << "  mrgIte cond l r = go cond l r" << std::endl;
+    std::cout << "    where" << std::endl;
+    for (int i = 0; i < env_type_list.size(); ++i) {
+        std::cout << "      go cond (Env" << std::to_string(i) << " l) (Env" << std::to_string(i);
+        std::cout << " r) = Env" << std::to_string(i) << " $ mrgIte cond l r" << std::endl;
+    }
+    std::cout << "      go _ _ _ = error \"Should not happen\"" << std::endl;
+
+    std::cout << std::endl << "$(makeUnionWrapper \"u\" ''EnvValue)" << std::endl << std::endl;
+
+    outputRefEnv();
+
+/*
+evalVar1 :: RefEnv -> Ident -> SymInteger
+evalVar1 (RefEnv env) x =
+    let v = evalFunc (RefEnv env) x in
+    case v of
+      Env1 sym -> sym
+      _ -> error "evalVar1: variable type not matched"
+*/ 
+    for (int i = 0; i < env_type_list.size(); ++i) {
+        std::cout << "evalVar" << std::to_string(i) << " :: RefEnv -> Ident -> " << env_type_list[i].first->getHaskellName() << std::endl;
+        std::cout << "evalVar" << std::to_string(i) << " (RefEnv env) x =" << std::endl;
+        std::cout << "    let v = evalFunc (RefEnv env) x in" << std::endl;
+        std::cout << "    case v of" << std::endl;
+        std::cout << "      Env" << std::to_string(i) << " sym -> sym" << std::endl;
+        std::cout << "      _ -> error \"evalVar" << std::to_string(i) << ": variable type not matched\"" << std::endl << std::endl;
+    }
+}
+
 /*
 data AExpr
   = I SymInteger
@@ -556,33 +715,232 @@ void incre::grammarToHaskell(Grammar *grammar, int func_num,
             } else {
                 std::cout << "  | ";
             }
-            std::cout << rule->toHaskell(name_to_expr_num, next_expr_num, func_num) << std::endl;
+            // rule->modifySemanticsName(name_to_expr_num, func_num, node->name);
+            std::cout << rule->toHaskell(name_to_expr_num, next_expr_num, func_num, node->name) << std::endl;
         }
+        std::string node_name = std::to_string(func_num) + "_" + std::to_string(name_to_expr_num[node->name]);
         std::cout << "  deriving stock (Generic, Show)" << std::endl
-            << "  deriving (Mergeable, EvaluateSym, ToCon Expr" << name_to_expr_num[node->name] << ")"
-            << std::endl << "    via (Default Expr" << name_to_expr_num[node->name] << ")" << std::endl;
+            << "  deriving (Mergeable, EvaluateSym, ToCon Expr" << node_name << ")"
+            << std::endl << "    via (Default Expr" << node_name << ")" << std::endl;
         std::cout << std::endl;
     }
 }
 
-void incre::evalToHaskell(Grammar *grammar, int func_num,
-        std::unordered_map<std::string, int>& name_to_expr_num) {
+/*
+instance GenSym (Int) Expr0_0 where
+  fresh :: forall m. (MonadFresh m) => Int -> m (UnionM Expr0_0)
+  fresh gendepth = gen0 gendepth 
+    where
+    genSingle0 = [mrgParam1]
+    genSingle1 = [mrgCzero]
+    gen0 gendepth
+      | gendepth <= 0 = chooseUnionFresh genSingle0
+      | otherwise = do 
+        e1 <- (gen1 (gendepth - 1)) 
+        e2 <- (gen1 (gendepth - 1)) 
+        res <- chooseUnionFresh (genSingle0 ++ [mrgProd e1 e2])
+        return res
+    gen1 gendepth
+      | gendepth <= 0 = chooseUnionFresh genSingle1
+      | otherwise = do 
+        e1 <- (gen0 (gendepth - 1)) 
+        e2 <- (gen0 (gendepth - 1)) 
+        res <- chooseUnionFresh (genSingle1 ++ [mrgAccess0 e1] ++ [mrgAccess1 e2])
+        return res
+*/
+void incre::spaceToHaskell(Grammar *grammar, int func_num,
+        std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num) {
+    std::string start_node_name = std::to_string(func_num) + "_" + std::to_string(0);
+    std::cout << "instance GenSym (Int) Expr" << start_node_name << " where " << std::endl;
+    std::cout << "  fresh :: forall m. (MonadFresh m) => Int -> m (UnionM Expr" << start_node_name << ")" << std::endl;
+    std::cout << "  fresh gendepth = gen0 gendepth " << std::endl;
+    std::cout << "    where" << std::endl;
+
+    // (has_single = true) means the node has at least one constructor without any param, so it can have genSingle func
+    std::vector<bool> has_single(next_expr_num, false);
+    bool flag = false;
     for (auto* node: grammar->symbol_list) {
-        std::string node_name = std::to_string(func_num);
-        node_name += "_"; node_name += std::to_string(name_to_expr_num[node->name]);
-        std::cout << "eval" << node_name << " :: SymIntEnv -> SymBoolEnv -> Expr"
-            << node_name << " -> " << node->type->getName() << std::endl;
+        int node_num = name_to_expr_num[node->name];
         for (auto* rule: node->rule_list) {
-            std::cout << "eval" << node_name << " env1 env2 (";
-            std::cout << ") = ";
+            if (rule->param_list.size() == 0) {
+                has_single[node_num] = true;
+                break;
+            }
         }
+        // if has_single = true, output "genSingle0 = [mrgParam1]"
+        if (has_single[node_num]) {
+            std::cout << "    genSingle" << std::to_string(node_num) <<" = ";
+            for (auto* rule: node->rule_list) {
+                if (rule->param_list.size() == 0) {
+                    if (!flag) flag = true;
+                    else std::cout << " ++ ";
+                    std::cout << "[mrg" << rule->getSemanticsName() << std::to_string(func_num) << "_" << std::to_string(node_num) << "]";
+                }
+            }
+            std::cout << std::endl;
+        }
+    }
+    for (auto* node: grammar->symbol_list) {
+        int node_num = name_to_expr_num[node->name];
+        std::string node_name = std::to_string(func_num) + "_" + std::to_string(node_num);
+        std::vector<int> max_num_of_param(next_expr_num, 0);
+        std::vector<int> param_num_now(next_expr_num, 0);
+        for (auto* rule: node->rule_list) {
+            for (auto &param: rule->param_list) {
+                max_num_of_param[name_to_expr_num[param->name]]++;
+            }
+        }
+        std::cout << "    gen" << std::to_string(node_num) << " gendepth";
+        // grammar has genSingle
+        if (has_single[node_num]) {
+            std::cout << std::endl;
+            std::cout << "      | gendepth <= 0 = chooseUnionFresh genSingle" << std::to_string(node_num) << std::endl;
+            std::cout << "      | otherwise = do" << std::endl;
+            for (int i = 0; i < next_expr_num; ++i) {
+                for (int j = 0; j < max_num_of_param[i]; ++j) {
+                    std::string param_name = "e" + std::to_string(i) + "_" + std::to_string(j);
+                    std::cout << "        " << param_name << " <- (gen" << std::to_string(i) << " (gendepth - 1))"<< std::endl;
+                }
+            }
+            std::cout << "        res <- chooseUnionFresh (genSingle" << std::to_string(node_num);
+            for (auto* rule: node->rule_list) {
+                if (rule->param_list.size() == 0) continue;
+                std::cout << " ++ [";
+                std::cout << "mrg" << rule->getSemanticsName() << std::to_string(func_num) << "_" << std::to_string(node_num);
+                for (auto &param: rule->param_list) {
+                    int expr_num = name_to_expr_num[param->name];
+                    if (param_num_now[expr_num] > max_num_of_param[expr_num]) {
+                        LOG(FATAL) << "not enough param!";
+                    }
+                    int param_num = param_num_now[expr_num]++;
+                    std::cout << " e" << std::to_string(expr_num) << "_" << std::to_string(param_num);
+                }
+                std::cout << "]";
+            }
+            std::cout << ")" << std::endl << "        return res";
+        }
+        // grammar doesn't have genSignle
+        else {
+            std::cout << " = do" << std::endl;
+            for (int i = 0; i < next_expr_num; ++i) {
+                for (int j = 0; j < max_num_of_param[i]; ++j) {
+                    std::string param_name = "e" + std::to_string(i) + "_" + std::to_string(j);
+                    std::cout << "        " << param_name << " <- (gen" << std::to_string(i) << " (gendepth - 1))"<< std::endl;
+                }
+            }
+            std::cout << "        res <- chooseUnionFresh (";
+            flag = false;
+            for (auto* rule: node->rule_list) {
+                if (rule->param_list.size() == 0) continue;
+                if (!flag) flag = true;
+                else std::cout << " ++ ";
+                std::cout << "[mrg" << rule->getSemanticsName() << std::to_string(func_num) << "_" << std::to_string(node_num);
+                for (auto &param: rule->param_list) {
+                    int expr_num = name_to_expr_num[param->name];
+                    if (param_num_now[expr_num] > max_num_of_param[expr_num]) {
+                        LOG(FATAL) << "not enough param!";
+                    }
+                    int param_num = param_num_now[expr_num]++;
+                    std::cout << " e" << std::to_string(expr_num) << "_" << std::to_string(param_num);
+                }
+                std::cout << "]";
+            }
+            std::cout << ")" << std::endl << "        return res";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+}
+
+void incre::evalToHaskell(Grammar *grammar, int func_num,
+        std::unordered_map<std::string, int>& name_to_expr_num,
+        std::vector<std::string>& param_list, std::vector<std::pair<PType, int> > &env_type_list) {
+    for (auto* node: grammar->symbol_list) {
+        std::string node_name = std::to_string(func_num) + "_" + std::to_string(name_to_expr_num[node->name]);
+        std::string oup_type = node->type->getHaskellName();
+        std::cout << "eval" << node_name << " :: RefEnv -> Expr"
+            << node_name << " -> " << oup_type << std::endl;
+        for (auto* rule: node->rule_list) {
+            std::cout << rule->evalRuleToHaskell(node_name, func_num, name_to_expr_num, param_list, node->type->getHaskellName(), env_type_list) << std::endl;
+        }
+        std::cout << std::endl;
+        /*
+        evalU1_1 :: RefEnv -> UnionM Expr1_1 -> SymBool
+        evalU1_1 env = onUnion (eval1_1 env)
+        */
+        std::cout << "evalU" << node_name << " :: RefEnv -> UnionM Expr"
+            << node_name << " -> " << oup_type << std::endl;
+        std::cout << "evalU" << node_name << " env = onUnion (eval"
+            << node_name << " env)" << std::endl;
+        std::cout << std::endl;
+    }
+}
+
+void incre::getEvalString(std::vector<std::string> &eval_string_for_each_hole,
+        std::vector<std::pair<std::vector<std::string>, Grammar *> > final_grammar,
+        TyList &final_type_list,
+        std::vector<std::pair<PType, int> > &env_type_list) {
+    int hole_size = final_grammar.size();
+    bool flag = false;
+    
+    for (int i = 0; i < hole_size; ++i) {
+        std::vector<std::pair<int, std::string> > param2type;
+        std::vector<std::pair<int, int> > param2eval_var_num;
+        auto& [param_list_for_hole, grammar] = final_grammar[i];
+        for (auto* node: grammar->symbol_list) {
+            std::string node_type = node->type->getHaskellName();
+            for (auto* rule: node->rule_list) {
+                std::string semantics_name = rule->getSemanticsName();
+                if (semantics_name.substr(0, 5) == "Param") {
+                    if (rule->param_list.size() == 0) {
+                        // std::cout << semantics_name << std::endl;
+                        int param_num = semantics_name[5] - '0';
+                        param2type.push_back(std::make_pair(param_num, node_type));
+                    } else {
+                        LOG(FATAL) << "Unexpected rule begin with Param, semantics_name = " << semantics_name;
+                    }
+                }
+            }
+        }
+        for (auto& [param_num, node_type]: param2type) {
+            // std::cout << param_num << ", " << node_type << std::endl;
+            flag = false;
+            for (auto& [ptype, eval_var_num]: env_type_list) {
+                if (node_type == ptype->getHaskellName()) {
+                    flag = true;
+                    param2eval_var_num.push_back(std::make_pair(param_num, eval_var_num));
+                    break;
+                }
+            }
+            if (!flag) {
+                LOG(FATAL) << "Unexpected type of param, param_type = " << node_type;
+            }
+        }
+        if (param2type.size() != param2eval_var_num.size()) {
+            LOG(FATAL) << "Size of param2type and param2eval_var_num not equal, param2type = " << param2type.size() <<
+                ", param2eval_var_num = " << param2eval_var_num.size();
+        }
+
+        // evalU0_0 (RefEnv [("tmp5", (EnvTuple tmp5))]) ((genSym (1::Int) "hole1") :: (UnionM Expr0_0))
+        flag = false;
+        std::string res = "evalU" + std::to_string(i) + "_0" + " (RefEnv [";
+        for (auto& [param_num, eval_var_num]: param2eval_var_num) {
+            std::string param_name = param_list_for_hole[param_num];
+            // std::cout << param_num << ", " << param_name << ", " << eval_var_num << std::endl;
+            if (!flag) flag = true;
+            else res += ", ";
+            res += ("(\"" + param_name + "\", (Env" + std::to_string(eval_var_num) + " " + param_name + "))");
+        }
+        res += "]) ((genSym (1::Int) \"hole" + std::to_string(i) + "\") :: (UnionM Expr" + std::to_string(i) + "_0))";
+        eval_string_for_each_hole.push_back(res);
     }
 }
 
 void incre::programToHaskell(const std::shared_ptr<ProgramData> &prog, 
     const std::vector<std::pair<Term, Data>> &io_pairs, 
     incre::IncreInfo *info,
-    const incre::IncreAutoLifterSolver *solver, const std::string &path) {
+    const incre::IncreAutoLifterSolver *solver, const std::string &path,
+    TyList &final_type_list) {
     construct.clear();
     std::ofstream outFile(path);
     std::streambuf *cout_buf = std::cout.rdbuf();
@@ -593,6 +951,77 @@ void incre::programToHaskell(const std::shared_ptr<ProgramData> &prog,
     // output some content
     preOutput();
 
+    std::cout << std::endl << "------program space begin----" << std::endl;
+    
+    // get program space
+    std::vector<std::unordered_map<std::string, int> > name_to_expr_num;
+    std::vector<int> next_expr_num;
+    std::vector<std::pair<std::vector<std::string>, Grammar *> > final_grammar;
+    // type for replacing compress type
+    for (int i = 0; i < info->align_infos.size(); ++i) {
+        auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
+        final_grammar.push_back(std::make_pair(param_list, grammar));
+        name_to_expr_num.push_back(std::unordered_map<std::string, int>());
+        next_expr_num.push_back(0);
+    }
+
+    // output env
+    std::vector<std::pair<PType, int> > env_type_list;
+    envToHaskell(final_grammar, env_type_list);
+    std::cout << "{- env_type_list: " << std::endl;
+    for (auto [ptype, i]: env_type_list) {
+        std::cout << ptype->getHaskellName() << std::endl;
+    }
+    std::cout << "-}" << std::endl << std::endl;
+
+    // output grammar
+    for (int i = 0; i < info->align_infos.size(); ++i) {
+        Ty oup_type = info->align_infos[i]->oup_type;
+        Ty actual_oup_type = incre::getFinalType(oup_type, final_type_list);
+        std::cout << "-- output_type: " << actual_oup_type->toString() << std::endl;
+        auto [_, grammar] = final_grammar[i];
+        grammarToHaskell(grammar, i, name_to_expr_num[i], next_expr_num[i]);
+    }
+
+    // $(makeUnionWrapper "mrg" ''Expr0_0)
+    for (int i = 0; i < info->align_infos.size(); ++i) {
+        for (int j = 0; j < next_expr_num[i]; ++j) {
+            std::cout << "$(makeUnionWrapper \"mrg\" ''Expr";
+            std::cout << std::to_string(i) << "_" << std::to_string(j) << ")" << std::endl;
+        }
+    }
+    std::cout << std::endl;
+
+    // output program space
+    for (int i = 0; i < info->align_infos.size(); ++i) {
+        auto [_ , grammar] = final_grammar[i];
+        spaceToHaskell(grammar, i, name_to_expr_num[i], next_expr_num[i]);
+    }
+
+    // output eval function
+    for (int i = 0; i < info->align_infos.size(); ++i) {
+        auto [param_list, grammar] = final_grammar[i];
+        evalToHaskell(grammar, i, name_to_expr_num[i], param_list, env_type_list);
+    }
+
+    std::cout << std::endl << "------program space end----" << std::endl << std::endl
+        << "------spec begin-------" << std::endl;
+
+    // get var for each hole
+    std::cout << "{-";
+    for (int i = 0; i < info->align_infos.size(); ++i) {
+        std::cout << std::endl << "Hole grammar for #" << i << std::endl;
+        auto& [param_list, _] = final_grammar[i];
+        for (auto& param: param_list) {
+            std::cout << param << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "-}" << std::endl;
+
+    // get eval clause for each hole
+    getEvalString(eval_string_for_each_hole, final_grammar, final_type_list, env_type_list);
+
     // output def_inductive command
     for (auto &command : prog->commands) {
         if (command->getType() == CommandType::DEF_IND) {
@@ -600,39 +1029,6 @@ void incre::programToHaskell(const std::shared_ptr<ProgramData> &prog,
             commandToHaskell(command);
         }
     }
-    std::cout << std::endl << "------type def end------" << std::endl << std::endl
-        << "------program space begin----" << std::endl;
-    
-    // get var for each space
-    for (auto& align_info: info->align_infos) {
-        std::cout << "zyw: align_info->print()" << std::endl;
-        align_info->print();
-    }
-
-    // get program space
-    std::vector<std::unordered_map<std::string, int> > name_to_expr_num;
-    std::vector<int> next_expr_num;
-    TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
-    for (int i = 0; i < info->align_infos.size(); ++i) {
-        auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
-        std::cout << std::endl << "Hole grammar for #" << i << std::endl;
-        for (auto& param: param_list) {
-            std::cout << param << " ";
-        }
-        std::cout << std::endl;
-        name_to_expr_num.push_back(std::unordered_map<std::string, int>());
-        next_expr_num.push_back(0);
-        grammarToHaskell(grammar, i, name_to_expr_num[i], next_expr_num[i]);
-    }
-
-    // output eval function
-    for (int i = 0; i < info->align_infos.size(); ++i) {
-        auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
-        evalToHaskell(grammar, i, name_to_expr_num[i]);
-    }
-
-    std::cout << std::endl << "------program space end----" << std::endl << std::endl
-        << "------spec begin-------" << std::endl;
 
     // output spec function
     for (auto &command: prog->commands) {

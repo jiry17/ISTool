@@ -28,6 +28,7 @@ public:
     virtual std::string getBaseName();
     virtual TypeList getParams();
     virtual PType clone(const TypeList& params);
+    virtual std::string getHaskellName();
     virtual ~RefinedType() = default;
 };
 

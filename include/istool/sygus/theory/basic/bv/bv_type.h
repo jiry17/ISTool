@@ -13,6 +13,7 @@ public:
     TBitVector(int _size);
     virtual std::string getName();
     virtual PType clone(const TypeList& param);
+    virtual std::string getHaskellName();
     virtual ~TBitVector() = default;
 };
 

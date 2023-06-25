@@ -21,6 +21,9 @@ std::string TBot::getName() {
 PType TBot::clone(const TypeList &params) {
     return std::make_shared<TBot>();
 }
+std::string TBot::getHaskellName() {
+    return getName();
+}
 
 TVar::TVar(const std::string &_name): name(_name) {
 }
@@ -29,6 +32,9 @@ PType TVar::clone(const TypeList &params) {
 }
 std::string TVar::getName() {
     return name;
+}
+std::string TVar::getHaskellName() {
+    return getName();
 }
 
 bool type::equal(const PType &t1, const PType &t2) {
@@ -44,6 +50,9 @@ std::string TBool::getName() {
 }
 PType TBool::clone(const TypeList &params) {
     return std::make_shared<TBool>();
+}
+std::string TBool::getHaskellName() {
+    return "SymBool";
 }
 
 PType type::getTBool() {

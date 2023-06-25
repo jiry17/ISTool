@@ -34,13 +34,16 @@ TypeList TSum::getParams() {
 PType TSum::clone(const TypeList &type_list) {
     return std::make_shared<TSum>(type_list);
 }
+std::string TSum::getHaskellName() {
+    return getName();
+}
 
 TProduct::TProduct(const TypeList &_sub_types): sub_types(_sub_types) {
 }
 std::string TProduct::getName() {
     std::string res;
     for (int i = 0; i < sub_types.size(); ++i) {
-        if (i) res += "*";
+        if (i) res += " * ";
         res += sub_types[i]->getName();
     }
     return "(" + res + ")";
@@ -62,6 +65,14 @@ TypeList TProduct::getParams() {
 }
 PType TProduct::clone(const TypeList &type_list) {
     return std::make_shared<TProduct>(type_list);
+}
+std::string TProduct::getHaskellName() {
+    std::string res;
+    for (int i = 0; i < sub_types.size(); ++i) {
+        if (i) res += ", ";
+        res += sub_types[i]->getHaskellName();
+    }
+    return "(" + res + ")";
 }
 
 TArrow::TArrow(const TypeList &_inp_types, const PType &_oup_type): inp_types(_inp_types), oup_type(_oup_type) {
@@ -93,6 +104,9 @@ PType TArrow::clone(const TypeList &type_list) {
     PType oup = type_list[n - 1];
     return std::make_shared<TArrow>(inp_list, oup);
 }
+std::string TArrow::getHaskellName() {
+    return getName();
+}
 
 TList::TList(const PType &_content): content(_content) {
 }
@@ -113,6 +127,9 @@ TypeList TList::getParams() {
 PType TList::clone(const TypeList &type_list) {
     return std::make_shared<TList>(type_list[0]);
 }
+std::string TList::getHaskellName() {
+    return getName();
+}
 
 TBTree::TBTree(const PType &_content, const PType &_leaf): content(_content), leaf(_leaf) {
 }
@@ -132,6 +149,9 @@ TypeList TBTree::getParams() {
 }
 PType TBTree::clone(const TypeList &type_list) {
     return std::make_shared<TBTree>(type_list[0], type_list[1]);
+}
+std::string TBTree::getHaskellName() {
+    return getName();
 }
 
 PType ext::ho::getTIntList() {
