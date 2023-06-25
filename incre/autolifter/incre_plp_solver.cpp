@@ -4,6 +4,7 @@
 
 #include "istool/incre/autolifter/incre_plp_solver.h"
 #include "glog/logging.h"
+#include "istool/basic/config.h"
 #include "istool/incre/trans/incre_trans.h"
 #include <iostream>
 
@@ -63,19 +64,34 @@ namespace {
             if (is_include_direct) {
                 if (!program.second.first && sp) return {};
             }
-            if (!sp || !program.second.first) return {program};
-            int param_id = sp->id; assert(compress_var_id.count(param_id));
-            int compress_id = compress_var_id[param_id];
-            auto it = compress_var_pool.find(compress_id);
-            assert(it != compress_var_pool.end());
-            if (param_id != it->second.first) return {};
+            if (!program.second.first) return {program};
 
-            std::vector<AuxProgram> res;
-            for (int var_id: it->second.second) {
-                auto compress_program = std::make_pair(program.first.first, program::buildParam(var_id, sp->oup_type));
-                res.emplace_back(compress_program, program.second);
+            std::vector<AuxProgram> result = {program};
+            std::vector<TypedProgram> extract_list = {program.first};
+            // Programs derived from the same var
+            if (sp) {
+                int param_id = sp->id; assert(compress_var_id.count(param_id));
+                int compress_id = compress_var_id[param_id];
+                auto it = compress_var_pool.find(compress_id);
+                assert(it != compress_var_pool.end());
+                if (param_id != it->second.first) return {};
+
+                for (int var_id: it->second.second) {
+                    if (var_id == sp->id) continue;
+                    auto compress_program = std::make_pair(program.first.first, program::buildParam(var_id, sp->oup_type));
+                    extract_list.push_back(compress_program);
+                    result.emplace_back(compress_program, program.second);
+                }
             }
-            return res;
+
+            auto* tc = dynamic_cast<incre::TLabeledCompress*>(program.first.first.get());
+            if (config::KIsDefaultSelf && tc && tc->id == task->oup_compress_id) {
+                for (auto& extract: extract_list) {
+                    result.emplace_back(extract, task->target);
+                }
+            }
+
+            return result;
         }
         virtual std::vector<AuxProgram> getDefaultAuxPrograms() {
             return default_list;
@@ -170,13 +186,22 @@ std::string IncrePLPSolver::example2String(const std::pair<int, int> &example) {
 }
 
 std::vector<AuxProgram> IncrePLPSolver::unfoldComponents(const std::vector<AuxProgram> &program_list) {
-    std::vector<AuxProgram> res = evaluate_util->getDefaultAuxPrograms();
+    std::unordered_set<std::string> existing_set;
+    std::vector<AuxProgram> result;
+    auto insert = [&](const AuxProgram& program) {
+        auto feature = autolifter::aux2String(program);
+        if (existing_set.find(feature) != existing_set.end()) return;
+        existing_set.insert(feature);
+        result.push_back(program);
+    };
+
+    for (auto& program: evaluate_util->getDefaultAuxPrograms()) insert(program);
     for (auto& program: program_list) {
         for (auto& derived_program: evaluate_util->constructAuxProgram(program)) {
-            res.push_back(derived_program);
+            insert(derived_program);
         }
     }
-    return res;
+    return result;
 }
 #include "istool/basic/config.h"
 void IncrePLPSolver::addErrorExample(int example_id) {
@@ -364,6 +389,7 @@ std::pair<int, int> IncrePLPSolver::verify(const std::vector<AuxProgram> &aux_li
             if (inp_cache_list[i]) inp_list[i] = inp_cache_list[i]->at(example_id);
             else {
                 try {
+                    // LOG(INFO) << task->example_space->example_list[example_id].toString();
                     auto inp = task->example_space->runAux(example_id, aux_list[i]);
                     new_inp_storage[i].push_back(inp);
                     inp_list[i] = inp;
@@ -591,37 +617,11 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
     LOG(INFO) << "Counter example " << example2String(counter_example);
     addExample(counter_example);
 
-    /*if (task->example_space->tau_id == 0) {
-        TypedProgram compress_program(task->example_space->value_list[1].second, program::buildParam(1));
-        std::vector<AuxProgram> aux_list;
-        auto param0 = program::buildParam(0);
-        for (auto op_name: {"run", "minimum", "length"}) {
-            auto sem = _getSemantics(task->aux_grammar_list[0]->grammar, op_name);
-            auto sem_prog = std::make_shared<Program>(sem, (ProgramList){});
-            auto app = _getSemantics(task->aux_grammar_list[0]->grammar, "app");
-            auto prog = std::make_shared<Program>(app, (ProgramList){sem_prog, param0});
-            TypedProgram aux_program(theory::clia::getTInt(), prog);
-            aux_list.emplace_back(compress_program, aux_program);
-        }
-        aux_list = unfoldComponents(aux_list);
-        LOG(INFO) << "test components " << _unitList2String(aux_list);
-        counter_example = verify(aux_list);
-        LOG(INFO) << "conuter example " << counter_example.first << " " << counter_example.second;
-        if (counter_example.first != -1) {
-            LOG(INFO) << "  " << example2String(counter_example);
-            for (auto unit: aux_list) {
-                std::cout << "  " << task->runInp(counter_example.first, unit).toString() << " " <<
-                          task->runInp(counter_example.second,unit).toString() << std::endl;
-            }
-        }
-        int kk; std::cin >> kk;
-    }*/
-
     while (true) {
         TimeCheck(guard);
         auto candidate_result = unfoldComponents(synthesisFromExample(guard));
         LOG(INFO) << "Candidate result " << _unitList2String(candidate_result);
-        LOG(INFO) << KComposedNum;
+        LOG(INFO) << KComposedNum << std::endl;
         counter_example = verify(candidate_result);
         if (counter_example.first == -1) return candidate_result;
         addExample(counter_example);

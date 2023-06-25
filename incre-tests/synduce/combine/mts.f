@@ -18,7 +18,7 @@ mts = fix (
   end
 );
 
-spec = \xs: List. {sum xs, mts xs};
+spec = \xs: List. mts xs;
 
 repr = fix (
   \f: List -> Compress List. \xs: List.

@@ -1,3 +1,5 @@
+Config NonLinear = true;
+
 Inductive List = nil Unit | cons {Int, List};
 Inductive PList = pnil Unit | pcons {Int, Int, PList};
 

@@ -1,5 +1,5 @@
 Config ExtraGrammar = "AutoLifter";
-Config NonLinear = true;
+Config TermNum = 6;
 
 Inductive List = nil Unit | cons {Int, List};
 Tag = Bool; Result = Compress List; NodeInfo = {Tag, Result};
@@ -120,7 +120,6 @@ merge_tag = \x: Tag. \y: Tag.
 /*Query-related operators*/
 
 inf = 100;
-nthree = -3;
 ntwo = -2;
 min = \a: Int. \b: Int. if < a b then a else b;
 max = \a: Int. \b: Int. if < a b then b else a;

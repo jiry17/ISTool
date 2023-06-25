@@ -21,27 +21,42 @@ repr = fix (
 );
 
 spec = fix (
-  \f: PTree -> {Int, Int}. \x: PTree.
+  \f: PTree -> Int. \x: PTree.
   match x with
-    pelt a -> {a, a}
+    pelt a -> a
   | pnode {a, l} -> 
     let maxh_aux = fix (
         \g: List -> Int. \y: List.
         match y with
-          elt a -> (f a).1
-        | cons {hd, tl} -> + (f hd).1 (g tl)
+          elt a -> f a
+        | cons {hd, tl} -> + (f hd) (g tl)
         end
     ) in
       let res = maxh_aux l in
-        {max a res, + a res}
+        max a res
   end
 );
 
+/*tsum = fix (
+  \f: Tree -> Int. \t: Tree.
+  match t with
+    telt w -> w
+  | tnode {w, l, r} -> + w (+ (spec (repr l)) (f r))
+  end
+);*/
+
 target = fix (
   \f: Tree -> Compress Tree. \t: Tree.
+  let aux = fix (
+    \g: Tree -> Compress Tree. \t: Tree.
+    match t with
+      telt w -> t
+    | tnode {w, l, r} -> tnode{w, f l, g r}
+    end
+  ) in
   match t with
     telt w -> t
-  | tnode {w, l, r} -> tnode {w, f l, f r}
+  | tnode {w, l, r} -> tnode {w, f l, aux r}
   end
 );
 

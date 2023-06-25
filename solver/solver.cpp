@@ -39,6 +39,10 @@ FunctionContext CEGISSolver::synthesis(TimeGuard* guard) {
             return res;
         }
         LOG(INFO) << "Counter example " << data::dataList2String(counter_example);
+        LOG(INFO) << "Current examples";
+        for (auto& example: example_list) {
+            LOG(INFO) << "  " << data::dataList2String(example);
+        }
         // auto* io_space = dynamic_cast<IOExampleSpace*>(spec->example_space.get());
         // if (io_space) LOG(INFO) << "ExampleSpace " << example::ioExample2String(io_space->getIOExample(counter_example));
         example_list.push_back(counter_example);

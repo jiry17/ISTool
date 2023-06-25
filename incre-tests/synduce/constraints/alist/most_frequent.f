@@ -1,5 +1,3 @@
-Config ComposeNum = 4;
-
 Inductive List = elt Int | cons {Int, List};
 Inductive Pos = one Unit | s Pos;
 Inductive AList = aelt {Int, Pos} | acons {Int, Pos, AList};
@@ -28,7 +26,7 @@ count = \w: Int. fix (
   end
 );
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int}. \xs: List.
   match xs with
     elt h -> {1, h}
@@ -37,7 +35,7 @@ spec = fix (
       let c = count h xs in
         if > c res.1 then {c, h} else res
   end
-);
+) xs).2;
 
 repr =
   let repeat = \w: Int. \suf: List. fix (
@@ -80,4 +78,4 @@ target = fix (
   end
 );
 
-main = \xs: AList. if is_unique xs then spec (repr (target xs)) else {0, 0};
+main = \xs: AList. if is_unique xs then spec (repr (target xs)) else 0;

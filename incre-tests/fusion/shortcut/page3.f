@@ -1,3 +1,5 @@
+Config NonLinear = true;
+
 Inductive List = nil Unit | cons {Int, List};
 
 div2 = \x: Int. / x 2;
@@ -16,4 +18,4 @@ sum = fix (
   end
 );
 
-main = \a: Int. \b: Int. sum (from a b);
+main = \a: Int. \b: Int. if <= a b then sum (from a b) else 0;

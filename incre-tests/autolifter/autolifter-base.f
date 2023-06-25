@@ -159,5 +159,5 @@ al_concat = \xs: List. \ys: List. (fix (
 @Align al_iseven = \a: Int. == a (* (/ a 2) 2);
 @Align al_isodd = \a: Int. not (al_iseven a);
 @Align one = 1;
-@Align two = 2;
-@Align three = 3;
+@Align none = -1;
+@Combine al_error = \x: Int. or (== x al_error) (== x (- 0 al_error));

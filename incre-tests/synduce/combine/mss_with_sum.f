@@ -27,7 +27,7 @@ drop_sum_list = fix (
   end
 );
 
-mts = fix (
+mss = \xs: List. (fix (
   \f: List -> {Int, Int, Int}. \xs: List.
   match xs with
     elt t -> if (> t 0) then {t,t,t} else {0,0,0}
@@ -41,9 +41,9 @@ mts = fix (
     let new_mts = max (+ hd sum_tl) mts_tl in
     {new_mts, new_mps, max new_mps mss_tl}
   end
-);
+) xs).3;
 
-spec = \xs: List. mts xs;
+spec = \xs: List. mss xs;
 
 repr = fix (
   \f: IdxList -> Compress List. \xs: IdxList.

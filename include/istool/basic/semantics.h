@@ -17,6 +17,8 @@ class Env;
 
 struct SemanticsError: public std::exception {
 };
+struct ExecutionNotDefinedError: public std::exception {
+};
 
 class Semantics {
 public:

@@ -19,7 +19,7 @@ repr = fix (
   end
 );
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Bool}. \xs: List.
   match xs with
     elt a -> {max 0 a, (>= a 0)}
@@ -28,6 +28,6 @@ spec = fix (
     let new_cond = and result.2 (>= hd 0) in
     {if new_cond then + hd result.1 else result.1, new_cond}
   end
-);
+) xs).1;
 
 main = \x: CnList. spec (repr x);

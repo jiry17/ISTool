@@ -70,6 +70,4 @@ queens = \n: Int. (fix (
     ) in (enum subres 1)
 )) n;
 
-calc = \xs: NList. sum (concat xs);
-
-@Start main = \n: Int. if > n 0 then calc (queens n) else 0;
+@Start main = \n: Int. if > n 0 then queens n else nnil unit;

@@ -29,7 +29,8 @@ sum = fix (
 
 max = \a: Int. \b: Int. if < a b then b else a;
 
-spec = fix (
+spec = \xs: NList.
+let res = fix (
   \f: NList -> {Int, Int, Int, Int}. \xs: NList.
   match xs with
     line a ->
@@ -46,7 +47,7 @@ spec = fix (
         + res.4 hsum
         }
   end
-);
+) xs in {res.1, res.2, res.3};
 
 target = fix (
   \f: CNList -> Compress CNList. \c: CNList.

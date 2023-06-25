@@ -12,7 +12,7 @@ repr = fix (
   end
 );
 
-spec = fix (
+spec = \e: ArithExpr. (fix (
   \f: ArithExpr -> {Int, Int}. \e: ArithExpr.
   match e with
     int i -> {i,i}
@@ -29,6 +29,6 @@ spec = fix (
     let m = max sum (max r1.2 r2.2) in
     {sum, m}
   end
-);
+) e).2;
 
 main = \e: PsumExpr. spec (repr e);

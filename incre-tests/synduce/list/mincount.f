@@ -3,7 +3,7 @@ Inductive CList = single Int | concat {CList, CList};
 
 min = \x: Int. \y: Int. if (< x y) then x else y;
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int}. \xs: List.
   match xs with
     elt a -> {a, 1}
@@ -13,7 +13,7 @@ spec = fix (
     let new_cnt = if (< hd result.1) then 1 else + result.2 (if (== hd result.1) then 1 else 0) in
     {new_min, new_cnt}
   end
-);
+) xs).2;
 
 cat = fix (
   \f: List -> List -> List. \xs: List. \ys: List.

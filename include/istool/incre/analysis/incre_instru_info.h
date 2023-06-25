@@ -30,11 +30,11 @@ namespace incre {
     class IncreInfo {
     public:
         IncreProgram program;
-        Context* ctx;
+        EnvContext* ctx;
         AlignTypeInfoList align_infos;
         IncreExamplePool* example_pool;
         grammar::ComponentPool component_pool;
-        IncreInfo(const IncreProgram& _program, Context* _ctx, const AlignTypeInfoList& infos, IncreExamplePool* pool, const grammar::ComponentPool& _pool);
+        IncreInfo(const IncreProgram& _program, EnvContext* _ctx, const AlignTypeInfoList& infos, IncreExamplePool* pool, const grammar::ComponentPool& _pool);
         ~IncreInfo();
     };
 }

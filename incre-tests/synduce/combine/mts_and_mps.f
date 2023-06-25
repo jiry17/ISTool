@@ -2,14 +2,6 @@ Inductive List = nil Unit | cons {Int, List};
 
 max = \a: Int. \b: Int. if < a b then b else a;
 
-sum = fix (
-  \f: List -> Int. \xs: List.
-  match xs with
-    nil _ -> 0
-  | cons {h, t} -> + h (f t)
-  end
-);
-
 mts = fix (
   \f: Int -> List -> Int. \pre: Int. \xs: List.
   match xs with
@@ -26,7 +18,7 @@ mps = fix (
   end
 );
 
-spec = \xs: List. {sum xs, mts 0 xs, mps xs};
+spec = \xs: List. {mts 0 xs, mps xs};
 
 repr = fix (
   \f: List -> Compress List. \xs: List.

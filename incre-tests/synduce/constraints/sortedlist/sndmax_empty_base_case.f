@@ -44,7 +44,7 @@ is_sorted = fix (
 min = \x: Int. \y: Int. if < x y then x else y;
 max = \x: Int. \y: Int. if > x y then x else y;
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int}. \xs: List.
   match xs with
     nil _ -> {0, 0}
@@ -52,7 +52,7 @@ spec = fix (
     let res = f t in
       {max res.1 h, max res.2 (min res.1 h)}
   end
-);
+) xs).2;
 
 target = fix (
   \f: CList -> Compress CList. \c: CList.
@@ -64,4 +64,4 @@ target = fix (
 );
 
 main = \c: CList.
-  if is_sorted (repr c) then spec (repr (target c)) else {0, 0};
+  if is_sorted (repr c) then spec (repr (target c)) else 0;

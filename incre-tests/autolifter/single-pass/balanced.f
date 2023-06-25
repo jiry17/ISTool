@@ -16,8 +16,6 @@ single_pass = \v: List -> Bool.
   ) in \xs: List.
   v (run xs);
 
-inf = 100;
-
 /*User provided programs*/
 
 balanced = fix (

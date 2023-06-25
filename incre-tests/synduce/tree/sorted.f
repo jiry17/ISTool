@@ -1,6 +1,6 @@
 Inductive Tree = leaf Int | node {Int, Tree, Tree};
 
-spec = fix (
+spec = \t: Tree. (fix (
   \f: Tree -> {Int, Bool}. \t: Tree.
   match t with
     leaf a -> {a, true}
@@ -9,7 +9,7 @@ spec = fix (
     let r2 = (f r) in
     {a, and (and (and (< r1.1 a) (< a r2.1)) r1.2) r2.2}
   end
-);
+) t).2;
 
 repr = fix (
   \f: Tree -> Compress Tree. \t: Tree.

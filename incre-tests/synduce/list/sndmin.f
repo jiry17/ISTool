@@ -20,7 +20,7 @@ repr = fix (
   end
 );
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int}. \xs: List.
   match xs with
     two {a, b} -> {min a b, max a b}
@@ -30,6 +30,6 @@ spec = fix (
     let new_snd = min result.2 (max hd result.1) in
     {new_min, new_snd}
     end
-);
+) xs).2;
 
 main = \x: CList. spec (repr x);

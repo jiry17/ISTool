@@ -1,4 +1,4 @@
-//
+  //
 // Created by pro on 2022/1/7.
 //
 
@@ -260,6 +260,36 @@ namespace {
     }
 }
 
+/*std::vector<polygen::ClausePlan> DNFLearner::getAllClause(int l, int r, const std::vector<polygen::PCmpInfo> &info_list,
+                                                          const Bitset &rem_example, int lim) {
+    std::vector<polygen::ClausePlan> result; int n_size = info_list[0]->N.size();
+    ClausePlan empty_plan({}, rem_example, Bitset(n_size, true));
+    result.push_back(empty_plan);
+    for (int ind = 0; ind < info_list.size(); ++ind) {
+        auto& info = info_list[ind];
+        int pre_size = int(result.size());
+        auto rem_P = info->P & rem_example;
+        if (rem_P.count() < lim) continue;
+        ClausePlan new_plan({l}, rem_P, info->N);
+        for (int i = 0; i < pre_size; ++i) {
+            TimeCheck(guard);
+            auto merge_rem_P = result[i].P & rem_P;
+            if (merge_rem_P.count() >= lim) {
+                auto merge_rem_N = result[i].N & info->N;
+                if (ind + 1 == info_list.size() && merge_rem_N.count()) continue;
+                result.push_back(_mergePlan(result[i], new_plan, merge_rem_P, merge_rem_N));
+            }
+        }
+        result = _reduceClause(result);
+    }
+
+    std::vector<ClausePlan> final_result;
+    for (auto& plan: result) {
+        if (plan.N.count() == 0) final_result.push_back(plan);
+    }
+    return final_result;
+}*/
+
 // TODO: replace this part by foldl
 std::vector<polygen::ClausePlan> DNFLearner::getAllClause(int l, int r, const std::vector<polygen::PCmpInfo> &info_list,
         const Bitset &rem_example, int lim) {
@@ -274,7 +304,7 @@ std::vector<polygen::ClausePlan> DNFLearner::getAllClause(int l, int r, const st
         }
         return _reduceClause(result);
     }
-    int mid = l + r >> 1;
+    int mid = r - 1;
     auto l_result = getAllClause(l, mid, info_list, rem_example, lim);
     auto r_result = getAllClause(mid + 1, r, info_list, rem_example, lim);
     for (const auto& l_plan: l_result) {
@@ -373,6 +403,9 @@ FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, 
         if (io_example.second.isTrue()) positive_list.push_back(io_example.first);
         else negative_list.push_back(io_example.first);
     }
+    /*for (int i = 0; i < 10 && i < example_list.size(); ++i) {
+        LOG(INFO) << "example " << data::dataList2String(example_list[i]);
+    }*/
 
     std::set<std::pair<int, int>> visited_set;
     int or_limit = 1;
@@ -389,6 +422,7 @@ FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, 
                 visited_set.insert({clause_num, si});
                 auto condition = searchForCondition(info_storage[si], clause_num);
                 if (condition) {
+                    LOG(INFO) << "Find condition " << condition->toString();
                     return semantics::buildSingleContext(io_space->func_name, condition);
                 }
             }

@@ -131,9 +131,11 @@ void FExampleSpace::registerOupCache(const PProgram &program, const std::vector<
 void FExampleSpace::switchTo(int example_id) {
     if (current_example_id == example_id) return;
     current_example_id = example_id;
+    std::unordered_map<std::string, Data> global_map;
     for (int i = 0; i < global_input_list.size(); ++i) {
-        pool->ctx->addBinding(global_input_list[i].first, std::make_shared<TmValue>(example_list[example_id].global_input[i]));
+        global_map[global_input_list[i].first] = example_list[example_id].global_input[i];
     }
+    pool->ctx->initGlobal(global_map);
 }
 
 namespace {
@@ -155,14 +157,18 @@ namespace {
 Data FExampleSpace::runCompress(int example_id, Program *prog) {
     switchTo(example_id);
     global::recorder.start("execute");
+    int pre_size = pool->ctx->holder->address_list.size();
     auto res = env->run(prog, example_list[example_id].full_input);
+    pool->ctx->holder->recover(pre_size);
     global::recorder.end("execute");
     return res;
 }
 Data FExampleSpace::runAux(int example_id, const Data& content, Program *prog) {
     switchTo(example_id);
     global::recorder.start("execute");
+    int pre_size = pool->ctx->holder->address_list.size();
     auto res = env->run(prog, example_list[example_id].getAuxInput(content));
+    pool->ctx->holder->recover(pre_size);
     global::recorder.end("execute");
     return res;
 }
@@ -174,6 +180,7 @@ Data FExampleSpace::runAux(int example_id, const AuxProgram &aux) {
         auto* tv = dynamic_cast<VLabeledCompress*>(compress.get());
 #ifdef DEBUG
         auto* mid_type = dynamic_cast<TLabeledCompress*>(aux.first.first.get());
+        // LOG(INFO) << compress.toString() <<"  " << tv;
         // LOG(INFO) << aux2String(aux) << " " << compress.toString();
         assert(tv && mid_type && tv->id == mid_type->id);
 #endif
@@ -192,8 +199,8 @@ Data FExampleSpace::runOup(int example_id, Program *program, const std::vector<i
 
 PLPTask::PLPTask(FExampleSpace *_example_space, const std::vector<GrammarEnumerateTool *> &_aux_grammar_list,
                  const std::vector<TypedProgramList> &_pre_res, GrammarEnumerateTool *_compress_grammar, const TypedProgram &_target,
-                 const std::vector<int> &_path): example_space(_example_space), aux_grammar_list(_aux_grammar_list),
-                 pre_res_list(_pre_res), compress_grammar(_compress_grammar), target(_target), path(_path) {
+                 const std::vector<int> &_path, bool _oup_compress_id): example_space(_example_space), aux_grammar_list(_aux_grammar_list),
+                 pre_res_list(_pre_res), compress_grammar(_compress_grammar), target(_target), path(_path), oup_compress_id(_oup_compress_id) {
     oup_cache = example_space->getOupCache(target.second, path, 0);
     if (!oup_cache) {
         example_space->registerOupCache(target.second, path, {});
@@ -272,6 +279,20 @@ namespace {
         assert(ts && ts->type);
         return {ts->type, program->sub_list[0]};
     }
+
+    class _RuleBasedOptimizer: public Optimizer {
+    public:
+        static const std::unordered_set<std::string> KComOpSet, KAssocOpSet;
+        virtual void clear() {
+        }
+        virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p) {
+            auto sem_name = p->semantics->getName();
+        }
+
+    };
+
+    const std::unordered_set<std::string> _RuleBasedOptimizer::KComOpSet = {"+", "*", "||", "&&", "max", "min"};
+    const std::unordered_set<std::string> _RuleBasedOptimizer::KAssocOpSet = {"+", "*", "||", "&&", "max", "min"};
 }
 
 void GrammarEnumerateTool::extend() {

@@ -20,7 +20,7 @@ repr = fix (
 min = \a: Int. \b: Int. if < a b then a else b;
 max = \a: Int. \b: Int. if < a b then b else a;
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int}. \xs: List.
   match xs with
     two {x, y} -> {min x y, max x y}
@@ -28,7 +28,7 @@ spec = fix (
     let res = f t in
       {min res.1 h, min res.2 (max res.1 h)}
   end
-);
+) xs).2;
 
 is_sorted =
   let aux = fix (
@@ -52,4 +52,4 @@ target = fix (
 );
 
 main = \c: CList.
-  if is_sorted (repr c) then spec (repr (target c)) else {0, 0};
+  if is_sorted (repr c) then spec (repr (target c)) else 0;

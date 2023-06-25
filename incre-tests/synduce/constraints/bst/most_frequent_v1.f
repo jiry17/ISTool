@@ -1,5 +1,3 @@
-Config ComposeNum = 4;
-
 Inductive List = elt Int | cons {Int, List};
 Inductive Pos = one Unit | s Pos;
 Inductive Map = value {Int, Pos} | node {Int, Map, Map};
@@ -62,7 +60,7 @@ count = \w: Int. fix (
   end
 );
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int}. \l: List.
   match l with
     elt v -> {1, v}
@@ -71,7 +69,7 @@ spec = fix (
       let res = f t in
         if > cnt res.1 then {cnt, h} else res
   end
-);
+) xs).2;
 
 p2i = fix (
   \f: Pos -> Int. \n: Pos.
@@ -92,4 +90,4 @@ target = fix (
   end
 );
 
-main = \m: Map. if is_map m then spec (repr (target m)) else {0, 0};
+main = \m: Map. if is_map m then spec (repr (target m)) else 0;

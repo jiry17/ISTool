@@ -167,7 +167,15 @@ int CompressRes::insert(const TypedProgram& program) {
     return id;
 }
 
-autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(AlignTypeInfoData *info, const TypedProgram &target, const std::vector<int>& path) {
+namespace {
+    int _getCompressId(const Ty& type) {
+        auto* tc = dynamic_cast<TyLabeledCompress*>(type.get());
+        if (tc) return tc->id;
+        return -1;
+    }
+}
+
+autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(AlignTypeInfoData *info, const TypedProgram &target, const OutputUnit& unit) {
     auto* space = example_space_list[info->getId()];
 
     std::vector<TypedProgramList> known_lifts(aux_grammar_list.size());
@@ -177,7 +185,7 @@ autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(AlignTypeInfoData *info, 
         }
     }
 
-    auto* task = new PLPTask(space, aux_grammar_list, known_lifts, compress_grammar_list[info->getId()], target, path);
+    auto* task = new PLPTask(space, aux_grammar_list, known_lifts, compress_grammar_list[info->getId()], target, unit.path, _getCompressId(unit.unit_type));
     auto* solver = new IncrePLPSolver(env.get(), task);
     auto res = solver->synthesis(nullptr);
 
@@ -204,7 +212,7 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
         for (auto& unit: unit_storage[align_info->getId()]) {
             auto *oup_ty = unit.unit_type.get();
             if (!dynamic_cast<TyCompress *>(oup_ty)) {
-                PLPRes res = solvePLPTask(align_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr}, unit.path);
+                PLPRes res = solvePLPTask(align_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr}, unit);
                 record_res(align_info->getId(), res);
             }
         }
@@ -223,7 +231,7 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
                     for (auto& unit: unit_storage[align_info->getId()]) {
                         auto *cty = dynamic_cast<TyLabeledCompress *>(unit.unit_type.get());
                         if (cty && cty->id == compress_id) {
-                            PLPRes res = solvePLPTask(align_info.get(), component.program, unit.path);
+                            PLPRes res = solvePLPTask(align_info.get(), component.program, unit);
                             record_res(align_info->getId(), res);
                         }
                     }

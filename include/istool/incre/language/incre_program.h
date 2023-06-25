@@ -17,7 +17,7 @@ namespace incre {
     };
 
     enum class CommandDecorate {
-        INPUT, START, SYN_COMPRESS, SYN_COMBINE, SYN_ALIGN, SYN_NO_PARTIAL
+        INPUT, START, SYN_COMPRESS, SYN_COMBINE, SYN_ALIGN, SYN_NO_PARTIAL, TERM_NUM
     };
 
     enum class IncreConfig {
@@ -29,6 +29,8 @@ namespace incre {
         NON_LINEAR, /*Whether consider * in synthesis, default false*/
         EXTRA_GRAMMAR, /*Extra grammar considered in synthesis, default Fold*/
         ENABLE_FOLD, /*Whether consider `fold` operator on data structures in synthesis, default false*/
+        TERM_NUM, /* Number of terms considered by PolyGen*/
+        CLAUSE_NUM, /* Number of terms considered by PolyGen*/
         PRINT_ALIGN /*Whether print align results to the result*/
     };
 

@@ -1,5 +1,3 @@
-Config ComposeNum = 4;
-
 Inductive List = cons {Int, List} | nil Unit;
 Inductive CartTree = node {CartTree, Int, CartTree} | leaf Unit;
 Inductive CartPath = consNode {CartTree, CartPath} | nilNode Unit;
@@ -47,7 +45,14 @@ concat = fix (lambda f: List->List->List. lambda x: List. lambda y: List.
 cart2l = fix (
   \f: CartTree -> Compress List. \t: CartTree.
   match t with
-    node {l, w, r} ->
+    node {leaf _, w, leaf _} -> cons {w, nil unit}
+  | node {l, w, leaf _} ->
+    let lres = f l in
+      concat lres (cons {w, nil unit})
+  | node {leaf _, w, r} ->
+    let rres = f r in
+      concat (cons {w, nil unit}) rres
+  | node {l, w, r} ->
       let lres = f l in
         let rres = f r in
           concat lres (concat (cons {w, nil unit}) rres)

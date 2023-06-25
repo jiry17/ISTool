@@ -18,4 +18,7 @@ const std::string config::KIncreParserPath = "/home/jiry/zyw/IncreLanguage_23051
 const std::string config::KIncreParserPath = "/home/jiry/zyw/IncreLanguage_230511/";
 #endif
 
+const bool config::KIsDefaultSelf = true;
+
+
 TimeRecorder global::recorder;

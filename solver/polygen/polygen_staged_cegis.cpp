@@ -59,6 +59,16 @@ ProgramList StagedCEGISPolyGen::synthesisTerms(TimeGuard* guard) {
     ProgramList term_list = {start};
     ExampleList counter_examples;
     auto* example_space = dynamic_cast<FiniteExampleSpace*>(spec->example_space.get());
+
+    {
+        int base_num = 100;
+        std::vector<int> index_list;
+        for (int i = 0; i < index_list.size(); ++i) index_list.push_back(i);
+        std::shuffle(index_list.begin(), index_list.end(), spec->env->random_engine);
+        for (int i = 0; i < index_list.size() && i < base_num; ++i) {
+            counter_examples.push_back(example_space->example_space[index_list[i]]);
+        }
+    }
     while (1) {
         auto counter_example = verifyTerms(term_list);
         if (counter_example == -1) return term_list;

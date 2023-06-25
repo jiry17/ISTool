@@ -3,7 +3,7 @@ Inductive Zipper = top Unit | left {Int, BTree, Zipper} | right {Int, BTree, Zip
 
 max = \a: Int. \b: Int. if (< a b) then b else a;
 
-spec = (fix (
+spec = \t: BTree. (fix (
   \f: {Int, Int} -> BTree -> {Int, Int}. \s: {Int, Int}. \t: BTree.
   match t with
     empty _ -> s
@@ -11,7 +11,7 @@ spec = (fix (
     let result = f s l in
     f {+ result.1 a, max result.2 (+ result.1 a)} r
   end
-)) {0,0};
+) {0,0} t).2;
 
 repr = fix (
   \f: Zipper -> Compress BTree. \z: Zipper.

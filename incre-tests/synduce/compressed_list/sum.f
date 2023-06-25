@@ -1,3 +1,5 @@
+Config NonLinear = true;
+
 Inductive Nat = z Unit | s Nat;
 Inductive List = nil Unit | cons {Int, List};
 Inductive CList = cnil Unit | ccons {Nat, Int, CList};

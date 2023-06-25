@@ -24,14 +24,14 @@ max_diff = \w: Int. fix (
   end
 );
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int}. \xs: List.
   match xs with
     elt x -> {0, x}
   | cons {h, t} ->
     {max (max_diff h t) (f t).1, h}
   end
-);
+) xs).1;
 
 target = fix (
   \f: List -> Compress List. \xs: List.
@@ -41,4 +41,4 @@ target = fix (
   end
 );
 
-main = \xs: List. if is_sorted xs then spec (target xs) else {0, 0};
+main = \xs: List. if is_sorted xs then spec (target xs) else 0;

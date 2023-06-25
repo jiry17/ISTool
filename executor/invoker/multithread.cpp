@@ -41,6 +41,11 @@ FunctionContext invoker::multi::synthesis(Specification *spec, Verifier *v, cons
         solver_list.push_back(builder(spec, v));
     }
 
+    auto* fio = dynamic_cast<FiniteIOExampleSpace*>(spec->example_space.get());
+    for (int i = 0; i < 10 && i < fio->example_space.size(); ++i) {
+        auto& example = fio->example_space[i];
+        LOG(INFO) << example::ioExample2String(fio->getIOExample(example));
+    }
     std::mutex res_lock;
     FunctionContext res;
 
@@ -53,7 +58,6 @@ FunctionContext invoker::multi::synthesis(Specification *spec, Verifier *v, cons
                 res_lock.unlock();
                 multi_guard->finish();
             }
-            LOG(INFO) << "Finished " << ind;
         } catch (const TimeOutError& e) {
             LOG(INFO) << "Interrupt " << ind;
         }

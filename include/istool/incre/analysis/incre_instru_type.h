@@ -12,6 +12,7 @@ namespace incre {
     public:
         int id;
         VLabeledCompress(const Data& _v, int _id);
+        virtual std::string toString() const;
         virtual ~VLabeledCompress() = default;
     };
 

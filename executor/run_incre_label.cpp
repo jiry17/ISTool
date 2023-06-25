@@ -54,11 +54,6 @@ int main(int argv, char** argc) {
         info->example_pool->generateSingleExample();
     }
 
-    std::cout << "zyw: print component_pool begin!" << std::endl;
-    auto component_pool = info->component_pool;
-    component_pool.print();
-    std::cout << "zyw: print component_pool end!" << std::endl;
-
     for (auto& align_info: info->align_infos) {
         std::cout << "zyw: align_info->print()" << std::endl;
         align_info->print();
@@ -72,8 +67,7 @@ int main(int argv, char** argc) {
         std::cout << "zyw: example_list end!" << std::endl;
     }
     
-    /*
-    TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
+    /* TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
     for (int i = 0; i < info->align_infos.size(); ++i) {
         auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
         LOG(INFO) << "Hole grammar for #" << i;
@@ -83,8 +77,7 @@ int main(int argv, char** argc) {
         std::cout << std::endl;
         grammar->print();
     }
-    int kk; std::cin >> kk;
-    */
+    int kk; std::cin >> kk; */
 
     // LOG(INFO) << "Pre execute time " << global::recorder.query("execute");
 

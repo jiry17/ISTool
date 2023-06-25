@@ -18,7 +18,7 @@ repr = fix (
   end
 );
 
-spec = fix (
+spec = \xs: BList. (fix (
   \f: BList -> {Bool, Bool, Bool}. \xs: BList.
   match xs with
     nil _ -> {false, false, false}
@@ -29,6 +29,6 @@ spec = fix (
     let new_aux = or result.3 (not hd) in
     {new_seen1, new_res, new_aux}
   end
-);
+) xs).2;
 
 main = \xs: CList. spec (repr xs);

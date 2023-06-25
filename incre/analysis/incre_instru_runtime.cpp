@@ -29,7 +29,6 @@ std::string IncreExampleData::toString() const {
     return res + "} -> " + oup.toString();
 }
 IncreExampleCollector::~IncreExampleCollector() {
-    delete ctx;
 }
 void IncreExampleCollector::add(int tau_id, const std::unordered_map<std::string, Data> &local, const Data &oup) {
     assert(example_pool.size() > tau_id);
@@ -310,6 +309,14 @@ namespace {
     }
 }
 
+void SubstituteBasedExampleCollector::collect(const Term &start, const std::unordered_map<std::string, Data> &_global) {
+    current_global = _global;
+    for (auto& [name, val]: current_global) {
+        ctx->addBinding(name, std::make_shared<TmValue>(val));
+    }
+    _collectExample(start, ctx, this);
+}
+
 IncreExamplePool::~IncreExamplePool() {
     delete generator;
 }
@@ -369,27 +376,45 @@ namespace {
     const int KDefaultThreadNum = 8;
 }
 
+SubstituteBasedExampleCollector::SubstituteBasedExampleCollector(
+        const std::vector<std::unordered_set<std::string>> &_cared_vars, ProgramData *_program):
+        IncreExampleCollector(_cared_vars, _program) {
+    ctx = _buildCollectContext(_program, this);
+}
+SubstituteBasedExampleCollector::~SubstituteBasedExampleCollector() noexcept {
+    delete ctx;
+}
+
 IncreExampleCollector::IncreExampleCollector(const std::vector<std::unordered_set<std::string>> &_cared_vars,
                                              ProgramData* _program): cared_vars(_cared_vars), example_pool(_cared_vars.size()) {
-    ctx = _buildCollectContext(_program, this);
 }
 
 IncreExamplePool::IncreExamplePool(const IncreProgram& _program, Env* env,
-                                   const std::vector<std::unordered_set<std::string>> &_cared_vars):
+                                   const std::vector<std::unordered_set<std::string>> &_cared_vars, const CollectorBuilder& _builder):
                                    program(_program), cared_vars(_cared_vars), example_pool(_cared_vars.size()),
-                                   is_already_finished(_cared_vars.size(), false) {
-    generator = new FixedPoolFunctionGenerator(env); ctx = new Context();
+                                   is_already_finished(_cared_vars.size(), false), builder(_builder) {
+    generator = new FixedPoolFunctionGenerator(env);
+
+    auto label_rule = [](const Term& term, EnvAddress* env, AddressHolder* holder, const ExternalEnvRuleMap& map) -> Data {
+        auto* lt = dynamic_cast<TmLabeledLabel*>(term.get()); assert(lt);
+        auto res = incre::envRun(lt->content, env, holder, map);
+        return Data(std::make_shared<VLabeledCompress>(res, lt->id));
+    };
+    ExternalEnvRuleMap tmp_ext;
+    tmp_ext[TermType::LABEL] = (ExternalEnvRunRule){label_rule};
+
+    ctx = incre::envRun(program.get(), tmp_ext);
+    auto* tmp_ctx = new Context();
     for (int command_id = 0; command_id < program->commands.size(); ++command_id) {
         auto& command = program->commands[command_id];
-        incre::run(command, ctx);
-        LOG(INFO) << command->toString();
+        incre::run(command, tmp_ctx);
 
         if (command->getType() == CommandType::BIND) {
             auto* cb = dynamic_cast<CommandBind*>(command.get());
-            auto type = ctx->getType(cb->name);
-            auto* type_ctx = new TypeContext(ctx);
-            type = incre::unfoldBasicType(type, type_ctx);
-            delete type_ctx;
+            auto type = tmp_ctx->getType(cb->name);
+            auto* tmp_type_ctx = new TypeContext(tmp_ctx);
+            type = incre::unfoldBasicType(type, tmp_type_ctx);
+            delete tmp_type_ctx;
             if (cb->isDecoratedWith(CommandDecorate::INPUT)) {
                 if (_isCompressRelevant(type.get())) {
                     LOG(FATAL) << "The input should not be compressed, but get " << type->toString();
@@ -411,14 +436,17 @@ IncreExamplePool::IncreExamplePool(const IncreProgram& _program, Env* env,
         }
     }
 
+    type_ctx = new TypeContext(tmp_ctx);
+    delete tmp_ctx;
+
     start_dist = std::uniform_int_distribution<int>(0, int(start_list.size()) - 1);
     auto data = env->getConstRef(incre::KExampleThreadName, BuildData(Int, KDefaultThreadNum));
     thread_num = theory::clia::getIntValue(*data);
 }
 
 DefaultIncreExamplePool::DefaultIncreExamplePool(const IncreProgram &_program, Env *env,
-                                                 const std::vector<std::unordered_set<std::string>> &_cared_vars):
-                                                 IncreExamplePool(_program, env, _cared_vars) {
+                                                 const std::vector<std::unordered_set<std::string>> &_cared_vars, const CollectorBuilder& _builder):
+                                                 IncreExamplePool(_program, env, _cared_vars, _builder) {
 }
 void DefaultIncreExamplePool::insertExample(int pos, const IncreExample &new_example) {
     assert(pos < example_pool.size());
@@ -426,8 +454,8 @@ void DefaultIncreExamplePool::insertExample(int pos, const IncreExample &new_exa
 }
 
 NoDuplicatedIncreExamplePool::NoDuplicatedIncreExamplePool(const IncreProgram &_program, Env *env,
-                                                           const std::vector<std::unordered_set<std::string>> &_cared_vars):
-        IncreExamplePool(_program, env, _cared_vars), existing_example_set(_cared_vars.size()) {
+                                                           const std::vector<std::unordered_set<std::string>> &_cared_vars, const CollectorBuilder& _builder):
+        IncreExamplePool(_program, env, _cared_vars, _builder), existing_example_set(_cared_vars.size()) {
 }
 
 void NoDuplicatedIncreExamplePool::insertExample(int pos, const IncreExample &new_example) {
@@ -441,23 +469,13 @@ void NoDuplicatedIncreExamplePool::insertExample(int pos, const IncreExample &ne
 
 #include "istool/basic/config.h"
 
-void IncreExampleCollector::collect(const Term &start, const std::unordered_map<std::string, Data> &_global) {
-    current_global = _global;
-    for (auto& [name, val]: current_global) {
-        /*LOG(INFO) << "bind " << name << " " << val.toString();*/
-        ctx->addBinding(name, std::make_shared<TmValue>(val));
-    }
-    //LOG(INFO) << "collect " << start->toString();
-    _collectExample(start, ctx, this);
-}
-
 std::pair<Term, std::unordered_map<std::string, Data>> IncreExamplePool::generateStart() {
     std::unordered_map<std::string, Data> global;
     // std::cout << "zyw: generateStart, inp_name = " << std::endl;
     for (auto& [inp_name, inp_ty]: input_list) {
         std::cout << inp_name << std::endl;
         auto input_data = generator->getRandomData(inp_ty);
-        ctx->addBinding(inp_name, std::make_shared<TmValue>(input_data));
+        // ctx->addBinding(inp_name, std::make_shared<TmValue>(input_data));
         global[inp_name] = input_data;
     }
     auto& [start_name, params] = start_list[start_dist(generator->env->random_engine)];
@@ -481,11 +499,12 @@ namespace {
         int tau_id, target_num, thread_num;
         bool is_finished = false;
         int attempt_num = 0;
+        CollectorBuilder builder;
         std::queue<std::pair<Term, std::unordered_map<std::string, Data>>> input_queue;
         TimeGuard* guard;
 
-        _MultiThreadCollectorHolder(IncreExamplePool* _pool, int _tau_id, int _target_num, TimeGuard* _guard):
-            pool(_pool), tau_id(_tau_id), target_num(_target_num), guard(_guard), thread_num(pool->thread_num) {
+        _MultiThreadCollectorHolder(IncreExamplePool* _pool, int _tau_id, int _target_num, const CollectorBuilder& _builder, TimeGuard* _guard):
+            pool(_pool), tau_id(_tau_id), target_num(_target_num), guard(_guard), builder(_builder), thread_num(pool->thread_num) {
         }
         void collect() {
             std::vector<std::thread> thread_list;
@@ -538,7 +557,7 @@ namespace {
             std::vector<IncreExampleCollector*> collector_list;
 
             for (int i = 0; i < thread_num; ++i) {
-                auto* collector = new IncreExampleCollector(pool->cared_vars, pool->program.get());
+                auto* collector = builder(pool->cared_vars, pool->program.get());
                 collector_list.push_back(collector);
                 thread_list.emplace_back(single_thread, collector, i);
             }
@@ -552,7 +571,7 @@ namespace {
 
 void IncreExamplePool::generateSingleExample() {
     auto [term, global] = generateStart();
-    auto* collector = new IncreExampleCollector(cared_vars, program.get());
+    auto* collector = builder(cared_vars, program.get());
 
     global::recorder.start("collect");
     collector->collect(term, global);
@@ -563,12 +582,26 @@ void IncreExamplePool::generateSingleExample() {
 void IncreExamplePool::generateBatchedExample(int tau_id, int target_num, TimeGuard *guard) {
     if (is_already_finished[tau_id] || target_num < example_pool[tau_id].size()) return;
     if (guard) LOG(INFO) << "Start generate " << guard->getRemainTime();
-    auto* holder = new _MultiThreadCollectorHolder(this, tau_id, target_num, guard);
+    auto* holder = new _MultiThreadCollectorHolder(this, tau_id, target_num, builder, guard);
     global::recorder.start("collect");
     holder->collect();
     global::recorder.end("collect");
+    if (example_pool[tau_id].size() < target_num) is_already_finished[tau_id] = true;
     if (guard) LOG(INFO) << "Generate finished";
     delete holder;
 }
 
 const std::string incre::KExampleThreadName = "KIncreExampleCollectNum";
+
+CollectorBuilder incre::getCollectorBuilder(const CollectorType &type) {
+    switch (type) {
+        case CollectorType::SUBSTITUE:
+            return [](const std::vector<std::unordered_set<std::string>>& cared_vars, ProgramData* program) {
+                return new SubstituteBasedExampleCollector(cared_vars, program);
+            };
+        case CollectorType::ENV:
+            return [](const std::vector<std::unordered_set<std::string>>& cared_vars, ProgramData* program) {
+                return new EnvBasedExampleCollector(cared_vars, program);
+            };
+    }
+}

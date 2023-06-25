@@ -1,3 +1,4 @@
+Config ExtraGrammar = "AutoLifter";
 Inductive CList = cnil Unit | single Int | concat {CList, CList};
 Inductive List = nil Unit | cons {Int, List};
 
@@ -19,7 +20,7 @@ repr = fix (
 
 max = \a: Int. \b: Int. if < a b then b else a;
 
-spec = fix (
+spec = \xs: List. (fix (
   \f: List -> {Int, Int}. \xs: List.
   match xs with
     nil _ -> {0, 0}
@@ -27,6 +28,6 @@ spec = fix (
     let res = f t in
       {max 0 (+ res.1 h), + res.2 h}
   end
-);
+) xs).1;
 
 @Start main = \cl: CList. spec (repr cl);

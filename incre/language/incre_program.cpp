@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/language/incre_program.h"
+#include "istool/solver/polygen/polygen_term_solver.h"
 #include "glog/logging.h"
 #include <iostream>
 
@@ -96,7 +97,9 @@ namespace {
             {IncreConfig::ENABLE_FOLD, "EnableFold"},
             {IncreConfig::SAMPLE_INT_MIN, "SampleIntMin"},
             {IncreConfig::SAMPLE_INT_MAX, "SampleIntMax"},
-            {IncreConfig::PRINT_ALIGN, "PrintAlign"}
+            {IncreConfig::PRINT_ALIGN, "PrintAlign"},
+            {IncreConfig::TERM_NUM, "TermNum"},
+            {IncreConfig::CLAUSE_NUM, "ClauseNum"}
     };
 }
 
@@ -109,6 +112,7 @@ IncreConfig incre::string2ConfigType(const std::string &s) {
 
 
 #include "istool/solver/autolifter/composed_sf_solver.h"
+#include "istool/solver/polygen/dnf_learner.h"
 
 const std::string config_name::KDataSizeLimitName = "incre@data-size-limit";
 const std::string config_name::KExtraGrammarName = "incre@extra-grammar";
@@ -124,6 +128,7 @@ namespace {
     void _constructEnvNameMap() {
         KConfigEnvNameMap = {
             {IncreConfig::COMPOSE_NUM, solver::autolifter::KComposedNumName},
+            {IncreConfig::TERM_NUM, solver::polygen::KMaxTermNumName},
             {IncreConfig::NON_LINEAR, config_name::KIsNonLinearName},
             {IncreConfig::VERIFY_BASE, solver::autolifter::KOccamExampleNumName},
             {IncreConfig::SAMPLE_SIZE, config_name::KDataSizeLimitName},
@@ -131,7 +136,8 @@ namespace {
             {IncreConfig::ENABLE_FOLD, config_name::KIsEnableFoldName},
             {IncreConfig::SAMPLE_INT_MIN, config_name::KSampleIntMinName},
             {IncreConfig::SAMPLE_INT_MAX, config_name::KSampleIntMaxName},
-            {IncreConfig::PRINT_ALIGN, config_name::KPrintAlignName}
+            {IncreConfig::PRINT_ALIGN, config_name::KPrintAlignName},
+            {IncreConfig::CLAUSE_NUM, solver::polygen::KMaxClauseNumName}
         };
     }
 }

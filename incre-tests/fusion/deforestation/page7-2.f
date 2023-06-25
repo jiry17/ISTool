@@ -1,3 +1,5 @@
+Config NonLinear = true;
+
 Inductive Tree = leaf Int | branch {Tree, Tree};
 
 square = \x: Int. * x x;

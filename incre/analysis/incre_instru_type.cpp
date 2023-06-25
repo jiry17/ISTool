@@ -11,6 +11,10 @@ VLabeledCompress::VLabeledCompress(const Data &_v, int _id):
     VCompress(_v), id(_id) {
 }
 
+std::string VLabeledCompress::toString() const {
+    return "compress[" + std::to_string(id) + "] " + content.toString();
+}
+
 TyLabeledCompress::TyLabeledCompress(const Ty &_ty, int _id):
     TyCompress(_ty), id(_id) {
 }

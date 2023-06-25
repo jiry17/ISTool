@@ -1,4 +1,4 @@
-Config ComposeNum = 4;
+Config ClauseNum = 2;
 
 Inductive List = cons {Int, List} | nil Unit;
 Inductive CartTree = node {CartTree, Int, CartTree} | leaf Unit;
@@ -47,7 +47,14 @@ concat = fix (lambda f: List->List->List. lambda x: List. lambda y: List.
 cart2l = fix (
   \f: CartTree -> Compress List. \t: CartTree.
   match t with
-    node {l, w, r} ->
+    node {leaf _, w, leaf _} -> cons {w, nil unit}
+  | node {l, w, leaf _} ->
+    let lres = f l in
+      concat lres (cons {w, nil unit})
+  | node {leaf _, w, r} ->
+    let rres = f r in
+      concat (cons {w, nil unit}) rres
+  | node {l, w, r} ->
       let lres = f l in
         let rres = f r in
           concat lres (concat (cons {w, nil unit}) rres)
@@ -75,7 +82,6 @@ fold = lambda f: Int->Int->Int. lambda x: List. lambda w0: Int.
 
 length = lambda x: List. fold (lambda a: Int. lambda b: Int. + b 1) x 0;
 sum = lambda x: List. fold (lambda a: Int. lambda b: Int. + a b) x 0;
-
 head = lambda default: Int. lambda l: List.
   match l with
     cons {h, t} -> h
@@ -94,14 +100,6 @@ raw_pre = \b: List -> Bool.
       if (b pre) then max len sub_res
       else sub_res
   )) (nil unit) 0;
-
-raw_suf = \b: List -> Bool.
-  fix (\f: List->Int. \l: List.
-  if (b l) then length l
-  else match l with
-    cons {h, t} -> f t
-  | _ -> 0
-  end);
 
 raw_lsp = \b: List -> Bool.
   fix (\f: List -> Int. \l: List.

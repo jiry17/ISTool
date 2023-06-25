@@ -57,13 +57,12 @@ namespace incre::grammar {
 
     class IncreComponent: public ContextFreeSynthesisComponent {
     public:
-        Context* ctx;
         TypeList param_types;
         PType res_type;
         Data data;
         Term term;
-        bool is_partial;
-        IncreComponent(Context* _ctx, const std::string& _name, const PType& _type, const Data& _data, const Term& _term, int command_id, bool _is_partial);
+        bool is_partial, is_parallel;
+        IncreComponent(const std::string& _name, const PType& _type, const Data& _data, const Term& _term, int command_id, bool _is_partial, bool _is_parallel);
         virtual void insertComponent(const GrammarBuilder& symbol_map);
         virtual void extendNTMap(GrammarBuilder& symbol_map);
         virtual Term tryBuildTerm(const PSemantics& sem, const TermList& term_list);
@@ -150,17 +149,17 @@ namespace incre::grammar {
     };
 
     namespace collector {
-        ComponentPool collectComponentFromSource(Context* ctx, ProgramData* program);
-        ComponentPool collectComponentFromLabel(Context* ctx, ProgramData* program);
-        ComponentPool getBasicComponentPool(Context* ctx, Env* env);
-        ComponentPool collectExtraOperators(Context* ctx, const std::string& extra_name);
-        void loadExtraOperator(Context* ctx, Env* env, const std::string& extra_name);
+        ComponentPool collectComponentFromSource(EnvContext* env_ctx, TypeContext* ctx, ProgramData* program);
+        ComponentPool collectComponentFromLabel(EnvContext* env_ctx, TypeContext* ctx, ProgramData* program);
+        ComponentPool getBasicComponentPool(Env* env);
+        ComponentPool collectExtraOperators(EnvContext* env_ctx, TypeContext* ctx, const std::string& extra_name);
+        void loadExtraOperator(EnvContext* env_ctx, TypeContext* ctx, Env* env, const std::string& extra_name);
         extern const std::string KCollectMethodName;
     }
     namespace builder {
         Grammar *buildGrammar(const TypeList &inp_list, const SynthesisComponentList &component_list, const PType& oup);
     }
-    ComponentPool collectComponent(Context* ctx, Env* env, ProgramData* program);
+    ComponentPool collectComponent(EnvContext* env_ctx, TypeContext* ctx, Env* env, ProgramData* program);
 }
 
 #endif //ISTOOL_INCRE_COMPONENT_COLLECTOR_H

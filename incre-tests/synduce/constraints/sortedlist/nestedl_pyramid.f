@@ -42,7 +42,7 @@ interval = fix (
   end
 );
 
-spec = fix (
+spec = \xs: NList. (fix (
   \f: NList -> {Int, Int, Bool}. \xs: NList.
   match xs with
     line x ->
@@ -54,7 +54,7 @@ spec = fix (
           {min info.1 res.1, max info.2 res.2,
            and res.3 (and (<= res.1 info.1) (>= res.2 info.2))}
   end
-);
+) xs).3;
 
 target = fix (
   \f: NList -> Compress NList. \xs: NList.
@@ -68,4 +68,4 @@ target = fix (
    end
 );
 
-main = \xs: NList. if is_sorted xs then spec (target xs) else {0, 0, false};
+main = \xs: NList. if is_sorted xs then spec (target xs) else false;
