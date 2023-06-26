@@ -26,11 +26,199 @@ std::string ConcreteRule::toString() const {
     std::string res = semantics->getName();
     if (param_list.empty()) return res;
     for (int i = 0; i < param_list.size(); ++i) {
-        if (i) res += ","; else res += "(";
+        if (i) res += " "; else res += "(";
         res += param_list[i]->name;
     }
     return res + ")";
 }
+
+std::string ConcreteRule::getSemanticsName() const {
+    return semantics->getName();
+}
+
+std::string ConcreteRule::toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num, int func_num, std::string &node_name) {
+    std::string res = semantics->getName();
+    // modify constructor
+    if (res == "+") res = "Cadd";
+    else if (res == "-") res = "Csub";
+    else if (res == "*") res = "Cmul";
+    else if (res == "=") res = "Ceq";
+    else if (res == "<") res = "Cless";
+    else if (res == "&&") res = "Cand";
+    else if (res == "||") res = "Cor";
+    else if (res == "!") res = "Cnot";
+    else if (res == "0") res = "Czero";
+    else if (res == "1") res = "Cone";
+    else if (res == "(0) (0)") res = "CTupleZero";
+    else if (res == "ite") res = "CIte";
+    else if (res == "false") res = "CFalse";
+    else if (res == "true") res = "CTrue";
+    else if (!(res[0] >= 'a' && res[0] <= 'z' || res[0] >= 'A' && res[0] <= 'Z')) {
+        std::cout << "error: res is not a letter!, res = " << res << std::endl;
+        return res;
+    }
+    else res[0] = std::toupper(res[0]);
+    // change name of semantics
+    semantics->name = res;
+    res += std::to_string(func_num) + "_" + std::to_string(name_to_expr_num[node_name]); 
+
+    if (param_list.empty()) return res;
+    for (int i = 0; i < param_list.size(); ++i) {
+        res += " ";
+        if (name_to_expr_num.find(param_list[i]->name) == name_to_expr_num.end()) {
+            name_to_expr_num[param_list[i]->name] = next_expr_num++;
+        }
+        res += "(UnionM Expr" + std::to_string(func_num) + "_" + std::to_string(name_to_expr_num[param_list[i]->name]) + ")";
+    }
+    return res;
+}
+
+std::string ConcreteRule::evalRuleToHaskell(std::string node_name, int func_num,
+        std::unordered_map<std::string, int>& name_to_expr_num,
+        std::vector<std::string>& var_list,
+        std::string oup_type, std::vector<std::pair<PType, int> > &env_type_list) {
+    std::vector<int> param_num;
+    std::vector<std::string> param_name;
+    std::string semantics_name = semantics->name;
+
+    for (int i = 0; i < param_list.size(); ++i) {
+        param_num.push_back(name_to_expr_num[param_list[i]->name]);
+        param_name.push_back("p" + std::to_string(i));
+    }
+    
+    std::string res = "eval" + node_name + " env (" + semantics_name + node_name;
+    for (int i = 0; i < param_list.size(); ++i) {
+        res += " " + param_name[i];
+    }
+    res += ") = ";
+    if (semantics_name == "Cadd" || semantics_name == "Csub" || semantics_name == "Cmul"
+        || semantics_name == "Ceq" || semantics_name == "Cless" || semantics_name == "Cand"
+        || semantics_name == "Cor") {
+        if (param_list.size() != 2) {
+            std::cout << "error: param size != 2" << std::endl;
+            return res;
+        }
+        std::unordered_map<std::string, std::string> func_name_map = {{"Cadd", "+"},
+            {"Csub", "-"}, {"Cmul", "*"}, {"Ceq", "==~"}, {"Cless", "<~"}, {"Cand", "&&~"},
+            {"Cor", "||~"}};
+        res += " (evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[0])
+            + " env " + param_name[0] + ") ";
+        res += func_name_map[semantics_name];
+        res += " (evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[1])
+            + " env " + param_name[1] + ") ";
+    }
+    else if (semantics_name == "Cnot") {
+        if (param_list.size() != 1) {
+            std::cout << "error: param size != 1" << std::endl;
+            return res;
+        }
+        // mrgIte ((evalU0_2 env p0) ==~ (toSym True)) (toSym False) (toSym True)
+        res += " mrgIte ((evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[0])
+            + " env " + param_name[0] + ") ==~ (toSym True)) (toSym False) (toSym True)";
+    }
+    else if (semantics_name == "Czero") {
+        if (param_list.size() != 0) {
+            std::cout << "error: param size != 0" << std::endl;
+            return res;
+        }
+        res += "0";
+    }
+    else if (semantics_name == "Cone") {
+        if (param_list.size() != 0) {
+            std::cout << "error: param size != 0" << std::endl;
+            return res;
+        }
+        res += "1";
+    }
+    else if (semantics_name == "CTupleZero") {
+        if (param_list.size() != 0) {
+            std::cout << "error: param size != 0" << std::endl;
+            return res;
+        }
+        res += "(0,0)";
+    }
+    else if (semantics_name == "CFalse") {
+        if (param_list.size() != 0) {
+            std::cout << "error: param size != 0" << std::endl;
+            return res;
+        }
+        res += "(toSym False)";
+    }
+    else if (semantics_name == "CTrue") {
+        if (param_list.size() != 0) {
+            std::cout << "error: param size != 0" << std::endl;
+            return res;
+        }
+        res += "(toSym True)";
+    }
+    else if (semantics_name == "CIte") {
+        if (param_list.size() != 3) {
+            std::cout << "error: param size != 3" << std::endl;
+        }
+        // mrgIte ((evalU0_2 env p0) ==~ (toSym True)) (evalU0_1 env p1) (evalU0_1 env p2)
+        res += "mrgIte";
+        res += " ((evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[0])
+            + " env " + param_name[0] + ") ==~ (toSym True))";
+        res += " (evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[1])
+            + " env " + param_name[1] + ")";
+        res += " (evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[2])
+            + " env " + param_name[2] + ")";
+    }
+    else if (semantics_name.substr(0, 6) == "Access") {
+        if (param_list.size() != 1) {
+            std::cout << "error: param size != 1" << std::endl;
+            return res;
+        }
+        if (semantics_name[6] == '0') res += "fst ";
+        else res += "snd ";
+        res += "(evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[0])
+            + " env " + param_name[0] + ")";
+    }
+    else if (semantics_name.substr(0, 4) == "Prod") {
+        if (param_list.size() != 2) {
+            std::cout << "error: param size != 2" << std::endl;
+            return res;
+        }
+        res += "(";
+        res += "(evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[0])
+            + " env " + param_name[0] + ")";
+        res += ", ";
+        res += "(evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[1])
+            + " env " + param_name[1] + ")";
+        res += ")";
+    }
+    else if (semantics_name.substr(0, 5) == "Param") {
+        int param_num = semantics_name[5] - '0';
+        int num_in_type_list = -1;
+        for (int i = 0; i < env_type_list.size(); ++i) {
+            if (oup_type == env_type_list[i].first->getHaskellName()) {
+                num_in_type_list = i;
+                break;
+            }
+        }
+        if (num_in_type_list == -1) {
+            LOG(FATAL) << "Unexpected type in Param" << std::to_string(param_num) << ", type = " << oup_type;
+        }
+        res += "evalVar";
+        res += std::to_string(num_in_type_list);
+        res += (" env \"" + var_list[param_num] + "\"");
+    }
+    else {
+        if (semantics_name == "Max") semantics_name = "max'";
+        else if (semantics_name == "Min") semantics_name = "min'";
+        else if (semantics_name == "Sum") semantics_name = "sum'";
+        else {
+            semantics_name[0] = std::tolower(semantics_name[0]);
+        }
+        res += semantics_name;
+        for (int i = 0; i < param_list.size(); ++i) {
+            res += " (evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[i])
+                + " env " + param_name[i] + ")";
+        }
+    }
+    return res;
+}
+
 PProgram ConcreteRule::buildProgram(const ProgramList &sub_list) {
     return std::make_shared<Program>(semantics, sub_list);
 }
@@ -129,7 +317,7 @@ void Grammar::print() const {
     std::cout << "start: " << start->name << std::endl;
     for (auto* node: symbol_list) {
         std::cout << "node: " << node->name << std::endl;
-        for (auto* rule: node->rule_list) {
+        for (auto *rule: node->rule_list) {
             std::cout << "  " << rule->toString() << std::endl;
         }
     }

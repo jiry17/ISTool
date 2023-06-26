@@ -1,0 +1,33 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingVia #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
+module Main where
+
+import Grisette
+import Utils.Timing
+import GHC.Generics
+import Data.Time
+import Data.Hashable
+import Data.Maybe
+import Data.Proxy
+import Control.DeepSeq
+import Control.Monad.Except
+import System.CPUTime
+
+type Ident = String
+      
+data Unit =
+      Unit
+    deriving stock (Generic, Show)
+    deriving (Mergeable, EvaluateSym, ToCon Unit, ExtractSymbolics)
+        via (Default Unit)
+
+------pre output end-----

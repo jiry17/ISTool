@@ -11,6 +11,7 @@ class TInt: public SimpleType {
 public:
     virtual std::string getName();
     virtual PType clone(const TypeList& params);
+    virtual std::string getHaskellName();
 };
 
 namespace theory {

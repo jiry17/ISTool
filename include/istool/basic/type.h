@@ -21,6 +21,7 @@ public:
     virtual std::string getBaseName() = 0;
     virtual TypeList getParams() = 0;
     virtual PType clone(const TypeList& params) = 0;
+    virtual std::string getHaskellName() = 0;
     virtual ~Type() = default;
 };
 
@@ -36,6 +37,7 @@ class TBot: public SimpleType {
 public:
     virtual std::string getName();
     virtual PType clone(const TypeList& params);
+    virtual std::string getHaskellName();
     virtual ~TBot() = default;
 };
 
@@ -45,6 +47,7 @@ public:
     TVar(const std::string& _name);
     virtual std::string getName();
     virtual PType clone(const TypeList& params);
+    virtual std::string getHaskellName();
     virtual ~TVar() = default;
 };
 
@@ -52,6 +55,7 @@ class TBool: public SimpleType {
 public:
     virtual std::string getName();
     virtual PType clone(const TypeList& params);
+    virtual std::string getHaskellName();
     virtual ~TBool() = default;
 };
 

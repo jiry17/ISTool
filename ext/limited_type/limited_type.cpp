@@ -21,6 +21,9 @@ std::string RefinedType::getName() {
 PType RefinedType::clone(const TypeList &params) {
     return std::make_shared<RefinedType>(params[0], p);
 }
+std::string RefinedType::getHaskellName() {
+    return getName();
+}
 
 
 bool RefinedType::equal(Type *type) {

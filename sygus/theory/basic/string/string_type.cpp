@@ -11,6 +11,9 @@ std::string TString::getName() {
 PType TString::clone(const TypeList &type_list) {
     return std::make_shared<TString>();
 }
+std::string TString::getHaskellName() {
+    return getName();
+}
 
 PType theory::string::getTString() {
     static PType t_string;

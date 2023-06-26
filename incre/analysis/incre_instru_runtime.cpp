@@ -472,6 +472,7 @@ void NoDuplicatedIncreExamplePool::insertExample(int pos, const IncreExample &ne
 std::pair<Term, std::unordered_map<std::string, Data>> IncreExamplePool::generateStart() {
     std::unordered_map<std::string, Data> global;
     for (auto& [inp_name, inp_ty]: input_list) {
+        std::cout << inp_name << std::endl;
         auto input_data = generator->getRandomData(inp_ty);
         // ctx->addBinding(inp_name, std::make_shared<TmValue>(input_data));
         global[inp_name] = input_data;

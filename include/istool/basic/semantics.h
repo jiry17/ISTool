@@ -26,6 +26,7 @@ public:
     Semantics(const std::string& _name);
     virtual Data run(const std::vector<std::shared_ptr<Program>>& sub_list, ExecuteInfo* info) = 0;
     virtual std::string buildProgramString(const std::vector<std::string>& sub_exp);
+    virtual std::string buildProgramStringToHaskell(const std::vector<std::string>& sub_exp);
     virtual std::string getName();
     virtual ~Semantics() = default;
 };

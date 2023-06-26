@@ -112,6 +112,23 @@ IncreAutoLifterSolver::IncreAutoLifterSolver(IncreInfo *_info, const PEnv& _env)
     for (int i = 0; i < aux_grammar_list.size(); ++i) {
         aux_grammar_list[i] = new GrammarEnumerateTool(buildAuxGrammar(i));
     }
+
+    int num = 0;
+    for (auto& grammar_enum: compress_grammar_list) {
+        std::cout << "num = " << num++ << std::endl;
+        auto& grammar = grammar_enum->grammar;
+        grammar->print();
+    }
+    num = 0;
+    for (auto& grammar_enum: aux_grammar_list) {
+        std::cout << "num = " << num++ << std::endl;
+        auto& grammar = grammar_enum->grammar;
+        grammar->print();
+    }
+    for (auto& [name, grammar]: combine_grammar_map) {
+        std::cout << name << " " << std::endl;
+        grammar->print();
+    }
 #ifdef DEBUG
     for (int i = 0; i < info->align_infos.size(); ++i) assert(info->align_infos[i]->getId() == i);
 #endif

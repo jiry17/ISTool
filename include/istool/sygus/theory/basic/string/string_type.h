@@ -12,6 +12,7 @@ class TString: public SimpleType {
 public:
     virtual std::string getName();
     virtual PType clone(const TypeList& type_list);
+    virtual std::string getHaskellName();
     virtual ~TString() = default;
 };
 

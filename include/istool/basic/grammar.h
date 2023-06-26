@@ -27,6 +27,11 @@ public:
     Rule(const NTList& _param_list);
     virtual PProgram buildProgram(const ProgramList& sub_list) = 0;
     virtual std::string toString() const = 0;
+    virtual std::string getSemanticsName() const = 0;
+    virtual std::string toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num, int func_num, std::string &node_name) = 0;
+    virtual std::string evalRuleToHaskell(std::string node_name, int func_num,
+        std::unordered_map<std::string, int>& name_to_expr_num, std::vector<std::string>& var_list,
+        std::string oup_type, std::vector<std::pair<PType, int> > &env_type_list) = 0;
     virtual Rule* clone(const NTList& new_param_list) = 0;
     virtual ~Rule() = default;
 };
@@ -38,6 +43,11 @@ public:
     virtual int getSize() const {return 1;}
     virtual PProgram buildProgram(const ProgramList& sub_list);
     virtual std::string toString() const;
+    virtual std::string getSemanticsName() const;
+    virtual std::string toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num, int func_num, std::string &node_name);
+    virtual std::string evalRuleToHaskell(std::string node_name, int func_num,
+        std::unordered_map<std::string, int>& name_to_expr_num, std::vector<std::string>& var_list,
+        std::string oup_type, std::vector<std::pair<PType, int> > &env_type_list);
     virtual Rule* clone(const NTList& new_param_list);
     ~ConcreteRule() = default;
 };

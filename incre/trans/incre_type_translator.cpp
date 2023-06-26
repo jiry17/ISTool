@@ -28,6 +28,9 @@ bool TIncreInductive::equal(Type *t) {
     delete ctx;
     return res;
 }
+std::string TIncreInductive::getHaskellName() {
+    return getName();
+}
 
 TCompress::TCompress(const PType &_content): content(_content) {
 }
@@ -46,6 +49,9 @@ TypeList TCompress::getParams() {
 }
 PType TCompress::clone(const TypeList& params) {
     LOG(FATAL) << "TCompress.clone() should not be invoked";
+}
+std::string TCompress::getHaskellName() {
+    return getName();
 }
 
 TLabeledCompress::TLabeledCompress(int _id, const PType &_content): id(_id), TCompress(_content) {

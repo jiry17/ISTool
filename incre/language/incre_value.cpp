@@ -9,7 +9,7 @@
 using namespace incre;
 
 std::string VUnit::toString() const {
-    return "unit";
+    return "Unit";
 }
 bool VUnit::equal(Value *value) const {
     return dynamic_cast<VUnit*>(value);
@@ -23,7 +23,10 @@ bool VInductive::equal(Value *value) const {
     return v->name == name && v->content == content;
 }
 std::string VInductive::toString() const {
-    return name + " " + content.toString();
+    std::string name_for_haskell = name;
+    name_for_haskell[0] = std::toupper(name_for_haskell[0]);
+    // return name + " " + content.toString();
+    return name_for_haskell + " " + content.toString();
 }
 
 VCompress::VCompress(const Data &_content): content(_content) {}
