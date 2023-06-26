@@ -18,6 +18,7 @@ namespace incre::match {
 
     bool match(TyData* type, const MatchTask& task);
     bool match(TermData* term, const MatchTask& task);
+
     MatchContext match(ProgramData* program, const MatchTask& task);
 }
 

@@ -55,6 +55,11 @@ namespace incre {
 
     IncreProgram eliminateNestedAlign(ProgramData* program);
     IncreProgram eliminateUnusedLet(ProgramData* program);
+
+    int getTypeSize(TyData* type);
+    int getTermSize(TermData* term);
+    int getCommandSize(CommandData* command);
+    int getProgramSize(ProgramData* program);
 }
 
 #endif //ISTOOL_INCRE_H

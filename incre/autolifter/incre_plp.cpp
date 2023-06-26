@@ -199,7 +199,7 @@ Data FExampleSpace::runOup(int example_id, Program *program, const std::vector<i
 
 PLPTask::PLPTask(FExampleSpace *_example_space, const std::vector<GrammarEnumerateTool *> &_aux_grammar_list,
                  const std::vector<TypedProgramList> &_pre_res, GrammarEnumerateTool *_compress_grammar, const TypedProgram &_target,
-                 const std::vector<int> &_path, bool _oup_compress_id): example_space(_example_space), aux_grammar_list(_aux_grammar_list),
+                 const std::vector<int> &_path, int _oup_compress_id): example_space(_example_space), aux_grammar_list(_aux_grammar_list),
                  pre_res_list(_pre_res), compress_grammar(_compress_grammar), target(_target), path(_path), oup_compress_id(_oup_compress_id) {
     oup_cache = example_space->getOupCache(target.second, path, 0);
     if (!oup_cache) {
@@ -280,6 +280,33 @@ namespace {
         return {ts->type, program->sub_list[0]};
     }
 
+    namespace {
+        bool _isRemoveCom(const std::string& name, const PProgram& p) {
+            assert(p->sub_list.size() <= 2);
+            if (p->sub_list.size() != 2) return false;
+            auto l = p->sub_list[0]->toString();
+            auto r = p->sub_list[1]->toString();
+            return l >= r;
+        }
+        bool _isRemoveAssoc(const std::string& name, const PProgram& p) {
+            assert(p->sub_list.size() <= 2);
+            if (p->sub_list.size() != 2) return false;
+            return p->sub_list[0]->semantics->getName() == name;
+        }
+        bool _isRemoveConst(const PProgram& p) {
+            if (p->sub_list.size()) {
+                return dynamic_cast<ConstSemantics*>(p->semantics.get());
+            }
+            bool is_remove = true;
+            for (auto& sub_program: p->sub_list) {
+                if (!_isRemoveConst(sub_program)) {
+                    is_remove = false;
+                }
+            }
+            return is_remove;
+        }
+    }
+
     class _RuleBasedOptimizer: public Optimizer {
     public:
         static const std::unordered_set<std::string> KComOpSet, KAssocOpSet;
@@ -287,6 +314,19 @@ namespace {
         }
         virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p) {
             auto sem_name = p->semantics->getName();
+            if (KComOpSet.find(sem_name) != KComOpSet.end() && _isRemoveCom(sem_name, p)) {
+                //LOG(INFO) << "remove " << p->toString();
+                return true;
+            }
+            if (KAssocOpSet.find(sem_name) != KAssocOpSet.end() && _isRemoveAssoc(sem_name, p)) {
+                //LOG(INFO) << "remove " << p->toString();
+                return true;
+            }
+            if (!p->sub_list.empty() && _isRemoveConst(p)) {
+                //LOG(INFO) << "remove " << p->toString();
+                return true;
+            }
+            return false;
         }
 
     };
@@ -298,8 +338,11 @@ namespace {
 void GrammarEnumerateTool::extend() {
     int target_size = program_pool.size();
     auto dummy_info = std::make_shared<SynthInfo>("", TypeList(), PType(), grammar);
-    std::vector<FunctionContext> collect_list; EnumConfig c(nullptr, nullptr, nullptr);
+    std::vector<FunctionContext> collect_list;
+    auto* op = new _RuleBasedOptimizer();
+    EnumConfig c(nullptr, op, nullptr);
     solver::collectAccordingSize({dummy_info}, target_size + 1, collect_list, c);
+    delete op;
     TypedProgramList res_list;
     for (auto& res: collect_list) {
         auto p = _extractTypedProgram(res[""]);

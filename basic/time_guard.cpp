@@ -41,8 +41,15 @@ double TimeRecorder::query(const std::string &type) {
     return value_map[type];
 }
 
+void TimeRecorder::record(const std::string &name, int value) {
+    record_map[name] = value;
+}
+
 void TimeRecorder::printAll() {
     for (auto& info: value_map) {
+        std::cout << info.first << ": " << info.second << std::endl;
+    }
+    for (auto& info: record_map) {
         std::cout << info.first << ": " << info.second << std::endl;
     }
 }

@@ -349,12 +349,13 @@ namespace {
         return true;
     }
 
-    std::pair<std::vector<int>, IOExampleList> _simplifyExampleSpace(const IOExampleList& example_list) {
+    std::pair<std::vector<int>, IOExampleList> _simplifyExampleSpace(const IOExampleList& example_list, const std::vector<int>& related_indexes) {
         assert(example_list.size());
-        std::vector<bool> is_used(example_list[0].first.size(), true);
-        for (int i = 0; i < is_used.size(); ++i) {
-            is_used[i] = false;
-            if (!_isDistinguishAllExamples(is_used, example_list)) is_used[i] = true;
+        std::vector<bool> is_used(example_list[0].first.size(), false);
+        for (auto index: related_indexes) is_used[index] = true;
+        for (auto index: related_indexes) {
+            is_used[index] = false;
+            if (!_isDistinguishAllExamples(is_used, example_list)) is_used[index] = true;
         }
         std::vector<int> remained_indices;
         for (int i = 0; i < is_used.size(); ++i) {
@@ -403,12 +404,13 @@ namespace {
         return new Grammar(symbol_list[g->start->id], symbol_list);
     }
 
-    PProgram _synthesis(Grammar* grammar, const IOExampleList& example_list, const PEnv& env, const SolverConfig& config, const TypeList& inp_types) {
+    PProgram _synthesis(Grammar* grammar, const IOExampleList& example_list, const PEnv& env, const SolverConfig& config,
+                        const TypeList& inp_types, const std::vector<int>& related_indexes) {
         const std::string default_name = "func";
         if (example_list.empty()) {
             return ::grammar::getMinimalProgram(grammar);
         }
-        auto [used_indices, simplified_examples] = _simplifyExampleSpace(example_list);
+        auto [used_indices, simplified_examples] = _simplifyExampleSpace(example_list, related_indexes);
         auto example_space = example::buildFiniteIOExampleSpace(simplified_examples, default_name, env.get(), inp_types);
         auto param_type_list = _getInpTypes(grammar);
         auto* simplified_grammar = _simplifyGrammar(grammar, used_indices);
@@ -456,9 +458,41 @@ namespace {
         LOG(FATAL) << "Unsupported type " << oup_type->getName();
     }
 
-    PProgram _synthesisCombinator(CExampleSpace* example_space, const std::vector<_OutputCase>& component_info_list, IncreAutoLifterSolver* solver) {
+    RelatedComponents _getComponentList(const std::map<std::vector<int>, std::vector<RelatedComponents>>& records,
+                                        const std::vector<int>& path) {
+        {
+            auto it = records.find(path);
+            if (it != records.end()) {
+                assert(it->second.size() == 1);
+                return it->second[0];
+            }
+        }
+        assert(!path.empty()); int size = path.size();
+        auto new_path = path; int last = new_path[size - 1]; new_path.pop_back();
+        auto it = records.find(new_path);
+        assert(it != records.end() && it->second.size() > last);
+        return it->second[last];
+    }
+
+    std::vector<int> _getRelatedIndexes(const std::map<std::vector<int>, std::vector<RelatedComponents>>& records,
+                                        const std::vector<int>& path, const std::vector<std::pair<int, int>>& param_list) {
+        auto related_component = _getComponentList(records, path);
+        std::map<std::pair<int, int>, int> index_map;
+        for (int i = 0; i < param_list.size(); ++i) index_map[param_list[i]] = i;
+        std::vector<int> related_indexes;
+        for (auto& related_pair: related_component) {
+            assert(index_map.find(related_pair) != index_map.end());
+            related_indexes.push_back(index_map[related_pair]);
+        }
+        return related_indexes;
+    }
+
+    PProgram _synthesisCombinator(CExampleSpace* example_space, const std::vector<_OutputCase>& component_info_list, IncreAutoLifterSolver* solver,
+                                  const std::map<std::vector<int>, std::vector<RelatedComponents>>& records, const std::vector<std::pair<int, int>>& param_list) {
         ProgramList res_list;
         for (auto& component_info: component_info_list) {
+            std::vector<int> related_indexes = _getRelatedIndexes(records, component_info.path, param_list);
+
             IOExampleList component_example_list;
             for (auto& [inp, oup]: example_space->example_list) {
                 auto oup_component = component_info.extract(oup);
@@ -470,7 +504,7 @@ namespace {
             auto* grammar = solver->buildCombinatorGrammar(example_space->inp_type_list, oup_type, example_space->align_id);
 
             auto solver_config = _getSolverToken(oup_type.get());
-            PProgram main = _synthesis(grammar, component_example_list, example_space->env, solver_config, example_space->inp_type_list);
+            PProgram main = _synthesis(grammar, component_example_list, example_space->env, solver_config, example_space->inp_type_list, related_indexes);
             /*LOG(INFO) << "Synthesize " << main->toString() << " from ";
             for (int i = 0; i < 10 && i < component_example_list.size(); ++i) {
                 LOG(INFO) << "  " << example::ioExample2String(component_example_list[i]);
@@ -534,9 +568,17 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
     }
 
     PProgram res = nullptr;
+    std::vector<std::pair<int, int>> param_positions;
+    for (int i = 0; i < compress_res_list[align_id].compress_list.size(); ++i) {
+        auto* lt = dynamic_cast<TLabeledCompress*>(compress_res_list[align_id].compress_list[i].first.get());
+        if (lt) {
+            auto& f_res = f_res_list[lt->id];
+            for (int j = 0; j < f_res.component_list.size(); ++j) param_positions.emplace_back(i, j);
+        } else param_positions.emplace_back(i, -1);
+    }
 
     while (!res || !example_space->isValid(res)) {
-        res = _synthesisCombinator(example_space, output_cases, this);
+        res = _synthesisCombinator(example_space, output_cases, this, align_result_records[align_id], param_positions);
         example_space->extendExample();
     }
 
@@ -589,10 +631,15 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
     return term;
 }
 
+#include "istool/basic/config.h"
+
 void IncreAutoLifterSolver::solveCombinators() {
     for (int pass_id = 0; pass_id < info->align_infos.size(); ++pass_id) {
         comb_list.push_back(synthesisCombinator(pass_id));
     }
+    auto comb_size = 0;
+    for (auto& comb: comb_list) comb_size += incre::getTermSize(comb.get());
+    global::recorder.record("comb-size", comb_size);
 }
 
 namespace {

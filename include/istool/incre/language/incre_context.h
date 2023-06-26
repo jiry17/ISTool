@@ -73,8 +73,6 @@ namespace incre {
         virtual void cancelBind(const BindLog& log);
         ~TypeContext();
     };
-
-
 }
 
 #endif //ISTOOL_INCRE_CONTEXT_H
