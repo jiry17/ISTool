@@ -23,7 +23,7 @@ std::set<std::string> construct;
 std::set<std::string> modified_func_name = {"main", "sum", "min", "max"};
 // pre_func_name is the actual func name, post_func_name is used in fix term
 std::string pre_func_name, post_func_name;
-bool in_fix_func = false;
+int in_fix_func = 0;
 std::vector<std::string> eval_string_for_each_hole;
 int hole_num_now = 0;
 
@@ -51,7 +51,7 @@ namespace {
     }
 }
 
-void incre::tyToHaskell(const std::shared_ptr<TyData> &ty, bool &in_def_ind) {
+void incre::tyToHaskell(const std::shared_ptr<TyData> &ty, bool in_def_ind = false) {
     if (debug_haskell) std::cout << std::endl << "[zyw: tyToHaskell] ";
     if (ty->getType() == TyType::INT) {
         if (debug_haskell) std::cout << std::endl;
@@ -110,7 +110,7 @@ void incre::tyToHaskell(const std::shared_ptr<TyData> &ty, bool &in_def_ind) {
             // first char of constructors should be capitalised
             ind_cons.first[0] = std::toupper(ind_cons.first[0]);
             std::cout << ind_cons.first << " ";
-            tyToHaskell(ind_cons.second);
+            tyToHaskell(ind_cons.second, true);
             std::cout << std::endl;
         }
     } else if (ty->getType() == TyType::COMPRESS) {
@@ -175,7 +175,7 @@ void incre::patternToHaskell(const std::shared_ptr<PatternData> &pattern) {
     }
 }
 
-void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
+void incre::termToHaskell(const std::shared_ptr<TermData> &term, bool after_constructor = false) {
     if (debug_haskell) std::cout << std::endl << "[zyw: termToHaskell]" << std::endl;
     if (term->getType() == TermType::VALUE) {
         if (debug_haskell) std::cout << "[VALUE]" << std::endl;
@@ -183,8 +183,10 @@ void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
         if (tm_value->data.isNull() || tm_value->data.toString() == "unit") {
             std::cout << "Unit";
         } else {
-            
-            std::cout << tm_value->data.toString();
+            std::string s = tm_value->data.toString();
+            if (s == ">" || s == "<" || s == ">=" || s == "<=" || s == "==" || s == "&&" || s == "||") s += "~";
+            if (modified_func_name.find(s) != modified_func_name.end()) s += "'";
+            std::cout << s;
         }
     } else if (term->getType() == TermType::IF) {
         if (debug_haskell) std::cout << "[IF]" << std::endl;
@@ -209,7 +211,10 @@ void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
         if (debug_haskell) std::cout << "[VAR]" << std::endl;
         auto* tm_var = dynamic_cast<TmVar*>(term.get());
         if (construct.find(tm_var->name) != construct.end()) {
-          tm_var->name[0] = std::toupper(tm_var->name[0]);
+            tm_var->name[0] = std::toupper(tm_var->name[0]);
+        }
+        if (modified_func_name.find(tm_var->name) != modified_func_name.end()) {
+            tm_var->name += "'";
         }
         std::cout << tm_var->name;
         if (debug_haskell) std::cout << std::endl << "[Term_VAR_END]" << std::endl;
@@ -232,9 +237,12 @@ void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
         if (debug_haskell) std::cout << "[TUPLE]" << std::endl;
         auto* tm_tuple = dynamic_cast<TmTuple*>(term.get());
         bool flag = false;
+        // if after_constructor = true, format of tuple is Cons h t, otherwise should be Cons (h, t)
+        if (!after_constructor) std::cout << "(";
         for (auto& tuple_field : tm_tuple->fields) {
             if (flag) {
-                std::cout << " ";
+                if (!after_constructor) std::cout << ", ";
+                else std::cout << " ";
             } else {
                 flag = true;
             }
@@ -246,6 +254,7 @@ void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
             termToHaskell(tuple_field);
             if (need_bracket) std::cout << ")";
         }
+        if (!after_constructor) std::cout << ")";
     } else if (term->getType() == TermType::PROJ) {
         if (debug_haskell) std::cout << "[PROJ]" << std::endl;
         auto* tm_proj = dynamic_cast<TmProj*>(term.get());
@@ -268,12 +277,11 @@ void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
         if (debug_haskell) std::cout << "[APP]" << std::endl;
         auto* tm_app = dynamic_cast<TmApp*>(term.get());
         std::string func_name = tm_app->func->toString();
-        if (func_name == "+" || func_name == "-" || func_name == "*") {
+        if (func_name == "+" || func_name == "-" || func_name == "*" || func_name == "<" || func_name == ">" || func_name == "&&" || func_name == "||") {
             incre::TermType param_type = tm_app->param->getType();
             bool need_bracket = !(param_type == incre::TermType::VALUE ||
                                   param_type == incre::TermType::VAR || param_type == incre::TermType::TUPLE
                                   || param_type == incre::TermType::PROJ);
-            std::cout << " ";
             if (need_bracket) std::cout << "(";
             termToHaskell(tm_app->param);
             if (need_bracket) std::cout << ")";
@@ -282,33 +290,49 @@ void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
             std::cout << " ";
         }
         else {
-            if (in_fix_func && func_name == post_func_name) {
+            /*if (in_fix_func && func_name == post_func_name) {
               std::cout << pre_func_name;
             } else if (modified_func_name.find(func_name) != modified_func_name.end()) {
               // if the func name is reserved word, add "'" at the end
               std::cout << func_name << "'";
             } else {
               termToHaskell(tm_app->func);
-            }
+            }*/
+            termToHaskell(tm_app->func);
             incre::TermType param_type = tm_app->param->getType();
             bool need_bracket = !(param_type == incre::TermType::VALUE ||
                                   param_type == incre::TermType::VAR || param_type == incre::TermType::TUPLE
                                   || param_type == incre::TermType::PROJ);
             std::cout << " ";
             if (need_bracket) std::cout << "(";
-            termToHaskell(tm_app->param);
+            if (construct.find(func_name) != construct.end()) {
+                termToHaskell(tm_app->param, true);
+            } else {
+                termToHaskell(tm_app->param);
+            }
             if (need_bracket) std::cout << ")";
         }
     } else if (term->getType() == TermType::FIX) {
         if (debug_haskell) std::cout << "[FIX]" << std::endl;
+        in_fix_func++;
         auto* tm_fix = dynamic_cast<TmFix*>(term.get());
         if (tm_fix->content->getType() != TermType::ABS) {
             std::cout << "error: fix.content is not Term::ABS!" << std::endl;
         } else {
             auto* tm_first_content = dynamic_cast<TmAbs*>(tm_fix->content.get());
+            std::string fix_func_name = tm_first_content->name;
+            std::cout << "let " << fix_func_name << " ";
+            termParamToHaskell(tm_fix->content, true);
+            std::cout << "= " << std::endl;
+            floor_num_haskell += 3;
+            printSpace(floor_num_haskell);
             termToHaskell(tm_first_content->content);
+            floor_num_haskell -= 3;
+            std::cout << "in" << std::endl;
+            printSpace(floor_num_haskell);
+            std::cout << fix_func_name << " ";
         }
-        printSpace(floor_num_haskell);
+        in_fix_func--;
         if (debug_haskell) std::cout << std::endl << "[FIX_END]" << std::endl;
     } else if (term->getType() == TermType::MATCH) {
         if (debug_haskell) std::cout << "[MATCH]" << std::endl;
@@ -369,18 +393,14 @@ void incre::termToHaskell(const std::shared_ptr<TermData> &term) {
 }
 
 // 获取函数的参数
-void incre::termParamToHaskell(const std::shared_ptr<TermData> &term, const bool &first_fix, const bool &first_param) {
+void incre::termParamToHaskell(const std::shared_ptr<TermData> &term, bool first_param = true) {
     if (term->getType() == TermType::ABS) {
         if (debug_haskell) std::cout << "[ABS-PARAM]" << std::endl;
         auto* tm_abs = dynamic_cast<TmAbs*>(term.get());
-        if (!first_param) {
+        if (!first_param || in_fix_func == 0) {
             std::cout << tm_abs->name << " ";
         }
-        termParamToHaskell(tm_abs->content, first_fix, false);
-    } else if (term->getType() == TermType::FIX && first_fix) {
-        if (debug_haskell) std::cout << "[FIX-PARAM]" << std::endl;
-        auto* tm_fix = dynamic_cast<TmFix*>(term.get());
-        termParamToHaskell(tm_fix->content, false, true);
+        termParamToHaskell(tm_abs->content, false);
     }
 }
 
@@ -394,6 +414,7 @@ void incre::bindingToHaskell(const std::shared_ptr<BindingData> &binding) {
     } else if (binding->getType() == BindingType::TERM) {
         if (debug_haskell) std::cout << "[TERM]" << std::endl;
         auto* term_binding = dynamic_cast<TermBinding*>(binding.get());
+        // std::cout << "term_binding->term: " << termType2String(term_binding->term->getType()) << std::endl;
         termParamToHaskell(term_binding->term);
         std::cout << "= " << std::endl;
         printSpace(floor_num_haskell);
@@ -437,7 +458,7 @@ void incre::bindingTyToHaskell(const std::shared_ptr<BindingData> &binding, cons
         else if (term_binding->term->getType() == TermType::FIX) {
             if (debug_haskell) std::cout << "[FIX-getty]" << std::endl;
             pre_func_name = name;
-            in_fix_func = true;
+            in_fix_func = 1;
             auto* fix_term = dynamic_cast<TmFix*>(term_binding->term.get());
             if (fix_term->content->getType() == TermType::ABS) {
                 auto* first_abs_term = dynamic_cast<TmAbs*>(fix_term->content.get());
@@ -482,12 +503,13 @@ void incre::commandToHaskell(const std::shared_ptr<CommandData> &command) {
         if (modified_func_name.find(command_bind->name) != modified_func_name.end()) {
           command_bind->name += "'";
         }
-        bindingTyToHaskell(command_bind->binding, command_bind->name);
+        // 不一定需要？
+        // bindingTyToHaskell(command_bind->binding, command_bind->name);
         std::cout << command_bind->name << " ";
         bindingToHaskell(command_bind->binding);
         std::cout << std::endl;
-        pre_func_name = post_func_name = "";
-        in_fix_func = false;
+        // pre_func_name = post_func_name = "";
+        in_fix_func = 0;
     } else if (command->getType() == CommandType::DEF_IND) {
         if (debug_haskell) std::cout << "[DEF_IND]" << std::endl;
         auto* command_def = dynamic_cast<CommandDefInductive*>(command.get());
@@ -497,7 +519,7 @@ void incre::commandToHaskell(const std::shared_ptr<CommandData> &command) {
         if (debug_haskell) std::cout << std::endl << "zyw: def_name = " << def_name << std::endl;
         std::cout << "data ";
         floor_num_haskell++;
-        tyToHaskell(command_def->_type, true);
+        tyToHaskell(command_def->_type);
         floor_num_haskell--;
         outputDeriving(def_name);
     } else {
@@ -566,7 +588,8 @@ void incre::postOutput(const std::vector<std::pair<Term, Data>> &io_pairs) {
     printSpace(4);
     std::cout << "]" << std::endl;
     printSpace(1);
-    std::cout << "ioPair pairs" << std::endl;
+    std::cout << "    (time, _) <- timeIt $ ioPair pairs" << std::endl;
+    std::cout << "    putStrLn $ \"Time: \" ++ show time ++ \" seconds\"" << std::endl;
 }
 
 void incre::envToHaskell(std::vector<std::pair<std::vector<std::string>, Grammar* > > &final_grammar, std::vector<std::pair<PType, int> > &env_type_list) {
@@ -768,6 +791,7 @@ void incre::spaceToHaskell(Grammar *grammar, int func_num,
             }
         }
         // if has_single = true, output "genSingle0 = [mrgParam1]"
+        flag = false;
         if (has_single[node_num]) {
             std::cout << "    genSingle" << std::to_string(node_num) <<" = ";
             for (auto* rule: node->rule_list) {
@@ -778,6 +802,8 @@ void incre::spaceToHaskell(Grammar *grammar, int func_num,
                 }
             }
             std::cout << std::endl;
+        } else {
+            LOG(FATAL) << "Unexpected datatype: has_sinle = false, func_num = " << func_num;
         }
     }
     for (auto* node: grammar->symbol_list) {
@@ -980,6 +1006,7 @@ void incre::programToHaskell(const std::shared_ptr<ProgramData> &prog,
         Ty actual_oup_type = incre::getFinalType(oup_type, final_type_list);
         std::cout << "-- output_type: " << actual_oup_type->toString() << std::endl;
         auto [_, grammar] = final_grammar[i];
+        // grammar->print();
         grammarToHaskell(grammar, i, name_to_expr_num[i], next_expr_num[i]);
     }
 

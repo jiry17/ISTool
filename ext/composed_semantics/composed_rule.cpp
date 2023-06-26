@@ -35,8 +35,11 @@ namespace {
         else if (res == "||") res = "Cor";
         else if (res == "!") res = "Cnot";
         else if (res == "0") res = "Czero";
+        else if (res == "(0) (0)") res = "CTupleZero";
         else if (res == "1") res = "Cone";
         else if (res == "ite") res = "CIte";
+        else if (res == "false") res = "CFalse";
+        else if (res == "true") res = "CTrue";
         else if (!(res[0] >= 'a' && res[0] <= 'z' || res[0] >= 'A' && res[0] <= 'Z')) {
             std::cout << "error: res is not a letter!" << std::endl;
             return res;
@@ -82,7 +85,6 @@ std::string ComposedRule::evalRuleToHaskell(std::string node_name, int func_num,
     std::vector<int> param_num;
     std::vector<std::string> param_name;
     std::string semantics_name = sketch->semantics->name;
-    if (semantics_name == "Max") semantics_name = "max'";
 
     for (int i = 0; i < param_list.size(); ++i) {
         param_num.push_back(name_to_expr_num[param_list[i]->name]);
@@ -131,6 +133,27 @@ std::string ComposedRule::evalRuleToHaskell(std::string node_name, int func_num,
             return res;
         }
         res += "1";
+    }
+    else if (semantics_name == "CTupleZero") {
+        if (param_list.size() != 0) {
+            std::cout << "error: param size != 0" << std::endl;
+            return res;
+        }
+        res += "(0,0)";
+    }
+    else if (semantics_name == "CFalse") {
+        if (param_list.size() != 0) {
+            std::cout << "error: param size != 0" << std::endl;
+            return res;
+        }
+        res += "(toSym False)";
+    }
+    else if (semantics_name == "CTrue") {
+        if (param_list.size() != 0) {
+            std::cout << "error: param size != 0" << std::endl;
+            return res;
+        }
+        res += "(toSym True)";
     }
     else if (semantics_name == "CIte") {
         if (param_list.size() != 3) {
@@ -186,6 +209,12 @@ std::string ComposedRule::evalRuleToHaskell(std::string node_name, int func_num,
         res += (" env \"" + var_list[param_num] + "\"");
     }
     else {
+        if (semantics_name == "Max") semantics_name = "max'";
+        else if (semantics_name == "Min") semantics_name = "min'";
+        else if (semantics_name == "Sum") semantics_name = "sum'";
+        else {
+            semantics_name[0] = std::tolower(semantics_name[0]);
+        }
         res += semantics_name;
         for (int i = 0; i < param_list.size(); ++i) {
             res += " (evalU" + std::to_string(func_num) + "_" + std::to_string(param_num[i])

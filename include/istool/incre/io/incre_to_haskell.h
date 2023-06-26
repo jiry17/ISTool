@@ -11,10 +11,10 @@
 #include "istool/incre/language/incre.h"
 
 namespace incre {
-    void tyToHaskell(const std::shared_ptr<TyData> &ty, bool &in_def_ind = false);
+    void tyToHaskell(const std::shared_ptr<TyData> &ty, bool in_def_ind);
     void patternToHaskell(const std::shared_ptr<PatternData> &pattern);
-    void termToHaskell(const std::shared_ptr<TermData> &term);
-    void termParamToHaskell(const std::shared_ptr<TermData> &term, const bool &first_fix = true, const bool &first_param = true);
+    void termToHaskell(const std::shared_ptr<TermData> &term, bool after_constructor);
+    void termParamToHaskell(const std::shared_ptr<TermData> &term, bool first_param);
     void bindingToHaskell(const std::shared_ptr<BindingData> &binding);
     void bindingTyToHaskell(const std::shared_ptr<BindingData> &binding, const std::string &name);
     void commandToHaskell(const std::shared_ptr<CommandData> &command);

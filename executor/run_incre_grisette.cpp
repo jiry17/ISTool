@@ -19,16 +19,21 @@
 using namespace incre;
 
 int main(int argv, char** argc) {
-    std::string path, label_path, target;
+    std::string path, label_path, result_path, haskell_path;
     if (argv <= 1) {
         std::string name = "zyw/sum_pre";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
+        // path for label result
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
-        target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
+        // path for synthesis result
+        result_path = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
+        // path for file of haskell
+        haskell_path = config::KSourcePath + "tests/incre/haskell-res/" + name + ".f";
     } else {
         path = std::string(argc[1]);
         label_path = std::string(argc[2]);
-        target = std::string(argc[3]);
+        result_path = std::string(argc[3]);
+        haskell_path = std::string(argc[4]);
     }
 
     TimeGuard* global_guard = new TimeGuard(1e9);
@@ -46,20 +51,40 @@ int main(int argv, char** argc) {
 
     res = incre::eliminateNestedAlign(res.get());
     incre::printProgram(res, label_path);
+    incre::printProgram(res);
 
     env->setConst(incre::grammar::collector::KCollectMethodName, BuildData(Int, incre::grammar::ComponentCollectorType::SOURCE));
     env->setConst(theory::clia::KINFName, BuildData(Int, 50000));
 
     auto* info = incre::buildIncreInfo(res, env.get());
     // set context in example_pool
-    info->example_pool->generateSingleExample();
+    for (int i = 1; i <= 10; ++i) {
+        info->example_pool->generateSingleExample();
+    }
+
+    // get result from AutoLabel
+    auto* solver = new incre::IncreAutoLifterSolver(info, env);
+    auto solution = solver->solve();
+    std::cout << "zyw: solution.print() begin!" << std::endl;
+    solution.print();
+    std::cout << "zyw: solution.print() end!" << std::endl;
+    // LOG(INFO) << "After execute time " << global::recorder.query("execute");
+
+    auto full_res = incre::rewriteWithIncreSolution(info->program.get(), solution, env.get());
+    full_res = incre::eliminateUnusedLet(full_res.get());
+
+    incre::printProgram(full_res, result_path);
+    incre::printProgram(full_res);
 
     // get io pairs
     std::vector<std::pair<Term, Data>> io_pairs;
-    for (int i = 0; i < 5; ++i) {
-        auto term = (info->example_pool->generateStart()).first;
-        auto result = incre::run(term, info->example_pool->ctx);
-        io_pairs.push_back({term, result});
+    for (int i = 0; i < 20; ++i) {
+        auto example = info->example_pool->generateStart();
+        info->example_pool->ctx->initGlobal(example.second);
+        auto* start = info->example_pool->ctx->start;
+        auto* holder = info->example_pool->ctx->holder;
+        auto result = incre::envRun(example.first, start, holder);
+        io_pairs.push_back({example.first, result});
     }
 
     // get component pool
@@ -77,12 +102,12 @@ int main(int argv, char** argc) {
         std::cout << "zyw: align_info->print() end!" << std::endl;
     }
 
-    auto* solver = new incre::IncreAutoLifterSolver(info, env);
+    // auto* solver = new incre::IncreAutoLifterSolver(info, env);
 
     // final output
-    // TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
-    TyList final_type_list = {std::make_shared<TyInt>()};
-    incre::programToHaskell(res, io_pairs, info, solver, target, final_type_list);
+    TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
+    // TyList final_type_list = {std::make_shared<TyInt>()};
+    incre::programToHaskell(res, io_pairs, info, solver, haskell_path, final_type_list);
 
     global::recorder.printAll();
     std::cout << global_guard->getPeriod() << std::endl;
