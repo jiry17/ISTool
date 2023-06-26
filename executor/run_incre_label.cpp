@@ -21,8 +21,8 @@ int main(int argv, char** argc) {
     if (argv <= 1) {
         //std::string name = "dp/01knapsack";
         //std::string name = "synduce/nested_list/pyramid_intervals";
-        std::string name = "autolifter/dac/balanced";
-        //std::string name = "autolifter/dac/mps_p";
+        //std::string name = "/synduce/ptree/sum";
+        std::string name = "autolifter/single-pass/3rd-min";
         //std::string name = "fusion/shortcut/page8";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";

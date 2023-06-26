@@ -662,7 +662,7 @@ ComponentPool incre::grammar::collectComponent(EnvContext* env_ctx, TypeContext*
 ComponentPool incre::grammar::collector::getBasicComponentPool(Env* env) {
     ComponentPool basic;
     // insert basic operator
-    std::vector<std::string> op_list = {"+", "-", "=", "<", "and", "or", "!"};
+    std::vector<std::string> op_list = {"+", "-", "=", "<", "<=", "and", "or", "!"};
 
     const std::unordered_set<std::string> all_used_op = {"+", "-"};
 

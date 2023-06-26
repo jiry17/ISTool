@@ -94,6 +94,7 @@ namespace {
             return result;
         }
         virtual std::vector<AuxProgram> getDefaultAuxPrograms() {
+            LOG(INFO) << default_list.size();
             return default_list;
         }
         virtual Data execute(const AuxProgram& program, int example_id) {
@@ -626,10 +627,14 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
         if (counter_example.first == -1) return candidate_result;
         addExample(counter_example);
         LOG(INFO) << "Counter example " << example2String(counter_example);
-        LOG(INFO) << task->runOup(counter_example.first).toString() << " " << task->runOup(counter_example.second).toString() << std::endl;
-        for (auto unit: candidate_result) {
-            LOG(INFO) << "  " << task->runInp(counter_example.first, unit).toString() << " " <<
-              task->runInp(counter_example.second,unit).toString() << std::endl;
+        if (counter_example.second != counter_example.first) {
+            LOG(INFO) << task->runOup(counter_example.first).toString() << " " << task->runOup(counter_example.second).toString() << std::endl;
+            for (auto unit: candidate_result) {
+                LOG(INFO) << "  " << task->runInp(counter_example.first, unit).toString() << " " <<
+                          task->runInp(counter_example.second, unit).toString() << std::endl;
+            }
+        } else {
+            LOG(INFO) << "An error example";
         }
     }
 }

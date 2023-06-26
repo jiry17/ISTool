@@ -90,7 +90,7 @@ namespace incre::autolifter {
 
         PLPTask(FExampleSpace* _example_space, const std::vector<GrammarEnumerateTool*>& _aux_grammar_list,
                 const std::vector<TypedProgramList>& _pre_res,
-                GrammarEnumerateTool* _compress_grammar, const TypedProgram& _target, const std::vector<int>& _path, bool _oup_compress_id);
+                GrammarEnumerateTool* _compress_grammar, const TypedProgram& _target, const std::vector<int>& _path, int _oup_compress_id);
     };
 
     Data eliminateCompress(const Data& data);

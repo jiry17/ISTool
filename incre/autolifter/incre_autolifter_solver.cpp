@@ -4,6 +4,7 @@
 
 #include <istool/ext/deepcoder/data_type.h>
 #include <istool/ext/deepcoder/deepcoder_semantics.h>
+#include "istool/basic/config.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
 #include "istool/incre/autolifter/incre_plp_solver.h"
 #include "istool/incre/trans/incre_trans.h"
@@ -93,7 +94,7 @@ Grammar * IncreAutoLifterSolver::buildCombinatorGrammar(const TypeList &type_lis
 }
 
 IncreAutoLifterSolver::IncreAutoLifterSolver(IncreInfo *_info, const PEnv& _env): env(_env), IncreSolver(_info),
-    f_res_list(_getCNum(_info)), compress_res_list(info->align_infos.size()),
+    f_res_list(_getCNum(_info)), compress_res_list(info->align_infos.size()), align_result_records(info->align_infos.size()),
     aux_grammar_list(_getCNum(_info)) {
     for (auto& [name, inp_type]: info->example_pool->input_list) {
         global_input_type_list.push_back(incre::typeFromIncre(inp_type));
@@ -176,14 +177,18 @@ autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(AlignTypeInfoData *info, 
 }
 
 void IncreAutoLifterSolver::solveAuxiliaryProgram() {
-    auto record_res = [&](int align_id, const PLPRes& res) {
+    auto record_res = [&](int align_id, const PLPRes& res, const std::vector<int>& path) {
+        RelatedComponents related;
         for (auto& [compress_program, aux_program]: res) {
             auto* ltc = dynamic_cast<TLabeledCompress*>(compress_program.first.get());
+            int aux_id = -1, compress_id = -1;
             if (ltc) {
-                f_res_list[ltc->id].insert(aux_program);
+                aux_id = f_res_list[ltc->id].insert(aux_program);
             }
-            compress_res_list[align_id].insert(compress_program);
+            compress_id = compress_res_list[align_id].insert(compress_program);
+            related.emplace_back(compress_id, aux_id);
         }
+        return related;
     };
 
     for (auto& align_info: info->align_infos) {
@@ -195,7 +200,8 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
             auto *oup_ty = unit.unit_type.get();
             if (!dynamic_cast<TyCompress *>(oup_ty)) {
                 PLPRes res = solvePLPTask(align_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr}, unit);
-                record_res(align_info->getId(), res);
+                auto related = record_res(align_info->getId(), res, unit.path);
+                align_result_records[align_info->getId()][unit.path].push_back(related);
             }
         }
     }
@@ -214,7 +220,8 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
                         auto *cty = dynamic_cast<TyLabeledCompress *>(unit.unit_type.get());
                         if (cty && cty->id == compress_id) {
                             PLPRes res = solvePLPTask(align_info.get(), component.program, unit);
-                            record_res(align_info->getId(), res);
+                            auto related = record_res(align_info->getId(), res, unit.path);
+                            align_result_records[align_info->getId()][unit.path].push_back(related);
                         }
                     }
                 }
@@ -235,6 +242,19 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
             f_type_list.push_back(std::make_shared<TyTuple>(fields));
         }
     }
+
+    auto align_total_size = 0;
+    for (auto& f_res: f_res_list) {
+        if (f_res.component_list.size() > 1) align_total_size++;
+        for (auto& component: f_res.component_list) align_total_size += component.program.second->size();
+    }
+    global::recorder.record("align-size", align_total_size);
+    auto extract_size = 0;
+    for (auto& compress_res: compress_res_list) {
+        if (compress_res.compress_list.size() > 1) extract_size++;
+        for (auto& component: compress_res.compress_list) extract_size += component.second->size();
+    }
+    global::recorder.record("extract-size", extract_size);
 }
 
 #include "istool/basic/config.h"

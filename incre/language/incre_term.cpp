@@ -92,62 +92,6 @@ std::string TmAlign::toString() const {
     return "align " + content->toString();
 }
 
-TermList incre::getSubTerms(TermData *term) {
-    switch (term->getType()) {
-        case TermType::VALUE:
-        case TermType::VAR: return {};
-        case TermType::ALIGN: {
-            auto* ta = dynamic_cast<TmAlign*>(term);
-            return {ta->content};
-        }
-        case TermType::LABEL: {
-            auto* tl = dynamic_cast<TmLabel*>(term);
-            return {tl->content};
-        }
-        case TermType::UNLABEL: {
-            auto* tu = dynamic_cast<TmUnLabel*>(term);
-            return {tu->content};
-        }
-        case TermType::APP: {
-            auto* ta = dynamic_cast<TmApp*>(term);
-            return {ta->func, ta->param};
-        }
-        case TermType::ABS: {
-            auto* ta = dynamic_cast<TmAbs*>(term);
-            return {ta->content};
-        }
-        case TermType::LET: {
-            auto* tl = dynamic_cast<TmLet*>(term);
-            return {tl->def, tl->content};
-        }
-        case TermType::MATCH: {
-            auto* tm = dynamic_cast<TmMatch*>(term);
-            TermList res = {tm->def};
-            for (auto& [_, sub]: tm->cases) res.push_back(sub);
-            return res;
-        }
-        case TermType::TUPLE: {
-            auto* tt = dynamic_cast<TmTuple*>(term);
-            return tt->fields;
-        }
-        case TermType::PROJ: {
-            auto* tp = dynamic_cast<TmProj*>(term);
-            return {tp->content};
-        }
-        case TermType::IF: {
-            auto* ti = dynamic_cast<TmIf*>(term);
-            return {ti->c, ti->t, ti->f};
-        }
-        case TermType::FIX: {
-            auto* tf = dynamic_cast<TmFix*>(term);
-            return {tf->content};
-        }
-        case TermType::WILDCARD: {
-            LOG(FATAL) << "Unknown WILDCARD: " << term->toString();
-        }
-    }
-}
-
 namespace {
 #define ReplaceHead(name) Term _replaceTerm(Tm ## name* term, const Term& _term, const std::function<Term(const Term&)>& replace_func)
 #define ReplaceCase(name) return _replaceTerm(dynamic_cast<Tm ## name*>(term.get()), term, replace_func)
