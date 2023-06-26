@@ -207,11 +207,11 @@ namespace {
     }
 }
 
-bool incre::match::match(TyData *type, const MatchTask &task) {
-    return _isTypeMatch(type, task, {});
+bool incre::match::match(TyData *type, const MatchTask &task, const MatchContext& ctx) {
+    return _isTypeMatch(type, task, ctx);
 }
-bool incre::match::match(TermData* tm, const MatchTask& task) {
-    return _isTermMatch(tm, task, {});
+bool incre::match::match(TermData* tm, const MatchTask& task, const MatchContext& ctx) {
+    return _isTermMatch(tm, task, ctx);
 }
 
 MatchContext incre::match::match(ProgramData *program, const MatchTask &task) {

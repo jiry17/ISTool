@@ -19,10 +19,10 @@ using namespace incre;
 int main(int argv, char** argc) {
     std::string path, label_path, target;
     if (argv <= 1) {
-        //std::string name = "dp/01knapsack";
+        std::string name = "dp/15-4";
         //std::string name = "synduce/nested_list/pyramid_intervals";
         //std::string name = "/synduce/ptree/sum";
-        std::string name = "autolifter/single-pass/3rd-min";
+        // std::string name = "autolifter/single-pass/3rd-min";
         //std::string name = "fusion/shortcut/page8";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
@@ -39,6 +39,7 @@ int main(int argv, char** argc) {
     incre::prepareEnv(env.get());
 
     auto init_program = incre::parseFromF(path, true);
+    // init_program = incre::removeGlobal(init_program.get());
 
     global::recorder.start("label");
     auto* label_solver = new autolabel::AutoLabelZ3Solver(init_program);

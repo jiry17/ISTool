@@ -60,6 +60,8 @@ namespace incre {
     int getTermSize(TermData* term);
     int getCommandSize(CommandData* command);
     int getProgramSize(ProgramData* program);
+
+    IncreProgram removeGlobal(ProgramData* program);
 }
 
 #endif //ISTOOL_INCRE_H

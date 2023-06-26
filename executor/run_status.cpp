@@ -95,7 +95,7 @@ int countProgram(ProgramData* program, const TypeMatcher& type_matcher, const Te
 int main(int argv, char** argc) {
     std::string path;
     if (argv <= 1) {
-        std::string name = "autolifter/dac/sum";
+        std::string name = "dp/15-4";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
     } else {
         path = std::string(argc[1]);
@@ -105,7 +105,6 @@ int main(int argv, char** argc) {
     incre::prepareEnv(env.get());
 
     auto init_program = incre::parseFromF(path, true);
-
 
     auto false_type_matcher = [](TyData* type) -> std::pair<int, bool> {return {0, false};};
     auto false_term_matcher = [](TermData* term) -> std::pair<int, bool> {return {0, false};};
