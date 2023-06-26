@@ -95,7 +95,6 @@ Grammar * IncreAutoLifterSolver::buildCombinatorGrammar(const TypeList &type_lis
 IncreAutoLifterSolver::IncreAutoLifterSolver(IncreInfo *_info, const PEnv& _env): env(_env), IncreSolver(_info),
     f_res_list(_getCNum(_info)), compress_res_list(info->align_infos.size()),
     aux_grammar_list(_getCNum(_info)) {
-    std::cout << "zyw: IncreAutoLifterSolver" << std::endl;
     for (auto& [name, inp_type]: info->example_pool->input_list) {
         global_input_type_list.push_back(incre::typeFromIncre(inp_type));
     }
