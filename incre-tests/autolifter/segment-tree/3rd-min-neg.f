@@ -1,4 +1,5 @@
 Config ExtraGrammar = "AutoLifter";
+Config ComposeNum = 2;
 Config TermNum = 6;
 
 Inductive List = nil Unit | cons {Int, List};

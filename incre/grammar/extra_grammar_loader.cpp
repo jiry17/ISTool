@@ -333,7 +333,7 @@ namespace {
         }
         ComponentPool res;
 
-        TyList target_list = {std::make_shared<TyInt>()};
+        TyList target_list = {std::make_shared<TyInt>(), std::make_shared<TyBool>()};
         LOG(INFO) << "Load fold operators";
         for (auto& ind_type: ind_list) {
             LOG(INFO) << "Load for " << ind_type->toString();

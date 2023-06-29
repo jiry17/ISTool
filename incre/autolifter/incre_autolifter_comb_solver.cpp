@@ -521,7 +521,7 @@ namespace {
             auto res = component->tryBuildTerm(sem, sub_list);
             if (res) return res;
         }
-        if (sem->getName() == "unit") {
+        if (sem->getName() == "unit" || sem->getName() == "Unit") {
             auto* cs = dynamic_cast<ConstSemantics*>(sem.get());
             assert(cs);
             return std::make_shared<TmValue>(cs->w);

@@ -1,4 +1,5 @@
 Config ExtraGrammar = "AutoLifter";
+Config ComposeNum = 2;
 
 Inductive List = nil Unit | cons {Int, List};
 Tag = Bool; Result = Compress List; NodeInfo = {Tag, Result};

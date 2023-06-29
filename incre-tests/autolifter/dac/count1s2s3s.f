@@ -1,8 +1,13 @@
 Config ExtraGrammar = "AutoLifter";
-Config SampleIntMin = 0;
-Config SampleIntMax = 5;
+Config SampleIntMin = 1;
+Config SampleIntMax = 3;
+Config SampleSize = 20;
 
 Inductive List = cons {Int, List} | nil Unit;
+
+inf = 100;
+two = 2;
+three = 3;
 
 length = fix (\f: List->Int. \x: List.
   match x with
@@ -35,8 +40,6 @@ dac = \v: List -> Int. \xs: List.
       concat (f sp.1) (f sp.2)
     end
   ) in v (run xs);
-
-inf = 100;
 
 /*User provided programs*/
 

@@ -94,7 +94,6 @@ namespace {
             return result;
         }
         virtual std::vector<AuxProgram> getDefaultAuxPrograms() {
-            LOG(INFO) << default_list.size();
             return default_list;
         }
         virtual Data execute(const AuxProgram& program, int example_id) {
@@ -109,7 +108,7 @@ namespace {
 
 namespace {
     int KDefaultComposedNum = 3;
-    int KDefaultExtraTurnNum = 0;
+    int KDefaultExtraTurnNum = 100;
     int KDefaultVerifyBaseNum = 1000;
     int KDefaultExampleTimeOut = 10;
     int KDefaultEnlargeFactor = 2;
@@ -218,6 +217,9 @@ void IncrePLPSolver::addErrorExample(int example_id) {
 }
 
 void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
+    if (example.first == example.second) {
+        addErrorExample(example.first); return;
+    }
     global::recorder.start("extend-component");
     for (auto& unit: component_info_list) {
         if (unit.is_error) continue;
@@ -320,13 +322,17 @@ std::vector<UnitInfo> IncrePLPSolver::mergeUnits(int compress_size, int aux_size
     return res_list;
 }
 
+namespace {
+    const int KDelta = 0;
+}
+
 void IncrePLPSolver::getMoreComponent() {
 
     ++current_size;
     LOG(INFO) << "get more component";
 
     std::vector<std::vector<UnitInfo>> unit_storage;
-    for (int compress_size = 0; compress_size <= current_size; ++compress_size) {
+    for (int compress_size = 0; compress_size < current_size; ++compress_size) {
         auto merge_result = mergeUnits(compress_size, current_size - compress_size);
         /*LOG(INFO) << "merge " << compress_size << " " << current_size - compress_size << std::endl;
         for (auto& program: merge_result) {
@@ -334,6 +340,7 @@ void IncrePLPSolver::getMoreComponent() {
         }*/
         unit_storage.push_back(merge_result);
     }
+    if (current_size >= KDelta) unit_storage.push_back(mergeUnits(current_size - KDelta, 0));
 
     for (auto& unit: _randomMerge(unit_storage, env)) {
         /*if (dynamic_cast<TBool*>(unit.program.first.first.get())) {

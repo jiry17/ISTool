@@ -403,9 +403,6 @@ FunctionContext DNFLearner::synthesis(const std::vector<Example> &example_list, 
         if (io_example.second.isTrue()) positive_list.push_back(io_example.first);
         else negative_list.push_back(io_example.first);
     }
-    /*for (int i = 0; i < 10 && i < example_list.size(); ++i) {
-        LOG(INFO) << "example " << data::dataList2String(example_list[i]);
-    }*/
 
     std::set<std::pair<int, int>> visited_set;
     int or_limit = 1;

@@ -19,11 +19,14 @@ using namespace incre;
 int main(int argv, char** argc) {
     std::string path, label_path, target;
     if (argv <= 1) {
-        std::string name = "dp/15-4";
-        //std::string name = "synduce/nested_list/pyramid_intervals";
-        //std::string name = "/synduce/ptree/sum";
-        // std::string name = "autolifter/single-pass/3rd-min";
-        //std::string name = "fusion/shortcut/page8";
+        //std::string name = "dp/15-11";
+        //std::string name = "synduce/list/bal";
+        std::string name = "autolifter/lsp/page20";
+        //std::string name = "/synduce/indexed_list/position_polynomial";
+        //std::string name = "autolifter/dac/mss";
+        //std::string name = "synduce/list/msshom";
+        // std::string name = "autolifter/dac/count1s2s3s";
+        //std::string name = "fusion/algprog/page62";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";

@@ -1,6 +1,11 @@
 Inductive BList = nil Unit | cons {Bool, BList};
 Inductive CList = emp Unit | single Bool | concat {CList, CList};
 
+const_true = true;
+const_false = false;
+op_and = \x: Bool. \y: Bool. and x y;
+op_or = \x: Bool. \y: Bool. or x y;
+
 cat_list = fix (
   \f: BList -> BList -> BList. \xs: BList. \ys: BList.
   match xs with

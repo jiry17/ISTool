@@ -1,4 +1,5 @@
 Config ExtraGrammar = "AutoLifter";
+Config ComposeNum = 4;
 Config SampleIntMin = 0;
 Config SampleIntMax = 1;
 Config SampleSize = 20;

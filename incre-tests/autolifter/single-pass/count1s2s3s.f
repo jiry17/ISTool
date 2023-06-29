@@ -1,8 +1,12 @@
 Config ExtraGrammar = "AutoLifter";
-Config SampleIntMin = 0;
-Config SampleIntMax = 5;
+Config SampleIntMin = 1;
+Config SampleIntMax = 3;
 
 Inductive List = cons {Int, List} | nil Unit;
+
+inf = 100;
+two = 2;
+three = 3;
 
 single_pass = \v: List -> Int.
   let run = fix (
@@ -13,8 +17,6 @@ single_pass = \v: List -> Int.
     end
   ) in \xs: List.
   v (run xs);
-
-inf = 100;
 
 /*User provided programs*/
 
@@ -29,27 +31,5 @@ count1s2s3s = fix (
     + upd (f s1 s2 t)
   end
 ) false false;
-
-/*test2s1 = fix (
-  \f: List -> Bool. \xs: List.
-  match xs with
-    nil _ -> false
-  | cons {h, t} ->
-    if == h 2 then f t
-    else if == h 1 then true
-    else false
-  end
-);
-
-test2s3 = fix (
-  \f: List -> Bool. \xs: List.
-  match xs with
-    nil _ -> false
-  | cons {h, t} ->
-    if == h 2 then f t
-    else if == h 3 then true
-    else false
-  end
-);*/
 
 main = single_pass count1s2s3s;

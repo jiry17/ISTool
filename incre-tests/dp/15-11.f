@@ -7,8 +7,8 @@ Inductive Schedule = fin Unit | month {Int, Int, Schedule};
 Plan = Compress Schedule;
 Inductive PlanList = pnil Unit | pcons {Plan, PlanList};
 
-@Input cost = cons {1, cons {1, cons {0, cons {1, cons {1, cons {0, nil unit}}}}}};
-@Input lim = 3; @Input m = 1; @Input c = 1;
+@Input cost: List;
+@Input lim: Int; @Input m: Int; @Input c: Int;
 inf = 100;
 
 @Combine get_cost = \now: Int.

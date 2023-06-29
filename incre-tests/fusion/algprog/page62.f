@@ -1,4 +1,5 @@
 Inductive List = nil Unit | cons {Int, List};
+Config NonLinear = true;
 
 incre = \x: Int.
   let w = / x 10 in {w, - x (* 10 w)};

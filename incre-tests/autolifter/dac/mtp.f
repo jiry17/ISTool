@@ -1,6 +1,7 @@
 Config ExtraGrammar = "AutoLifter";
-Config SampleIntMin = -3;
-Config SampleIntMax = 3;
+Config SampleIntMin = -4;
+Config SampleIntMax = 4;
+Config SampleSize = 8;
 Config NonLinear = true;
 
 Inductive List = cons {Int, List} | nil Unit;
