@@ -21,12 +21,12 @@ int main(int argv, char** argc) {
     if (argv <= 1) {
         //std::string name = "dp/15-11";
         //std::string name = "synduce/list/bal";
-        std::string name = "autolifter/lsp/page20";
+        //std::string name = "test";
         //std::string name = "/synduce/indexed_list/position_polynomial";
-        //std::string name = "autolifter/dac/mss";
-        //std::string name = "synduce/list/msshom";
+        //std::string name = "autolifter/single-pass/max_1s_p";
+        //std::string name = "/synduce/indexed_list/position_polynomial";
         // std::string name = "autolifter/dac/count1s2s3s";
-        //std::string name = "fusion/algprog/page62";
+        std::string name = "fusion/algprog/page58";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
@@ -58,11 +58,13 @@ int main(int argv, char** argc) {
 
     auto* info = incre::buildIncreInfo(res, env.get());
 
-    for (int i = 1; i <= 10; ++i) {
+    /*for (int i = 1; i <= 10; ++i) {
         info->example_pool->generateSingleExample();
+        std::cout << info->example_pool->generateStart().first->toString() << std::endl;
     }
+    exit(0);
 
-    /*auto* ctx = incre::run(res);
+    auto* ctx = incre::run(res);
     auto* env_ctx = incre::envRun(res.get());
     for (int i = 1; i <= 10; ++i) {
         auto [term, global] = info->example_pool->generateStart();

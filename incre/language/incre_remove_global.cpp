@@ -90,9 +90,6 @@ namespace {
     }
 
     Term _buildTerm(const Term& term, const GlobalInfoList &info_list, const MatchContext& ctx, std::vector<std::string>& tmp_list) {
-        LOG(INFO) << term->toString();
-        for (auto& [name, w]: ctx) LOG(INFO) << "match info " << name << " " << w;
-        for (auto& tmp: tmp_list) LOG(INFO) << "tmp " << tmp;
         switch (term->getType()) {
             case TermType::VAR: BuildCase(Var);
             case TermType::VALUE: return term;

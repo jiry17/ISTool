@@ -175,6 +175,18 @@ namespace {
     }
 }
 
+namespace {
+    int _getIncreTermSize(Program* program) {
+        int res = program->sub_list.size() + 1;
+        if (program->semantics->getName() == "prod") res = 1;
+        if (program->semantics->getName().substr(0, 6) == "access") res = 1;
+        for (auto& sub_program: program->sub_list) {
+            res += _getIncreTermSize(sub_program.get());
+        }
+        return res;
+    }
+}
+
 autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(AlignTypeInfoData *info, const TypedProgram &target, const OutputUnit& unit) {
     auto* space = example_space_list[info->getId()];
 
@@ -263,13 +275,21 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
     auto align_total_size = 0;
     for (auto& f_res: f_res_list) {
         if (f_res.component_list.size() > 1) align_total_size++;
-        for (auto& component: f_res.component_list) align_total_size += component.program.second->size();
+        for (auto& component: f_res.component_list) {
+            auto size = _getIncreTermSize(component.program.second.get());
+            //LOG(INFO) << "align size :" << component.program.second->toString() << " " << size;
+            align_total_size += size;
+        }
     }
     global::recorder.record("align-size", align_total_size);
     auto extract_size = 0;
     for (auto& compress_res: compress_res_list) {
         if (compress_res.compress_list.size() > 1) extract_size++;
-        for (auto& component: compress_res.compress_list) extract_size += component.second->size();
+        for (auto& component: compress_res.compress_list) {
+            auto size = _getIncreTermSize(component.second.get());
+            //LOG(INFO) << "comb size :" << component.second->toString() << " " << size;
+            extract_size += size;
+        }
     }
     global::recorder.record("extract-size", extract_size);
 }
