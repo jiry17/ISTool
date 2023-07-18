@@ -7,6 +7,7 @@
 #include "istool/incre/io/incre_from_json.h"
 #include "istool/incre/io/incre_printer.h"
 #include "istool/incre/autolabel/incre_autolabel_constraint_solver.h"
+#include "istool/incre/autolifter/incre_nonscalar_autolifter.h"
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
 #include "istool/incre/grammar/incre_component_collector.h"
@@ -18,18 +19,13 @@ using namespace incre;
 
 int main(int argv, char** argc) {
     std::string path, label_path, target;
+    bool is_autolabel = true;
     if (argv <= 1) {
-        //std::string name = "dp/15-11";
-        //std::string name = "synduce/list/bal";
-        //std::string name = "test";
-        //std::string name = "/synduce/indexed_list/position_polynomial";
-        //std::string name = "autolifter/single-pass/max_1s_p";
-        //std::string name = "/synduce/indexed_list/position_polynomial";
-        // std::string name = "autolifter/dac/count1s2s3s";
-        std::string name = "fusion/algprog/page58";
+        std::string name = "nonscalar/parallel_suffix_sum";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
+        is_autolabel = false;
     } else {
         path = std::string(argc[1]);
         label_path = std::string(argc[2]);
@@ -41,42 +37,28 @@ int main(int argv, char** argc) {
     auto env = std::make_shared<Env>();
     incre::prepareEnv(env.get());
 
-    auto init_program = incre::parseFromF(path, true);
+    auto input_program = incre::parseFromF(path, false);
     // init_program = incre::removeGlobal(init_program.get());
 
-    global::recorder.start("label");
-    auto* label_solver = new autolabel::AutoLabelZ3Solver(init_program);
-    auto res = label_solver->label();
-    global::recorder.end("label");
-    incre::applyConfig(res.get(), env.get());
+    IncreProgram labeled_program;
 
-    res = incre::eliminateNestedAlign(res.get());
-    incre::printProgram(res, label_path);
-    incre::printProgram(res);
+    if (is_autolabel) {
+        global::recorder.start("label");
+        auto *label_solver = new autolabel::AutoLabelZ3Solver(input_program);
+        labeled_program = label_solver->label();
+        global::recorder.end("label");
+    } else {
+        labeled_program = input_program;
+    }
+    incre::applyConfig(labeled_program.get(), env.get());
+
+    labeled_program = incre::eliminateNestedAlign(labeled_program.get());
+    incre::printProgram(labeled_program, label_path);
+    incre::printProgram(labeled_program);
     env->setConst(incre::grammar::collector::KCollectMethodName, BuildData(Int, incre::grammar::ComponentCollectorType::SOURCE));
     env->setConst(theory::clia::KINFName, BuildData(Int, 50000));
 
-    auto* info = incre::buildIncreInfo(res, env.get());
-
-    /*for (int i = 1; i <= 10; ++i) {
-        info->example_pool->generateSingleExample();
-        std::cout << info->example_pool->generateStart().first->toString() << std::endl;
-    }
-    exit(0);
-
-    auto* ctx = incre::run(res);
-    auto* env_ctx = incre::envRun(res.get());
-    for (int i = 1; i <= 10; ++i) {
-        auto [term, global] = info->example_pool->generateStart();
-        env_ctx->initGlobal(global);
-        for (auto& [name, v]: global) {
-            ctx->addBinding(name, std::make_shared<TmValue>(v));
-        }
-        auto v1 = incre::run(term, ctx), v2 = incre::envRun(term, env_ctx->start, env_ctx->holder);
-        LOG(INFO) << v1.toString() << " " << v2.toString() << " " << term->toString();
-        assert(v1 == v2);
-    }
-    return 0;*/
+    auto* info = incre::buildIncreInfo(labeled_program, env.get());
 
     for (auto& align_info: info->align_infos) {
         align_info->print();
@@ -86,23 +68,13 @@ int main(int argv, char** argc) {
             std::cout << "  " << example_list[i]->toString() << std::endl;
         }
     }
-    
-    /*TyList final_type_list = {std::make_shared<TyTuple>((TyList){std::make_shared<TyInt>(), std::make_shared<TyInt>()})};
-    for (int i = 0; i < info->align_infos.size(); ++i) {
-        auto [param_list, grammar] = buildFinalGrammar(info, i, final_type_list);
-        LOG(INFO) << "Hole grammar for #" << i;
-        for (auto& param: param_list) {
-            std::cout << param << " ";
-        }
-        std::cout << std::endl;
-        grammar->print();
-    }
-    int kk; std::cin >> kk;*/
 
-    // LOG(INFO) << "Pre execute time " << global::recorder.query("execute");
+    auto* ns_solver = new autolifter::IncreNonScalarSolver(info, env);
+    auto solution = ns_solver->solve();
 
-    auto* solver = new incre::IncreAutoLifterSolver(info, env);
-    auto solution = solver->solve();
+
+   /* auto* solver = new incre::IncreAutoLifterSolver(info, env);
+    auto solution = solver->solve();*/
     solution.print();
     // LOG(INFO) << "After execute time " << global::recorder.query("execute");
 

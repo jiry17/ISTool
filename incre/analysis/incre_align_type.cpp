@@ -127,7 +127,7 @@ AlignTypeInfoList incre::collectAlignType(const IncreProgram &program) {
             }
         }
 
-        auto res = incre::getType(ct->content, ctx, ext);
+        auto res = incre::unfoldTypeWithLabeledCompress(incre::getType(ct->content, ctx, ext), ctx);
         info[id] = std::make_shared<AlignTypeInfoData>(term, inps, res, command_id);
         return res;
     };

@@ -49,6 +49,7 @@ namespace incre {
     void prepareEnv(Env* env);
     IncreInfo* buildIncreInfo(const IncreProgram& program, Env* env);
     std::pair<std::vector<std::string>, Grammar*> buildFinalGrammar(IncreInfo* info, int align_id, const TyList& final_compress_list);
+    TyList getCompressTypeList(IncreInfo* info);
 }
 
 

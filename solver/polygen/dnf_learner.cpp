@@ -91,6 +91,9 @@ DNFLearner::DNFLearner(Specification *spec): PBESolver(spec) {
 
 PCmpInfo DNFLearner::buildInfo(const PProgram& program) {
     Bitset P, N;
+    /*LOG(INFO) << "run " << program->toString();
+    for (auto& example: positive_list) LOG(INFO) << "P: " << data::dataList2String(example);
+    for (auto& example: negative_list) LOG(INFO) << "N: " << data::dataList2String(example);*/
     for (auto& example: positive_list) P.append(spec->env->run(program.get(), example).isTrue());
     for (auto& example: negative_list) N.append(spec->env->run(program.get(), example).isTrue());
     return std::make_shared<CmpInfo>(program, P, N);
