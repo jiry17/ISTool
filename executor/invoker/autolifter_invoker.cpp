@@ -38,10 +38,6 @@ namespace {
         int KMaxClauseNum = _accessIntConfig(env, solver::polygen::KMaxClauseNumName, 3);
 
         return [=](Specification *spec, Verifier *v) -> Solver * {
-            auto domain_builder = solver::lia::liaSolverBuilder;
-            auto dnf_builder = [](Specification *spec) -> PBESolver * { return new DNFLearner(spec); };
-            auto stun_info = solver::divideSyGuSSpecForSTUN(spec->info_list[0], spec->env.get());
-
             int total_component_num = 0;
             for (const auto &type: spec->info_list[0]->inp_type_list) {
                 total_component_num += _getComponentNum(type.get());
@@ -52,7 +48,7 @@ namespace {
             spec->env->setConst(solver::lia::KMaxCostName, BuildData(Int, KMaxCost));
             spec->env->setConst(solver::polygen::KMaxClauseNumName, BuildData(Int, KMaxClauseNum));
             spec->env->setConst(solver::polygen::KIsAllowErrorName, BuildData(Bool, true));
-            return new CEGISPolyGen(spec, stun_info.first, stun_info.second, domain_builder, dnf_builder, v);
+            return invoker::builderSolver(spec, v, SolverToken::POLYGEN, {});
         };
     }
 }

@@ -30,7 +30,7 @@ std::pair<SolverToken, InvokeConfig> util::getSolverToken(Type *oup_type) {
 
         InvokeConfig config;
         config.set("solver_list",
-                   (std::vector<invoker::multi::SolverBuilder>) {obe_builder, staged_polygen_solver, lia_solver});
+                   (std::vector<invoker::multi::SolverBuilder>) {obe_builder, lia_solver, staged_polygen_solver});
         return {SolverToken::MULTI_THREAD, config};
     }
     LOG(FATAL) << "Unsupported type " << oup_type->getName();

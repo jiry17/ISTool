@@ -14,6 +14,52 @@ bool TrivialVerifier::verify(const FunctionContext &info, Example *counter_examp
     return true;
 }
 
+namespace {
+    bool _isRemoveCom(const std::string& name, const PProgram& p) {
+        assert(p->sub_list.size() <= 2);
+        if (p->sub_list.size() != 2) return false;
+        auto l = p->sub_list[0]->toString();
+        auto r = p->sub_list[1]->toString();
+        return l >= r;
+    }
+    bool _isRemoveAssoc(const std::string& name, const PProgram& p) {
+        assert(p->sub_list.size() <= 2);
+        if (p->sub_list.size() != 2) return false;
+        return p->sub_list[0]->semantics->getName() == name;
+    }
+    bool _isRemoveConst(const PProgram& p) {
+        if (p->sub_list.empty()) {
+            return dynamic_cast<ConstSemantics*>(p->semantics.get());
+        }
+        bool is_remove = true;
+        for (auto& sub_program: p->sub_list) {
+            if (!_isRemoveConst(sub_program)) {
+                is_remove = false;
+            }
+        }
+        return is_remove;
+    }
+}
+
+void RuleBasedOptimizer::clear() {}
+
+bool RuleBasedOptimizer::isDuplicated(const std::string &name, NonTerminal *nt, const PProgram &p) {
+    auto sem_name = p->semantics->getName();
+    if (KComOpSet.find(sem_name) != KComOpSet.end() && _isRemoveCom(sem_name, p)) {
+        return true;
+    }
+    if (KAssocOpSet.find(sem_name) != KAssocOpSet.end() && _isRemoveAssoc(sem_name, p)) {
+        return true;
+    }
+    if (!p->sub_list.empty() && _isRemoveConst(p)) {
+        return true;
+    }
+    return false;
+}
+
+const std::unordered_set<std::string> RuleBasedOptimizer::KComOpSet = {"+", "*", "||", "&&", "max", "min"};
+const std::unordered_set<std::string> RuleBasedOptimizer::KAssocOpSet = {"+", "*", "||", "&&", "max", "min"};
+
 OBEOptimizer::OBEOptimizer(ProgramChecker* _is_runnable, const std::unordered_map<std::string, ExampleList> &_pool, Env* _env):
         is_runnable(_is_runnable), example_pool(_pool), env(_env) {
 }

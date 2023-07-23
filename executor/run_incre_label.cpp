@@ -6,6 +6,7 @@
 #include "istool/basic/config.h"
 #include "istool/incre/io/incre_from_json.h"
 #include "istool/incre/io/incre_printer.h"
+#include "istool/solver/polygen/lia_solver.h"
 #include "istool/incre/autolabel/incre_autolabel_constraint_solver.h"
 #include "istool/incre/autolifter/incre_nonscalar_autolifter.h"
 #include "istool/incre/analysis/incre_instru_info.h"
@@ -21,11 +22,11 @@ int main(int argv, char** argc) {
     std::string path, label_path, target;
     bool is_autolabel = true;
     if (argv <= 1) {
-        std::string name = "nonscalar/parallel_suffix_sum";
+        std::string name = "dp/cut";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
-        is_autolabel = false;
+        // is_autolabel = false;
     } else {
         path = std::string(argc[1]);
         label_path = std::string(argc[2]);
@@ -36,8 +37,9 @@ int main(int argv, char** argc) {
 
     auto env = std::make_shared<Env>();
     incre::prepareEnv(env.get());
+    env->setConst(solver::lia::KIsGurobiName, BuildData(Bool, false));
 
-    auto input_program = incre::parseFromF(path, false);
+    auto input_program = incre::parseFromF(path, is_autolabel);
     // init_program = incre::removeGlobal(init_program.get());
 
     IncreProgram labeled_program;
@@ -69,12 +71,12 @@ int main(int argv, char** argc) {
         }
     }
 
-    auto* ns_solver = new autolifter::IncreNonScalarSolver(info, env);
-    auto solution = ns_solver->solve();
+    //auto* ns_solver = new autolifter::IncreNonScalarSolver(info, env);
+    //auto solution = ns_solver->solve();
 
 
-   /* auto* solver = new incre::IncreAutoLifterSolver(info, env);
-    auto solution = solver->solve();*/
+    auto* solver = new incre::IncreAutoLifterSolver(info, env);
+    auto solution = solver->solve();
     solution.print();
     // LOG(INFO) << "After execute time " << global::recorder.query("execute");
 

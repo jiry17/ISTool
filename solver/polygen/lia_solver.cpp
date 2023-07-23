@@ -65,9 +65,8 @@ namespace {
     }
 }
 
-LIASolver::LIASolver(Specification *_spec, const ProgramList &_program_list):
-    PBESolver(_spec), ext(ext::z3::getExtension(_spec->env.get())), program_list(_program_list),
-    env(true) {
+BaseLIASolver::BaseLIASolver(Specification *_spec, const ProgramList &_program_list):
+    PBESolver(_spec), program_list(_program_list) {
     if (spec->info_list.size() > 1) {
         LOG(FATAL) << "LIA Solver can only synthesize a single program";
     }
@@ -79,26 +78,91 @@ LIASolver::LIASolver(Specification *_spec, const ProgramList &_program_list):
     if (!dynamic_cast<TInt*>(term_info->oup_type.get())) {
         LOG(FATAL) << "LIA solver supports only integers";
     }
-
     auto* c_max_data = spec->env->getConstRef(solver::lia::KConstIntMaxName);
     if (c_max_data->isNull()) {
         spec->env->setConst(solver::lia::KConstIntMaxName,
-                BuildData(Int, _getDefaultConstMax(spec->info_list[0])));
+                            BuildData(Int, _getDefaultConstMax(spec->info_list[0])));
     }
     KConstIntMax = theory::clia::getIntValue(*c_max_data);
     auto* t_max_data = spec->env->getConstRef(solver::lia::KTermIntMaxName);
     if (t_max_data->isNull()) {
         spec->env->setConst(solver::lia::KTermIntMaxName,
-                BuildData(Int, _getDefaultTermMax(spec->info_list[0])));
+                            BuildData(Int, _getDefaultTermMax(spec->info_list[0])));
     }
     KTermIntMax = theory::clia::getIntValue(*t_max_data);
     auto* cost_data = spec->env->getConstRef(solver::lia::KMaxCostName);
     if (cost_data->isNull()) KMaxCost = KDefaultMaxCost; else KMaxCost = theory::clia::getIntValue(*cost_data);
     KRelaxTimeLimit = 0.1;
+
+    info = _buildLIAInfo(spec->info_list[0]);
+}
+
+PProgram BaseLIASolver::trivialSolve(const ExampleList &example_list) {
+    if (example_list.empty()) {
+        return program::buildConst(BuildData(Int, 0));
+    }
+    IOExampleList io_example_list;
+    for (const auto& example: example_list) {
+        io_example_list.push_back(io_example_space->getIOExample(example));
+    }
+
+    {
+        bool is_constant = true;
+        for (int i = 1; i < io_example_list.size(); ++i) {
+            if (!(io_example_list[i].second == io_example_list[0].second)) {
+                is_constant = false;
+                break;
+            }
+        }
+        if (is_constant) {
+            int w = theory::clia::getIntValue(io_example_list[0].second);
+            if (w <= KConstIntMax) return program::buildConst(io_example_list[0].second);
+        }
+    }
+    return nullptr;
+}
+
+std::pair<IOExampleList, ProgramList> BaseLIASolver::initializeExamples(const ExampleList &example_list) {
+    std::unordered_set<std::string> cache;
+    ProgramList considered_program_list;
+    IOExampleList direct_example_list, wrapped_example_list;
+    for (auto& example: example_list) direct_example_list.push_back(io_example_space->getIOExample(example));
+    for (auto& io_example: direct_example_list) {
+        wrapped_example_list.emplace_back(DataList(), io_example.second);
+    }
+    for (const auto& program: program_list) {
+        DataList output_list;
+        bool is_invalid = false;
+        for (const auto& io_example: direct_example_list) {
+            try {
+                auto res = spec->env->run(program.get(), io_example.first);
+                if (res.isNull()) {
+                    is_invalid = true; break;
+                }
+                output_list.push_back(res);
+            } catch (SemanticsError& e) {
+                is_invalid = true; break;
+            }
+        }
+        if (is_invalid) continue;
+        auto feature = data::dataList2String(output_list);
+        if (cache.find(feature) == cache.end()) {
+            cache.insert(feature);
+            for (int i = 0; i < output_list.size(); ++i) {
+                wrapped_example_list[i].first.push_back(output_list[i]);
+            }
+            considered_program_list.push_back(program);
+        }
+    }
+    return {wrapped_example_list, considered_program_list};
+}
+
+LIASolver::LIASolver(Specification *_spec, const ProgramList &_program_list):
+    BaseLIASolver(_spec, _program_list), env(true) {
+
     auto* gurobi_timeout = spec->env->getConstRef(solver::lia::KDefaultGurobiTimeOutName, BuildData(Int, KDefaultGurobiTimeOut));
     KGurobiTimeOut = theory::clia::getIntValue(*gurobi_timeout);
 
-    info = _buildLIAInfo(term_info);
     env.set("LogFile", "gurobi.log");
     env.set(GRB_DoubleParam_TimeLimit, KGurobiTimeOut);
     env.start();
@@ -120,81 +184,29 @@ namespace {
     }
 }
 
-namespace {
-    PProgram _buildProgram(const LIAResult& solve_res, const ProgramList& program_list, Env* env) {
-        PProgram res;
-        auto plus = env->getSemantics("+"), times = env->getSemantics("*");
-        if (solve_res.c_val) res = program::buildConst(BuildData(Int, solve_res.c_val));
-        for (int i = 0; i < solve_res.param_list.size(); ++i) {
-            res = _add(res, solve_res.param_list[i], program_list[i], env);
-        }
-        if (!res) res = program::buildConst(BuildData(Int, 0));
-        return res;
+PProgram BaseLIASolver::buildProgram(const LIAResult &result, const ProgramList &considered_programs, Env *env) {
+    PProgram res;
+    auto plus = env->getSemantics("+"), times = env->getSemantics("*");
+    if (result.c_val) res = program::buildConst(BuildData(Int, result.c_val));
+    for (int i = 0; i < result.param_list.size(); ++i) {
+        res = _add(res, result.param_list[i], considered_programs[i], env);
     }
+    if (!res) res = program::buildConst(BuildData(Int, 0));
+    return res;
+}
+
+BaseLIASolver *LIASolver::clone(Specification *spec, const ProgramList &program_list) {
+    return new LIASolver(spec, program_list);
 }
 
 FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, TimeGuard *guard) {
-    if (example_list.empty()) {
-        return semantics::buildSingleContext(io_example_space->func_name, program::buildConst(BuildData(Int, 0)));
-    }
-    IOExampleList io_example_list;
-    for (const auto& example: example_list) {
-        io_example_list.push_back(io_example_space->getIOExample(example));
-    }
-
-    {
-        bool is_constant = true;
-        for (int i = 1; i < io_example_list.size(); ++i) {
-            if (!(io_example_list[i].second == io_example_list[0].second)) {
-                is_constant = false;
-                break;
-            }
-        }
-        if (is_constant) {
-            int w = theory::clia::getIntValue(io_example_list[0].second);
-            if (w <= KConstIntMax) {
-                auto prog = program::buildConst(io_example_list[0].second);
-                return semantics::buildSingleContext(io_example_space->func_name, prog);
-            }
-        }
-    }
-    std::unordered_set<std::string> cache;
-    ProgramList considered_program_list;
-    IOExampleList wrapped_example_list;
-    for (auto& io_example: io_example_list) {
-        wrapped_example_list.emplace_back(DataList(), io_example.second);
-    }
-    for (const auto& program: program_list) {
-        DataList output_list;
-        bool is_invalid = false;
-        for (const auto& io_example: io_example_list) {
-            try {
-                auto res = spec->env->run(program.get(), io_example.first);
-                if (res.isNull()) {
-                    is_invalid = true; break;
-                }
-                output_list.push_back(res);
-            } catch (SemanticsError& e) {
-                is_invalid = true; break;
-            }
-        }
-        if (is_invalid) continue;
-        auto feature = data::dataList2String(output_list);
-        if (cache.find(feature) == cache.end()) {
-            cache.insert(feature);
-            for (int i = 0; i < output_list.size(); ++i) {
-                wrapped_example_list[i].first.push_back(output_list[i]);
-            }
-            considered_program_list.push_back(program);
-        }
-    }
-
+    auto [wrapped_example_list, considered_program_list] = initializeExamples(example_list);
     while (1) {
-        auto solve_res = solver::lia::solveLIA(env, wrapped_example_list, ext, KTermIntMax, KConstIntMax, KMaxCost,
+        auto solve_res = solver::lia::solveLIA(env, wrapped_example_list,  KTermIntMax, KConstIntMax, KMaxCost,
                                                guard);
         switch (solve_res.status) {
             case LIAResult::Status::SUCCESS: {
-                auto program = _buildProgram(solve_res, considered_program_list, spec->env.get());
+                auto program = buildProgram(solve_res, considered_program_list, spec->env.get());
                 return semantics::buildSingleContext(io_example_space->func_name, program);
             }
             case LIAResult::Status::INFEASIBLE: {
@@ -254,7 +266,7 @@ namespace {
     }
 }
 
-LIAResult solver::lia::solveLIA(GRBEnv& env, const std::vector<IOExample> &example_list, Z3Extension *ext, int t_max, int c_max, int cost_max, TimeGuard *guard) {
+LIAResult solver::lia::solveLIA(GRBEnv& env, const std::vector<IOExample> &example_list, int t_max, int c_max, int cost_max, TimeGuard *guard) {
     TimeCheck(guard);
     int n = example_list[0].first.size();
     GRBModel model = GRBModel(env);
@@ -375,12 +387,11 @@ namespace {
     }
 }
 
-void* LIASolver::relax(TimeGuard* guard) {
+void* BaseLIASolver::relax(TimeGuard* guard) {
     // LOG(INFO) << "relax " << std::endl;
     int next_num = int(program_list.size()) * 2;
     double time_out = KRelaxTimeLimit;
     if (guard) time_out = std::min(time_out, guard->getRemainTime());
-    double next_time_limit = KRelaxTimeLimit;
 
     auto next_program_list = _getConsideredTerms(info, next_num, time_out);
     // LOG(INFO) << "Next program list " << next_program_list.size() << " " << next_program_list[next_program_list.size() - 1]->toString() << " " << program_list.size();
@@ -389,12 +400,17 @@ void* LIASolver::relax(TimeGuard* guard) {
         return nullptr;
     }
 
-    return new LIASolver(spec, next_program_list);
+    return clone(spec, next_program_list);
 }
 
-LIASolver * solver::lia::liaSolverBuilder(Specification *spec) {
-    double KRelaxTimeLimit = 0.1;
+const std::string solver::lia::KIsGurobiName = "IsGurobiAvailable";
+
+
+BaseLIASolver *solver::lia::getLIASolver(Specification *spec) {
+    auto* d = spec->env->getConstRef(KIsGurobiName, BuildData(Bool, true));
     auto info = spec->info_list[0];
-    ProgramList program_list = _getConsideredTerms(info, std::max(4, int(info->inp_type_list.size())), KRelaxTimeLimit);
-    return new LIASolver(spec, program_list);
+    ProgramList program_list = _getConsideredTerms(info, std::max(4, int(info->inp_type_list.size())), 0.1);
+    if (d->isTrue()) {
+        return new LIASolver(spec, program_list);
+    } else return new GreedyLIASolver(spec, program_list);
 }

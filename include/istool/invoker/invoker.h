@@ -120,7 +120,7 @@ namespace invoker {
 
         /**
          * @config "is_staged"
-         *   Whether synthesize terms and conditions in two separate CEGIS rounds, deafult false
+         *   Whether synthesize terms and conditions in two separate CEGIS rounds, default false
          */
         Solver* buildPolyGen(Specification* spec, Verifier* v, const InvokeConfig& config);
         Solver* buildCondSolver(Specification* spec, Verifier* v, const InvokeConfig& config);

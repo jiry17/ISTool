@@ -697,9 +697,13 @@ ComponentPool incre::grammar::collector::getBasicComponentPool(Env* env) {
     }
 
     // insert const operator
-    auto ic = std::make_shared<ConstComponent>(theory::clia::getTInt(), (DataList){BuildData(Int, 0)},
-                                               [](Value* value)->bool {return dynamic_cast<IntValue*>(value);});
-    RegisterAll(ic);
+    auto ic_align = std::make_shared<ConstComponent>(theory::clia::getTInt(), (DataList){BuildData(Int, 0)},
+                                                        [](Value* value)->bool {return dynamic_cast<IntValue*>(value);});
+    RegisterComponent(align, ic_align);
+    auto ic = std::make_shared<ConstComponent>(theory::clia::getTInt(), (DataList){BuildData(Int, 0), BuildData(Int, 1)},
+                                                        [](Value* value)->bool {return dynamic_cast<IntValue*>(value);});
+    RegisterComponent(compress, ic);
+    RegisterComponent(comb, ic);
     auto ib = std::make_shared<ConstComponent>(type::getTBool(), (DataList){},
                                                [](Value* value) -> bool {return dynamic_cast<BoolValue*>(value);});
     RegisterAll(ib);

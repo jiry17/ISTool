@@ -280,66 +280,22 @@ namespace {
         return {ts->type, program->sub_list[0]};
     }
 
-    namespace {
-        bool _isRemoveCom(const std::string& name, const PProgram& p) {
-            assert(p->sub_list.size() <= 2);
-            if (p->sub_list.size() != 2) return false;
-            auto l = p->sub_list[0]->toString();
-            auto r = p->sub_list[1]->toString();
-            return l >= r;
-        }
-        bool _isRemoveAssoc(const std::string& name, const PProgram& p) {
-            assert(p->sub_list.size() <= 2);
-            if (p->sub_list.size() != 2) return false;
-            return p->sub_list[0]->semantics->getName() == name;
-        }
-        bool _isRemoveConst(const PProgram& p) {
-            if (p->sub_list.size()) {
-                return dynamic_cast<ConstSemantics*>(p->semantics.get());
-            }
-            bool is_remove = true;
-            for (auto& sub_program: p->sub_list) {
-                if (!_isRemoveConst(sub_program)) {
-                    is_remove = false;
-                }
-            }
-            return is_remove;
-        }
-    }
-
     class _RuleBasedOptimizer: public Optimizer {
     public:
         static const std::unordered_set<std::string> KComOpSet, KAssocOpSet;
         virtual void clear() {
         }
         virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p) {
-            auto sem_name = p->semantics->getName();
-            if (KComOpSet.find(sem_name) != KComOpSet.end() && _isRemoveCom(sem_name, p)) {
-                //LOG(INFO) << "remove " << p->toString();
-                return true;
-            }
-            if (KAssocOpSet.find(sem_name) != KAssocOpSet.end() && _isRemoveAssoc(sem_name, p)) {
-                //LOG(INFO) << "remove " << p->toString();
-                return true;
-            }
-            if (!p->sub_list.empty() && _isRemoveConst(p)) {
-                //LOG(INFO) << "remove " << p->toString();
-                return true;
-            }
-            return false;
         }
 
     };
-
-    const std::unordered_set<std::string> _RuleBasedOptimizer::KComOpSet = {"+", "*", "||", "&&", "max", "min"};
-    const std::unordered_set<std::string> _RuleBasedOptimizer::KAssocOpSet = {"+", "*", "||", "&&", "max", "min"};
 }
 
 void GrammarEnumerateTool::extend() {
     int target_size = program_pool.size();
     auto dummy_info = std::make_shared<SynthInfo>("", TypeList(), PType(), grammar);
     std::vector<FunctionContext> collect_list;
-    auto* op = new _RuleBasedOptimizer();
+    auto* op = new RuleBasedOptimizer();
     EnumConfig c(nullptr, op, nullptr);
     solver::collectAccordingSize({dummy_info}, target_size + 1, collect_list, c);
     delete op;
