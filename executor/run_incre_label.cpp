@@ -11,6 +11,7 @@
 #include "istool/incre/autolifter/incre_nonscalar_autolifter.h"
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
+#include "istool/incre/autolifter/incre_nonscalar_oc.h"
 #include "istool/incre/grammar/incre_component_collector.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include <iostream>
@@ -20,13 +21,14 @@ using namespace incre;
 
 int main(int argv, char** argc) {
     std::string path, label_path, target;
-    bool is_autolabel = true;
+    bool is_nonscalar = false, is_autolabel = true;
     if (argv <= 1) {
-        std::string name = "dp/cut";
+        std::string name = "syc";
         path = config::KSourcePath + "incre-tests/" + name + ".f";
         label_path = config::KSourcePath + "tests/incre/label-res/" + name + ".f";
         target = config::KSourcePath + "tests/incre/optimize-res/" + name + ".f";
-        // is_autolabel = false;
+        is_autolabel = true;
+        is_nonscalar = false;
     } else {
         path = std::string(argc[1]);
         label_path = std::string(argc[2]);
@@ -71,12 +73,18 @@ int main(int argv, char** argc) {
         }
     }
 
-    //auto* ns_solver = new autolifter::IncreNonScalarSolver(info, env);
-    //auto solution = ns_solver->solve();
+    IncreSolution solution;
 
+    if (is_nonscalar) {
+        auto* runner = new autolifter::OCRunner(info, env.get(), 2, 1);
+        autolifter::NonScalarAlignSolver* aux_solver = new autolifter::OCNonScalarAlignSolver(info, runner);
+        auto *ns_solver = new autolifter::IncreNonScalarSolver(info, env, aux_solver);
 
-    auto* solver = new incre::IncreAutoLifterSolver(info, env);
-    auto solution = solver->solve();
+        solution = ns_solver->solve();
+    } else {
+        auto* solver = new incre::IncreAutoLifterSolver(info, env);
+        solution = solver->solve();
+    }
     solution.print();
     // LOG(INFO) << "After execute time " << global::recorder.query("execute");
 

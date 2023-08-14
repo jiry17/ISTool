@@ -1,4 +1,5 @@
 Config ExtraGrammar = "AutoLifter";
+Config VerifyBase = 10000;
 Inductive OpList = onil Unit | oadd {Int, OpList} | odel OpList;
 Inductive List = nil Unit | cons {Int, List};
 

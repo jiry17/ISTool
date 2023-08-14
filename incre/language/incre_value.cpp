@@ -9,7 +9,7 @@
 using namespace incre;
 
 std::string VUnit::toString() const {
-    return "Unit";
+    return "unit";
 }
 bool VUnit::equal(Value *value) const {
     return dynamic_cast<VUnit*>(value);

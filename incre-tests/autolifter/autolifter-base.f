@@ -13,7 +13,7 @@ al_error = 100;
 
 @Align @NoPartial al_plus = \a: Int. \b: Int. + a b;
 @Align @NoPartial al_minus = \a: Int. \b: Int. - a b;
-@Align @NoPartial al_times = \a: Int. \b: Int. * a b;
+/*@Align @NoPartial al_times = \a: Int. \b: Int. * a b;*/
 @Align @NoPartial al_min = \a: Int. \b: Int. if (< a b) then a else b;
 @Align @NoPartial al_max = \a: Int. \b: Int. if (> a b) then a else b;
 @Align al_maximum = al_fold al_max (- 0 al_inf);

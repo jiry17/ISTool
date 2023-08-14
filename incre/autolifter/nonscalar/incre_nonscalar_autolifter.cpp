@@ -54,7 +54,7 @@ InputUnfoldInfo autolifter::unfoldInput(const Data &data, int depth) {
 }
 
 namespace {
-    bool _unfoldOutput(const Data& data, const InputUnfoldInfo& info, int depth, OutputUnfoldInfo& result, const std::string& path) {
+    bool _unfoldOutput(const Data& data, const InputUnfoldInfo& info, int depth, std::unordered_map<std::string, Data>& result, const std::string& path) {
         if (_isPrimary(data)) {
             result[path] = data; return true;
         }
@@ -79,7 +79,7 @@ namespace {
 }
 
 bool autolifter::unfoldOutput(const Data &data, const InputUnfoldInfo &info, int depth_limit,
-                              OutputUnfoldInfo &result) {
+                              std::unordered_map<std::string, Data> &result) {
     result.clear();
     return _unfoldOutput(data, info, depth_limit, result, "");
 }
@@ -117,12 +117,12 @@ namespace {
 
 bool NonScalarExecutionTool::isValid(FullPairExample &example, const TypedProgramList &program) {
     auto x_inp = runInp(example.align_id, example.x, program);
-    OutputUnfoldInfo x_oup;
+    std::unordered_map<std::string, Data> x_oup;
     auto x_flag = runOup(example.align_id, example.x, program, x_inp, x_oup);
     if (!x_flag) return false;
     if (example.x == example.y) return true;
     auto y_inp = runInp(example.align_id, example.y, program);
-    OutputUnfoldInfo y_oup;
+    std::unordered_map<std::string, Data> y_oup;
     auto y_flag = runOup(example.align_id, example.y, program, y_inp, y_oup);
     if (!y_flag) return false;
     /*LOG(INFO) << "is valid check info";
@@ -144,6 +144,27 @@ namespace {
     bool _isBasicScalar(const Data& data) {
         return dynamic_cast<VInt*>(data.get()) || dynamic_cast<VBool*>(data.get()) || dynamic_cast<VUnit*>(data.get());
     }
+}
+
+Data autolifter::executeCompress(const Data &data, int compress_id, const PProgram &program, Env *env) {
+    if (_isBasicScalar(data)) return data;
+    auto* vc = dynamic_cast<VLabeledCompress*>(data.get());
+    if (vc) {
+        if (vc->id == compress_id) return env->run(program.get(), {vc->content});
+        return Data(std::make_shared<VUnit>());
+    }
+    auto* vt = dynamic_cast<VTuple*>(data.get());
+    if (vt) {
+        DataList result;
+        for (auto& element: vt->elements) result.push_back(executeCompress(element, compress_id, program, env));
+        return BuildData(Product, result);
+    }
+    auto* vi = dynamic_cast<VInductive*>(data.get());
+    if (vi) {
+        auto content = executeCompress(vi->content, compress_id, program, env);
+        return Data(std::make_shared<VInductive>(vi->name, content));
+    }
+    LOG(FATAL) << "Unknown data " << data.toString();
 }
 
 Data autolifter::executeCompress(const Data &data, const TypedProgramList &program_list, Env *env) {
@@ -186,7 +207,7 @@ InputUnfoldInfo BasicNonScalarExecutionTool::runInp(int align_id, int example_id
 }
 
 bool BasicNonScalarExecutionTool::runOup(int align_id, int example_id, const TypedProgramList &program,
-                                         const InputUnfoldInfo& inp_info, OutputUnfoldInfo &result) {
+                                         const InputUnfoldInfo& inp_info, std::unordered_map<std::string, Data> &result) {
     auto& example = pool->example_pool[align_id][example_id];
     auto value = executeCompress(example->oup, program, env);
     return unfoldOutput(value, inp_info, KUnfoldDepth, result);
@@ -197,11 +218,15 @@ namespace {
     const int KDefaultExampleTimeOut = 10;
 }
 
-BasicNonScalarSolver::BasicNonScalarSolver(IncreInfo *_info,  NonScalarExecutionTool *_runner):
-    info(_info), runner(_runner) {
-    auto d = runner->env->getConstRef(solver::autolifter::KOccamExampleNumName, BuildData(Int, KDefaultVerifyBase));
+NonScalarAlignSolver::NonScalarAlignSolver(IncreInfo *_info): info(_info),
+    compress_num(incre::getCompressTypeList(_info).size()), KVerifyNumList(_info->align_infos.size(), 0), verify_pos(0, 0) {
+    env = info->example_pool->generator->env;
+    auto d = env->getConstRef(solver::autolifter::KOccamExampleNumName, BuildData(Int, KDefaultVerifyBase));
     KVerifyBase = theory::clia::getIntValue(*d);
     KExampleTimeOut = KDefaultExampleTimeOut;
+}
+
+BasicNonScalarSolver::BasicNonScalarSolver(IncreInfo *_info,  NonScalarExecutionTool *_runner): NonScalarAlignSolver(_info), runner(_runner) {
     auto type_list = incre::getCompressTypeList(info);
     for (int i = 0; i < type_list.size(); ++i) {
         TypeList inp_list(1, incre::typeFromIncre(type_list[i]));
@@ -213,12 +238,19 @@ BasicNonScalarSolver::BasicNonScalarSolver(IncreInfo *_info,  NonScalarExecution
     }
 }
 
+void BasicNonScalarSolver::addCounterExample(const FullPairExample &example) {
+    example_list.push_back(example);
+}
 
-void BasicNonScalarSolver::acquireExamples(int target_num) {
+
+void NonScalarAlignSolver::acquireExamples(int target_num) {
     for (int i = 0; i < info->align_infos.size(); ++i) {
         auto* guard = new TimeGuard(KExampleTimeOut);
+        LOG(INFO) << "target num " << target_num << " pre num " << info->example_pool->example_pool[i].size();
         info->example_pool->generateBatchedExample(i, target_num, guard);
         delete guard;
+        LOG(INFO) << "found " << info->example_pool->example_pool[i].size();
+        KVerifyNumList[i] = std::max(KVerifyNumList[i], std::min(int(info->example_pool->example_pool[i].size()), target_num));
     }
 }
 
@@ -227,7 +259,7 @@ FullPairExample BasicNonScalarSolver::verify(const TypedProgramList &res) {
 
     auto verify = [&](int align_id, int example_id) {
         auto inp_info = runner->runInp(align_id, example_id, res);
-        OutputUnfoldInfo oup_info;
+        std::unordered_map<std::string, Data> oup_info;
         if (!runner->runOup(align_id, example_id, res, inp_info, oup_info)) return example_id;
         auto inp_feature = inp_info.structure_feature + "@" + data::dataList2String(inp_info.scalar_input);
         for (auto& [path, value]: oup_info) {
@@ -246,12 +278,17 @@ FullPairExample BasicNonScalarSolver::verify(const TypedProgramList &res) {
     for (auto& prog: res) verify_num += prog.second->size();
     verify_num *= KVerifyBase; acquireExamples(verify_num);
 
-    for (int align_id = 0; align_id < info->align_infos.size(); ++align_id) {
+    for (int _ = 0; _ < info->align_infos.size(); ++_) {
+        int n = KVerifyNumList[verify_pos.first];
         scalar_map.clear();
-        for (int example_id = 0; example_id < verify_num && example_id < info->example_pool->example_pool[align_id].size(); ++example_id) {
-            auto verify_res = verify(align_id, example_id);
-            if (verify_res != -1) return {align_id, verify_res, example_id};
+        for (int __ = 0; __ < n; ++__) {
+            auto verify_res = verify(verify_pos.first, verify_pos.second);
+            if (verify_res != -1) return {verify_pos.first, verify_res, verify_pos.second};
+            verify_pos.second++;
+            if (verify_pos.second == n) verify_pos.second = 0;
         }
+        verify_pos = {verify_pos.first + 1, 0};
+        if (verify_pos.first == info->align_infos.size()) verify_pos = {0, 0};
     }
     return {-1, -1, -1};
 }
@@ -300,14 +337,13 @@ TypedProgramList BasicNonScalarSolver::synthesisFromExample() {
     return _functionContext2TypedProgram(enum_res);
 }
 
-TypedProgramList BasicNonScalarSolver::solve() {
+TypedProgramList NonScalarAlignSolver::solve() {
     PType empty_type = std::make_shared<TBot>();
     PProgram empty_program = program::buildConst(Data(std::make_shared<VUnit>()));
-    TypedProgramList result(cinfo_list.size(), {empty_type, empty_program});
+    TypedProgramList result(compress_num, {empty_type, empty_program});
     auto counter_example = verify(result);
-    LOG(INFO) << "example " << counter_example.align_id << " " << counter_example.x << " " << counter_example.y;
     if (counter_example.align_id == -1) return result;
-    example_list.push_back(counter_example);
+    addCounterExample(counter_example);
 
     while (1) {
         result = synthesisFromExample();
@@ -315,8 +351,8 @@ TypedProgramList BasicNonScalarSolver::solve() {
         for (auto& program: result) LOG(INFO) << "  " << program.second->toString();
         counter_example = verify(result);
         if (counter_example.align_id != -1) {
-            example_list.push_back(counter_example);
-            assert(!runner->isValid(counter_example, result));
+            addCounterExample(counter_example);
+            //assert(!runner->isValid(counter_example, result));
             LOG(INFO) << "Example: " << counter_example.align_id << " " << counter_example.x << " " << counter_example.y;
             LOG(INFO) << info->example_pool->example_pool[counter_example.align_id][counter_example.x]->toString();
             if (counter_example.x != counter_example.y) {
@@ -330,7 +366,8 @@ namespace {
     const int KDefaultUnfoldDepth = 1;
 }
 
-IncreNonScalarSolver::IncreNonScalarSolver(IncreInfo *_info, const PEnv& _env): IncreSolver(_info), env(_env) {
+IncreNonScalarSolver::IncreNonScalarSolver(IncreInfo *_info, const PEnv& _env, NonScalarAlignSolver* _aux_solver):
+    IncreSolver(_info), env(_env), aux_solver(_aux_solver) {
     auto* d = env->getConstRef(autolifter::KUnfoldDepthName, BuildData(Int, KDefaultUnfoldDepth));
     KUnfoldDepth = theory::clia::getIntValue(*d);
     KExampleTimeOut = KDefaultExampleTimeOut;
@@ -340,8 +377,6 @@ IncreNonScalarSolver::IncreNonScalarSolver(IncreInfo *_info, const PEnv& _env): 
 const std::string autolifter::KUnfoldDepthName = "NonScalarIncre@UnfoldDepth";
 
 IncreSolution IncreNonScalarSolver::solve() {
-    //auto* runner = new BasicNonScalarExecutionTool(info, env.get(), KUnfoldDepth);
-    auto* aux_solver = new BasicNonScalarSolver(info, runner);
 
     align_list = aux_solver->solve();
     LOG(INFO) << "align result";

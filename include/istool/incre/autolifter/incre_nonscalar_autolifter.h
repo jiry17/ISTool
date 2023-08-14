@@ -23,8 +23,6 @@ namespace incre::autolifter {
         InputUnfoldInfo(const std::unordered_set<std::string>& _ds_input, const DataList& _scalar_input, const std::string& _feature);
     };
 
-    typedef std::unordered_map<std::string, Data> OutputUnfoldInfo;
-
     class NonScalarExecutionTool {
     public:
         IncreInfo* info;
@@ -34,7 +32,7 @@ namespace incre::autolifter {
 
         NonScalarExecutionTool(IncreInfo* _info, Env* _env, int _KUnfoldDepth);
         virtual InputUnfoldInfo runInp(int align_id, int example_id, const TypedProgramList& program) = 0;
-        virtual bool runOup(int align_id, int example_id, const TypedProgramList& program, const InputUnfoldInfo& inp_info, OutputUnfoldInfo& result) = 0;
+        virtual bool runOup(int align_id, int example_id, const TypedProgramList& program, const InputUnfoldInfo& inp_info, std::unordered_map<std::string, Data>& result) = 0;
         bool isValid(FullPairExample& example, const TypedProgramList& program);
         virtual ~NonScalarExecutionTool() = default;
     };
@@ -45,27 +43,40 @@ namespace incre::autolifter {
         BasicNonScalarExecutionTool(IncreInfo* _info,  Env* _env, int _KUnfoldDepth);
         void prepareGlobal(int align_id, int example_id);
         virtual InputUnfoldInfo runInp(int align_id, int example_id, const TypedProgramList& program);
-        virtual bool runOup(int align_id, int example_id, const TypedProgramList& program, const InputUnfoldInfo& inp_info, OutputUnfoldInfo& result);
+        virtual bool runOup(int align_id, int example_id, const TypedProgramList& program, const InputUnfoldInfo& inp_info, std::unordered_map<std::string, Data>& result);
 
         virtual ~BasicNonScalarExecutionTool() = default;
     };
 
-    class BasicNonScalarSolver {
+    class NonScalarAlignSolver {
     public:
         IncreInfo* info;
-        NonScalarExecutionTool* runner;
-        std::vector<FullPairExample> example_list;
-        FullPairExample verify(const TypedProgramList & res);
+        Env* env;
         void acquireExamples(int target_num);
-
         int KVerifyBase, KExampleTimeOut;
-        // TypeList ctype_list;
-        std::vector<PSynthInfo> cinfo_list;
+        int compress_num;
+        std::vector<int> KVerifyNumList;
+        std::pair<int, int> verify_pos;
 
-        TypedProgramList synthesisFromExample();
-        BasicNonScalarSolver(IncreInfo* _info, NonScalarExecutionTool* _runner);
+        virtual void addCounterExample(const FullPairExample& example) = 0;
+        virtual TypedProgramList synthesisFromExample() = 0;
+        virtual FullPairExample verify(const TypedProgramList& res) = 0;
         TypedProgramList solve();
+
+        NonScalarAlignSolver(IncreInfo* _info);
     };
+
+    class BasicNonScalarSolver: public NonScalarAlignSolver {
+    public:
+        std::vector<FullPairExample> example_list;
+        std::vector<PSynthInfo> cinfo_list;
+        NonScalarExecutionTool* runner;
+        FullPairExample verify(const TypedProgramList& res);
+        TypedProgramList synthesisFromExample();
+        virtual void addCounterExample(const FullPairExample& example);
+        BasicNonScalarSolver(IncreInfo* _info, NonScalarExecutionTool* _runner);
+    };
+
 
     class IncreNonScalarSolver: public IncreSolver {
     public:
@@ -73,7 +84,8 @@ namespace incre::autolifter {
         int KUnfoldDepth, KExampleTimeOut;
         TypedProgramList align_list;
         NonScalarExecutionTool* runner;
-        IncreNonScalarSolver(IncreInfo* _info, const PEnv& _env);
+        NonScalarAlignSolver* aux_solver;
+        IncreNonScalarSolver(IncreInfo* _info, const PEnv& _env, NonScalarAlignSolver* _aux_solver);
         Ty getFinalType(const Ty& type);
         virtual IncreSolution solve();
         virtual ~IncreNonScalarSolver() = default;
@@ -83,8 +95,9 @@ namespace incre::autolifter {
 
     InputUnfoldInfo unfoldInput(const Data& data, int depth);
     void mergeInputInfo(InputUnfoldInfo& base, const InputUnfoldInfo& extra);
-    bool unfoldOutput(const Data& data, const InputUnfoldInfo& info, int depth_limit, OutputUnfoldInfo& result);
+    bool unfoldOutput(const Data& data, const InputUnfoldInfo& info, int depth_limit, std::unordered_map<std::string, Data>& result);
     Data executeCompress(const Data& data, const TypedProgramList& program_list, Env* env);
+    Data executeCompress(const Data& data, int compress_id, const PProgram& program, Env* env);
     extern const std::string KUnfoldDepthName;
 
     namespace comb {

@@ -14,6 +14,7 @@ namespace incre {
         TermList align_list;
         TermList repr_list;
         IncreSolution(const TyList& _compress_type_list, const TermList& align_list, const TermList& repr_list);
+        IncreSolution() = default;
         void print() const;
     };
 

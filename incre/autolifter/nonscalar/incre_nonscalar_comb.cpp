@@ -276,7 +276,7 @@ namespace {
             for (int i = 0; i < inp.size(); ++i) {
                 autolifter::mergeInputInfo(inp_info, unfoldInput(inp[i], unfold_plan[i]));
             }
-            OutputUnfoldInfo oup_info;
+            std::unordered_map<std::string, Data> oup_info;
             if (!unfoldOutput(oup, inp_info, oup_depth, oup_info)) return false;
             std::string feature = inp_info.structure_feature + "@" + data::dataList2String(inp_info.scalar_input);
             for (auto& [path, v]: oup_info) {
