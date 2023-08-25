@@ -53,16 +53,19 @@ namespace {
         auto def = _eliminateUnusedLet(term->def);
         return std::make_shared<TmMatch>(def, cases);
     }
+    EliminateHead(Align) {
+        return std::make_shared<TmAlign>(_eliminateUnusedLet(term->content));
+    }
 
     Term _eliminateUnusedLet(const Term& term) {
         switch (term->getType()) {
             case TermType::WILDCARD:
             case TermType::LABEL:
             case TermType::UNLABEL:
-            case TermType::ALIGN:
                 LOG(FATAL) << "Unexpected TermType " << term->toString();
             case TermType::VALUE:
             case TermType::VAR: return term;
+            case TermType::ALIGN: EliminateCase(Align);
             case TermType::LET: EliminateCase(Let);
             case TermType::PROJ: EliminateCase(Proj);
             case TermType::ABS: EliminateCase(Abs);

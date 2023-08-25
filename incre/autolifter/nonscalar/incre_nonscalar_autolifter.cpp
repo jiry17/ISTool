@@ -9,6 +9,7 @@
 #include "istool/incre/trans/incre_trans.h"
 #include "istool/solver/autolifter/basic/occam_verifier.h"
 #include "istool/incre/analysis/incre_instru_info.h"
+#include "istool/basic/config.h"
 #include <iostream>
 
 using namespace incre;
@@ -378,12 +379,15 @@ const std::string autolifter::KUnfoldDepthName = "NonScalarIncre@UnfoldDepth";
 
 IncreSolution IncreNonScalarSolver::solve() {
 
+    global::printStageResult("Stage 1/2: synthesizing the representation function.");
     align_list = aux_solver->solve();
     LOG(INFO) << "align result";
     for (auto& align: align_list) LOG(INFO) << "  " << align.second->toString();
 
+    global::printStageResult("Stage 2/2: synthesizing the combinator.");
     TermList comb_list;
     for (int i = 0; i < info->align_infos.size(); ++i) {
+        global::printStageResult("  Synthesizing sketch hole " + std::to_string(i + 1) + "/" + std::to_string(info->align_infos.size()));
         comb_list.push_back(synthesisComb(i));
     }
     TyList compress_type_list;

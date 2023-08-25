@@ -224,24 +224,49 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
         unit_storage.push_back(_unfoldOutputType(align_info->oup_type));
     }
 
-    for (auto& align_info: info->align_infos) {
-        for (auto& unit: unit_storage[align_info->getId()]) {
-            auto *oup_ty = unit.unit_type.get();
-            if (!dynamic_cast<TyCompress *>(oup_ty)) {
-                PLPRes res = solvePLPTask(align_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr}, unit);
-                auto related = record_res(align_info->getId(), res, unit.path);
-                align_result_records[align_info->getId()][unit.path].push_back(related);
+    {
+        global::printStageResult("  Iteration #0");
+        int sub_task_num = 0;
+        for (auto &align_info: info->align_infos) {
+            for (auto &unit: unit_storage[align_info->getId()]) {
+                auto *oup_ty = unit.unit_type.get();
+                if (!dynamic_cast<TyCompress *>(oup_ty)) sub_task_num += 1;
+            }
+        }
+        int sub_task_id = 0;
+        for (auto &align_info: info->align_infos) {
+            for (auto &unit: unit_storage[align_info->getId()]) {
+                auto *oup_ty = unit.unit_type.get();
+                if (!dynamic_cast<TyCompress *>(oup_ty)) {
+                    global::printStageResult("    Solving subtask " + std::to_string(++sub_task_id) + "/" +
+                                             std::to_string(sub_task_num));
+                    PLPRes res = solvePLPTask(align_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr},
+                                              unit);
+                    auto related = record_res(align_info->getId(), res, unit.path);
+                    align_result_records[align_info->getId()][unit.path].push_back(related);
+                }
             }
         }
     }
 
     bool is_changed = true;
+    int iteration_id = 0;
     while (is_changed) {
         is_changed = false;
+        global::printStageResult("  Iteration #" + std::to_string(++iteration_id));
+        int sub_task_num = 0; std::vector<int> extend_limit;
+        for (const auto& f_res: f_res_list) {
+            extend_limit.push_back(f_res.component_list.size());
+            for (const auto& component: f_res.component_list) {
+                if (!component.is_extended) sub_task_num++;
+            }
+        }
+        int sub_task_id = 0;
         for (int compress_id = 0; compress_id < f_res_list.size(); ++compress_id) {
-            for (int i = 0; i < f_res_list[compress_id].component_list.size(); ++i) {
+            for (int i = 0; i < extend_limit[compress_id]; ++i) {
                 auto component = f_res_list[compress_id].component_list[i];
                 if (component.is_extended) continue;
+                global::printStageResult("    Solving subtask " + std::to_string(++sub_task_id) + "/" + std::to_string(sub_task_num));
                 is_changed = true;
                 f_res_list[compress_id].component_list[i].is_extended = true;
                 for (auto& align_info: info->align_infos) {
@@ -298,9 +323,11 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
 
 IncreSolution IncreAutoLifterSolver::solve() {
     global::recorder.start("syn-align");
+    global::printStageResult("Stage 1/2: synthesizing the representation function.");
     solveAuxiliaryProgram();
     global::recorder.end("syn-align");
     global::recorder.start("syn-comb");
+    global::printStageResult("Stage 2/2: synthesizing the combinator.");
     solveCombinators();
     global::recorder.end("syn-comb");
     if (env->getConstRef(config_name::KPrintAlignName, BuildData(Bool, false))->isTrue()) {

@@ -611,6 +611,7 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
 
 void IncreAutoLifterSolver::solveCombinators() {
     for (int pass_id = 0; pass_id < info->align_infos.size(); ++pass_id) {
+        global::printStageResult("  Synthesizing sketch hole " + std::to_string(pass_id + 1) + "/" + std::to_string(info->align_infos.size()));
         comb_list.push_back(synthesisCombinator(pass_id));
     }
     auto comb_size = 0;
