@@ -20,11 +20,11 @@
 
 using namespace incre;
 
-DEFINE_string(benchmark, "/usr/jiry/ISTool/incre-tests/syc.f", "The absolute path of the benchmark file (.sl)");
+DEFINE_string(benchmark, "", "The absolute path of the benchmark file (.sl)");
 DEFINE_string(output, "", "The absolute path of the output file");
 DEFINE_bool(autolabel, true, "Whether automatically generate annotations");
 DEFINE_bool(scalar, true, "Whether consider only scalar expressions when filling sketch holes");
-DEFINE_bool(mark_rewrite, false, "Whetehr to mark the sketch holes.");
+DEFINE_bool(mark_rewrite, false, "Whether to mark the sketch holes.");
 DEFINE_string(stage_output_file, "", "Only used in online demo");
 
 int main(int argc, char** argv) {
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     if (is_autolabel) {
         global::printStageResult("Start stage 0/2: generating annotations.");
         global::recorder.start("label");
-        auto *label_solver = new autolabel::AutoLabelZ3Solver(input_program);
+        auto *label_solver = new autolabel::AutoLabelZ3Solver(input_program, is_scalar);
         labeled_program = label_solver->label();
         global::recorder.end("label");
         global::printStageResult("Stage 0/2 Finished");

@@ -32,7 +32,7 @@ namespace incre::autolabel {
     };
 
     Ty unfoldTypeWithZ3Label(const Ty& type, TypeContext* ctx);
-    void initZ3Context(ProgramData* init_program, Z3Context* ctx);
+    void initZ3Context(ProgramData* init_program, Z3Context* ctx, bool is_scalar_only);
     void collectAlignConstraint(ProgramData* program, Z3Context* ctx);
     z3::expr collectMinimalAlignConstraint(ProgramData* program, Z3Context* ctx);
     IncreProgram constructLabel(ProgramData* program, const z3::model& model, Z3Context* ctx);
@@ -40,7 +40,8 @@ namespace incre::autolabel {
     class AutoLabelZ3Solver: public AutoLabelSolver {
     public:
         Z3Context* ctx;
-        AutoLabelZ3Solver(const IncreProgram& init_program);
+        bool is_scalar;
+        AutoLabelZ3Solver(const IncreProgram& init_program, bool _is_scalar);
         virtual IncreProgram label();
         ~AutoLabelZ3Solver();
     };

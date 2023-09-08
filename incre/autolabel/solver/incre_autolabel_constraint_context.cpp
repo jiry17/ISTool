@@ -106,15 +106,15 @@ namespace {
         __align(full_x, full_y, ctx);
     }
 
-    Ty _labelTerm(const Term& term, Z3Context* ctx);
+    Ty _labelTerm(const Term& term, Z3Context* ctx, bool is_scalar_only);
 
-#define LabelHead(name) Ty _labelTerm(Tm ## name* term, Z3Context* ctx)
-#define LabelCase(name) {raw_type = _labelTerm(dynamic_cast<Tm ## name*>(term.get()), ctx); break;}
+#define LabelHead(name) Ty _labelTerm(Tm ## name* term, Z3Context* ctx, bool is_scalar_only)
+#define LabelCase(name) {raw_type = _labelTerm(dynamic_cast<Tm ## name*>(term.get()), ctx, is_scalar_only); break;}
 
     LabelHead(If) {
-        auto c = _labelTerm(term->c, ctx);
-        auto t = _labelTerm(term->t, ctx);
-        auto f = _labelTerm(term->f, ctx);
+        auto c = _labelTerm(term->c, ctx, is_scalar_only);
+        auto t = _labelTerm(term->t, ctx, is_scalar_only);
+        auto f = _labelTerm(term->f, ctx, is_scalar_only);
         LOG(INFO) << "Align term " << term->toString();
         _align(c, std::make_shared<TyBool>(), ctx);
         _align(t, f, ctx);
@@ -124,14 +124,14 @@ namespace {
         return ctx->lookup(term->name);
     }
     LabelHead(Let) {
-        auto type = _labelTerm(term->def, ctx);
+        auto type = _labelTerm(term->def, ctx, is_scalar_only);
         auto log = ctx->bind(term->name, type);
-        auto res = _labelTerm(term->content, ctx);
+        auto res = _labelTerm(term->content, ctx, is_scalar_only);
         ctx->cancelBind(log);
         return res;
     }
     LabelHead(Proj) {
-        auto res = autolabel::unfoldTypeWithZ3Label(_labelTerm(term->content, ctx), ctx);
+        auto res = autolabel::unfoldTypeWithZ3Label(_labelTerm(term->content, ctx, is_scalar_only), ctx);
         auto [label, content] = _unfoldCompress(res, ctx->ctx);
         ctx->addCons(!label);
         auto* tt = dynamic_cast<TyTuple*>(content.get());
@@ -140,11 +140,11 @@ namespace {
     }
     LabelHead(Tuple) {
         TyList sub_list;
-        for (auto& field: term->fields) sub_list.push_back(_labelTerm(field, ctx));
+        for (auto& field: term->fields) sub_list.push_back(_labelTerm(field, ctx, is_scalar_only));
         return std::make_shared<TyTuple>(sub_list);
     }
     LabelHead(Fix) {
-        auto res = _labelTerm(term->content, ctx);
+        auto res = _labelTerm(term->content, ctx, is_scalar_only);
         auto* at = dynamic_cast<TyArrow*>(res.get());
         assert(at);
         _align(at->source, at->target, ctx);
@@ -152,7 +152,7 @@ namespace {
     }
     LabelHead(Abs) {
         auto log = ctx->bind(term->name, term->type);
-        auto res = _labelTerm(term->content, ctx);
+        auto res = _labelTerm(term->content, ctx, is_scalar_only);
         ctx->cancelBind(log);
         return std::make_shared<TyArrow>(term->type, res);
     }
@@ -160,9 +160,9 @@ namespace {
         return incre::getValueType(term->data.get());
     }
     LabelHead(App) {
-        auto func = _labelTerm(term->func, ctx);
+        auto func = _labelTerm(term->func, ctx, is_scalar_only);
         func = autolabel::unfoldTypeWithZ3Label(func, ctx);
-        auto param = _labelTerm(term->param, ctx);
+        auto param = _labelTerm(term->param, ctx, is_scalar_only);
         auto* at = dynamic_cast<TyArrow*>(func.get());
         // LOG(INFO) << "get type " << term->toString() << " " << at->toString() << " " << param->toString();
         assert(at); _align(at->source, param, ctx);
@@ -205,12 +205,12 @@ namespace {
         }
     }
     LabelHead(Match) {
-        auto content = autolabel::unfoldTypeWithZ3Label(_labelTerm(term->def, ctx), ctx);
+        auto content = autolabel::unfoldTypeWithZ3Label(_labelTerm(term->def, ctx, is_scalar_only), ctx);
         TyList case_types;
         for (auto& [pattern, sub_term]: term->cases) {
             std::vector<TypeContext::BindLog> log_list;
             _bind(pattern, content, ctx, log_list);
-            case_types.push_back(_labelTerm(sub_term, ctx));
+            case_types.push_back(_labelTerm(sub_term, ctx, is_scalar_only));
             for (int i = int(log_list.size()) - 1; i >= 0; --i) {
                 ctx->cancelBind(log_list[i]);
             }
@@ -239,7 +239,7 @@ namespace {
         return _isFirstOrder(full_type);
     }
 
-    std::pair<bool, z3::expr> _getAlignCons(const Ty& type, z3::context& ctx) {
+    std::pair<bool, z3::expr> __getScalarOnlyAlignCons(const Ty& type, z3::context& ctx) {
         switch (type->getType()) {
             case TyType::VAR:
             case TyType::ARROW:
@@ -252,7 +252,7 @@ namespace {
                 return {true, ctx.bool_val(false)};
             case TyType::COMPRESS: {
                 auto [label, content] = _unfoldCompress(type, ctx);
-                auto [is_inductive, sub_cons] = _getAlignCons(content, ctx);
+                auto [is_inductive, sub_cons] = __getScalarOnlyAlignCons(content, ctx);
                 if (is_inductive) return {true, label | sub_cons};
                 return {false, ctx.bool_val(true)};
             }
@@ -260,7 +260,7 @@ namespace {
                 auto* tt = dynamic_cast<TyTuple*>(type.get());
                 bool is_inductive = false; z3::expr cons = ctx.bool_val(true);
                 for (auto& field: tt->fields) {
-                    auto sub_res = _getAlignCons(field, ctx);
+                    auto sub_res = __getScalarOnlyAlignCons(field, ctx);
                     is_inductive |= sub_res.first;
                     cons = cons & sub_res.second;
                 }
@@ -270,12 +270,12 @@ namespace {
         }
     }
 
-    z3::expr _getAlignCons(const Ty& type, Z3Context* ctx) {
+    z3::expr _getScalarOnlyAlignCons(const Ty& type, Z3Context* ctx) {
         auto full_type = autolabel::unfoldTypeWithZ3Label(type, ctx);
-        return _getAlignCons(full_type, ctx->ctx).second;
+        return __getScalarOnlyAlignCons(full_type, ctx->ctx).second;
     }
 
-    Ty _labelTerm(const Term& term, Z3Context* ctx) {
+    Ty _labelTerm(const Term& term, Z3Context* ctx, bool is_scalar_only) {
         Ty raw_type;
         switch (term->getType()) {
             case TermType::ALIGN:
@@ -312,14 +312,24 @@ namespace {
             // LOG(INFO) << "Can align " << term->toString();
             auto align_var = ctx->getVar();
             ctx->align_map.insert({term.get(), align_var});
-            ctx->addCons(z3::implies(align_var, _getAlignCons(res, ctx)));
+            if (is_scalar_only) ctx->addCons(z3::implies(align_var, _getScalarOnlyAlignCons(res, ctx)));
+            else {
+                auto flip_it = ctx->flip_map.find(term.get());
+                if (flip_it != ctx->flip_map.end()) {
+                    auto flip_var = flip_it->second;
+                    if (raw_type->getType() == TyType::COMPRESS) {
+                        auto [label, content] = _unfoldCompress(raw_type, ctx->ctx);
+                        ctx->addCons(z3::implies(align_var && flip_var, !label));
+                    }
+                }
+            }
         }
 
         return ctx->type_map[term.get()] = res;
     }
 }
 
-void autolabel::initZ3Context(ProgramData* init_program, Z3Context* ctx) {
+void autolabel::initZ3Context(ProgramData* init_program, Z3Context* ctx, bool is_scalar_only) {
     for (auto& command: init_program->commands) {
         switch (command->getType()) {
             case CommandType::DEF_IND: {
@@ -348,7 +358,7 @@ void autolabel::initZ3Context(ProgramData* init_program, Z3Context* ctx) {
                     case BindingType::TERM: {
                         auto* bt = dynamic_cast<TermBinding*>(bind.get());
 
-                        auto type = _labelTerm(bt->term, ctx);
+                        auto type = _labelTerm(bt->term, ctx, is_scalar_only);
                         ctx->bind(cb->name, type);
                         break;
                     }

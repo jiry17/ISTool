@@ -72,6 +72,7 @@ ComponentPool collector::collectComponentFromSource(EnvContext* env_ctx, TypeCon
     ComponentPool pool;
     auto info_map = _constructInfoMap(program);
     std::unordered_set<std::string> name_set;
+    std::unordered_set<std::string> extract_wildcard, combine_wildcard;
     for (auto& command: program->commands) {
         switch (command->getType()) {
             case CommandType::DEF_IND: {
@@ -84,6 +85,8 @@ ComponentPool collector::collectComponentFromSource(EnvContext* env_ctx, TypeCon
             case CommandType::BIND: {
                 auto* cb = dynamic_cast<CommandBind*>(command.get());
                 if (cb->binding->getType() != BindingType::TERM) continue;
+                if (cb->isDecoratedWith(CommandDecorate::SYN_COMBINE)) combine_wildcard.insert(cb->name);
+                if (cb->isDecoratedWith(CommandDecorate::SYN_COMPRESS)) extract_wildcard.insert(cb->name);
                 name_set.insert(cb->name);
             }
             case CommandType::IMPORT: break;
@@ -107,6 +110,13 @@ ComponentPool collector::collectComponentFromSource(EnvContext* env_ctx, TypeCon
         if (!component_info.is_recursive) {
             pool.compress_list.push_back(normal_component);
             pool.comb_list.push_back(parallel_component);
+        } else {
+            if (extract_wildcard.find(name) != extract_wildcard.end()) {
+                pool.compress_list.push_back(normal_component);
+            }
+            if (combine_wildcard.find(name) != extract_wildcard.end()) {
+                pool.comb_list.push_back(parallel_component);
+            }
         }
         pool.align_list.push_back(normal_component);
     }

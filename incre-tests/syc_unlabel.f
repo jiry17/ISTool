@@ -45,14 +45,11 @@ end
 func0 = fix (lambda f: List -> Compress List.
 lambda l: List.
 match l with
-  cons {h, t} ->
-    let res = f t in
-    align (label (snoc (unlabel res) h))
-| nil _ -> align (label (nil unit))
+  cons {h, t} -> snoc (f t) h
+| nil _ -> nil unit
 end
 );
 
 func1 = lambda var1: List.
 let var2 = func0 var1 in
-let var1 = unit in
-align (rev (unlabel var2));
+let var1 = unit in rev var2;

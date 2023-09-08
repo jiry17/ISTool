@@ -9,8 +9,8 @@
 using namespace incre;
 using namespace incre::autolabel;
 
-autolabel::AutoLabelZ3Solver::AutoLabelZ3Solver(const IncreProgram &init_program):
-    AutoLabelSolver(init_program), ctx(new Z3Context()) {
+autolabel::AutoLabelZ3Solver::AutoLabelZ3Solver(const IncreProgram &init_program, bool _is_scalar):
+    AutoLabelSolver(init_program), ctx(new Z3Context()), is_scalar(_is_scalar) {
 }
 
 autolabel::AutoLabelZ3Solver::~AutoLabelZ3Solver() {
@@ -18,7 +18,7 @@ autolabel::AutoLabelZ3Solver::~AutoLabelZ3Solver() {
 }
 
 IncreProgram AutoLabelZ3Solver::label() {
-    initZ3Context(init_program.get(), ctx);
+    initZ3Context(init_program.get(), ctx, is_scalar);
     collectAlignConstraint(init_program.get(), ctx);
 
     z3::optimize solver(ctx->ctx);

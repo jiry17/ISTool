@@ -374,7 +374,7 @@ namespace {
 }
 
 void collector::loadExtraOperator(EnvContext* env_ctx, TypeContext *type_ctx, Env* env, const std::string &extra_name) {
-    if (extra_name == "AutoLifter") {
+    if (extra_name == "AutoLifter" || extra_name == "DeepCoder") {
         _loadAutoLifterOperators(env_ctx, type_ctx); return;
     }
     if (extra_name == "Fold") {
