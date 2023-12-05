@@ -13,14 +13,14 @@ is_sorted =
   | cons {h, t} -> aux h t
   end;
 
-@Input w: Int;
+@Input winp: Int;
 
 spec = fix (
   \f: List -> Int. \xs: List.
   match xs with
-    elt a -> if < a w then 1 else 0
+    elt a -> if < a winp then 1 else 0
   | cons {h, t} ->
-    + (if < h w then 1 else 0) (f t)
+    + (if < h winp then 1 else 0) (f t)
   end
 );
 
@@ -29,7 +29,7 @@ target = fix (
   match xs with
     elt w -> xs
   | cons {h, t} ->
-    if < h w then cons {h, f t}
+    if < h winp then cons {h, f t}
     else xs /*Avoid recursions*/
   end
 );

@@ -144,7 +144,13 @@ namespace incre {
 
     extern const std::string KExampleThreadName;
 
+    typedef std::pair<Term, std::unordered_map<std::string, Data>> FullExample;
+
     CollectorBuilder getCollectorBuilder(const CollectorType &type);
+    DataList evaluateAll(const std::vector<FullExample>& examples, const IncreProgram& program);
+
+    std::vector<FullExample> constructAllPossibleInput(const std::vector<std::pair<std::string, Ty>>& global, const TyList& type,
+                                                       const std::string& start_name, const IncreConfigMap& config_map);
 }
 
 #endif //ISTOOL_INCRE_INSTRU_RUNTIME_H

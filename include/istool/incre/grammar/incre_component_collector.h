@@ -155,6 +155,7 @@ namespace incre::grammar {
         ComponentPool getBasicComponentPool(Env* env);
         ComponentPool collectExtraOperators(EnvContext* env_ctx, TypeContext* ctx, const std::string& extra_name);
         void loadExtraOperator(EnvContext* env_ctx, TypeContext* ctx, Env* env, const std::string& extra_name);
+        CommandList extractExtraComponentInResult(const std::string& extra_name);
         extern const std::string KCollectMethodName;
     }
     namespace builder {

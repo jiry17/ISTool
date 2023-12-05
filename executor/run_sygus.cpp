@@ -27,10 +27,10 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        solver_name = "polygen";
+        solver_name = "maxflash";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv/PRE_icfp_gen_14.10.sl";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mpg_guard2_non_half.sl";
-        benchmark_name = "/home/jiry/2022A/OOPSLA23-artifact/tests/clia/mss.sl";
+        benchmark_name = config::KSourcePath + "tests/1.sl";
         output_name = "/tmp/629453237.out";
     }
 

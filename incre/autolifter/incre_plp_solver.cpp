@@ -626,6 +626,7 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
     addExample(counter_example);
 
     while (true) {
+        // global::recorder.add("#cegis", 1);
         TimeCheck(guard);
         auto candidate_result = unfoldComponents(synthesisFromExample(guard));
         LOG(INFO) << "Candidate result " << _unitList2String(candidate_result);

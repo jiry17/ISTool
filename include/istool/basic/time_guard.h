@@ -34,6 +34,7 @@ public:
     void end(const std::string& type);
     double query(const std::string& type);
     void record(const std::string& name, int value);
+    void add(const std::string& name, int value);
     void printAll();
 };
 

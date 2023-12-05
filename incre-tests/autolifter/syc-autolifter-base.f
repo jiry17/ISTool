@@ -1,9 +1,10 @@
-Inductive List = cons {Int, List} | nil Unit;
+Inductive IInt = cint Int;
+Inductive List = nil Unit | cons {IInt, List};
 
 al_fold = \oplus: Int -> Int -> Int. \e: Int.
   fix (\f: List->Int. \xs: List.
     match xs with
-      cons {h, t} -> oplus h (f t)
+      cons {cint h, t} -> oplus h (f t)
     | nil _ -> e
     end
   );
@@ -13,14 +14,14 @@ al_error = 100;
 
 @Align @NoPartial al_plus = \a: Int. \b: Int. + a b;
 @Align @NoPartial al_minus = \a: Int. \b: Int. - a b;
-@Align @NoPartial al_times = \a: Int. \b: Int. * a b;
+/*@Align @NoPartial al_times = \a: Int. \b: Int. * a b;*/
 @Align @NoPartial al_min = \a: Int. \b: Int. if (< a b) then a else b;
 @Align @NoPartial al_max = \a: Int. \b: Int. if (> a b) then a else b;
 @Align al_maximum = al_fold al_max (- 0 al_inf);
 @Align al_minimum = al_fold al_min al_inf;
 @Align al_sum = al_fold al_plus 0;
 @Align al_length = al_fold (\a: Int. \b: Int. + b 1) 0;
-@Align @Extract al_head = \xs: List. match xs with nil _ -> al_inf | cons {h, _} -> h end;
+@Align @Extract al_head = \xs: List. match xs with nil _ -> al_error | cons {cint h, _} -> h end;
 @Align al_inc = \a: Int. + a 1;
 @Align al_dec = \a: Int. - a 1;
 @Align al_neg = \a: Int. - 0 a;
@@ -29,8 +30,8 @@ al_error = 100;
   \f: List -> Int. \xs: List.
   match xs with
     nil _ -> al_error
-  | cons {h, nil _} -> h
-  | cons {h, t} -> f t
+  | cons {cint h, nil _} -> h
+  | cons {cint h, t} -> f t
   end
 );
 
@@ -41,7 +42,7 @@ al_error = 100;
       else (fix (
         \f: Int -> List -> Int. \i: Int. \ys: List.
         match ys with
-          cons {h, t} -> if (== i 0) then h else f (- i 1) t
+          cons {cint h, t} -> if (== i 0) then h else f (- i 1) t
         end
       )) ind xs;
 
@@ -49,7 +50,7 @@ al_error = 100;
   \f: List -> Int. \xs: List.
   match xs with
     nil _ -> 0
-  | cons {h, t} -> if p h then (+ 1 (f t)) else f t
+  | cons {cint h, t} -> if p h then (+ 1 (f t)) else f t
   end
 );
 
@@ -59,7 +60,7 @@ al_error = 100;
       (fix (\f: Int -> List -> List. \i: Int. \ys: List.
         match ys with
           nil _ -> ys
-        | cons {h, t} -> if < i 0 then nil unit else cons {h, f (- i 1) t}
+        | cons {cint h, t} -> if < i 0 then nil unit else cons {cint h, f (- i 1) t}
         end
       )) ind xs;
 
@@ -69,7 +70,7 @@ al_error = 100;
       (fix (\f: Int -> List -> List. \i: Int. \ys: List.
         match ys with
           nil _ -> ys
-        | cons {h, t} -> if (>= i ind) then cons {h, f (+ i 1) t} else f (+ i 1) t
+        | cons {cint h, t} -> if (>= i ind) then cons {cint h, f (+ i 1) t} else f (+ i 1) t
         end
       )) 0 xs;
 
@@ -77,7 +78,7 @@ al_error = 100;
   \f: List -> List -> List. \res: List. \xs: List.
   match xs with
     nil _ -> res
-  | cons {h, t} -> f (cons {h, res}) t
+  | cons {cint h, t} -> f (cons {cint h, res}) t
   end
 ) (nil unit);
 
@@ -85,7 +86,7 @@ al_error = 100;
   \f: List -> List. \xs: List.
   match xs with
     nil _ -> xs
-  | cons {h, t} -> cons {op h, f t}
+  | cons {cint h, t} -> cons {cint (op h), f t}
   end
 );
 
@@ -93,7 +94,7 @@ al_error = 100;
   \f: List -> List. \xs: List.
   match xs with
     nil _ -> xs
-  | cons {h, t} -> if (p h) then cons {h, f t} else f t
+  | cons {cint h, t} -> if (p h) then cons {cint h, f t} else f t
   end
 );
 
@@ -101,10 +102,10 @@ al_error = 100;
   \f: List -> List -> List. \xs: List. \ys: List.
   match xs with
     nil _ -> nil unit
-  | cons {h1, t1} ->
+  | cons {cint h1, t1} ->
     match ys with
       nil _ -> nil unit
-    | cons {h2, t2} -> cons {op h1 h2, f t1 t2}
+    | cons {cint h2, t2} -> cons {cint (op h1 h2), f t1 t2}
     end
   end
 );
@@ -113,7 +114,7 @@ al_concat = \xs: List. \ys: List. (fix (
   \f: List -> List. \zs: List.
   match zs with
     nil _ -> ys
-  | cons {h, t} -> cons {h, f t}
+  | cons {cint h, t} -> cons {cint h, f t}
   end
 )) xs;
 
@@ -121,36 +122,36 @@ al_concat = \xs: List. \ys: List. (fix (
   \f: List -> List. \xs: List.
   match xs with
     nil _ -> xs
-  | cons {h, t} ->
+  | cons {cint h, t} ->
     let l = al_filter (\a: Int. < a h) t in
       let r = al_filter (\a: Int. <= h a) t in
-        al_concat (f l) (cons {h, (f r)})
+        al_concat (f l) (cons {cint h, (f r)})
   end
 );
 
 @Align @NoPartial al_scanl = \oplus: Int -> Int -> Int. \xs: List.
   match xs with
     nil _ -> xs
-  | cons {h, t} ->
+  | cons {cint h, t} ->
     let rec = fix (\f: Int -> List -> List. \pre: Int. \xs: List.
       match xs with
-        cons {h, t} ->
+        cons {cint h, t} ->
           let now = oplus pre h in
-            cons {now, f now t}
+            cons {cint now, f now t}
       | nil _ -> xs
       end
     ) in
-      cons {h, rec h t}
+      cons {cint h, rec h t}
   end;
 
 @Align @NoPartial al_scanr = \oplus: Int -> Int -> Int. fix (
   \f: List -> List. \xs: List.
   match xs with
     nil _ -> xs
-  | cons {h, nil _} -> xs
-  | cons {h, t} ->
+  | cons {cint h, nil _} -> xs
+  | cons {cint h, t} ->
     let res = f t in
-      cons {oplus h (al_head res), res}
+      cons {cint (oplus h (al_head res)), res}
   end
 );
 
@@ -160,4 +161,4 @@ al_concat = \xs: List. \ys: List. (fix (
 @Align al_isodd = \a: Int. not (al_iseven a);
 @Align one = 1;
 @Align none = -1;
-/*@Combine al_error = \x: Int. or (== x al_error) (== x (- 0 al_error));*/
+@Combine al_error = \x: Int. or (== x al_error) (== x (- 0 al_error));

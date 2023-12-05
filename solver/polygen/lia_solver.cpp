@@ -200,6 +200,7 @@ BaseLIASolver *LIASolver::clone(Specification *spec, const ProgramList &program_
 }
 
 FunctionContext LIASolver::synthesis(const std::vector<Example> &example_list, TimeGuard *guard) {
+    if (example_list.empty()) return semantics::buildSingleContext(io_example_space->func_name, program::buildConst(BuildData(Int, 0)));
     auto [wrapped_example_list, considered_program_list] = initializeExamples(example_list);
     while (1) {
         auto solve_res = solver::lia::solveLIA(env, wrapped_example_list,  KTermIntMax, KConstIntMax, KMaxCost,

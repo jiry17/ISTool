@@ -10,6 +10,11 @@ end;
 
 cmax = lambda x: Int. lambda y: Int. if (<= x y) then y else x;
 
+lhead = \xs: Llist. match xs with
+  cnil _ -> nil unit
+| ccons {h, t} -> h
+end;
+
 mapcons = fix (lambda f: Llist -> IInt -> Llist.
 lambda ll: Llist.
 lambda h: IInt.
@@ -24,7 +29,7 @@ prefixes = fix (lambda f: List -> Llist.
 lambda l: List.
 match l with
    nil _ -> cnil unit
-| cons {h, t} -> ccons {cons {h, nil unit}, mapcons (f t) h}
+| cons {h, t} -> ccons {l, f t}
 end
 );
 
@@ -52,22 +57,15 @@ match ll with
 end
 );
 
-func1 = fix (lambda f: List -> Llist.
+func1 = fix (lambda f: List -> Compress Llist.
 lambda l: List.
 match l with
   nil _ -> let var6 = 0 in cnil unit
-| cons {h, t} -> let l = (nil unit) in ccons {cons {h, nil unit}, cappend (mapcons (prefixes t) h) (f t)}
-end
-);
-
-tmp = fix (\f: List -> Compress List. \xs: List.
-match xs with
-  nil _ -> xs
-| cons {h, t} -> cons {h, f t}
+| cons {h, t} -> cappend (prefixes l) (f t)
 end
 );
 
 func2 = lambda var4: List.
-let var5 = (tmp var4) in
+let var5 = (func1 var4) in
 let var4 = (nil unit) in
-(func0 (func1 var5));
+(func0 var5);

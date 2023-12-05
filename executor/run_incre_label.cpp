@@ -14,13 +14,15 @@
 #include "istool/incre/autolifter/incre_nonscalar_oc.h"
 #include "istool/incre/grammar/incre_component_collector.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
+#include "istool/sygus/theory/basic/string/string_value.h"
 #include <iostream>
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 
 using namespace incre;
 
-DEFINE_string(benchmark, "", "The absolute path of the benchmark file (.sl)");
+DEFINE_string(benchmark, "/home/jiry/2023A/ISTool/incre-tests/running-example-in.f", "The absolute path of the benchmark file (.sl)");
+//DEFINE_string(benchmark, "/home/jiry/2023A/ISTool/incre-tests/synduce/constraints/sorted_and_indexed/count_lt0.f", "The absolute path of the benchmark file (.sl)");
 DEFINE_string(output, "", "The absolute path of the output file");
 DEFINE_bool(autolabel, true, "Whether automatically generate annotations");
 DEFINE_bool(scalar, true, "Whether consider only scalar expressions when filling sketch holes");
@@ -38,7 +40,7 @@ int main(int argc, char** argv) {
 
     auto env = std::make_shared<Env>();
     incre::prepareEnv(env.get());
-    env->setConst(solver::lia::KIsGurobiName, BuildData(Bool, false));
+    //env->setConst(solver::lia::KIsGurobiName, BuildData(Bool, false));
 
     auto input_program = incre::parseFromF(path, is_autolabel);
     // init_program = incre::removeGlobal(init_program.get());
@@ -91,8 +93,66 @@ int main(int argc, char** argv) {
     auto full_res = incre::rewriteWithIncreSolution(info->program.get(), solution, env.get(), is_mark);
     full_res = incre::eliminateUnusedLet(full_res.get());
 
+    /* Final verification */
+    global::recorder.start("final-verify");
+    if (full_res->config_map.find(IncreConfig::EXTRA_GRAMMAR) != full_res->config_map.end()) {
+        auto name_data = full_res->config_map[IncreConfig::EXTRA_GRAMMAR];
+        auto *sv = dynamic_cast<StringValue *>(name_data.get());
+        CommandList extra_component;
+        if (sv) {
+            extra_component = incre::grammar::collector::extractExtraComponentInResult(sv->s);
+        }
+        CommandList pre_commands;
+        for (auto &command: full_res->commands) {
+            if (command->isDecoratedWith(CommandDecorate::INPUT)) {
+                extra_component.push_back(command);
+            } else {
+                pre_commands.push_back(command);
+            }
+        }
+        full_res->commands.clear();
+        bool is_inserted = false;
+        for (auto &command: pre_commands) {
+            if (command->getType() != CommandType::DEF_IND && !is_inserted) {
+                is_inserted = true;
+                for (auto &new_command: extra_component) full_res->commands.push_back(new_command);
+            }
+            full_res->commands.push_back(command);
+        }
+        if (!is_inserted) {
+            for (auto &new_command: extra_component) {
+                full_res->commands.push_back(new_command);
+            }
+        }
+    }
+
     if (!target.empty()) incre::printProgram(full_res, target, is_mark);
     incre::printProgram(full_res, {}, is_mark);
+    auto [start_name, params] = info->example_pool->start_list[0];
+    auto possible_inputs = incre::constructAllPossibleInput(info->example_pool->input_list, params, start_name, input_program->config_map);
+
+    LOG(INFO) << "Possible inputs " << possible_inputs.size();
+    for (int i = 0; i < 10 && i < possible_inputs.size(); ++i) {
+        std::cout << "#" << i << ": " << possible_inputs[i].first->toString() << std::endl;
+        for (auto& [name, v]: possible_inputs[i].second) std::cout << " " << name << "@" << v.toString();
+        std::cout << std::endl;
+    }
+    auto ref_result = evaluateAll(possible_inputs, input_program);
+    auto total_result = evaluateAll(possible_inputs, full_res);
+    for (int i = 0; i < 10 && i < possible_inputs.size(); ++i) {
+        std::cout << "#" << i << ": " << ref_result[i].toString() << " " << total_result[i].toString() << std::endl;
+    }
+    for (int i = 0; i < ref_result.size(); ++i) {
+        if (!(ref_result[i] == total_result[i])) {
+            std::cout << "incorrect" << std::endl;
+            std::cout << "#" << i << ": " << possible_inputs[i].first->toString() << std::endl;
+            for (auto& [name, v]: possible_inputs[i].second) std::cout << " " << name << "@" << v.toString();
+            std::cout << ref_result[i].toString() << " " << total_result[i].toString() << std::endl;
+        }
+        assert(ref_result[i] == total_result[i]);
+    }
+    global::recorder.end("final-verify");
+
 
     global::recorder.printAll();
     std::cout << global_guard->getPeriod() << std::endl;

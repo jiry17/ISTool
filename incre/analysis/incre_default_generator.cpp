@@ -108,6 +108,138 @@ SizeSafeValueGenerator::SplitScheme::SplitScheme(const std::string &_cons_name, 
                                                  cons_name(_cons_name), cons_type(_cons_type), size_list(_size_list) {
 }
 
+namespace {
+    const int KCollectLen = 10;
+    int KCollectIntMin = -5, KCollectIntMax = 5;
+
+    void _collectAllSizeScheme(int i, int n, int rem, std::vector<int>& tmp, std::vector<std::vector<int>>& result) {
+        if (n == 0) {
+            if (rem == 0) result.emplace_back(); return;
+        }
+        if (i + 1 == n) {
+            tmp[i] = rem; result.emplace_back(tmp); return;
+        }
+        for (int current = 0; current <= rem; ++current) {
+            tmp[i] = current;
+            _collectAllSizeScheme(i + 1, n, rem - current, tmp, result);
+        }
+    }
+
+    std::vector<std::vector<int>> _collectAllSizeScheme(int n, int tot) {
+        std::vector<int> tmp(n, 0);
+        std::vector<std::vector<int>> result;
+        _collectAllSizeScheme(0, n, tot, tmp, result);
+        return result;
+    }
+
+    void _combineAll(int i, int n, const DataStorage& storage, DataList& tmp, DataList& result) {
+        if (i == n) {
+            result.emplace_back(std::make_shared<VTuple>(tmp)); return;
+        }
+        for (auto& data: storage[i]) {
+            tmp[i] = data; _combineAll(i + 1, n, storage, tmp, result);
+        }
+    }
+
+    DataList _collectAll(const Ty& type, int size, std::vector<std::pair<std::string, Ty>>& context) {
+        DataList result;
+        switch (type->getType()) {
+            case TyType::INT: {
+                if (size != 1) return {};
+                for (int i = KCollectIntMin; i <= KCollectIntMax; ++i) {
+                    result.emplace_back(BuildData(Int, i));
+                }
+                return result;
+            }
+            case TyType::BOOL: {
+                if (size != 1) return {};
+                result.emplace_back(BuildData(Bool, false));
+                result.emplace_back(BuildData(Bool, true));
+                return result;
+            }
+            case TyType::UNIT: {
+                if (size) return {};
+                result.emplace_back(std::make_shared<VUnit>());
+                return result;
+            }
+            case TyType::ARROW:
+            case TyType::COMPRESS: {
+                LOG(FATAL) << "Unexpected input type";
+            }
+            case TyType::VAR: {
+                auto* tv = dynamic_cast<TyVar*>(type.get());
+                for (int i = int(context.size()) - 1; i >= 0; --i) {
+                    if (context[i].first == tv->name) {
+                        return _collectAll(context[i].second, size, context);
+                    }
+                }
+                LOG(FATAL) << "Unknown type variable " << tv->name;
+            }
+            case TyType::TUPLE: {
+                auto* tt = dynamic_cast<TyTuple*>(type.get());
+                for (auto& scheme: _collectAllSizeScheme(tt->fields.size(), size)) {
+                    DataStorage storage;
+                    for (int i = 0; i < scheme.size(); ++i) {
+                        storage.push_back(_collectAll(tt->fields[i], scheme[i], context));
+                    }
+                    DataList tmp(scheme.size());
+                    _combineAll(0, scheme.size(), storage, tmp, result);
+                }
+                return result;
+            }
+            case TyType::IND: {
+                if (size == 0) return {};
+                auto* ti = dynamic_cast<TyInductive*>(type.get());
+                context.emplace_back(ti->name, type);
+                for (auto& [name, sub_type]: ti->constructors) {
+                    for (auto& sub_res: _collectAll(sub_type, size - 1, context)) {
+                        result.emplace_back(std::make_shared<VInductive>(name, sub_res));
+                    }
+                }
+                context.pop_back();
+                return result;
+            }
+        }
+    }
+}
+
+std::vector<std::pair<Term, std::unordered_map<std::string, Data>>>
+incre::constructAllPossibleInput(const std::vector<std::pair<std::string, Ty>> &global, const TyList &types,
+                                 const std::string &start_name, const IncreConfigMap& config_map) {
+    TyList fields = types;
+    for (auto& [_, ty]: global) fields.push_back(ty);
+    Ty full_type = std::make_shared<TyTuple>(fields);
+    std::vector<std::pair<std::string, Ty>> context;
+    std::vector<std::pair<Term, std::unordered_map<std::string, Data>>> result;
+
+    auto it = config_map.find(IncreConfig::SAMPLE_INT_MIN);
+    if (it != config_map.end()) {
+        auto* vi = dynamic_cast<VInt*>(it->second.get());
+        if (vi) KCollectIntMin = std::max(KCollectIntMin, vi->w);
+    }
+    it = config_map.find(IncreConfig::SAMPLE_INT_MAX);
+    if (it != config_map.end()) {
+        auto* vi = dynamic_cast<VInt*>(it->second.get());
+        if (vi) KCollectIntMax = std::min(KCollectIntMax, vi->w);
+    }
+
+    for (int i = 2; i <= KCollectLen; ++i) {
+        for (auto& data: _collectAll(full_type, i, context)) {
+            auto* vt = dynamic_cast<VTuple*>(data.get()); assert(vt);
+            Term final_term = std::make_shared<TmVar>(start_name);
+            for (int j = 0; j < types.size(); ++j) {
+                final_term = std::make_shared<TmApp>(final_term, std::make_shared<TmValue>(vt->elements[j]));
+            }
+            std::unordered_map<std::string, Data> global_map;
+            for (int j = 0; j < global.size(); ++j) {
+                global_map[global[j].first] = vt->elements[j + types.size()];
+            }
+            result.emplace_back(final_term, global_map);
+        }
+    }
+    return result;
+}
+
 std::string SizeSafeValueGenerator::SplitScheme::toString() const {
     std::string res = cons_name + "@" + cons_type->toString();
     for (auto& w: size_list) res += " " + std::to_string(w);

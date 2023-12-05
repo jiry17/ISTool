@@ -601,3 +601,50 @@ CollectorBuilder incre::getCollectorBuilder(const CollectorType &type) {
             };
     }
 }
+
+DataList incre::evaluateAll(const std::vector<FullExample> &examples, const IncreProgram &program) {
+    DataList result(examples.size());
+    int current_pos = 0, n = examples.size();
+    std::mutex pos_lock;
+
+    auto single_thread = [&]() {
+        auto* holder = new AddressHolder();
+        auto* ctx = new EnvContext(holder);
+        ctx->start = holder->extend(ctx->start, "al_inf", BuildData(Int, 100));
+        for (auto& command: program->commands) {
+            incre::envRun(command, ctx);
+        }
+        std::queue<int> task_queue;
+        std::vector<std::pair<int, Data>> local_result;
+        while (1) {
+            if (task_queue.empty()) {
+               pos_lock.lock();
+               if (current_pos == n) {
+                   pos_lock.unlock(); break;
+               }
+               int pre = current_pos; current_pos = std::min(n, current_pos + 100);
+               pos_lock.unlock();
+               for (int i = pre; i < current_pos; ++i) {
+                   task_queue.push(i);
+               }
+            }
+            int k = task_queue.front(); task_queue.pop();
+            auto& [term, global] = examples[k];
+            ctx->initGlobal(global);
+            int pre_size = holder->address_list.size();
+            result[k] = incre::envRun(term, ctx->start, holder);
+            holder->recover(pre_size);
+        }
+        return;
+    };
+
+    std::vector<std::thread> thread_list;
+
+    for (int i = 0; i < KDefaultThreadNum; ++i) {
+        thread_list.emplace_back(single_thread);
+    }
+    for (int i = 0; i < KDefaultThreadNum; ++i) {
+        thread_list[i].join();
+    }
+    return result;
+}
