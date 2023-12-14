@@ -1,155 +1,154 @@
 //
-// Created by pro on 2022/9/18.
+// Created by pro on 2023/12/8.
 //
 
 #include "istool/incre/language/incre_program.h"
-#include "istool/solver/polygen/polygen_term_solver.h"
 #include "glog/logging.h"
-#include <iostream>
 
 using namespace incre;
+using namespace incre::syntax;
 
-CommandData::CommandData(CommandType _type, const DecorateSet& _decorate_set):
-    type(_type), decorate_set(_decorate_set) {}
-CommandType CommandData::getType() const {
-    return type;
+
+CommandData::CommandData(const CommandType &_type, const std::string& _name, const DecorateSet &_decos):
+        type(_type), decos(_decos), name(_name) {
 }
 
-bool CommandData::isDecoratedWith(CommandDecorate deco) const {
-    return decorate_set.find(deco) != decorate_set.end();
+bool CommandData::isDecrorateWith(CommandDecorate deco) const {
+    return decos.find(deco) != decos.end();
 }
 
-std::string CommandData::toString() {
-    std::string res;
-    for (auto deco: decorate_set) {
-        res += "@" + decorate2String(deco) + " ";
+CommandType CommandData::getType() const {return type;}
+
+CommandBind::CommandBind(const std::string &_name, const Term &_term, const DecorateSet &decos):
+        term(_term), CommandData(CommandType::BIND, _name, decos) {
+}
+
+CommandDef::CommandDef(const std::string &_name, int _param, const std::vector<std::pair<std::string, Ty>> &_cons_list,
+                       const DecorateSet &decos): param(_param), cons_list(_cons_list), CommandData(CommandType::DEF_IND, _name, decos) {
+}
+
+CommandInput::CommandInput(const std::string &_name, const syntax::Ty &_type, const DecorateSet &decos):
+    CommandData(CommandType::INPUT, _name, decos), type(_type) {
+}
+
+IncreProgramData::IncreProgramData(const CommandList &_commands, const IncreConfigMap &_config_map):
+        commands(_commands), config_map(_config_map) {
+}
+
+void incre::IncreProgramWalker::walkThrough(IncreProgramData *program) {
+    preProcess(program);
+    for (auto& command: program->commands) {
+        switch (command->getType()) {
+            case CommandType::BIND: {
+                auto* cb = dynamic_cast<CommandBind*>(command.get());
+                visit(cb); break;
+            }
+            case CommandType::DEF_IND: {
+                auto* cd = dynamic_cast<CommandDef*>(command.get());
+                visit(cd); break;
+            }
+            case CommandType::INPUT: {
+                auto* ci = dynamic_cast<CommandInput*>(command.get());
+                visit(ci); break;
+            }
+        }
     }
-    return res + contentToString();
-}
-
-std::string CommandImport::contentToString() const {
-    return "import " + name + ";";
-}
-CommandImport::CommandImport(const std::string &_name, const CommandList &_commands):
-    CommandData(CommandType::IMPORT, {}), name(_name), commands(_commands) {
-}
-
-CommandBind::CommandBind(const std::string &_name, const Binding &_binding, const DecorateSet& _decorate_set):
-    CommandData(CommandType::BIND, _decorate_set), name(_name), binding(_binding) {
-}
-std::string CommandBind::contentToString() const {
-    return name + " = " + binding->toString() + ";";
-}
-
-CommandDefInductive::CommandDefInductive(const Ty &__type):
-    CommandData(CommandType::DEF_IND, {}), _type(__type) {
-    type = dynamic_cast<TyInductive*>(_type.get());
-    if (!type) {
-        LOG(FATAL) << "Expected TyInductive but get " << _type->toString();
-    }
-}
-std::string CommandDefInductive::contentToString() const {
-    auto res = "Inductive " + type->name + " = ";
-    for (int i = 0; i < type->constructors.size(); ++i) {
-        auto& [name, ty] = type->constructors[i];
-        if (i) res += " | ";
-        res += name + " " + ty->toString();
-    }
-    return res + ";";
-}
-
-ProgramData::ProgramData(const CommandList &_commands, const IncreConfigMap& _config_map):
-    commands(_commands), config_map(_config_map) {}
-void ProgramData::print() const {
-    for (auto& command: commands) {
-        std::cout << command->toString() << std::endl;
-    }
+    postProcess(program);
 }
 
 namespace {
-    const std::unordered_map<CommandDecorate, std::string> KDecorateNameMap = {
-            {CommandDecorate::INPUT, "Input"}, {CommandDecorate::START, "Start"},
-            {CommandDecorate::SYN_ALIGN, "Align"}, {CommandDecorate::SYN_COMBINE, "Combine"},
-            {CommandDecorate::SYN_COMPRESS, "Extract"}, {CommandDecorate::SYN_NO_PARTIAL, "NoPartial"}
+    class _DefaultContextBuilder: public IncreProgramWalker {
+    public:
+        IncreContext ctx;
+        std::unordered_map<std::string, EnvAddress*> address_map;
+    protected:
+        incre::semantics::IncreEvaluator* evaluator;
+        incre::types::IncreTypeChecker* checker;
+        incre::syntax::IncreTypeRewriter* rewriter;
+
+        virtual void visit(CommandBind* command) {
+            auto type = checker ? checker->bindTyping(command->term.get(), ctx) : nullptr;
+            auto res = evaluator ? evaluator->evaluate(command->term.get(), ctx) : Data();
+            if (type && rewriter) type = rewriter->rewrite(type);
+            if (type) LOG(INFO) << command->name << ": " << type->toString();
+            ctx = ctx.insert(command->name, Binding(false, type, res));
+        }
+
+        virtual void visit(CommandDef* command) {
+            for (auto& [cons_name, cons_type]: command->cons_list) {
+                ctx = ctx.insert(cons_name, Binding(true, cons_type, {}));
+            }
+        }
+
+        virtual void visit(CommandInput* command) {
+            ctx = ctx.insert(command->name, command->type);
+            if (address_map.find(command->name) != address_map.end()) {
+                LOG(FATAL) << "Duplicated global input " << command->name;
+            }
+            address_map[command->name] = ctx.start.get();
+        }
+    public:
+
+        _DefaultContextBuilder(incre::semantics::IncreEvaluator* _evaluator, incre::types::IncreTypeChecker* _checker,
+                               incre::syntax::IncreTypeRewriter* _rewriter):
+                ctx(nullptr), evaluator(_evaluator), checker(_checker), rewriter(_rewriter) {
+        }
+
     };
 }
 
-CommandDecorate incre::string2Decorate(const std::string &s) {
-    for (auto& [deco, name]: KDecorateNameMap) {
-        if (name == s) return deco;
+IncreFullContext incre::buildContext(IncreProgramData *program, semantics::IncreEvaluator *evaluator,
+                                types::IncreTypeChecker *checker, syntax::IncreTypeRewriter* rewriter) {
+    auto* walker = new _DefaultContextBuilder(evaluator, checker, rewriter);
+    walker->walkThrough(program);
+    auto res = std::make_shared<IncreFullContextData>(walker->ctx, walker->address_map);
+    delete walker;
+    return res;
+}
+
+IncreFullContext incre::buildContext(IncreProgramData *program, const semantics::IncreEvaluatorGenerator &eval_gen,
+                                     const types::IncreTypeCheckerGenerator &type_checker_gen,
+                                     const syntax::IncreTypeRewriterGenerator &rewriter_gen) {
+    auto *eval = eval_gen(); auto* type_checker = type_checker_gen();
+    auto* rewriter = rewriter_gen();
+    if (type_checker && !rewriter) LOG(FATAL) << "Missing type rewriter";
+    auto ctx = buildContext(program, eval, type_checker, rewriter);
+    delete eval; delete type_checker; delete rewriter;
+    return ctx;
+}
+
+
+void IncreProgramRewriter::visit(CommandDef *command) {
+    std::vector<std::pair<std::string, Ty>> cons_list;
+    for (auto& [cons_name, cons_ty]: command->cons_list) {
+        cons_list.emplace_back(cons_name, type_rewriter->rewrite(cons_ty));
     }
-    LOG(FATAL) << "Unknown Decorate " << s;
+    res->commands.push_back(std::make_shared<CommandDef>(command->name, command->param, cons_list, command->decos));
 }
 
-std::string incre::decorate2String(CommandDecorate deco) {
-    auto it = KDecorateNameMap.find(deco);
-    assert(it != KDecorateNameMap.end());
-    return it->second;
+void IncreProgramRewriter::visit(CommandBind *command) {
+    auto new_term = term_rewriter->rewrite(command->term);
+    res->commands.push_back(std::make_shared<CommandBind>(command->name, new_term, command->decos));
 }
 
-namespace {
-    const std::unordered_map<IncreConfig, std::string> KConfigNameMap = {
-            {IncreConfig::COMPOSE_NUM, "ComposeNum"},
-            {IncreConfig::VERIFY_BASE, "VerifyBase"},
-            {IncreConfig::NON_LINEAR, "NonLinear"},
-            {IncreConfig::SAMPLE_SIZE, "SampleSize"},
-            {IncreConfig::EXTRA_GRAMMAR, "ExtraGrammar"},
-            {IncreConfig::ENABLE_FOLD, "EnableFold"},
-            {IncreConfig::SAMPLE_INT_MIN, "SampleIntMin"},
-            {IncreConfig::SAMPLE_INT_MAX, "SampleIntMax"},
-            {IncreConfig::PRINT_ALIGN, "PrintAlign"},
-            {IncreConfig::TERM_NUM, "TermNum"},
-            {IncreConfig::CLAUSE_NUM, "ClauseNum"}
-    };
+void IncreProgramRewriter::visit(CommandInput *command) {
+    auto new_type = type_rewriter->rewrite(command->type);
+    res->commands.push_back(std::make_shared<CommandInput>(command->name, new_type, command->decos));
 }
 
-IncreConfig incre::string2ConfigType(const std::string &s) {
-    for (auto& [config, name]: KConfigNameMap) {
-        if (name == s) return config;
-    }
-    LOG(FATAL) << "Unknown Config " << s;
+void IncreProgramRewriter::preProcess(IncreProgramData *program) {
+    res = std::make_shared<IncreProgramData>(CommandList(), program->config_map);
 }
 
-
-#include "istool/solver/autolifter/composed_sf_solver.h"
-#include "istool/solver/polygen/dnf_learner.h"
-
-const std::string config_name::KDataSizeLimitName = "incre@data-size-limit";
-const std::string config_name::KExtraGrammarName = "incre@extra-grammar";
-const std::string config_name::KIsNonLinearName = "incre@is-non-linear";
-const std::string config_name::KIsEnableFoldName = "incre@is-enable-fold";
-const std::string config_name::KSampleIntMaxName = "incre@sample-int-max";
-const std::string config_name::KSampleIntMinName = "incre@sample-int-min";
-const std::string config_name::KPrintAlignName = "incre@print-align";
-
-namespace {
-    std::unordered_map<IncreConfig, std::string> KConfigEnvNameMap;
-
-    void _constructEnvNameMap() {
-        KConfigEnvNameMap = {
-            {IncreConfig::COMPOSE_NUM, solver::autolifter::KComposedNumName},
-            {IncreConfig::TERM_NUM, solver::polygen::KMaxTermNumName},
-            {IncreConfig::NON_LINEAR, config_name::KIsNonLinearName},
-            {IncreConfig::VERIFY_BASE, solver::autolifter::KOccamExampleNumName},
-            {IncreConfig::SAMPLE_SIZE, config_name::KDataSizeLimitName},
-            {IncreConfig::EXTRA_GRAMMAR, config_name::KExtraGrammarName},
-            {IncreConfig::ENABLE_FOLD, config_name::KIsEnableFoldName},
-            {IncreConfig::SAMPLE_INT_MIN, config_name::KSampleIntMinName},
-            {IncreConfig::SAMPLE_INT_MAX, config_name::KSampleIntMaxName},
-            {IncreConfig::PRINT_ALIGN, config_name::KPrintAlignName},
-            {IncreConfig::CLAUSE_NUM, solver::polygen::KMaxClauseNumName}
-        };
-    }
+IncreProgramRewriter::IncreProgramRewriter(IncreTypeRewriter *_type_rewriter, IncreTermRewriter *_term_rewriter):
+        type_rewriter(_type_rewriter), term_rewriter(_term_rewriter) {
 }
 
-void incre::applyConfig(IncreConfig config, const Data &config_value, Env *env) {
-    if (KConfigEnvNameMap.empty()) _constructEnvNameMap();
-    env->setConst(KConfigEnvNameMap[config], config_value);
-}
-
-void incre::applyConfig(ProgramData *program, Env *env) {
-    if (KConfigEnvNameMap.empty()) _constructEnvNameMap();
-    for (auto& [incre_type, _]: KConfigEnvNameMap) {
-        applyConfig(incre_type, program->config_map[incre_type], env);
-    }
+IncreProgram syntax::rewriteProgram(IncreProgramData *program, const IncreTypeRewriterGenerator &type_gen,
+                                    const IncreTermRewriterGenerator &term_gen) {
+    auto* type_rewriter = type_gen(); auto* term_rewriter = term_gen();
+    auto* rewriter = new IncreProgramRewriter(type_rewriter, term_rewriter);
+    rewriter->walkThrough(program); auto res = rewriter->res;
+    delete type_rewriter; delete term_rewriter; delete rewriter;
+    return res;
 }

@@ -2,6 +2,7 @@
 // Created by pro on 2022/9/25.
 //
 
+/*
 #include "istool/incre/incre_solver.h"
 #include "istool/incre/io/incre_printer.h"
 #include "glog/logging.h"
@@ -188,4 +189,4 @@ IncreProgram incre::rewriteWithIncreSolution(ProgramData *program, const IncreSo
         }
     }
     return std::make_shared<ProgramData>(res, program->config_map);
-}
+}*/

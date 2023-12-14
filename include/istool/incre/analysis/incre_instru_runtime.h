@@ -5,20 +5,23 @@
 #ifndef ISTOOL_INCRE_INSTRU_RUNTIME_H
 #define ISTOOL_INCRE_INSTRU_RUNTIME_H
 
-#include "incre_instru_type.h"
+#include "istool/incre/language/incre_program.h"
 #include "istool/basic/example_sampler.h"
+#include "incre_instru_types.h"
 #include <random>
 #include <unordered_set>
 
-namespace incre {
+namespace incre::example {
     struct IncreExampleData {
-        int tau_id;
+        int rewrite_id;
         std::unordered_map<std::string, Data> local_inputs, global_inputs;
         Data oup;
-        IncreExampleData(int _tau_id, const std::unordered_map<std::string, Data>& _local, const std::unordered_map<std::string, Data>& _global, const Data& _oup);
+        IncreExampleData(int _rewrite_id, const std::unordered_map<std::string, Data>& _local, const std::unordered_map<std::string, Data>& _global, const Data& _oup);
         std::string toString() const;
         virtual ~IncreExampleData() = default;
     };
+
+    syntax::Ty getContentTypeForGen(syntax::TypeData* res, syntax::TypeData* cons_ty);
 
     typedef std::shared_ptr<IncreExampleData> IncreExample;
     typedef std::vector<IncreExample> IncreExampleList;
@@ -27,130 +30,75 @@ namespace incre {
     public:
         Env* env;
         int KSizeLimit, KIntMin, KIntMax;
-        IncreDataGenerator(Env* _env);
-        virtual Data getRandomData(const Ty& type) = 0;
+        std::unordered_map<std::string, CommandDef*> cons_map;
+        Data getRandomInt();
+        Data getRandomBool();
+        IncreDataGenerator(Env* _env, const std::unordered_map<std::string, CommandDef*>& _cons_map);
+        virtual Data getRandomData(const syntax::Ty& type) = 0;
         virtual ~IncreDataGenerator() = default;
     };
 
+    std::unordered_map<std::string, CommandDef*> extractConsMap(IncreProgramData* program);
+
+    typedef std::variant<std::pair<std::string, syntax::Ty>, std::vector<int>> SizeSplitScheme;
+    typedef std::vector<SizeSplitScheme> SizeSplitList;
+
     class SizeSafeValueGenerator: public IncreDataGenerator {
     public:
-        struct SplitScheme {
-            std::string cons_name;
-            Ty cons_type;
-            std::vector<int> size_list;
-            SplitScheme(const std::string& _cons_name, const Ty& _cons_type, const std::vector<int>& _size_list);
-            std::string toString() const;
-        };
-        typedef std::vector<SplitScheme> SplitList;
-
-        std::unordered_map<std::string, SplitList*> split_map;
-        std::unordered_map<std::string, Ty> ind_map;
-        SplitList* getPossibleSplit(const Ty& type, int size);
-        SizeSafeValueGenerator(Env* _env);
-        virtual Data getRandomData(const Ty& type);
+        std::unordered_map<std::string, SizeSplitList*> split_map;
+        SizeSplitList* getPossibleSplit(syntax::TypeData* type, int size);
+        SizeSafeValueGenerator(Env* _env, const std::unordered_map<std::string, CommandDef*>& _ind_cons_map);
+        virtual Data getRandomData(const syntax::Ty& type);
         virtual ~SizeSafeValueGenerator();
     };
 
-    class FirstOrderFunctionGenerator: public SizeSafeValueGenerator {
-    public:
-        virtual Data getRandomData(const Ty& type);
-        FirstOrderFunctionGenerator(Env* _env);
-        virtual ~FirstOrderFunctionGenerator() = default;
-    };
+    class IncreExampleCollector;
 
-    class FixedPoolFunctionGenerator: public SizeSafeValueGenerator {
+    class IncreExampleCollectionEvaluator: public incre::semantics::IncreLabeledEvaluator {
+    protected:
+        RegisterEvaluateCase(Rewrite);
     public:
-        virtual Data getRandomData(const Ty& type);
-        FixedPoolFunctionGenerator(Env* _env);
-        virtual ~FixedPoolFunctionGenerator() = default;
+        IncreExampleCollector* collector;
+        IncreExampleCollectionEvaluator(IncreExampleCollector* _collector);
     };
 
     class IncreExampleCollector {
     public:
         std::vector<IncreExampleList> example_pool;
-        std::vector<std::unordered_set<std::string>> cared_vars;
+        std::vector<std::vector<std::string>> cared_vars;
         std::unordered_map<std::string, Data> current_global;
-        IncreExampleCollector(const std::vector<std::unordered_set<std::string>>& _cared_vars, ProgramData* _program);
-        void add(int tau_id, const std::unordered_map<std::string, Data>& local, const Data& oup);
-        virtual void collect(const Term& start, const std::unordered_map<std::string, Data>& _global) = 0;
+        IncreFullContext ctx;
+        IncreExampleCollectionEvaluator* eval;
+        std::unordered_map<std::string, EnvAddress*> global_address_map;
+
+        IncreExampleCollector(IncreProgramData* program, const std::vector<std::vector<std::string>>& cared_vars);
+        void add(int rewrite_id, const std::unordered_map<std::string, Data>& local_inp, const Data& oup);
+        virtual void collect(const syntax::Term& start, const std::unordered_map<std::string, Data>& global);
         void clear();
         virtual ~IncreExampleCollector();
     };
 
-    enum class CollectorType {
-        SUBSTITUE, ENV
-    };
-
-    class SubstituteBasedExampleCollector: public IncreExampleCollector {
-    public:
-        Context* ctx;
-        SubstituteBasedExampleCollector(const std::vector<std::unordered_set<std::string>>& _cared_vars, ProgramData* _program);
-        virtual void collect(const Term& start, const std::unordered_map<std::string, Data>& _global);
-        ~SubstituteBasedExampleCollector();
-    };
-
-    class EnvBasedExampleCollector: public IncreExampleCollector {
-    public:
-        EnvContext* ctx;
-        ExternalEnvRuleMap ext_map;
-        static ExternalEnvRuleMap buildRuleMap();
-        EnvBasedExampleCollector(const std::vector<std::unordered_set<std::string>>& _cared_vars, ProgramData* _program);
-        virtual void collect(const Term& start, const std::unordered_map<std::string, Data>& _global);
-        ~EnvBasedExampleCollector();
-    };
-
-    typedef std::function<IncreExampleCollector*(const std::vector<std::unordered_set<std::string>>&, ProgramData*)> CollectorBuilder;
-
     class IncreExamplePool {
+    private:
+        IncreProgram program;
+        std::vector<std::vector<std::string>> cared_vars;
+        IncreDataGenerator* generator;
+        std::vector<bool> is_finished;
+        int thread_num;
+
+        std::vector<std::pair<std::string, syntax::Ty>> global_input_list;
+        std::vector<std::pair<std::string, syntax::TyList>> start_list;
+        std::vector<std::unordered_set<std::string>> existing_example_set;
     public:
         std::vector<IncreExampleList> example_pool;
-        std::vector<std::unordered_set<std::string>> cared_vars;
-        IncreDataGenerator* generator;
-        std::vector<bool> is_already_finished;
-        int thread_num;
-        EnvContext* ctx;
-        TypeContext* type_ctx;
-        IncreProgram program;
 
-        std::vector<std::pair<std::string, Ty>> input_list;
-        std::vector<std::pair<std::string, TyList>> start_list;
-        std::uniform_int_distribution<int> start_dist;
-        CollectorBuilder builder;
-
-        void merge(IncreExampleCollector* collector, TimeGuard* guard);
-        virtual void insertExample(int pos, const IncreExample& new_example) = 0;
-        std::pair<Term, std::unordered_map<std::string, Data>> generateStart();
-        IncreExamplePool(const IncreProgram& _program, Env* env, const std::vector<std::unordered_set<std::string>>& _cared_vars,
-                         const CollectorBuilder& _builder);
+        std::pair<syntax::Term, std::unordered_map<std::string, Data>> generateStart();
+        IncreExamplePool(const IncreProgram& _program, const std::vector<std::vector<std::string>>& _cared_vars, IncreDataGenerator* _g);
+        ~IncreExamplePool();
+        void merge(int rewrite_id, IncreExampleCollector* collector, TimeGuard* guard);
         void generateSingleExample();
-        void generateBatchedExample(int tau_id, int target_num, TimeGuard* guard);
-        virtual ~IncreExamplePool();
+        void generateBatchedExample(int rewrite_id, int target_num, TimeGuard* guard);
     };
-
-    class DefaultIncreExamplePool: public IncreExamplePool {
-    public:
-        DefaultIncreExamplePool(const IncreProgram& _program, Env* env, const std::vector<std::unordered_set<std::string>>& _cared_vars, const CollectorBuilder& _builder);
-        virtual ~DefaultIncreExamplePool() = default;
-        virtual void insertExample(int pos, const IncreExample& new_example);
-    };
-
-    class NoDuplicatedIncreExamplePool: public IncreExamplePool {
-    public:
-        std::vector<std::unordered_set<std::string>> existing_example_set;
-        NoDuplicatedIncreExamplePool(const IncreProgram& _program, Env* env, const std::vector<std::unordered_set<std::string>>& _cared_vars, const CollectorBuilder& _builder);
-        virtual ~NoDuplicatedIncreExamplePool() = default;
-        virtual void insertExample(int pos, const IncreExample& new_example);
-    };
-
-    extern const std::string KExampleThreadName;
-
-    typedef std::pair<Term, std::unordered_map<std::string, Data>> FullExample;
-
-    CollectorBuilder getCollectorBuilder(const CollectorType &type);
-    DataList evaluateAll(const std::vector<FullExample>& examples, const IncreProgram& program);
-
-    std::vector<FullExample> constructAllPossibleInput(const std::vector<std::pair<std::string, Ty>>& global, const TyList& type,
-                                                       const std::string& start_name, const IncreConfigMap& config_map);
 }
 
 #endif //ISTOOL_INCRE_INSTRU_RUNTIME_H

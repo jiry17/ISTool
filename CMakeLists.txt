@@ -15,24 +15,23 @@ find_package(Threads)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_definitions(-DLINUX)
-
     #Z3
-    set(Z3_PATH /home/jiry/2021A/z3)
-    #set(Z3_PATH /usr/jiry/lib/z3)
+    #set(Z3_PATH /home/jiry/2021A/z3)
+    set(Z3_PATH /usr/jiry/lib/z3)
     link_directories(${Z3_PATH}/build)
     set(Z3_FILE libz3.so)
     include_directories(${Z3_PATH}/src/api/c++)
     include_directories(${Z3_PATH}/src/api)
 
     #jsoncpp
-    find_package(Jsoncpp)
-    include_directories(${Jsoncpp_INCLUDE_DIR})
-    #set(Jsoncpp_LIBRARY /usr/lib/x86_64-linux-gnu/libjsoncpp.so)
+    #find_package(Jsoncpp)
+    #include_directories(${Jsoncpp_INCLUDE_DIR})
+    set(Jsoncpp_LIBRARY /usr/lib/x86_64-linux-gnu/libjsoncpp.so)
     include_directories(/usr/include/jsoncpp/)
 
     #gurobi
-    set(GUROBI_PATH /home/jiry/2021A/gurobi912/linux64)
-    #set(GUROBI_PATH /usr/jiry/lib/gurobi912/linux64)
+    #set(GUROBI_PATH /home/jiry/2021A/gurobi912/linux64)
+    set(GUROBI_PATH /usr/jiry/lib/gurobi912/linux64)
     include_directories(${GUROBI_PATH}/include)
     link_directories(${GUROBI_PATH}/lib)
     set(GUROBI_FILE libgurobi_g++5.2.a libgurobi91.so)
@@ -48,10 +47,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     #z3
     set(Z3_PATH /Users/pro/Desktop/work/2023S/z3)
-    link_directories(/usr/local/lib)
-    set(Z3_FILE libz3.dylib)
+    set(Z3_FILE /usr/local/lib/libz3.dylib)
     include_directories(${Z3_PATH}/src/api/c++)
     include_directories(${Z3_PATH}/src/api)
+    message(${Z3_FILE})
 
     #jsoncpp
     set(Jsoncpp_LIBRARY /usr/local/lib/libjsoncpp.dylib)

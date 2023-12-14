@@ -5,238 +5,306 @@
 #include "istool/incre/io/incre_from_json.h"
 #include "glog/logging.h"
 #include <fstream>
+#include "istool/basic/config.h"
+#include "istool/sygus/theory/basic/clia/clia.h"
 
 using namespace incre;
+using namespace incre::syntax;
+using namespace incre::semantics;
+using namespace incre::io;
 
-Pattern incre::json2pt(const Json::Value &node) {
-    auto type = node["type"].asString();
-    if (type == "underscore") return std::make_shared<PtUnderScore>();
-    if (type == "var") {
-        auto name = node["name"].asString();
-        return std::make_shared<PtVar>(name);
-    }
-    if (type == "tuple") {
-        PatternList fields;
-        for (const auto& sub_node: node["fields"]) {
-            fields.push_back(json2pt(sub_node));
-        }
-        return std::make_shared<PtTuple>(fields);
-    }
-    if (type == "constructor") {
-        auto name = node["name"].asString();
-        auto content = json2pt(node["content"]);
-        return std::make_shared<PtConstructor>(name, content);
-    }
-    LOG(FATAL) << "Unknown pattern " << node;
-}
+IncreParseError::IncreParseError(const std::string _message): message(_message) {}
 
-Ty incre::json2ty(const Json::Value &node) {
-    auto type = node["type"].asString();
-    if (type == "var") {
-        auto name = node["name"].asString();
-        return std::make_shared<TyVar>(name);
-    }
-    if (type == "unit") return std::make_shared<TyUnit>();
-    if (type == "tuple") {
-        TyList fields;
-        for (const auto& sub_node: node["fields"]) {
-            fields.push_back(json2ty(sub_node));
-        }
-        return std::make_shared<TyTuple>(fields);
-    }
-    if (type == "bool") return std::make_shared<TyBool>();
-    if (type == "int") return std::make_shared<TyInt>();
-    if (type == "arrow") {
-        auto source = json2ty(node["s"]);
-        auto target = json2ty(node["t"]);
-        return std::make_shared<TyArrow>(source, target);
-    }
-    if (type == "inductive") {
-        auto name = node["name"].asString();
-        std::vector<std::pair<std::string, Ty>> cons_list;
-        for (const auto& c_node: node["constructors"]) {
-            auto cname = c_node["name"].asString();
-            auto cty = json2ty(c_node["subtype"]);
-            cons_list.emplace_back(cname, cty);
-        }
-        return std::make_shared<TyInductive>(name, cons_list);
-    }
-    if (type == "compress") {
-        auto content = json2ty(node["content"]);
-        return std::make_shared<TyCompress>(content);
-    }
-    LOG(FATAL) << "Unknown type " << node;
-}
-
-Term incre::json2term(const Json::Value &node) {
-    auto type = node["type"].asString();
-    if (type == "true") return std::make_shared<TmValue>(BuildData(Bool, true));
-    if (type == "false") return std::make_shared<TmValue>(BuildData(Bool, false));
-    if (type == "unit") return std::make_shared<TmValue>(Data(std::make_shared<VUnit>()));
-    if (type == "int") {
-        int v = node["value"].asInt();
-        return std::make_shared<TmValue>(BuildData(Int, v));
-    }
-    if (type == "var") {
-        auto name = node["name"].asString();
-        return std::make_shared<TmVar>(name);
-    }
-    if (type == "if") {
-        auto cond = json2term(node["condition"]);
-        auto true_branch = json2term(node["true"]);
-        auto false_branch = json2term(node["false"]);
-        return std::make_shared<TmIf>(cond, true_branch, false_branch);
-    }
-    if (type == "op") {
-        auto op_name = node["operator"].asString();
-        auto res = incre::getOperator(op_name);
-        for (const auto& sub_node: node["operand"]) {
-            res = std::make_shared<TmApp>(res, json2term(sub_node));
-        }
-        return res;
-    }
-    if (type == "let") {
-        auto name = node["name"].asString();
-        auto def = incre::json2term(node["def"]);
-        auto content = incre::json2term(node["content"]);
-        return std::make_shared<TmLet>(name, def, content);
-    }
-    if (type == "tuple") {
-        TermList fields;
-        for (const auto& sub_node: node["fields"]) {
-            fields.push_back(incre::json2term(sub_node));
-        }
-        return std::make_shared<TmTuple>(fields);
-    }
-    if (type == "proj") {
-        auto content = incre::json2term(node["content"]);
-        int index = node["index"].asInt();
-        return std::make_shared<TmProj>(content, index);
-    }
-    if (type == "abs") {
-        auto name = node["name"].asString();
-        auto ty = incre::json2ty(node["vartype"]);
-        auto content = incre::json2term(node["content"]);
-        return std::make_shared<TmAbs>(name, ty, content);
-    }
-    if (type == "app") {
-        auto func = incre::json2term(node["func"]);
-        auto param = incre::json2term(node["param"]);
-        return std::make_shared<TmApp>(func, param);
-    }
-    if (type == "fix") {
-        auto content = incre::json2term(node["content"]);
-        return std::make_shared<TmFix>(content);
-    }
-    if (type == "constructor") LOG(FATAL) << "Unexpected term type \"constructor\" found in " << node;
-    if (type == "inductive") LOG(FATAL) << "Unexpected term type \"inductive\" found in " << node;
-    if (type == "match") {
-        auto value = incre::json2term(node["value"]);
-        std::vector<std::pair<Pattern, Term>> cases;
-        for (const auto& sub_node: node["cases"]) {
-            cases.emplace_back(incre::json2pt(sub_node["pattern"]), incre::json2term(sub_node["branch"]));
-        }
-        return std::make_shared<TmMatch>(value, cases);
-    }
-    if (type == "label") {
-        auto content = incre::json2term(node["content"]);
-        return std::make_shared<TmLabel>(content);
-    }
-    if (type == "unlabel") {
-        auto content = incre::json2term(node["content"]);
-        return std::make_shared<TmUnLabel>(content);
-    }
-    if (type == "align") {
-        auto content = incre::json2term(node["content"]);
-        return std::make_shared<TmAlign>(content);
-    }
-    LOG(FATAL) << "Unknown term " << node;
-}
-
-Binding incre::json2binding(const Json::Value &node) {
-    auto type = node["type"].asString();
-    if (type == "term") {
-        auto term = incre::json2term(node["content"]);
-        return std::make_shared<TermBinding>(term);
-    }
-    if (type == "type") {
-        auto ty = incre::json2ty(node["content"]);
-        return std::make_shared<TypeBinding>(ty);
-    }
-    if (type == "var") {
-        auto ty = incre::json2ty(node["content"]);
-        return std::make_shared<VarTypeBinding>(ty);
-    }
-    LOG(FATAL) << "Unknown Binding";
-}
-
-Command incre::json2command(const Json::Value &full_node) {
-    auto node = full_node["node"];
-    auto deco_node = full_node["decorates"];
-    auto type = node["type"].asString();
-    if (type == "import") {
-        auto name = node["name"].asString();
-        CommandList content;
-        for (auto& sub_node: node["content"]) {
-            content.push_back(incre::json2command(sub_node));
-        }
-        return std::make_shared<CommandImport>(name, content);
-    }
-    if (type == "skip") return nullptr;
-    if (type == "bind") {
-        auto name = node["name"].asString();
-        auto content = incre::json2binding(node["def"]);
-
-        DecorateSet decorate_set;
-        for (auto& deco: deco_node) {
-            decorate_set.insert(string2Decorate(deco.asString()));
-        }
-
-        return std::make_shared<CommandBind>(name, content, decorate_set);
-    }
-    if (type == "defind") {
-        auto ty = incre::json2ty(node["indtype"]);
-        return std::make_shared<CommandDefInductive>(ty);
-    }
-    LOG(FATAL) << "Unknown command " << node;
-}
-
-#include "istool/sygus/theory/basic/string/string_value.h"
+const char *IncreParseError::what() const noexcept {return message.c_str();}
 
 namespace {
-    Data _configValue2Data(const Json::Value& node) {
-        auto type = node["type"].asString();
-        if (type == "int") {
-            return BuildData(Int, node["value"].asInt());
+    const std::unordered_map<std::string, TypeType> KTypeTypeNameMap = {
+            {"var", TypeType::VAR}, {"unit", TypeType::UNIT},
+            {"bool", TypeType::BOOL}, {"int", TypeType::INT},
+            {"poly", TypeType::POLY}, {"arrow", TypeType::ARR},
+            {"tuple", TypeType::TUPLE}, {"cons", TypeType::IND}
+    };
+}
+
+syntax::TypeType io::string2TypeType(const std::string &type) {
+    auto it = KTypeTypeNameMap.find(type);
+    if (it == KTypeTypeNameMap.end()) throw IncreParseError("unknown TypeType " + type);
+    return it->second;
+}
+
+namespace {
+#define JsonTypeHead(name) syntax::Ty _json2ty_ ## name (const Json::Value & node)
+
+    JsonTypeHead(Var) {
+        TypeVarInfo info(std::make_pair(node["index"].asInt(), 0));
+        return std::make_shared<TyVar>(info);
+    }
+
+    JsonTypeHead(Int) {return std::make_shared<TyInt>();}
+    JsonTypeHead(Bool) {return std::make_shared<TyBool>();}
+    JsonTypeHead(Unit) {return std::make_shared<TyUnit>();}
+
+    JsonTypeHead(Poly) {
+        std::vector<int> indices;
+        for (auto& index_node: node["vars"]) indices.push_back(index_node.asInt());
+        return std::make_shared<TyPoly>(indices, json2ty(node["body"]));
+    }
+
+    JsonTypeHead(Arr) {
+        return std::make_shared<TyArr>(json2ty(node["s"]), json2ty(node["t"]));
+    }
+
+    JsonTypeHead(Tuple) {
+        TyList fields;
+        for (auto& field: node["fields"]) fields.push_back(json2ty(field));
+        return std::make_shared<TyTuple>(fields);
+    }
+
+    JsonTypeHead(Compress) {
+        throw IncreParseError("Unexpected TypeType COMPRESS");
+    }
+
+    JsonTypeHead(Ind) {
+        auto cons_name = node["name"].asString();
+        TyList param_list;
+        for (auto& param: node["params"]) param_list.push_back(json2ty(param));
+        if (cons_name == "Packed") {
+            if (param_list.size() != 1) throw IncreParseError("Packed should have exactly one parameter");
+            return std::make_shared<TyCompress>(param_list[0]);
         }
-        if (type == "bool") {
-            return BuildData(Bool, node["value"].asBool());
-        }
-        if (type == "string") {
-            return BuildData(String, node["value"].asString());
-        }
-        LOG(FATAL) << "Unknown config value " << node;
+        return std::make_shared<TyInd>(cons_name, param_list);
     }
 }
 
-incre::IncreProgram incre::json2program(const Json::Value &node) {
+#define JsonTypeCase(name) case TypeType::TYPE_TOKEN_##name: return _json2ty_ ## name(node);
+syntax::Ty io::json2ty(const Json::Value &node) {
+    switch (string2TypeType(node["type"].asString())) {
+        TYPE_CASE_ANALYSIS(JsonTypeCase);
+    }
+}
+
+namespace {
+    const std::unordered_map<std::string, PatternType> KPatternTypeNameMap = {
+            {"underscore", PatternType::UNDERSCORE}, {"var", PatternType::VAR},
+            {"tuple", PatternType::TUPLE}, {"cons", PatternType::CONS}
+    };
+}
+
+syntax::PatternType io::string2PatternType(const std::string &type) {
+    auto it = KPatternTypeNameMap.find(type);
+    if (it == KPatternTypeNameMap.end()) {
+        throw IncreParseError("Unexpected PatternType " + type);
+    }
+    return it->second;
+}
+
+syntax::Pattern io::json2pattern(const Json::Value &node) {
+    switch (string2PatternType(node["type"].asString())) {
+        case PatternType::UNDERSCORE: return std::make_shared<PtUnderScore>();
+        case PatternType::VAR: {
+            if (node.isMember("content")) {
+                return std::make_shared<PtVar>(node["name"].asString(), json2pattern(node["content"]));
+            } else {
+                return std::make_shared<PtVar>(node["name"].asString(), nullptr);
+            }
+        }
+        case PatternType::TUPLE: {
+            PatternList fields;
+            for (auto& field: node["fields"]) fields.push_back(json2pattern(field));
+            return std::make_shared<PtTuple>(fields);
+        }
+        case PatternType::CONS: {
+            return std::make_shared<PtCons>(node["name"].asString(), json2pattern(node["content"]));
+        }
+    }
+}
+
+namespace {
+    const std::unordered_map<std::string, TermType> KTermTypeNameMap {
+            {"true", TermType::VALUE}, {"false", TermType::VALUE},
+            {"if", TermType::IF}, {"unit", TermType::VALUE},
+            {"var", TermType::VAR}, {"int", TermType::VALUE},
+            {"op", TermType::PRIMARY}, {"app", TermType::APP},
+            {"tuple", TermType::TUPLE}, {"proj", TermType::PROJ},
+            {"let", TermType::LET}, {"func", TermType::FUNC},
+            {"letrec", TermType::LET}, {"match", TermType::MATCH},
+            {"cons", TermType::CONS}
+    };
+}
+
+syntax::TermType io::string2TermType(const std::string &type) {
+    auto it = KTermTypeNameMap.find(type);
+    if (it == KTermTypeNameMap.end()) throw IncreParseError("Unexpected TermType " + type);
+    return it->second;
+}
+
+namespace {
+#define JsonTermHead(name) Term _json2term_## name (const Json::Value& node)
+
+    JsonTermHead(Value) {
+        auto name = node["type"].asString();
+        Data v;
+        if (name == "true") v = BuildData(Bool, false);
+        else if (name == "false") v = BuildData(Bool, true);
+        else if (name == "unit") v = Data(std::make_shared<VUnit>());
+        else if (name == "int") v = BuildData(Int, node["value"].asInt());
+        else throw IncreParseError("Unknown value " + name);
+        return std::make_shared<TmValue>(v);
+    }
+
+    JsonTermHead(If) {
+        auto c = json2term(node["condition"]), t = json2term(node["true"]), f = json2term(node["false"]);
+        return std::make_shared<TmIf>(c, t, f);
+    }
+
+    JsonTermHead(Var) {
+        return std::make_shared<TmVar>(node["name"].asString());
+    }
+
+    JsonTermHead(Primary) {
+        TermList params;
+        for (auto& sub: node["operand"]) params.push_back(json2term(sub));
+        return std::make_shared<TmPrimary>(node["operator"].asString(), params);
+    }
+
+    JsonTermHead(Tuple) {
+        TermList fields;
+        for (auto& field: node["fields"]) fields.push_back(json2term(field));
+        return std::make_shared<TmTuple>(fields);
+    }
+
+    JsonTermHead(Proj) {
+        return std::make_shared<TmProj>(json2term(node["content"]), node["index"].asInt());
+    }
+
+    JsonTermHead(Func) {
+        return std::make_shared<TmFunc>(node["name"].asString(), json2term(node["content"]));
+    }
+
+    JsonTermHead(Let) {
+        bool is_rec = (node["type"].asString() == "letrec");
+        auto def = json2term(node["def"]), body = json2term(node["content"]);
+        return std::make_shared<TmLet>(node["name"].asString(), is_rec, def, body);
+    }
+
+    JsonTermHead(Match) {
+        auto def = json2term(node["value"]);
+        MatchCaseList cases;
+        for (auto& case_node: node["cases"]) {
+            cases.emplace_back(json2pattern(case_node["pattern"]), json2term(case_node["branch"]));
+        }
+        return std::make_shared<TmMatch>(def, cases);
+    }
+
+    bool _isReserved(const Term& term, const std::string& name) {
+        auto* tv = dynamic_cast<TmVar*>(term.get());
+        return tv && tv->name == name;
+    }
+
+    JsonTermHead(App) {
+        auto func = json2term(node["func"]), param = json2term(node["param"]);
+        if (_isReserved(func, "label")) return std::make_shared<TmLabel>(param);
+        if (_isReserved(func, "unlabel")) return std::make_shared<TmUnlabel>(param);
+        if (_isReserved(func, "rewrite")) return std::make_shared<TmRewrite>(param);
+        return std::make_shared<TmApp>(func, param);
+    }
+
+    JsonTermHead(Cons) {
+        return std::make_shared<TmCons>(node["name"].asString(), json2term(node["content"]));
+    }
+
+    JsonTermHead(Label) {throw IncreParseError("Unexpected TermType LABEL");}
+    JsonTermHead(Unlabel) {throw IncreParseError("Unexpected TermType UNLABEL");}
+    JsonTermHead(Rewrite) {throw IncreParseError("Unexpected TermType REWRITE");}
+
+}
+
+#define JsonTermCase(name) case TermType::TERM_TOKEN_##name: return _json2term_##name(node);
+syntax::Term io::json2term(const Json::Value &node) {
+    switch (string2TermType(node["type"].asString())) {
+        TERM_CASE_ANALYSIS(JsonTermCase);
+    }
+}
+
+#include "istool/sygus/theory/basic/string/str.h"
+
+namespace {
+    Data _json2data(const Json::Value& node) {
+       auto type = node["type"].asString();
+       if (type == "int") return BuildData(Int, node["value"].asInt());
+       if (type == "bool") return BuildData(Bool, node["value"].asBool());
+       if (type == "string") return BuildData(String, node["value"].asString());
+       throw IncreParseError("Unknown data type " + type);
+    }
+
+    const std::unordered_map<std::string, IncreConfig> KIncreConfigNameMap {
+            {"ComposeNum", IncreConfig::COMPOSE_NUM}, {"VerifyBase", IncreConfig::VERIFY_BASE},
+            {"NonLinear", IncreConfig::NON_LINEAR}, {"SampleSize", IncreConfig::SAMPLE_SIZE},
+            {"EnableFold", IncreConfig::ENABLE_FOLD}, {"SampleIntMin", IncreConfig::SAMPLE_INT_MIN},
+            {"SampleIntMax", IncreConfig::SAMPLE_INT_MAX}, {"PrintAlign", IncreConfig::PRINT_ALIGN},
+            {"TermNum", IncreConfig::TERM_NUM}, {"ClauseNum", IncreConfig::CLAUSE_NUM}
+    };
+
+    const std::unordered_map<std::string, CommandDecorate> KIncreDecorateNameMap {
+            {"Input", CommandDecorate::INPUT}, {"Start", CommandDecorate::START},
+            {"Compress", CommandDecorate::SYN_COMPRESS}, {"Combine", CommandDecorate::SYN_COMBINE},
+            {"Extract", CommandDecorate::SYN_EXTRACT}, {"NoPartial", CommandDecorate::SYN_NO_PARTIAL}
+    };
+}
+
+CommandDecorate io::string2Decorate(const std::string &name) {
+    auto it = KIncreDecorateNameMap.find(name);
+    if (it == KIncreDecorateNameMap.end()) throw IncreParseError("Unknown CommandDecorate " + name);
+    return it->second;
+}
+
+IncreConfig io::string2IncreConfig(const std::string &name) {
+    auto it = KIncreConfigNameMap.find(name);
+    if (it == KIncreConfigNameMap.end()) throw IncreParseError("Unknown IncreConfig " + name);
+    return it->second;
+}
+
+namespace {
+    std::unordered_set<CommandDecorate> _extractDecros(const Json::Value& node) {
+        std::unordered_set<CommandDecorate> deco_list;
+        for (auto& config_node: node) {
+            deco_list.insert(string2Decorate(config_node.asString()));
+        }
+        return deco_list;
+    }
+
+    Term _json2bind(const Json::Value& node) {
+        if (node["type"].asString() != "term") throw IncreParseError("Unknown bind type " + node["type"].asString());
+        return json2term(node["content"]);
+    }
+}
+
+IncreProgram io::json2program(const Json::Value &node) {
+    IncreConfigMap configs;
     CommandList commands;
-    IncreConfigMap config_map;
-    for (auto& sub_node: node) {
-        if (sub_node["node"]["type"].asString() == "config") {
-            auto command_node = sub_node["node"];
-            auto value = _configValue2Data(command_node["value"]);
-            config_map[incre::string2ConfigType(command_node["name"].asString())] = value;
-            continue;
+    for (auto& command_node: node) {
+        auto command_type = command_node["type"].asString();
+        auto decos = _extractDecros(command_node["decos"]);
+        if (command_type == "config") {
+            configs[string2IncreConfig(command_node["name"].asString())] = _json2data(command_node["value"]);
+        } else if (command_type == "bind") {
+            auto var_name = command_node["name"].asString();
+            auto def = _json2bind(command_node["def"]);
+            commands.push_back(std::make_shared<CommandBind>(var_name, def, decos));
+        } else if (command_type == "type") {
+            auto type_name = command_node["name"].asString();
+            auto arity = command_node["arity"].asInt();
+            std::vector<std::pair<std::string, Ty>> cons_list;
+            for (auto& cons_node: command_node["cons"]) {
+                cons_list.emplace_back(cons_node["name"].asString(), json2ty(cons_node["type"]));
+            }
+            commands.push_back(std::make_shared<CommandDef>(type_name, arity, cons_list, decos));
         }
-        auto command = incre::json2command(sub_node);
-        if (!command) continue;
-        commands.push_back(command);
     }
-    return std::make_shared<incre::ProgramData>(commands, config_map);
+    return std::make_shared<IncreProgramData>(commands, configs);
 }
 
-incre::IncreProgram incre::jsonFile2program(const std::string &path) {
+incre::IncreProgram io::json2program(const std::string &path) {
     Json::Reader reader;
     Json::Value root;
     std::ifstream inp(path, std::ios::out);
@@ -244,5 +312,14 @@ incre::IncreProgram incre::jsonFile2program(const std::string &path) {
     buf << inp.rdbuf();
     inp.close();
     assert(reader.parse(buf.str(), root));
-    return incre::json2program(root);
+    return json2program(root);
+}
+
+IncreProgram io::parseFromF(const std::string &path) {
+    std::string tmp_file = "/tmp/" + std::to_string(rand()) + ".json";
+    std::string command = "cd " + ::config::KIncreParserPath + "; ./f " + path + " " + tmp_file;
+    std::system(command.c_str());
+    auto res = json2program(tmp_file);
+    std::system(("rm " + tmp_file).c_str());
+    return res;
 }

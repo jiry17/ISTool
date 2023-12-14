@@ -21,7 +21,7 @@ public:
     virtual std::string getBaseName() = 0;
     virtual TypeList getParams() = 0;
     virtual PType clone(const TypeList& params) = 0;
-    virtual std::string getHaskellName() = 0;
+    virtual std::string getHaskellName() {return "";};
     virtual ~Type() = default;
 };
 

@@ -5,51 +5,57 @@
 #ifndef ISTOOL_INCRE_INFO_H
 #define ISTOOL_INCRE_INFO_H
 
-#include "istool/incre/language/incre_lookup.h"
-#include "istool/incre/grammar/incre_component_collector.h"
+#include "istool/incre/language/incre_program.h"
+#include "incre_instru_types.h"
 #include "incre_instru_runtime.h"
 
-namespace incre {
-
-    class AlignTypeInfoData {
+namespace incre::analysis {
+    class IncreInfoCollector: public types::IncreLabeledTypeChecker {
+    protected:
+        RegisterUnifyRule(Compress);
+        RegisterTypingRule(Label);
+        RegisterTypingRule(Unlabel);
+        virtual void postProcess(syntax::TermData* term, const IncreContext& ctx, const syntax::Ty& res);
     public:
-        TmLabeledAlign* term;
-        Term _term;
-        std::vector<std::pair<std::string, Ty>> inp_types;
-        Ty oup_type;
-        int command_id;
-        AlignTypeInfoData(const Term& __term, const std::unordered_map<std::string, Ty>& type_ctx, const Ty& _oup_type, int _command_id);
-        void print() const;
-        int getId() const;
-        ~AlignTypeInfoData() = default;
+        std::unordered_map<syntax::TermData*, syntax::Ty> term_type_map;
+        std::unordered_map<syntax::TermData*, IncreContext> term_context_map;
+        std::vector<int> final_index;
+        std::vector<int> father;
+        int getNewCompressLabel();
+        int getReprCompressLabel(int k);
+        void unionCompressLabel(int x, int y);
+        void constructFinalInfo();
+        int getFinalCompressLabel(int k);
     };
-    typedef std::shared_ptr<AlignTypeInfoData> AlignTypeInfo;
-    typedef std::vector<AlignTypeInfo> AlignTypeInfoList;
 
+    typedef std::vector<std::pair<std::string, syntax::Ty>> IncreInputInfo;
 
-    class IncreInfo {
+    class RewriteTypeInfo {
+    public:
+        int index;
+        IncreInputInfo inp_types;
+        syntax::Ty oup_type;
+        int command_id;
+        RewriteTypeInfo(int _index, const IncreInputInfo& _inp_types, const syntax::Ty& _oup_type, int _command_id);
+    };
+
+    class IncreInfoData {
     public:
         IncreProgram program;
-        EnvContext* ctx;
-        AlignTypeInfoList align_infos;
-        IncreExamplePool* example_pool;
-        grammar::ComponentPool component_pool;
-        IncreInfo(const IncreProgram& _program, EnvContext* _ctx, const AlignTypeInfoList& infos, IncreExamplePool* pool, const grammar::ComponentPool& _pool);
-        ~IncreInfo();
+        std::vector<RewriteTypeInfo> rewrite_info_list;
+        example::IncreExamplePool* pool;
+        IncreInfoData(const IncreProgram& _program, const std::vector<RewriteTypeInfo>& _rewrite_info_list, example::IncreExamplePool* pool);
+        ~IncreInfoData();
     };
-}
 
-namespace incre {
-    Ty unfoldTypeWithLabeledCompress(const Ty& type, TypeContext* ctx);
-    void checkAllLabelBounded(ProgramData* program);
-    // IncreProgram eliminateUnboundedCreate(const IncreProgram& program);
-    IncreProgram labelCompress(const IncreProgram& program);
-    Ty getFinalType(const Ty& type, const TyList& final_ty_list);
-    AlignTypeInfoList collectAlignType(const IncreProgram& program);
-    void prepareEnv(Env* env);
-    IncreInfo* buildIncreInfo(const IncreProgram& program, Env* env);
-    std::pair<std::vector<std::string>, Grammar*> buildFinalGrammar(IncreInfo* info, int align_id, const TyList& final_compress_list);
-    TyList getCompressTypeList(IncreInfo* info);
+    typedef std::shared_ptr<IncreInfoData> IncreInfo;
+
+    IncreInfo buildIncreInfo(IncreProgramData* program, Env* env);
+
+    namespace input_filter {
+        bool isValidInputType(const syntax::Ty& type);
+        IncreInputInfo buildInputInfo(const IncreContext& local_ctx, const IncreContext& global_ctx);
+    }
 }
 
 

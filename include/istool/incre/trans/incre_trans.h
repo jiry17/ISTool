@@ -5,45 +5,48 @@
 #ifndef ISTOOL_TANS_H
 #define ISTOOL_TANS_H
 
-#include "istool/incre/language/incre.h"
+#include "istool/incre/language/incre_syntax.h"
 
-namespace incre {
-
-    class TIncreInductive: public SimpleType {
+namespace incre::trans {
+    class TIncreInd: public Type {
     public:
-        Ty _type;
-        TyInductive* type;
-        virtual ~TIncreInductive() = default;
-        virtual std::string getName();
-        virtual PType clone(const TypeList &params);
-        virtual bool equal(Type* t);
-        virtual std::string getHaskellName();
-        TIncreInductive(const Ty& _type);
-    };
-
-    class TCompress: public SimpleType {
-    public:
-        PType content;
-        TCompress(const PType& _content);
+        std::string name;
+        TypeList params;
+        TIncreInd(const std::string& _name, const TypeList& _params);
         virtual std::string getName();
         virtual bool equal(Type* type);
         virtual std::string getBaseName();
         virtual TypeList getParams();
         virtual PType clone(const TypeList& params);
-        virtual std::string getHaskellName();
+        virtual ~TIncreInd() = default;
+    };
+
+    class TCompress: public Type {
+    public:
+        PType body;
+        TCompress(const PType& _body);
+        virtual std::string getName();
+        virtual bool equal(Type* type);
+        virtual std::string getBaseName();
+        virtual TypeList getParams();
+        virtual PType clone(const TypeList& params);
+        virtual ~TCompress() = default;
     };
 
     class TLabeledCompress: public TCompress {
     public:
         int id;
-        TLabeledCompress(int _id, const PType& _content);
-        virtual std::string getName();
+        TLabeledCompress(const PType& _body, int _id);
         virtual bool equal(Type* type);
+        virtual std::string getBaseName();
+        virtual PType clone(const TypeList& params);
+        virtual ~TLabeledCompress() = default;
     };
 
-    PType typeFromIncre(const Ty& type);
-    Ty typeToIncre(Type* type);
-    Term termToIncre(Program* program, const TermList& inps);
+
+    PType typeFromIncre(syntax::TypeData* type);
+    syntax::Ty typeToIncre(Type* type);
+    syntax::Term termToIncre(Program* program, const syntax::TermList& inps);
 }
 
 #endif //ISTOOL_TANS_H

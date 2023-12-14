@@ -1,88 +1,48 @@
 //
-// Created by pro on 2022/9/16.
+// Created by pro on 2023/12/5.
 //
-
 #include "istool/incre/language/incre_context.h"
-#include "glog/logging.h"
 #include "glog/logging.h"
 
 using namespace incre;
+using namespace incre::syntax;
 
-BindingType BindingData::getType() const {return type;}
-BindingData::BindingData(const BindingType &_type): type(_type) {}
+EnvAddress::EnvAddress(const std::string &_name, const syntax::Binding &_bind,
+                       const std::shared_ptr<EnvAddress> &_next):
+                       name(_name), bind(_bind), next(_next) {
+}
+IncreContext::IncreContext(const std::shared_ptr<EnvAddress> &_start): start(_start) {}
 
-TypeBinding::TypeBinding(const Ty &_type): BindingData(BindingType::TYPE), type(_type) {}
-std::string TypeBinding::toString() const {
-    return type->toString();
-}
-TermBinding::TermBinding(const Term &_term, const Ty& _ty): BindingData(BindingType::TERM), term(_term), type(_ty) {}
-std::string TermBinding::toString() const {
-    return term->toString();
-}
-VarTypeBinding::VarTypeBinding(const Ty&_type): BindingData(BindingType::VAR), type(_type) {}
-std::string VarTypeBinding::toString() const {
-    return type->toString();
-}
-
-void Context::addBinding(const std::string &name, const Ty &type) {
-    // LOG(INFO) << "binding " << name << " : " << type->toString();
-    binding_map[name] = std::make_shared<TypeBinding>(type);
-}
-
-void Context::addBinding(const std::string &name, const Term &term, const Ty& type) {
-    // if (type) LOG(INFO) << "binding " << name << " : " << type->toString();
-    binding_map[name] = std::make_shared<TermBinding>(term, type);
-}
-
-Ty Context::getType(const std::string &name) {
-    if (binding_map.find(name) == binding_map.end()) {
-        LOG(FATAL) << "Context error: name " << name << " not found.";
+syntax::Ty IncreContext::getType(const std::string &name) const {
+    for (auto now = start; now; now = now->next) {
+        if (now->name == name) return now->bind.getType();
     }
-    auto* binding = binding_map[name].get();
-    auto* ty_binding = dynamic_cast<TypeBinding*>(binding);
-    if (ty_binding) return ty_binding->type;
-    auto* term_binding = dynamic_cast<TermBinding*>(binding);
-    if (!term_binding) LOG(FATAL) << "Unknown binding " << term_binding->toString();
-    if (!term_binding->type) LOG(FATAL) << "The type of " << term_binding->term->toString() << " is unknown.";
-    return term_binding->type;
+    LOG(FATAL) << "No type is bound to " << name;
 }
 
-Term Context::getTerm(const std::string& name) {
-    if (binding_map.find(name) == binding_map.end()) {
-        LOG(FATAL) << "Context error: name " << name << " not found.";
+Data IncreContext::getData(const std::string &name) const {
+    for (auto now = start; now; now = now->next) {
+        if (now->name == name) return now->bind.getData();
     }
-    auto binding = dynamic_cast<TermBinding*>(binding_map[name].get());
-    if (!binding) {
-        LOG(FATAL) << "Context error: expected a term bound to " << name << ", but found a type.";
+    LOG(FATAL) << "No data is bound to " << name;
+}
+
+IncreContext IncreContext::insert(const std::string &name, const syntax::Binding &binding) const {
+    return std::make_shared<EnvAddress>(name, binding, start);
+}
+
+IncreFullContextData::IncreFullContextData(const IncreContext &_ctx,
+                                           const std::unordered_map<std::string, EnvAddress *> &_address_map):
+                                           ctx(_ctx), address_map(_address_map) {
+}
+
+void IncreFullContextData::setGlobalInput(const std::unordered_map<std::string, Data> &global_input) {
+    if (global_input.size() != address_map.size()) {
+        LOG(FATAL) << "Expect " << std::to_string(address_map.size()) << " global inputs, but received " << std::to_string(global_input.size());
     }
-    return binding->term;
-}
-
-TypeContext::BindLog TypeContext::bind(const std::string &name, const Ty &type) {
-    BindLog log({name, nullptr});
-    if (binding_map.find(name) != binding_map.end()) {
-        log.binding = binding_map[name];
-    }
-    binding_map[name] = type;
-    return log;
-}
-
-void TypeContext::cancelBind(const BindLog &log) {
-    if (!log.binding) binding_map.erase(log.name);
-    else binding_map[log.name] = log.binding;
-}
-TypeContext::~TypeContext() {
-}
-
-Ty TypeContext::lookup(const std::string &name) {
-    if (binding_map.find(name) == binding_map.end()) {
-        LOG(FATAL) << "Unknown type variable " << name;
-    }
-    return binding_map[name];
-}
-
-TypeContext::TypeContext(Context *ctx)  {
-    for (const auto& [name, _]: ctx->binding_map) {
-        binding_map[name] = ctx->getType(name);
+    for (auto& [name, value]: global_input) {
+        auto it = address_map.find(name);
+        if (it == address_map.end()) LOG(FATAL) << "Unknown global input " << name;
+        it->second->bind.data = value;
     }
 }

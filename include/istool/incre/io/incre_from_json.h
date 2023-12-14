@@ -6,21 +6,32 @@
 #define ISTOOL_INCRE_FROM_JSON_H
 
 #include <json/json.h>
-#include "istool/incre/language/incre_type.h"
-#include "istool/incre/language/incre_term.h"
-#include "istool/incre/language/incre_value.h"
 #include "istool/incre/language/incre_program.h"
 
 
-namespace incre {
-    Ty json2ty(const Json::Value& node);
-    Pattern json2pt(const Json::Value& node);
-    Term json2term(const Json::Value& node);
-    Binding json2binding(const Json::Value& node);
-    Command json2command(const Json::Value& node);
+namespace incre::io {
+
+    class IncreParseError: public std::exception {
+    private:
+        std::string message;
+    public:
+        IncreParseError(const std::string _message);
+        virtual const char* what() const noexcept;
+    };
+
+    syntax::TypeType string2TypeType(const std::string& type);
+    syntax::TermType string2TermType(const std::string& type);
+    syntax::PatternType string2PatternType(const std::string& type);
+    IncreConfig string2IncreConfig(const std::string& name);
+    CommandDecorate string2Decorate(const std::string& name);
+
+    syntax::Ty json2ty(const Json::Value& node);
+    syntax::Pattern json2pattern(const Json::Value& node);
+    syntax::Term json2term(const Json::Value& node);
+
     IncreProgram json2program(const Json::Value& node);
-    IncreProgram jsonFile2program(const std::string& path);
-    IncreProgram parseFromF(const std::string& path, bool is_autolabel);
+    IncreProgram json2program(const std::string& path);
+    IncreProgram parseFromF(const std::string& path);
 }
 
 #endif //ISTOOL_INCRE_FROM_JSON_H

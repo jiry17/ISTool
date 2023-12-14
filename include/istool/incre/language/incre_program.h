@@ -1,23 +1,56 @@
 //
-// Created by pro on 2022/9/18.
+// Created by pro on 2023/12/8.
 //
 
-#ifndef ISTOOL_INCRE_PROGRAM_H
-#define ISTOOL_INCRE_PROGRAM_H
+#ifndef ISTOOL_INCRE_H
+#define ISTOOL_INCRE_H
 
-#include "istool/basic/env.h"
-#include "incre_term.h"
-#include "incre_type.h"
-#include "incre_context.h"
-#include <unordered_set>
+#include "incre_semantics.h"
+#include "incre_rewriter.h"
+#include "incre_types.h"
 
 namespace incre {
     enum class CommandType {
-        IMPORT, BIND, DEF_IND
+        BIND, DEF_IND, INPUT
     };
 
     enum class CommandDecorate {
-        INPUT, START, SYN_COMPRESS, SYN_COMBINE, SYN_ALIGN, SYN_NO_PARTIAL, TERM_NUM
+        INPUT, START, SYN_EXTRACT, SYN_COMBINE, SYN_COMPRESS, SYN_NO_PARTIAL, TERM_NUM
+    };
+
+    typedef std::unordered_set<CommandDecorate> DecorateSet;
+
+    class CommandData {
+    public:
+        std::string name;
+        CommandType type;
+        DecorateSet decos;
+        CommandData(const CommandType& _type, const std::string& _name, const DecorateSet& decos);
+        bool isDecrorateWith(CommandDecorate deco) const;
+        CommandType getType() const;
+        virtual ~CommandData() = default;
+    };
+    typedef std::shared_ptr<CommandData> Command;
+    typedef std::vector<Command> CommandList;
+
+    class CommandBind: public CommandData {
+    public:
+        syntax::Term term;
+        CommandBind(const std::string& _name, const syntax::Term& _term, const DecorateSet& decos);
+    };
+
+    typedef std::vector<std::pair<std::string, syntax::Ty>> IndConstructorInfo;
+    class CommandDef: public CommandData {
+    public:
+        int param;
+        IndConstructorInfo cons_list;
+        CommandDef(const std::string& _name, int _param, const IndConstructorInfo& _cons_list, const DecorateSet& decos);
+    };
+
+    class CommandInput: public CommandData {
+    public:
+        syntax::Ty type;
+        CommandInput(const std::string& _name, const syntax::Ty& _type, const DecorateSet& decos);
     };
 
     enum class IncreConfig {
@@ -27,84 +60,76 @@ namespace incre {
         SAMPLE_INT_MAX, /*Int Max of Sample, Default 5*/
         SAMPLE_INT_MIN, /*Int Min of Sample, Default -5*/
         NON_LINEAR, /*Whether consider * in synthesis, default false*/
-        EXTRA_GRAMMAR, /*Extra grammar considered in synthesis, default Fold*/
         ENABLE_FOLD, /*Whether consider `fold` operator on data structures in synthesis, default false*/
         TERM_NUM, /* Number of terms considered by PolyGen*/
         CLAUSE_NUM, /* Number of terms considered by PolyGen*/
-        PRINT_ALIGN /*Whether print align results to the result*/
-    };
-
-    typedef std::unordered_set<CommandDecorate> DecorateSet;
-
-    class CommandData {
-        CommandType type;
-    public:
-        DecorateSet decorate_set;
-        CommandData(CommandType _type, const DecorateSet& _set);
-        CommandType getType() const;
-        bool isDecoratedWith(CommandDecorate deco) const;
-        std::string toString();
-        virtual std::string contentToString() const = 0;
-        virtual ~CommandData() = default;
-    };
-
-    typedef std::shared_ptr<CommandData> Command;
-    typedef std::vector<Command> CommandList;
-
-    class CommandImport: public CommandData {
-    public:
-        std::string name;
-        CommandList commands;
-        CommandImport(const std::string& _name, const CommandList& _commands);
-        virtual std::string contentToString() const;
-        virtual ~CommandImport() = default;
-    };
-
-    class CommandBind: public CommandData {
-    public:
-        std::string name;
-        Binding binding;
-        CommandBind(const std::string& _name, const Binding& _binding, const DecorateSet& decorate_set);
-        virtual std::string contentToString() const;
-        virtual ~CommandBind() = default;
-    };
-
-    class CommandDefInductive: public CommandData {
-    public:
-        TyInductive* type;
-        Ty _type;
-        CommandDefInductive(const Ty& __type);
-        virtual std::string contentToString() const;
-        virtual ~CommandDefInductive() = default;
+        PRINT_ALIGN, /*Whether print align results to the result*/
+        THREAD_NUM /*The number of threads available for collecting examples*/
     };
 
     typedef std::unordered_map<IncreConfig, Data> IncreConfigMap;
 
-    class ProgramData {
+    class IncreProgramData {
     public:
         IncreConfigMap config_map;
         CommandList commands;
-        ProgramData(const CommandList& _commands, const IncreConfigMap& config_map);
-        void print() const;
-        virtual ~ProgramData() = default;
+        IncreProgramData(const CommandList& _commands, const IncreConfigMap& _config_map);
     };
-    typedef std::shared_ptr<ProgramData> IncreProgram;
+    typedef std::shared_ptr<IncreProgramData> IncreProgram;
 
-    CommandDecorate string2Decorate(const std::string& s);
-    std::string decorate2String(CommandDecorate deco);
-    IncreConfig string2ConfigType(const std::string& s);
-    void applyConfig(IncreConfig config, const Data& config_value, Env* env);
-    void applyConfig(ProgramData* program, Env* env);
-
-    namespace config_name {
-        extern const std::string KDataSizeLimitName;
+    namespace config {
+        extern const std::string KComposeNumName;
+        extern const std::string KMaxTermNumName;
+        extern const std::string KMaxClauseNumName;
         extern const std::string KIsNonLinearName;
-        extern const std::string KExtraGrammarName;
+        extern const std::string KVerifyBaseName;
+        extern const std::string KDataSizeLimitName;
         extern const std::string KIsEnableFoldName;
         extern const std::string KSampleIntMinName;
         extern const std::string KSampleIntMaxName;
         extern const std::string KPrintAlignName;
+        extern const std::string KThreadNumName;
+
+        IncreConfigMap buildDefaultConfigMap();
+        void applyConfig(IncreProgramData* program, Env* env);
     }
+
+    class IncreProgramWalker {
+    protected:
+        virtual void visit(CommandDef* command) = 0;
+        virtual void visit(CommandBind* command) = 0;
+        virtual void visit(CommandInput* command) = 0;
+        virtual void preProcess(IncreProgramData* program) {}
+        virtual void postProcess(IncreProgramData* program) {}
+    public:
+        void walkThrough(IncreProgramData* program);
+        virtual ~IncreProgramWalker() = default;
+    };
+
+    IncreFullContext buildContext(IncreProgramData* program, semantics::IncreEvaluator* evaluator, types::IncreTypeChecker* checker, syntax::IncreTypeRewriter* rewriter);
+
+#define BuildGen(name) []{return new name();}
+    IncreFullContext buildContext(IncreProgramData* program,
+                              const semantics::IncreEvaluatorGenerator& = [](){return nullptr;},
+                              const types::IncreTypeCheckerGenerator& = [](){return nullptr;},
+                              const syntax::IncreTypeRewriterGenerator& = [](){return nullptr;});
 }
 
-#endif //ISTOOL_INCRE_PROGRAM_H
+namespace incre::syntax {
+    class IncreProgramRewriter: public IncreProgramWalker {
+    protected:
+        IncreTypeRewriter* type_rewriter;
+        IncreTermRewriter* term_rewriter;
+        virtual void visit(CommandDef* command);
+        virtual void visit(CommandBind* command);
+        virtual void visit(CommandInput* command);
+        virtual void preProcess(IncreProgramData* program);
+    public:
+        IncreProgram res;
+        IncreProgramRewriter(IncreTypeRewriter* _type_rewriter, IncreTermRewriter* _term_rewriter);
+    };
+
+    IncreProgram rewriteProgram(IncreProgramData* program, const IncreTypeRewriterGenerator& type_gen, const IncreTermRewriterGenerator& term_gen);
+}
+
+#endif //ISTOOL_INCRE_H

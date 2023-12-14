@@ -1,78 +1,39 @@
 //
-// Created by pro on 2022/9/16.
+// Created by pro on 2023/12/5.
 //
 
-#ifndef ISTOOL_INCRE_CONTEXT_H
-#define ISTOOL_INCRE_CONTEXT_H
+#ifndef ISTOOL_CONTEXT_H
+#define ISTOOL_CONTEXT_H
 
-#include "incre_term.h"
-#include "incre_type.h"
-#include <unordered_map>
+#include "incre_syntax.h"
 
 namespace incre {
-    enum class BindingType {
-        TYPE, TERM, VAR
-    };
-
-    class BindingData {
+    class EnvAddress {
     public:
-        BindingType type;
-        BindingData(const BindingType& _type);
-        virtual std::string toString() const = 0;
-        BindingType getType() const;
-        virtual ~BindingData() = default;
+        std::string name;
+        syntax::Binding bind;
+        std::shared_ptr<EnvAddress> next;
+        EnvAddress(const std::string &_name, const syntax::Binding& _bind, const std::shared_ptr<EnvAddress>& _next);
     };
 
-    typedef std::shared_ptr<BindingData> Binding;
-
-    class TypeBinding: public BindingData {
+    class IncreContext {
     public:
-        Ty type;
-        TypeBinding(const Ty& _type);
-        virtual std::string toString() const;
-        virtual ~TypeBinding() = default;
+        std::shared_ptr<EnvAddress> start;
+        syntax::Ty getType(const std::string& _name) const;
+        Data getData(const std::string& _name) const;
+        IncreContext insert(const std::string& name, const syntax::Binding& binding) const;
+        IncreContext(const std::shared_ptr<EnvAddress>& _start);
     };
 
-    class TermBinding: public BindingData {
+    class IncreFullContextData {
     public:
-        Term term;
-        Ty type;
-        TermBinding(const Term& _term, const Ty& _ty=nullptr);
-        virtual std::string toString() const;
-        virtual ~TermBinding() = default;
-    };
+        IncreContext ctx;
+        std::unordered_map<std::string, EnvAddress*> address_map;
 
-    class VarTypeBinding: public BindingData {
-    public:
-        Ty type;
-        VarTypeBinding(const Ty& _type);
-        virtual std::string toString() const;
-        virtual ~VarTypeBinding() = default;
+        IncreFullContextData(const IncreContext& _ctx, const std::unordered_map<std::string, EnvAddress*>& _address_map);
+        void setGlobalInput(const std::unordered_map<std::string, Data>& global_input);
     };
-
-    class Context {
-    public:
-        std::unordered_map<std::string, Binding> binding_map;
-        void addBinding(const std::string& name, const Ty& type);
-        void addBinding(const std::string& name, const Term& term, const Ty& type=nullptr);
-        Term getTerm(const std::string& name);
-        Ty getType(const std::string& name);
-    };
-
-    class TypeContext {
-    public:
-        struct BindLog {
-            std::string name;
-            Ty binding;
-        };
-        std::unordered_map<std::string, Ty> binding_map;
-        TypeContext(Context* ctx);
-        TypeContext() = default;
-        virtual BindLog bind(const std::string& name, const Ty& type);
-        Ty lookup(const std::string& name);
-        virtual void cancelBind(const BindLog& log);
-        ~TypeContext();
-    };
+    typedef std::shared_ptr<IncreFullContextData> IncreFullContext;
 }
 
-#endif //ISTOOL_INCRE_CONTEXT_H
+#endif //ISTOOL_CONTEXT_H
