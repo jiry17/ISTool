@@ -3,11 +3,13 @@
 //
 
 #include "istool/incre/autolifter/incre_solver_util.h"
+#include "istool/incre/grammar/incre_grammar_semantics.h"
 #include "istool/solver/polygen/polygen.h"
 
 using namespace incre;
 using namespace incre::autolifter;
 using namespace incre::autolifter::util;
+using namespace incre::syntax;
 
 std::pair<SolverToken, InvokeConfig> util::getSolverToken(Type *oup_type) {
     if (dynamic_cast<TBool *>(oup_type)) return {SolverToken::POLYGEN_CONDITION, {}};
@@ -95,7 +97,7 @@ namespace {
                     auto* ps = dynamic_cast<ParamSemantics*>(cr->semantics.get());
                     if (ps) {
                         if (index_map.find(ps->id) == index_map.end()) continue;
-                        auto new_sem = semantics::buildParamSemantics(index_map[ps->id], ps->oup_type);
+                        auto new_sem = ::semantics::buildParamSemantics(index_map[ps->id], ps->oup_type);
                         new_symbol->rule_list.push_back(new ConcreteRule(new_sem, {}));
                         continue;
                     }
@@ -112,12 +114,18 @@ namespace {
 PProgram util::synthesis2Program(const TypeList &inp_type_list, const PType &oup_type, const PEnv &env, Grammar* grammar,
                                  const IOExampleList &example_list) {
     if (dynamic_cast<TBot*>(oup_type.get())) {
-        return program::buildConst(Data(std::make_shared<VUnit>()));
+        return program::buildConst(Data(std::make_shared<incre::semantics::VUnit>()));
+    }
+    LOG(INFO) << "try synthesis";
+    for (int i = 0; i < 10 && i < example_list.size(); ++i) {
+        auto& example = example_list[i];
+        LOG(INFO) << "  " << example::ioExample2String(example);
     }
     const std::string default_name = "func";
     if (example_list.empty()) {
         return ::grammar::getMinimalProgram(grammar);
     }
+    incre::semantics::isConsiderGlobalInputs(env.get(), false);
     auto [used_indices, simplified_examples] = _simplifyExampleSpace(example_list);
     TypeList simplified_type_list;
     for (auto& index: used_indices) simplified_type_list.push_back(inp_type_list[index]);
@@ -134,6 +142,7 @@ PProgram util::synthesis2Program(const TypeList &inp_type_list, const PType &oup
     delete v;
     delete spec;
     delete simplified_grammar;
+    incre::semantics::isConsiderGlobalInputs(env.get(), true);
     return _recoverProgram(inp_type_list, used_indices, res[default_name]);
 }
 

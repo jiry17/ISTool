@@ -25,20 +25,18 @@ namespace incre::types {
     class IncreTypeChecker {
     protected:
         int tmp_var_id = 0, _level = 0;
-        syntax::Ty getTmpVar();
-        void pushLevel(); void popLevel();
         TERM_CASE_ANALYSIS(RegisterAbstractTypingRule);
         TYPE_CASE_ANALYSIS(RegisterAbstractUnifyRule);
         virtual void preProcess(syntax::TermData* term, const IncreContext& ctx) = 0;
         virtual void postProcess(syntax::TermData* term, const IncreContext& ctx, const syntax::Ty& res) = 0;
-        virtual syntax::Ty instantiate(const syntax::Ty& x) = 0;
-        virtual syntax::Ty generalize(const syntax::Ty& x) = 0;
-
-        void unify(const syntax::Ty &x, const syntax::Ty &y);
     public:
+        syntax::Ty getTmpVar();
+        void pushLevel(); void popLevel();
         syntax::Ty typing(syntax::TermData* term, const IncreContext& ctx);
-        syntax::Ty bindTyping(syntax::TermData* term, const IncreContext& ctx);
         virtual ~IncreTypeChecker() = default;
+        virtual syntax::Ty instantiate(const syntax::Ty& x) = 0;
+        virtual syntax::Ty generalize(const syntax::Ty& x, syntax::TermData* term) = 0;
+        void unify(const syntax::Ty &x, const syntax::Ty &y);
     };
 
 #define RegisterTypingRule(name) virtual syntax::Ty _typing(syntax::Tm ## name* term, const IncreContext& ctx);
@@ -48,13 +46,13 @@ namespace incre::types {
     protected:
         TERM_CASE_ANALYSIS(RegisterTypingRule);
         TYPE_CASE_ANALYSIS(RegisterUnifyRule);
-        virtual syntax::Ty instantiate(const syntax::Ty& x);
-        virtual syntax::Ty generalize(const syntax::Ty& x);
         virtual void preProcess(syntax::TermData* term, const IncreContext& ctx);
         virtual void postProcess(syntax::TermData* term, const IncreContext& ctx, const syntax::Ty& res);
         virtual void updateLevelBeforeUnification(syntax::TypeData* x, int index, int level);
         virtual std::pair<syntax::Ty, IncreContext> processPattern(syntax::PatternData* pattern, const IncreContext& ctx);
     public:
+        virtual syntax::Ty instantiate(const syntax::Ty& x);
+        virtual syntax::Ty generalize(const syntax::Ty& x, syntax::TermData* term);
         virtual ~DefaultIncreTypeChecker() = default;
     };
 

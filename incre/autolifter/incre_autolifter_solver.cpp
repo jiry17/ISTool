@@ -14,29 +14,31 @@
 
 using namespace incre;
 using namespace incre::autolifter;
+using namespace incre::syntax;
+using namespace incre::semantics;
+using namespace incre::analysis;
 
 FInfo::FInfo(const TypedProgram& _program, int _id, bool _is_extended):
         program(_program), id(_id), is_extended(_is_extended) {
 }
 
 namespace {
-    int _getCNum(IncreInfo* info) {
+    int _getCNum(IncreInfoData* info) {
         int c_num = 0;
-        auto get_id = [](TyData* type) {
+        auto get_id = [](syntax::TypeData* type) {
             auto* ct = dynamic_cast<TyLabeledCompress*>(type);
             if (ct) return ct->id + 1;
             return 0;
         };
-        for (auto& align_info: info->align_infos) {
-            for (auto& [_, type]: align_info->inp_types) c_num = std::max(c_num, get_id(type.get()));
-            c_num = std::max(c_num, get_id(align_info->oup_type.get()));
+        for (auto& rewrite_info: info->rewrite_info_list) {
+            for (auto& [_, type]: rewrite_info.inp_types) c_num = std::max(c_num, get_id(type.get()));
+            c_num = std::max(c_num, get_id(rewrite_info.oup_type.get()));
         }
-        // LOG(INFO) << "CNUM " << c_num;
         return c_num;
     }
 
     void _unfoldOutputType(const Ty& type, std::vector<int>& path, std::vector<OutputUnit>& res) {
-        if (type->getType() == TyType::TUPLE) {
+        if (type->getType() == TypeType::TUPLE) {
             auto* tt = dynamic_cast<TyTuple*>(type.get());
             for (int i = 0; i < tt->fields.size(); ++i) {
                 path.push_back(i);
@@ -55,12 +57,12 @@ namespace {
         return res;
     }
 
-    PType _getCompressType(IncreInfo* info, int compress_id) {
-        for (const auto& align_info: info->align_infos) {
-            for (auto&[name, ty]: align_info->inp_types) {
-                if (ty->getType() == TyType::COMPRESS) {
+    PType _getCompressType(IncreInfoData* info, int compress_id) {
+        for (const auto& rewrite_info: info->rewrite_info_list) {
+            for (auto&[name, ty]: rewrite_info.inp_types) {
+                if (ty->getType() == TypeType::COMPRESS) {
                     auto *cty = dynamic_cast<TyLabeledCompress *>(ty.get());
-                    if (cty && cty->id == compress_id) return incre::typeFromIncre(cty->content);
+                    if (cty && cty->id == compress_id) return incre::trans::typeFromIncre(cty->body.get());
                 }
             }
         }
@@ -75,44 +77,44 @@ GrammarEnumerateTool::GrammarEnumerateTool(Grammar *_grammar): grammar(_grammar)
     if (size_limit == -1) size_limit = 1e9;
 }
 
-Grammar * IncreAutoLifterSolver::buildAuxGrammar(int compress_id) {
-    TypeList inp_list = {_getCompressType(info, compress_id)};
+Grammar * IncreAutoLifterSolver::buildCompressGrammar(int compress_id) {
+    TypeList inp_list = {_getCompressType(info.get(), compress_id)};
     for (auto& inp_type: global_input_type_list) inp_list.push_back(inp_type);
-    return info->component_pool.buildAlignGrammar(inp_list);
+    return info->component_pool.buildCompGrammar(inp_list);
 }
-Grammar * IncreAutoLifterSolver::buildCompressGrammar(const TypeList &type_list, int align_id) {
-    int pos = info->align_infos[align_id]->command_id;
+Grammar * IncreAutoLifterSolver::buildExtractGrammar(const TypeList &type_list, int align_id) {
+    int pos = info->rewrite_info_list[align_id].command_id;
     TypeList inp_list = type_list;
     for (auto& inp_type: global_input_type_list) inp_list.push_back(inp_type);
-    return info->component_pool.buildCompressGrammar(inp_list, pos);
+    return info->component_pool.buildExtractGrammar(inp_list, pos);
 }
 Grammar * IncreAutoLifterSolver::buildCombinatorGrammar(const TypeList &type_list, const PType& oup_type, int align_id) {
     auto feature = std::to_string(align_id) + "@" + type::typeList2String(type_list) + "@" + oup_type->getName();
     if (combine_grammar_map.count(feature)) return combine_grammar_map[feature];
-    int pos = info->align_infos[align_id]->command_id;
-    return info->component_pool.buildCombinatorGrammar(type_list, oup_type, pos);
+    int pos = info->rewrite_info_list[align_id].command_id;
+    return info->component_pool.buildCombGrammar(type_list, oup_type, pos);
 }
 
-IncreAutoLifterSolver::IncreAutoLifterSolver(IncreInfo *_info, const PEnv& _env): env(_env), IncreSolver(_info),
-    f_res_list(_getCNum(_info)), compress_res_list(info->align_infos.size()), align_result_records(info->align_infos.size()),
-    aux_grammar_list(_getCNum(_info)) {
-    for (auto& [name, inp_type]: info->example_pool->input_list) {
-        global_input_type_list.push_back(incre::typeFromIncre(inp_type));
+IncreAutoLifterSolver::IncreAutoLifterSolver(const analysis::IncreInfo& _info, const PEnv &_env): IncreSolver(_info), env(_env),
+    f_res_list(_getCNum(_info.get())), extract_res_list(_info->rewrite_info_list.size()), rewrite_result_records(info->rewrite_info_list.size()) {
+    for (auto& global_type: info->example_pool->global_type_list) {
+        global_input_type_list.push_back(trans::typeFromIncre(global_type.get()));
     }
-    for (auto& align_info: info->align_infos) {
-        assert(align_info->getId() == example_space_list.size());
-        auto* example_space = new FExampleSpace(info->example_pool, align_info->getId(), env, align_info.get());
+
+    for (auto& rewrite_info: info->rewrite_info_list) {
+        assert(rewrite_info.index == example_space_list.size());
+        auto* example_space = new FExampleSpace(info->example_pool, rewrite_info.index, env, rewrite_info);
         example_space_list.push_back(example_space);
-        unit_storage.push_back(_unfoldOutputType(align_info->oup_type));
+        unit_storage.push_back(_unfoldOutputType(rewrite_info.oup_type));
 
-        TypeList inp_list;
-        for (auto& [_, t]: example_space->value_list) inp_list.push_back(t);
-        compress_grammar_list.push_back(new GrammarEnumerateTool(buildCompressGrammar(inp_list, align_info->getId())));
+        extract_grammar_list.push_back(new GrammarEnumerateTool(buildExtractGrammar(example_space->local_types, rewrite_info.index)));
     }
-    for (int i = 0; i < aux_grammar_list.size(); ++i) {
-        aux_grammar_list[i] = new GrammarEnumerateTool(buildAuxGrammar(i));
+    for (int i = 0; i < f_res_list.size(); ++i) {
+        compress_grammar_list.push_back(new GrammarEnumerateTool(buildCompressGrammar(i)));
     }
 
+    /*
+    LOG(INFO) << "print grammar";
     int num = 0;
     for (auto& grammar_enum: compress_grammar_list) {
         std::cout << "num = " << num++ << std::endl;
@@ -128,17 +130,17 @@ IncreAutoLifterSolver::IncreAutoLifterSolver(IncreInfo *_info, const PEnv& _env)
     for (auto& [name, grammar]: combine_grammar_map) {
         std::cout << name << " " << std::endl;
         grammar->print();
-    }
+    }*/
 #ifdef DEBUG
-    for (int i = 0; i < info->align_infos.size(); ++i) assert(info->align_infos[i]->getId() == i);
+    for (int i = 0; i < info->rewrite_info_list.size(); ++i) assert(info->rewrite_info_list[i].index == i);
 #endif
 }
 IncreAutoLifterSolver::~IncreAutoLifterSolver() {
     for (auto* example_space: example_space_list) {
         delete example_space;
     }
-    for (auto* g: aux_grammar_list) delete g;
     for (auto* g: compress_grammar_list) delete g;
+    for (auto* g: extract_grammar_list) delete g;
     for (auto& [_, grammar]: combine_grammar_map) delete grammar;
 }
 bool FRes::isEqual(Program *x, Program *y) {
@@ -187,17 +189,17 @@ namespace {
     }
 }
 
-autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(AlignTypeInfoData *info, const TypedProgram &target, const OutputUnit& unit) {
-    auto* space = example_space_list[info->getId()];
+autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(const RewriteTypeInfo& info, const TypedProgram &target, const OutputUnit& unit) {
+    auto* space = example_space_list[info.index];
 
-    std::vector<TypedProgramList> known_lifts(aux_grammar_list.size());
-    for (int i = 0; i < aux_grammar_list.size(); ++i) {
+    std::vector<TypedProgramList> known_lifts(f_res_list.size());
+    for (int i = 0; i < f_res_list.size(); ++i) {
         for (auto& component: f_res_list[i].component_list) {
             known_lifts[i].push_back(component.program);
         }
     }
 
-    auto* task = new PLPTask(space, aux_grammar_list, known_lifts, compress_grammar_list[info->getId()], target, unit.path, _getCompressId(unit.unit_type));
+    auto* task = new PLPTask(space, compress_grammar_list, known_lifts, extract_grammar_list[info.index], target, unit.path, _getCompressId(unit.unit_type));
     auto* solver = new IncrePLPSolver(env.get(), task);
     auto res = solver->synthesis(nullptr);
 
@@ -206,44 +208,45 @@ autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(AlignTypeInfoData *info, 
 }
 
 void IncreAutoLifterSolver::solveAuxiliaryProgram() {
-    auto record_res = [&](int align_id, const PLPRes& res, const std::vector<int>& path) {
+    auto record_res = [&](int rewrite_id, const PLPRes& res, const std::vector<int>& path) {
         RelatedComponents related;
         for (auto& [compress_program, aux_program]: res) {
-            auto* ltc = dynamic_cast<TLabeledCompress*>(compress_program.first.get());
+            auto* ltc = dynamic_cast<incre::trans::TLabeledCompress*>(compress_program.first.get());
             int aux_id = -1, compress_id = -1;
             if (ltc) {
                 aux_id = f_res_list[ltc->id].insert(aux_program);
             }
-            compress_id = compress_res_list[align_id].insert(compress_program);
+            compress_id = extract_res_list[rewrite_id].insert(compress_program);
             related.emplace_back(compress_id, aux_id);
         }
         return related;
     };
 
-    for (auto& align_info: info->align_infos) {
-        unit_storage.push_back(_unfoldOutputType(align_info->oup_type));
+    for (auto& rewrite_info: info->rewrite_info_list) {
+        unit_storage.push_back(_unfoldOutputType(rewrite_info.oup_type));
     }
 
     {
         global::printStageResult("  Iteration #0");
         int sub_task_num = 0;
-        for (auto &align_info: info->align_infos) {
-            for (auto &unit: unit_storage[align_info->getId()]) {
-                auto *oup_ty = unit.unit_type.get();
-                if (!dynamic_cast<TyCompress *>(oup_ty)) sub_task_num += 1;
+        for (auto& unit_list: unit_storage) {
+            for (auto& unit: unit_list) {
+                auto* oup_ty = unit.unit_type.get();
+                if (!dynamic_cast<TyCompress*>(oup_ty)) sub_task_num += 1;
             }
         }
+
         int sub_task_id = 0;
-        for (auto &align_info: info->align_infos) {
-            for (auto &unit: unit_storage[align_info->getId()]) {
+        for (auto &rewrite_info: info->rewrite_info_list) {
+            for (auto &unit: unit_storage[rewrite_info.index]) {
                 auto *oup_ty = unit.unit_type.get();
                 if (!dynamic_cast<TyCompress *>(oup_ty)) {
                     global::printStageResult("    Solving subtask " + std::to_string(++sub_task_id) + "/" +
                                              std::to_string(sub_task_num));
-                    PLPRes res = solvePLPTask(align_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr},
-                                              unit);
-                    auto related = record_res(align_info->getId(), res, unit.path);
-                    align_result_records[align_info->getId()][unit.path].push_back(related);
+                    PLPRes res = solvePLPTask(rewrite_info, {incre::trans::typeFromIncre(unit.unit_type.get()), nullptr}, unit);
+                    auto related = record_res(rewrite_info.index, res, unit.path);
+
+                    rewrite_result_records[rewrite_info.index][unit.path].push_back(related);
                 }
             }
         }
@@ -269,13 +272,14 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
                 global::printStageResult("    Solving subtask " + std::to_string(++sub_task_id) + "/" + std::to_string(sub_task_num));
                 is_changed = true;
                 f_res_list[compress_id].component_list[i].is_extended = true;
-                for (auto& align_info: info->align_infos) {
-                    for (auto& unit: unit_storage[align_info->getId()]) {
-                        auto *cty = dynamic_cast<TyLabeledCompress *>(unit.unit_type.get());
+                for (auto& rewrite_info: info->rewrite_info_list) {
+                    int index = rewrite_info.index;
+                    for (auto& unit: unit_storage[index]) {
+                        auto* cty = dynamic_cast<TyLabeledCompress*>(unit.unit_type.get());
                         if (cty && cty->id == compress_id) {
-                            PLPRes res = solvePLPTask(align_info.get(), component.program, unit);
-                            auto related = record_res(align_info->getId(), res, unit.path);
-                            align_result_records[align_info->getId()][unit.path].push_back(related);
+                            PLPRes res = solvePLPTask(rewrite_info, component.program, unit);
+                            auto related = record_res(index, res, unit.path);
+                            rewrite_result_records[index][unit.path].push_back(related);
                         }
                     }
                 }
@@ -289,34 +293,13 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
             f_type_list.push_back(std::make_shared<TyUnit>()); continue;
         }
         TyList fields;
-        for (auto& component: f_res.component_list) fields.push_back(incre::typeToIncre(component.program.first.get()));
+        for (auto& component: f_res.component_list) fields.push_back(incre::trans::typeToIncre(component.program.first.get()));
         if (fields.size() == 1) {
             f_type_list.push_back(fields[0]);
         } else {
             f_type_list.push_back(std::make_shared<TyTuple>(fields));
         }
     }
-
-    auto align_total_size = 0;
-    for (auto& f_res: f_res_list) {
-        if (f_res.component_list.size() > 1) align_total_size++;
-        for (auto& component: f_res.component_list) {
-            auto size = _getIncreTermSize(component.program.second.get());
-            //LOG(INFO) << "align size :" << component.program.second->toString() << " " << size;
-            align_total_size += size;
-        }
-    }
-    global::recorder.record("align-size", align_total_size);
-    auto extract_size = 0;
-    for (auto& compress_res: compress_res_list) {
-        if (compress_res.compress_list.size() > 1) extract_size++;
-        for (auto& component: compress_res.compress_list) {
-            auto size = _getIncreTermSize(component.second.get());
-            //LOG(INFO) << "comb size :" << component.second->toString() << " " << size;
-            extract_size += size;
-        }
-    }
-    global::recorder.record("extract-size", extract_size);
 }
 
 #include "istool/basic/config.h"
@@ -330,7 +313,7 @@ IncreSolution IncreAutoLifterSolver::solve() {
     global::printStageResult("Stage 2/2: synthesizing the combinator.");
     solveCombinators();
     global::recorder.end("syn-comb");
-    if (env->getConstRef(config_name::KPrintAlignName, BuildData(Bool, false))->isTrue()) {
+    if (env->getConstRef(config::KPrintAlignName, BuildData(Bool, false))->isTrue()) {
         auto repr_list = buildFRes();
         return {f_type_list, comb_list, repr_list};
     }

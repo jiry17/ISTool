@@ -13,11 +13,15 @@ EnvAddress::EnvAddress(const std::string &_name, const syntax::Binding &_bind,
 }
 IncreContext::IncreContext(const std::shared_ptr<EnvAddress> &_start): start(_start) {}
 
-syntax::Ty IncreContext::getType(const std::string &name) const {
+syntax::Ty IncreContext::getRawType(const std::string &name) const {
     for (auto now = start; now; now = now->next) {
         if (now->name == name) return now->bind.getType();
     }
     LOG(FATAL) << "No type is bound to " << name;
+}
+
+syntax::Ty IncreContext::getFinalType(const std::string &_name, syntax::IncreTypeRewriter *rewriter) const {
+    return rewriter->rewrite(getRawType(_name));
 }
 
 Data IncreContext::getData(const std::string &name) const {
@@ -25,6 +29,44 @@ Data IncreContext::getData(const std::string &name) const {
         if (now->name == name) return now->bind.getData();
     }
     LOG(FATAL) << "No data is bound to " << name;
+}
+
+#include <iostream>
+void IncreContext::printTypes() const {
+    std::vector<std::pair<std::string, Ty>> info_list;
+    for (auto pos = start; pos; pos = pos->next) {
+        info_list.emplace_back(pos->name, pos->bind.type);
+    }
+    std::reverse(info_list.begin(), info_list.end());
+    for (auto& [name, ty]: info_list) {
+        if (ty) std::cout << name << ": " << ty->toString() << std::endl;
+        else std::cout << name << ": NA" << std::endl;
+    }
+}
+void IncreContext::printDatas() const {
+    std::vector<std::pair<std::string, Data>> info_list;
+    for (auto pos = start; pos; pos = pos->next) {
+        info_list.emplace_back(pos->name, pos->bind.data);
+    }
+    std::reverse(info_list.begin(), info_list.end());
+    for (auto& [name, v]: info_list) {
+        if (!v.isNull()) std::cout << name << ": " << v.toString() << std::endl;
+        else std::cout << name << ": NA" << std::endl;
+    }
+}
+
+EnvAddress *IncreContext::getAddress(const std::string &name) {
+    for (auto now = start; now; now = now->next) {
+        if (now->name == name) return now.get();
+    }
+    LOG(FATAL) << "Nothing is bound to " << name;
+}
+
+bool IncreContext::isContain(const std::string &name) {
+    for (auto now = start; now; now = now->next) {
+        if (now->name == name) return true;
+    }
+    return false;
 }
 
 IncreContext IncreContext::insert(const std::string &name, const syntax::Binding &binding) const {

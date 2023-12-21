@@ -43,9 +43,10 @@ namespace {
         std::vector<AuxProgram> default_list;
 
         VarMergedAuxProgramEvaluateUtil(PLPTask* _task, bool _is_include_direct): AuxProgramEvaluateUtil(_task), is_include_direct(_is_include_direct) {
-            for (int i = 0; i < task->example_space->value_list.size(); ++i) {
-                auto& [name, type] = task->example_space->value_list[i];
-                auto* lct = dynamic_cast<incre::TLabeledCompress*>(type.get());
+            for (int i = 0; i < task->example_space->local_names.size(); ++i) {
+                auto& name = task->example_space->local_names[i];
+                auto& type = task->example_space->local_types[i];
+                auto* lct = dynamic_cast<incre::trans::TLabeledCompress*>(type.get());
                 if (lct) {
                     int id = lct->id;
                     if (compress_var_pool.count(id) == 0) {
@@ -84,7 +85,7 @@ namespace {
                 }
             }
 
-            auto* tc = dynamic_cast<incre::TLabeledCompress*>(program.first.first.get());
+            auto* tc = dynamic_cast<incre::trans::TLabeledCompress*>(program.first.first.get());
             if (config::KIsDefaultSelf && tc && tc->id == task->oup_compress_id) {
                 for (auto& extract: extract_list) {
                     result.emplace_back(extract, task->target);
@@ -277,10 +278,9 @@ void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
     uncovered_info_set.clear(); global_maximal.clear();
 }
 
-std::vector<UnitInfo> IncrePLPSolver::mergeUnits(int compress_size, int aux_size) {
-    auto* compress_list = task->compress_grammar->acquirePrograms(compress_size);
-    if (!compress_list) return {};
-
+std::vector<UnitInfo> IncrePLPSolver::mergeUnits(int extract_size, int aux_size) {
+    auto* extract_list = task->extract_grammar->acquirePrograms(extract_size);
+    if (!extract_list) return {};
     std::vector<TypedProgramList> known_aux_list(task->aux_grammar_list.size());
     std::vector<TypedProgramList*> aux_pointer_list(task->aux_grammar_list.size());
     if (aux_size == 0) {
@@ -296,16 +296,11 @@ std::vector<UnitInfo> IncrePLPSolver::mergeUnits(int compress_size, int aux_size
         }
     }
 
-    /*for (auto* aux: aux_pointer_list) {
-        if (aux) std::cout << aux->size(); else std::cout << "null";
-        std::cout << " ";
-    }
-    std::cout << std::endl;*/
 
     std::vector<UnitInfo> res_list;
-    for (auto compress_it = compress_list->begin(); compress_it < compress_list->end(); ++compress_it) {
+    for (auto compress_it = extract_list->begin(); compress_it < extract_list->end(); ++compress_it) {
         auto program = *compress_it;
-        auto* ltc = dynamic_cast<TLabeledCompress*>(program.first.get());
+        auto* ltc = dynamic_cast<incre::trans::TLabeledCompress*>(program.first.get());
         if (!ltc) {
             if (aux_size == 0) {
                 res_list.push_back(init({program, {nullptr, nullptr}}));
@@ -329,24 +324,21 @@ namespace {
 void IncrePLPSolver::getMoreComponent() {
 
     ++current_size;
-    LOG(INFO) << "get more component";
+    LOG(INFO) << "get more component ";
 
     std::vector<std::vector<UnitInfo>> unit_storage;
     for (int compress_size = 0; compress_size < current_size; ++compress_size) {
         auto merge_result = mergeUnits(compress_size, current_size - compress_size);
-        /*LOG(INFO) << "merge " << compress_size << " " << current_size - compress_size << std::endl;
-        for (auto& program: merge_result) {
-            LOG(INFO) << "  " << aux2String(program.program);
-        }*/
         unit_storage.push_back(merge_result);
     }
     if (current_size >= KDelta) unit_storage.push_back(mergeUnits(current_size - KDelta, 0));
 
     for (auto& unit: _randomMerge(unit_storage, env)) {
-        /*if (dynamic_cast<TBool*>(unit.program.first.first.get())) {
+        /*if (dynamic_cast<TBool*>(unit.program.second.first.get())) {
             LOG(INFO) << "new bool component " << aux2String(unit.program) << " " << unit.info.toString();
             int kk; std::cin >> kk;
         }*/
+        // LOG(INFO) << "new component " << aux2String(unit.program);
         component_info_list.push_back(unit);
     }
 }
@@ -538,6 +530,7 @@ solver::autolifter::EnumerateInfo * IncrePLPSolver::getNextComponent(int k, Time
         while (1) {
             while (next_component_id < component_info_list.size() && component_info_list[next_component_id].is_error) ++next_component_id;
             if (next_component_id < component_info_list.size()) {
+                // LOG(INFO) << "current component " << aux2String(component_info_list[next_component_id].program);
                 return new EnumerateInfo({next_component_id++});
             } else getMoreComponent();
         }
@@ -609,17 +602,8 @@ namespace {
 
 PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
     std::cout << std::endl << std::endl << std::endl;
-    LOG(INFO) << "solve " << task->example_space->tau_id;
+    LOG(INFO) << "solve " << task->example_space->rewrite_id;
     if (task->target.second) LOG(INFO) << "  " << task->target.second->toString();
-    /*for (int i = 0; i < task->aux_grammar_list.size(); ++i) {
-        auto* grammar = task->aux_grammar_list[i];
-        std::cout << "aux grammar " << i << std::endl;
-        grammar->grammar->print();
-        std::cout << std::endl;
-    }
-    std::cout << "compress grammar" << std::endl;
-    task->compress_grammar->grammar->print();
-    std::cout << std::endl;*/
     auto counter_example = verify(unfoldComponents({}));
     if (counter_example.first == -1) return {};
     LOG(INFO) << "Counter example " << example2String(counter_example);
@@ -628,7 +612,8 @@ PLPRes IncrePLPSolver::synthesis(TimeGuard *guard) {
     while (true) {
         // global::recorder.add("#cegis", 1);
         TimeCheck(guard);
-        auto candidate_result = unfoldComponents(synthesisFromExample(guard));
+        auto res = synthesisFromExample(guard);
+        auto candidate_result = unfoldComponents(res);
         LOG(INFO) << "Candidate result " << _unitList2String(candidate_result);
         LOG(INFO) << KComposedNum << std::endl;
         counter_example = verify(candidate_result);

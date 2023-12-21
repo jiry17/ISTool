@@ -38,8 +38,8 @@ namespace incre {
 
         struct OutputUnit {
             std::vector<int> path;
-            Ty unit_type;
-            OutputUnit(const std::vector<int>& _path, const Ty& _unit_type);
+            syntax::Ty unit_type;
+            OutputUnit(const std::vector<int>& _path, const syntax::Ty& _unit_type);
         };
 
         typedef std::vector<std::pair<int, int>> RelatedComponents;
@@ -47,11 +47,11 @@ namespace incre {
     }
     class IncreAutoLifterSolver: public IncreSolver {
         // Grammar builder
-        std::vector<autolifter::GrammarEnumerateTool*> compress_grammar_list, aux_grammar_list;
+        std::vector<autolifter::GrammarEnumerateTool*> extract_grammar_list, compress_grammar_list;
         std::unordered_map<std::string, Grammar*> combine_grammar_map;
-        autolifter::PLPRes solvePLPTask(AlignTypeInfoData* info, const autolifter::TypedProgram& target, const autolifter::OutputUnit& unit);
-        Grammar* buildAuxGrammar(int compress_id);
-        Grammar* buildCompressGrammar(const TypeList& type_list, int align_id);
+        autolifter::PLPRes solvePLPTask(const analysis::RewriteTypeInfo& info, const autolifter::TypedProgram& target, const autolifter::OutputUnit& unit);
+        Grammar* buildCompressGrammar(int compress_id);
+        Grammar* buildExtractGrammar(const TypeList& type_list, int align_id);
     public:
         Grammar* buildCombinatorGrammar(const TypeList& type_list, const PType& oup_type, int align_id);
 
@@ -59,23 +59,23 @@ namespace incre {
         std::vector<autolifter::FExampleSpace*> example_space_list;
         TypeList global_input_type_list;
         std::vector<std::vector<autolifter::OutputUnit>> unit_storage;
-        std::vector<std::map<std::vector<int>, std::vector<autolifter::RelatedComponents>>> align_result_records;
+        std::vector<std::map<std::vector<int>, std::vector<autolifter::RelatedComponents>>> rewrite_result_records;
 
-        IncreAutoLifterSolver(IncreInfo* _info, const PEnv& _env);
+        IncreAutoLifterSolver(const analysis::IncreInfo& _info, const PEnv& _env);
         virtual ~IncreAutoLifterSolver();
         virtual IncreSolution solve();
 
         // Synthesize auxiliary programs
         void solveAuxiliaryProgram();
         std::vector<autolifter::FRes> f_res_list;
-        std::vector<autolifter::CompressRes> compress_res_list;
-        TyList f_type_list;
+        std::vector<autolifter::CompressRes> extract_res_list;
+        syntax::TyList f_type_list;
 
         // Synthesize combinators
-        Term synthesisCombinator(int align_id);
-        TermList comb_list;
+        syntax::Term synthesisCombinator(int align_id);
+        syntax::TermList comb_list;
         void solveCombinators();
-        TermList buildFRes();
+        syntax::TermList buildFRes();
     };
 }
 

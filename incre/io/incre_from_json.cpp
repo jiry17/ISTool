@@ -174,7 +174,7 @@ namespace {
     }
 
     JsonTermHead(Proj) {
-        return std::make_shared<TmProj>(json2term(node["content"]), node["index"].asInt());
+        return std::make_shared<TmProj>(json2term(node["content"]), node["index"].asInt(), node["size"].asInt());
     }
 
     JsonTermHead(Func) {
@@ -242,13 +242,15 @@ namespace {
             {"NonLinear", IncreConfig::NON_LINEAR}, {"SampleSize", IncreConfig::SAMPLE_SIZE},
             {"EnableFold", IncreConfig::ENABLE_FOLD}, {"SampleIntMin", IncreConfig::SAMPLE_INT_MIN},
             {"SampleIntMax", IncreConfig::SAMPLE_INT_MAX}, {"PrintAlign", IncreConfig::PRINT_ALIGN},
-            {"TermNum", IncreConfig::TERM_NUM}, {"ClauseNum", IncreConfig::CLAUSE_NUM}
+            {"TermNum", IncreConfig::TERM_NUM}, {"ClauseNum", IncreConfig::CLAUSE_NUM},
+            {"SlowCombine", IncreConfig::SLOW_COMBINE}
     };
 
     const std::unordered_map<std::string, CommandDecorate> KIncreDecorateNameMap {
             {"Input", CommandDecorate::INPUT}, {"Start", CommandDecorate::START},
             {"Compress", CommandDecorate::SYN_COMPRESS}, {"Combine", CommandDecorate::SYN_COMBINE},
-            {"Extract", CommandDecorate::SYN_EXTRACT}, {"NoPartial", CommandDecorate::SYN_NO_PARTIAL}
+            {"Extract", CommandDecorate::SYN_EXTRACT}, {"NoPartial", CommandDecorate::SYN_NO_PARTIAL},
+            {"Exclude", CommandDecorate::SYN_EXCLUDE}
     };
 }
 
@@ -272,11 +274,6 @@ namespace {
         }
         return deco_list;
     }
-
-    Term _json2bind(const Json::Value& node) {
-        if (node["type"].asString() != "term") throw IncreParseError("Unknown bind type " + node["type"].asString());
-        return json2term(node["content"]);
-    }
 }
 
 IncreProgram io::json2program(const Json::Value &node) {
@@ -289,8 +286,8 @@ IncreProgram io::json2program(const Json::Value &node) {
             configs[string2IncreConfig(command_node["name"].asString())] = _json2data(command_node["value"]);
         } else if (command_type == "bind") {
             auto var_name = command_node["name"].asString();
-            auto def = _json2bind(command_node["def"]);
-            commands.push_back(std::make_shared<CommandBind>(var_name, def, decos));
+            auto def = json2term(command_node["def"]);
+            commands.push_back(std::make_shared<CommandBindTerm>(var_name, false, def, decos));
         } else if (command_type == "type") {
             auto type_name = command_node["name"].asString();
             auto arity = command_node["arity"].asInt();
@@ -299,6 +296,14 @@ IncreProgram io::json2program(const Json::Value &node) {
                 cons_list.emplace_back(cons_node["name"].asString(), json2ty(cons_node["type"]));
             }
             commands.push_back(std::make_shared<CommandDef>(type_name, arity, cons_list, decos));
+        } else if (command_type == "func") {
+            auto var_name = command_node["name"].asString();
+            auto def = json2term(command_node["def"]);
+            commands.push_back(std::make_shared<CommandBindTerm>(var_name, true, def, decos));
+        } else if (command_type == "declare") {
+            auto var_name = command_node["name"].asString();
+            auto type = json2ty(command_node["ty"]);
+            commands.push_back(std::make_shared<CommandDeclare>(var_name, type, decos));
         }
     }
     return std::make_shared<IncreProgramData>(commands, configs);

@@ -16,19 +16,10 @@ namespace incre::autolifter {
     typedef std::pair<TypedProgram, TypedProgram> AuxProgram;
     typedef std::vector<AuxProgram> PLPRes;
 
-    class IncreIOExample {
-    public:
-        DataList local_input, global_input, full_input;
-        Data oup;
-        IncreIOExample(const DataList& _local, const DataList& _global, const Data& _oup);
-        DataList getAuxInput(const Data& compress);
-        std::string toString() const;
-    };
-
 
     class FExampleSpace {
         void addExample();
-        Data runCompress(int example_id, Program* prog);
+        Data runExtract(int example_id, Program* prog);
         Data runAux(int example_id, const Data& content, Program* prog);
 
         // cache
@@ -42,18 +33,18 @@ namespace incre::autolifter {
         void registerAuxCache(const AuxProgram& program, const DataList& oup_list);
         void registerOupCache(const PProgram& program, const std::vector<int>& path, const DataList& oup_list);
 
-        std::vector<std::pair<std::string, PType>> value_list, global_input_list;
-        std::vector<IncreIOExample> example_list;
-        Env* env;
-        IncreExamplePool* pool;
-        int current_example_id;
+        std::vector<std::string> global_names, local_names;
+        TypeList global_types, local_types;
 
-        int tau_id;
-        FExampleSpace(IncreExamplePool* _pool, int _tau_id, const PEnv& _env, AlignTypeInfoData* pass_info);
-        void switchTo(int example_id);
+        example::IncreExampleList example_list;
+        Env* env;
+        example::IncreExamplePool* pool;
+
+        int rewrite_id;
+        FExampleSpace(example::IncreExamplePool* _pool, int _rewrite_id, const PEnv& _env, const analysis::RewriteTypeInfo& pass_info);
 
         Data runAux(int example_id, const AuxProgram& aux);
-        std::string example2String(const IOExample& example);
+        // std::string example2String(const IOExample& example);
         std::string example2String(int id);
         Data runOup(int example_id, Program* program, const std::vector<int>& path);
 
@@ -75,7 +66,7 @@ namespace incre::autolifter {
     public:
         FExampleSpace* example_space;
         std::vector<GrammarEnumerateTool*> aux_grammar_list;
-        GrammarEnumerateTool* compress_grammar;
+        GrammarEnumerateTool* extract_grammar;
         std::vector<TypedProgramList> pre_res_list;
         TypedProgram target;
         int oup_compress_id;
@@ -90,7 +81,7 @@ namespace incre::autolifter {
 
         PLPTask(FExampleSpace* _example_space, const std::vector<GrammarEnumerateTool*>& _aux_grammar_list,
                 const std::vector<TypedProgramList>& _pre_res,
-                GrammarEnumerateTool* _compress_grammar, const TypedProgram& _target, const std::vector<int>& _path, int _oup_compress_id);
+                GrammarEnumerateTool* _extract_grammar, const TypedProgram& _target, const std::vector<int>& _path, int _oup_compress_id);
     };
 
     Data eliminateCompress(const Data& data);

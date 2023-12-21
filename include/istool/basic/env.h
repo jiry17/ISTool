@@ -37,6 +37,7 @@ public:
     PSemantics getSemantics(const std::string& name) const;
 
     void setExecuteInfoBuilder(ExecuteInfoBuilder* builder);
+    ExecuteInfoBuilder* getExecuteInfoBuilder() const;
     Data run(Program* program, const DataList& param_list, const FunctionContext &ctx={});
 
     int setRandomSeed(int seed);

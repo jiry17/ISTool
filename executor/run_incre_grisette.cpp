@@ -11,7 +11,7 @@
 #include "istool/incre/autolabel/incre_autolabel_constraint_solver.h"
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
-#include "istool/incre/grammar/incre_component_collector.h"
+#include "istool/incre/grammar/incre_grammar_builder.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include <iostream>
 #include "glog/logging.h"

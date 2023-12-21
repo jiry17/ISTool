@@ -19,16 +19,17 @@ bool CommandData::isDecrorateWith(CommandDecorate deco) const {
 
 CommandType CommandData::getType() const {return type;}
 
-CommandBind::CommandBind(const std::string &_name, const Term &_term, const DecorateSet &decos):
-        term(_term), CommandData(CommandType::BIND, _name, decos) {
+CommandBindTerm::CommandBindTerm(const std::string &_name, bool _is_func, const syntax::Term &_term,
+                                 const DecorateSet &decos): CommandData(CommandType::BIND_TERM, _name, decos),
+                                 is_func(_is_func), term(_term) {
 }
 
 CommandDef::CommandDef(const std::string &_name, int _param, const std::vector<std::pair<std::string, Ty>> &_cons_list,
                        const DecorateSet &decos): param(_param), cons_list(_cons_list), CommandData(CommandType::DEF_IND, _name, decos) {
 }
 
-CommandInput::CommandInput(const std::string &_name, const syntax::Ty &_type, const DecorateSet &decos):
-    CommandData(CommandType::INPUT, _name, decos), type(_type) {
+CommandDeclare::CommandDeclare(const std::string &_name, const syntax::Ty &_type, const DecorateSet &decos):
+                               CommandData(CommandType::DECLARE, _name, decos), type(_type) {
 }
 
 IncreProgramData::IncreProgramData(const CommandList &_commands, const IncreConfigMap &_config_map):
@@ -36,70 +37,82 @@ IncreProgramData::IncreProgramData(const CommandList &_commands, const IncreConf
 }
 
 void incre::IncreProgramWalker::walkThrough(IncreProgramData *program) {
-    preProcess(program);
+    initialize(program);
     for (auto& command: program->commands) {
+        preProcess(command.get());
         switch (command->getType()) {
-            case CommandType::BIND: {
-                auto* cb = dynamic_cast<CommandBind*>(command.get());
+            case CommandType::BIND_TERM: {
+                auto* cb = dynamic_cast<CommandBindTerm*>(command.get());
                 visit(cb); break;
             }
             case CommandType::DEF_IND: {
                 auto* cd = dynamic_cast<CommandDef*>(command.get());
                 visit(cd); break;
             }
-            case CommandType::INPUT: {
-                auto* ci = dynamic_cast<CommandInput*>(command.get());
+            case CommandType::DECLARE: {
+                auto* ci = dynamic_cast<CommandDeclare*>(command.get());
                 visit(ci); break;
             }
         }
+        postProcess(command.get());
     }
-    postProcess(program);
 }
 
-namespace {
-    class _DefaultContextBuilder: public IncreProgramWalker {
-    public:
-        IncreContext ctx;
-        std::unordered_map<std::string, EnvAddress*> address_map;
-    protected:
-        incre::semantics::IncreEvaluator* evaluator;
-        incre::types::IncreTypeChecker* checker;
-        incre::syntax::IncreTypeRewriter* rewriter;
-
-        virtual void visit(CommandBind* command) {
-            auto type = checker ? checker->bindTyping(command->term.get(), ctx) : nullptr;
-            auto res = evaluator ? evaluator->evaluate(command->term.get(), ctx) : Data();
-            if (type && rewriter) type = rewriter->rewrite(type);
-            if (type) LOG(INFO) << command->name << ": " << type->toString();
-            ctx = ctx.insert(command->name, Binding(false, type, res));
-        }
-
-        virtual void visit(CommandDef* command) {
-            for (auto& [cons_name, cons_type]: command->cons_list) {
-                ctx = ctx.insert(cons_name, Binding(true, cons_type, {}));
-            }
-        }
-
-        virtual void visit(CommandInput* command) {
-            ctx = ctx.insert(command->name, command->type);
-            if (address_map.find(command->name) != address_map.end()) {
-                LOG(FATAL) << "Duplicated global input " << command->name;
-            }
-            address_map[command->name] = ctx.start.get();
-        }
-    public:
-
-        _DefaultContextBuilder(incre::semantics::IncreEvaluator* _evaluator, incre::types::IncreTypeChecker* _checker,
-                               incre::syntax::IncreTypeRewriter* _rewriter):
-                ctx(nullptr), evaluator(_evaluator), checker(_checker), rewriter(_rewriter) {
-        }
-
-    };
+incre::DefaultContextBuilder::DefaultContextBuilder(incre::semantics::IncreEvaluator *_evaluator,
+                                                    incre::types::IncreTypeChecker *_checker):
+                                                    evaluator(_evaluator), checker(_checker), ctx(nullptr) {
 }
 
-IncreFullContext incre::buildContext(IncreProgramData *program, semantics::IncreEvaluator *evaluator,
-                                types::IncreTypeChecker *checker, syntax::IncreTypeRewriter* rewriter) {
-    auto* walker = new _DefaultContextBuilder(evaluator, checker, rewriter);
+void incre::DefaultContextBuilder::visit(CommandBindTerm *command) {
+    if (ctx.isContain(command->name)) {
+        auto* address = ctx.getAddress(command->name);
+        if (!address->bind.data.isNull()) LOG(FATAL) << "Duplicated declaration on name " << command->name;
+        if (checker) {
+            assert(address->bind.type);
+            checker->unify(address->bind.type, checker->typing(command->term.get(), ctx));
+        }
+        if (evaluator) {
+            address->bind.data = evaluator->evaluate(command->term.get(), ctx);
+        }
+    } else if (command->is_func) {
+        ctx = ctx.insert(command->name, Binding(false, {}, {}));
+        auto* address = ctx.getAddress(command->name);
+        if (checker) {
+            checker->pushLevel(); auto current_type = checker->getTmpVar();
+            address->bind.type = current_type;
+            checker->unify(current_type, checker->typing(command->term.get(), ctx));
+            checker->popLevel();
+            auto final_type = checker->generalize(current_type, command->term.get());
+            address->bind.type = final_type;
+        }
+        if (evaluator) {
+            auto v = evaluator->evaluate(command->term.get(), ctx);
+            address->bind.data = v;
+        }
+    } else {
+        Ty type = nullptr;
+        if (checker) {
+            checker->pushLevel(); type = checker->typing(command->term.get(), ctx);
+            checker->popLevel(); type = checker->generalize(type, command->term.get());
+        }
+        auto res = evaluator ? evaluator->evaluate(command->term.get(), ctx): Data();
+        ctx = ctx.insert(command->name, Binding(false, type, res));
+    }
+}
+
+void incre::DefaultContextBuilder::visit(CommandDef *command) {
+    for (auto& [cons_name, cons_type]: command->cons_list) {
+        ctx = ctx.insert(cons_name, Binding(true, cons_type, {}));
+    }
+}
+
+void incre::DefaultContextBuilder::visit(CommandDeclare *command) {
+    if (ctx.isContain(command->name)) LOG(FATAL) << "Duplicated name " << command->name;
+    ctx = ctx.insert(command->name, command->type);
+}
+
+IncreFullContext incre::buildContext(IncreProgramData *program, semantics::IncreEvaluator *evaluator, types::IncreTypeChecker *checker) {
+    auto* walker = new DefaultContextBuilder(evaluator, checker);
     walker->walkThrough(program);
     auto res = std::make_shared<IncreFullContextData>(walker->ctx, walker->address_map);
     delete walker;
@@ -107,13 +120,10 @@ IncreFullContext incre::buildContext(IncreProgramData *program, semantics::Incre
 }
 
 IncreFullContext incre::buildContext(IncreProgramData *program, const semantics::IncreEvaluatorGenerator &eval_gen,
-                                     const types::IncreTypeCheckerGenerator &type_checker_gen,
-                                     const syntax::IncreTypeRewriterGenerator &rewriter_gen) {
+                                     const types::IncreTypeCheckerGenerator &type_checker_gen) {
     auto *eval = eval_gen(); auto* type_checker = type_checker_gen();
-    auto* rewriter = rewriter_gen();
-    if (type_checker && !rewriter) LOG(FATAL) << "Missing type rewriter";
-    auto ctx = buildContext(program, eval, type_checker, rewriter);
-    delete eval; delete type_checker; delete rewriter;
+    auto ctx = buildContext(program, eval, type_checker);
+    delete eval; delete type_checker;
     return ctx;
 }
 
@@ -126,17 +136,17 @@ void IncreProgramRewriter::visit(CommandDef *command) {
     res->commands.push_back(std::make_shared<CommandDef>(command->name, command->param, cons_list, command->decos));
 }
 
-void IncreProgramRewriter::visit(CommandBind *command) {
+void IncreProgramRewriter::visit(CommandBindTerm *command) {
     auto new_term = term_rewriter->rewrite(command->term);
-    res->commands.push_back(std::make_shared<CommandBind>(command->name, new_term, command->decos));
+    res->commands.push_back(std::make_shared<CommandBindTerm>(command->name, command->is_func, new_term, command->decos));
 }
 
-void IncreProgramRewriter::visit(CommandInput *command) {
+void IncreProgramRewriter::visit(CommandDeclare *command) {
     auto new_type = type_rewriter->rewrite(command->type);
-    res->commands.push_back(std::make_shared<CommandInput>(command->name, new_type, command->decos));
+    res->commands.push_back(std::make_shared<CommandDeclare>(command->name, new_type, command->decos));
 }
 
-void IncreProgramRewriter::preProcess(IncreProgramData *program) {
+void IncreProgramRewriter::initialize(IncreProgramData *program) {
     res = std::make_shared<IncreProgramData>(CommandList(), program->config_map);
 }
 

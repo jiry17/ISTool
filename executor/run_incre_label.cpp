@@ -12,7 +12,7 @@
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
 #include "istool/incre/autolifter/incre_nonscalar_oc.h"
-#include "istool/incre/grammar/incre_component_collector.h"
+#include "istool/incre/grammar/incre_grammar_builder.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/sygus/theory/basic/string/string_value.h"
 #include <iostream>

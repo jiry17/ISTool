@@ -86,6 +86,10 @@ void Env::setExecuteInfoBuilder(ExecuteInfoBuilder *builder) {
     info_builder = builder;
 }
 
+ExecuteInfoBuilder *Env::getExecuteInfoBuilder() const {
+    return info_builder;
+}
+
 Data Env::run(Program *program, const DataList &param_list, const FunctionContext &ctx) {
     auto* info = info_builder->buildInfo(param_list, ctx);
     auto res = program->run(info);

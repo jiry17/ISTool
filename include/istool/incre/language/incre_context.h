@@ -6,6 +6,7 @@
 #define ISTOOL_CONTEXT_H
 
 #include "incre_syntax.h"
+#include "incre_rewriter.h"
 
 namespace incre {
     class EnvAddress {
@@ -19,8 +20,13 @@ namespace incre {
     class IncreContext {
     public:
         std::shared_ptr<EnvAddress> start;
-        syntax::Ty getType(const std::string& _name) const;
+        syntax::Ty getRawType(const std::string& _name) const;
+        syntax::Ty getFinalType(const std::string& _name, syntax::IncreTypeRewriter* rewriter) const;
         Data getData(const std::string& _name) const;
+        bool isContain(const std::string& name);
+        EnvAddress* getAddress(const std::string& name);
+        void printTypes() const;
+        void printDatas() const;
         IncreContext insert(const std::string& name, const syntax::Binding& binding) const;
         IncreContext(const std::shared_ptr<EnvAddress>& _start);
     };

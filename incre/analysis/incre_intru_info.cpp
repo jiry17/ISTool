@@ -57,7 +57,6 @@ syntax::Ty IncreInfoCollector::_typing(syntax::TmLabel *term, const IncreContext
 }
 
 syntax::Ty IncreInfoCollector::_typing(syntax::TmUnlabel *term, const IncreContext &ctx) {
-    LOG(INFO) << term->toString();
     auto body = typing(term->body.get(), ctx);
     auto content_type = getTmpVar();
     auto full_type = std::make_shared<TyLabeledCompress>(content_type, getNewCompressLabel());
@@ -144,16 +143,29 @@ namespace {
             command_list.push_back(std::make_shared<CommandDef>(command->name, command->param, cons_list, command->decos));
         }
 
-        virtual void visit(CommandBind* command) {
-            auto type = collector->typing(command->term.get(), ctx);
-            ctx = ctx.insert(command->name, type);
-            command_list.push_back(std::make_shared<CommandBind>(command->name, command->term, command->decos));
+        virtual void visit(CommandBindTerm* command) {
+            if (ctx.isContain(command->name)) {
+                collector->unify(ctx.getRawType(command->name), collector->typing(command->term.get(), ctx));
+            } else if (command->is_func) {
+                collector->pushLevel(); auto var = collector->getTmpVar();
+                ctx = ctx.insert(command->name, var);
+                auto* address = ctx.start.get();
+                collector->unify(var, collector->typing(command->term.get(), ctx));
+                collector->popLevel(); var = collector->generalize(var, command->term.get());
+                address->bind.type = var;
+            } else {
+                collector->pushLevel();
+                auto res = collector->typing(command->term.get(), ctx);
+                collector->popLevel();
+                ctx = ctx.insert(command->name, collector->generalize(res, command->term.get()));
+            }
+            command_list.push_back(std::make_shared<CommandBindTerm>(command->name, command->is_func, command->term, command->decos));
         }
 
-        virtual void visit(CommandInput* command) {
+        virtual void visit(CommandDeclare* command) {
             auto new_type = type_constructor->rewrite(command->type);
             ctx = ctx.insert(command->name, new_type);
-            command_list.push_back(std::make_shared<CommandInput>(command->name, new_type, command->decos));
+            command_list.push_back(std::make_shared<CommandDeclare>(command->name, new_type, command->decos));
         }
     };
 
@@ -164,7 +176,11 @@ namespace {
             labeled_term_rewriter->command_id += 1;
             IncreProgramRewriter::visit(command);
         }
-        virtual void visit(CommandBind* command) {
+        virtual void visit(CommandBindTerm* command) {
+            labeled_term_rewriter->command_id += 1;
+            IncreProgramRewriter::visit(command);
+        }
+        virtual void visit(CommandDeclare* command) {
             labeled_term_rewriter->command_id += 1;
             IncreProgramRewriter::visit(command);
         }
@@ -181,12 +197,12 @@ analysis::RewriteTypeInfo::RewriteTypeInfo(int _index, const IncreInputInfo &_in
 
 analysis::IncreInfoData::IncreInfoData(const IncreProgram &_program,
                                        const std::vector<RewriteTypeInfo> &_rewrite_info_list,
-                                       IncreExamplePool* _pool):
-                                       program(_program), rewrite_info_list(_rewrite_info_list), pool(_pool) {
+                                       example::IncreExamplePool* _example_pool,
+                                       const grammar::ComponentPool &_component_pool):
+                                       program(_program), rewrite_info_list(_rewrite_info_list),
+                                       example_pool(_example_pool), component_pool(_component_pool) {
 }
-analysis::IncreInfoData::~IncreInfoData() {
-    delete pool;
-}
+IncreInfoData::~IncreInfoData() {delete example_pool;}
 
 namespace {
     bool _isInclude(const IncreContext& ctx, const std::string& name) {
@@ -202,6 +218,7 @@ namespace {
     protected:
         virtual Ty _rewrite(TyArr* type, const Ty& _type) {
             is_valid = false;
+            return _type;
         }
     public:
         _ArrowTypeDetector() = default;
@@ -226,6 +243,10 @@ IncreInputInfo input_filter::buildInputInfo(const IncreContext &local_ctx, const
     }
     return info;
 }
+
+#include "istool/incre/grammar/incre_grammar_semantics.h"
+#include "istool/sygus/theory/basic/theory_semantics.h"
+#include "istool/ext/deepcoder/deepcoder_semantics.h"
 
 IncreInfo analysis::buildIncreInfo(IncreProgramData *program, Env* env) {
     auto* collector = new IncreInfoCollector();
@@ -261,21 +282,27 @@ IncreInfo analysis::buildIncreInfo(IncreProgramData *program, Env* env) {
 
     delete term_rewriter; delete type_rewriter; delete collector;
 
-    IncreExamplePool* pool;
+    IncreExamplePool* example_pool;
     {
         std::vector<std::vector<std::string>> cared_var_storage;
-        for (auto& info: rewrite_info_list) {
+        for (auto &info: rewrite_info_list) {
             std::vector<std::string> cared_var_list;
-            for (auto& inp_var_info: info.inp_types) {
+            for (auto &inp_var_info: info.inp_types) {
                 cared_var_list.push_back(inp_var_info.first);
             }
             cared_var_storage.push_back(cared_var_list);
         }
 
-        auto* generator = new SizeSafeValueGenerator(env, extractConsMap((res_program.get())));
-        pool = new IncreExamplePool(res_program, cared_var_storage, generator);
+        auto *generator = new SizeSafeValueGenerator(env, extractConsMap((res_program.get())));
+        example_pool = new IncreExamplePool(res_program, cared_var_storage, generator);
     }
 
-    return std::make_shared<IncreInfoData>(res_program, rewrite_info_list, pool);
-}
+    // Prepare the environment
+    theory::loadBasicSemantics(env, TheoryToken::CLIA);
+    ext::ho::loadDeepCoderSemantics(env);
+    incre::semantics::registerIncreExecutionInfo(env, example_pool->global_name_list);
 
+    auto component_pool = incre::grammar::collector::collectComponent(env, res_program.get());
+
+    return std::make_shared<IncreInfoData>(res_program, rewrite_info_list, example_pool, component_pool);
+}

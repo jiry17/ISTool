@@ -140,6 +140,8 @@ namespace incre::syntax {
         PtCons(const std::string& _name, const Pattern& _body);
         virtual std::string toString() const;
     };
+
+    std::vector<std::string> getVarsInPattern(PatternData* pattern);
 }
 
 namespace incre::syntax {
@@ -220,8 +222,8 @@ namespace incre::syntax {
 
     class TmProj: public TermData {
     public:
-        Term body; int index;
-        TmProj(const Term& _body, int _index);
+        Term body; int id, size;
+        TmProj(const Term& _body, int _id, int _size);
         virtual std::string toString() const;
     };
 

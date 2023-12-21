@@ -14,10 +14,8 @@ Solver * invoker::single::buildPolyGen(Specification *spec, Verifier *v, const I
     TermSolver* term_solver;
     auto* d = spec->env->getConstRef(solver::lia::KIsGurobiName, BuildData(Bool, true));
     if (d->isTrue()) {
-        LOG(INFO) << "Build Normal";
         term_solver = new PolyGenTermSolver(spec, stun_info.first, solver::lia::getLIASolver);
     } else {
-        LOG(INFO) << "Build Enumerate";
         term_solver = new EnumeratePolyGenTermSolver(spec, stun_info.first);
     }
     auto* cond_solver = new PolyGenConditionSolver(spec, stun_info.second, [](Specification* spec) -> PBESolver* {return new DNFLearner(spec);});

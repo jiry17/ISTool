@@ -92,7 +92,7 @@ Term IncreTermRewriter::_rewrite(TmFunc *term, const Term &_term) {
 }
 
 Term IncreTermRewriter::_rewrite(TmProj *term, const Term &_term) {
-    return std::make_shared<TmProj>(TermRewrite(body), term->index);
+    return std::make_shared<TmProj>(TermRewrite(body), term->id, term->size);
 }
 
 Term IncreTermRewriter::_rewrite(TmLabel *term, const Term &_term) {
@@ -130,3 +130,4 @@ Term IncreTermRewriter::_rewrite(TmRewrite *term, const Term &_term) {
 Term IncreTermRewriter::_rewrite(TmUnlabel *term, const Term &_term) {
     return std::make_shared<TmUnlabel>(TermRewrite(body));
 }
+

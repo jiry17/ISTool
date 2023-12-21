@@ -11,11 +11,11 @@
 
 namespace incre {
     enum class CommandType {
-        BIND, DEF_IND, INPUT
+        BIND_TERM, DEF_IND, DECLARE
     };
 
     enum class CommandDecorate {
-        INPUT, START, SYN_EXTRACT, SYN_COMBINE, SYN_COMPRESS, SYN_NO_PARTIAL, TERM_NUM
+        INPUT, START, SYN_EXTRACT, SYN_COMBINE, SYN_COMPRESS, SYN_EXCLUDE, SYN_NO_PARTIAL, TERM_NUM
     };
 
     typedef std::unordered_set<CommandDecorate> DecorateSet;
@@ -33,10 +33,11 @@ namespace incre {
     typedef std::shared_ptr<CommandData> Command;
     typedef std::vector<Command> CommandList;
 
-    class CommandBind: public CommandData {
+    class CommandBindTerm: public CommandData {
     public:
         syntax::Term term;
-        CommandBind(const std::string& _name, const syntax::Term& _term, const DecorateSet& decos);
+        bool is_func;
+        CommandBindTerm(const std::string& _name, bool _is_func, const syntax::Term& _term, const DecorateSet& decos);
     };
 
     typedef std::vector<std::pair<std::string, syntax::Ty>> IndConstructorInfo;
@@ -47,10 +48,10 @@ namespace incre {
         CommandDef(const std::string& _name, int _param, const IndConstructorInfo& _cons_list, const DecorateSet& decos);
     };
 
-    class CommandInput: public CommandData {
+    class CommandDeclare: public CommandData {
     public:
         syntax::Ty type;
-        CommandInput(const std::string& _name, const syntax::Ty& _type, const DecorateSet& decos);
+        CommandDeclare(const std::string& _name, const syntax::Ty& _type, const DecorateSet& decos);
     };
 
     enum class IncreConfig {
@@ -61,10 +62,11 @@ namespace incre {
         SAMPLE_INT_MIN, /*Int Min of Sample, Default -5*/
         NON_LINEAR, /*Whether consider * in synthesis, default false*/
         ENABLE_FOLD, /*Whether consider `fold` operator on data structures in synthesis, default false*/
-        TERM_NUM, /* Number of terms considered by PolyGen*/
-        CLAUSE_NUM, /* Number of terms considered by PolyGen*/
+        TERM_NUM, /*Number of terms considered by PolyGen*/
+        CLAUSE_NUM, /*Number of terms considered by PolyGen*/
         PRINT_ALIGN, /*Whether print align results to the result*/
-        THREAD_NUM /*The number of threads available for collecting examples*/
+        THREAD_NUM, /*The number of threads available for collecting examples*/
+        SLOW_COMBINE /*Whether to ignore the O(1) time limit of sketch holes*/
     };
 
     typedef std::unordered_map<IncreConfig, Data> IncreConfigMap;
@@ -89,6 +91,7 @@ namespace incre {
         extern const std::string KSampleIntMaxName;
         extern const std::string KPrintAlignName;
         extern const std::string KThreadNumName;
+        extern const std::string KSlowCombineName;
 
         IncreConfigMap buildDefaultConfigMap();
         void applyConfig(IncreProgramData* program, Env* env);
@@ -97,22 +100,36 @@ namespace incre {
     class IncreProgramWalker {
     protected:
         virtual void visit(CommandDef* command) = 0;
-        virtual void visit(CommandBind* command) = 0;
-        virtual void visit(CommandInput* command) = 0;
-        virtual void preProcess(IncreProgramData* program) {}
-        virtual void postProcess(IncreProgramData* program) {}
+        virtual void visit(CommandBindTerm* command) = 0;
+        virtual void visit(CommandDeclare* command) = 0;
+        virtual void initialize(IncreProgramData* program) {}
+        virtual void preProcess(CommandData* program) {}
+        virtual void postProcess(CommandData* program) {}
     public:
         void walkThrough(IncreProgramData* program);
         virtual ~IncreProgramWalker() = default;
     };
 
-    IncreFullContext buildContext(IncreProgramData* program, semantics::IncreEvaluator* evaluator, types::IncreTypeChecker* checker, syntax::IncreTypeRewriter* rewriter);
+    class DefaultContextBuilder: public IncreProgramWalker {
+    public:
+        IncreContext ctx;
+        std::unordered_map<std::string, EnvAddress*> address_map;
+        DefaultContextBuilder(incre::semantics::IncreEvaluator* _evaluator, incre::types::IncreTypeChecker* _checker);
+        virtual ~DefaultContextBuilder() = default;
+    protected:
+        incre::semantics::IncreEvaluator* evaluator;
+        incre::types::IncreTypeChecker* checker;
+        virtual void visit(CommandBindTerm* command);
+        virtual void visit(CommandDef* command);
+        virtual void visit(CommandDeclare* command);
+    };
+
+    IncreFullContext buildContext(IncreProgramData* program, semantics::IncreEvaluator* evaluator, types::IncreTypeChecker* checker);
 
 #define BuildGen(name) []{return new name();}
     IncreFullContext buildContext(IncreProgramData* program,
                               const semantics::IncreEvaluatorGenerator& = [](){return nullptr;},
-                              const types::IncreTypeCheckerGenerator& = [](){return nullptr;},
-                              const syntax::IncreTypeRewriterGenerator& = [](){return nullptr;});
+                              const types::IncreTypeCheckerGenerator& = [](){return nullptr;});
 }
 
 namespace incre::syntax {
@@ -121,9 +138,9 @@ namespace incre::syntax {
         IncreTypeRewriter* type_rewriter;
         IncreTermRewriter* term_rewriter;
         virtual void visit(CommandDef* command);
-        virtual void visit(CommandBind* command);
-        virtual void visit(CommandInput* command);
-        virtual void preProcess(IncreProgramData* program);
+        virtual void visit(CommandBindTerm* command);
+        virtual void visit(CommandDeclare* command);
+        virtual void initialize(IncreProgramData* program);
     public:
         IncreProgram res;
         IncreProgramRewriter(IncreTypeRewriter* _type_rewriter, IncreTermRewriter* _term_rewriter);

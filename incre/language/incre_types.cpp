@@ -107,9 +107,18 @@ namespace {
             _collectLocalVars(subtype.get(), local_vars, level);
         }
     }
+
+    bool _isInvolveRewrite(TermData* term) {
+        if (term->getType() == TermType::REWRITE) return true;
+        for (auto& sub: syntax::getSubTerms(term)) {
+            if (_isInvolveRewrite(sub.get())) return true;
+        }
+        return false;
+    }
 }
 
-syntax::Ty DefaultIncreTypeChecker::generalize(const syntax::Ty &x) {
+syntax::Ty DefaultIncreTypeChecker::generalize(const syntax::Ty &x, TermData* term) {
+    if (_isInvolveRewrite(term)) return x;
     std::unordered_set<int> local_vars;
     _collectLocalVars(x.get(), local_vars, _level);
     std::vector<int> vars;
@@ -151,13 +160,6 @@ syntax::Ty IncreTypeChecker::typing(syntax::TermData *term, const IncreContext &
     }
     postProcess(term, ctx, res);
     return res;
-}
-
-syntax::Ty IncreTypeChecker::bindTyping(syntax::TermData *term, const IncreContext &ctx) {
-    pushLevel();
-    auto res = typing(term, ctx);
-    popLevel();
-    return generalize(res);
 }
 
 #define TrivialUnificationCase(name) void DefaultIncreTypeChecker::_unify(syntax::Ty ##name *x, syntax::Ty## name *y, const syntax::Ty &_x, const syntax::Ty &_y) { \
@@ -221,25 +223,25 @@ syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmLet *term, const IncreCont
         auto new_ctx = ctx.insert(term->name, def_var);
         unify(def_var, GetType(def, new_ctx));
         popLevel();
-        new_ctx = ctx.insert(term->name, generalize(def_var));
+        new_ctx = ctx.insert(term->name, generalize(def_var, term->def.get()));
         return GetType(body, new_ctx);
     } else {
         pushLevel();
         GetTypeAssign(def, ctx);
         popLevel();
-        def = generalize(def);
+        def = generalize(def, term->def.get());
         auto new_ctx = ctx.insert(term->name, def);
         return GetType(body, new_ctx);
     }
 }
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmVar *term, const IncreContext &ctx) {
-    auto var_type = ctx.getType(term->name);
+    auto var_type = ctx.getRawType(term->name);
     return instantiate(var_type);
 }
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmCons *term, const IncreContext &ctx) {
-    auto cons_type = instantiate(ctx.getType(term->cons_name));
+    auto cons_type = instantiate(ctx.getRawType(term->cons_name));
     GetTypeAssign(body, ctx); auto res = getTmpVar();
     unify(cons_type, std::make_shared<TyArr>(body, res));
     return res;
@@ -253,9 +255,10 @@ syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmFunc *term, const IncreCon
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmProj *term, const IncreContext &ctx) {
     GetTypeAssign(body, ctx);
-    auto* tt = dynamic_cast<TyTuple*>(body.get());
-    if (!tt || tt->fields.size() < term->index) throw IncreTypingError("Type mismatch: the body of TmProj should be a tuple");
-    return tt->fields[term->index - 1];
+    TyList fields(term->size);
+    for (int i = 0; i < term->size; ++i) fields[i] = getTmpVar();
+    unify(body, std::make_shared<TyTuple>(fields));
+    return fields[term->id - 1];
 }
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmLabel *term, const IncreContext &ctx) {
@@ -289,7 +292,7 @@ DefaultIncreTypeChecker::processPattern(syntax::PatternData *pattern, const Incr
         }
         case PatternType::CONS: {
             auto* pc = dynamic_cast<PtCons*>(pattern);
-            auto cons_type = instantiate(ctx.getType(pc->name));
+            auto cons_type = instantiate(ctx.getRawType(pc->name));
             auto [body_type, new_ctx] = processPattern(pc->body.get(), ctx);
             auto res_type = getTmpVar(); unify(std::make_shared<TyArr>(body_type, res_type), cons_type);
             return {res_type, new_ctx};

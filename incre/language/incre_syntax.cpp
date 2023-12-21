@@ -58,9 +58,10 @@ std::string TmTuple::toString() const {
     }
     return res + "}";
 }
-TmProj::TmProj(const Term &_body, int _index): TermData(TermType::PROJ), body(_body), index(_index) {}
+TmProj::TmProj(const Term &_body, int _id, int _size):
+    TermData(TermType::PROJ), body(_body), id(_id), size(_size) {}
 std::string TmProj::toString() const {
-    return body->toString() + "." + std::to_string(index);
+    return body->toString() + "." + std::to_string(id) + "/" + std::to_string(size);
 }
 
 #define SubTermHead(name) TermList _getSubTerms(Tm ## name* term)
@@ -184,26 +185,30 @@ std::string TyCompress::toString() const {
     return "Packed " + body->toString();
 }
 
+namespace {
+#define SubTypeCase(name) case TypeType::TYPE_TOKEN_## name: return _getSubTypes(dynamic_cast<Ty ## name*>(x));
+#define SubTypeHead(name) TyList _getSubTypes(Ty ## name* x)
+#define EmptySubTypeCase(name) SubTypeHead(name) {return {};}
+
+    EmptySubTypeCase(Int);
+    EmptySubTypeCase(Bool);
+    EmptySubTypeCase(Unit);
+    SubTypeHead(Var) {
+        if (x->is_bounded()) {
+            return {x->get_bound_type()};
+        }
+        return {};
+    }
+    SubTypeHead(Tuple) {return x->fields;}
+    SubTypeHead(Ind) {return x->param_list;}
+    SubTypeHead(Arr) {return {x->inp, x->oup};}
+    SubTypeHead(Poly) {return {x->body};}
+    SubTypeHead(Compress) {return {x->body};}
+}
+
 TyList incre::syntax::getSubTypes(TypeData *x) {
     switch (x->getType()) {
-        case TypeType::VAR: {
-            auto* tv = dynamic_cast<TyVar*>(x);
-            if (tv->is_bounded()) {
-                return {tv->get_bound_type()};
-            }
-            return {};
-        }
-        case TypeType::INT:
-        case TypeType::BOOL:
-        case TypeType::UNIT: return {};
-        case TypeType::TUPLE: return dynamic_cast<TyTuple*>(x)->fields;
-        case TypeType::IND: return dynamic_cast<TyInd*>(x)->param_list;
-        case TypeType::ARR: {
-            auto* ta = dynamic_cast<TyArr*>(x);
-            return {ta->inp, ta->oup};
-        }
-        case TypeType::POLY: return {dynamic_cast<TyPoly*>(x)->body};
-        case TypeType::COMPRESS: return {dynamic_cast<TyCompress*>(x)->body};
+        TYPE_CASE_ANALYSIS(SubTypeCase);
     }
 }
 
@@ -219,4 +224,34 @@ Data Binding::getData() const {
 Ty Binding::getType() const {
     if (!type) LOG(FATAL) << "Ty is not bound";
     return type;
+}
+
+namespace {
+    void _getVarsInPattern(PatternData* pattern, std::vector<std::string>& names) {
+        switch (pattern->getType()) {
+            case PatternType::TUPLE: {
+                auto* pt = dynamic_cast<PtTuple*>(pattern);
+                for (auto& field: pt->fields) _getVarsInPattern(field.get(), names);
+                return;
+            }
+            case PatternType::VAR: {
+                auto* pv = dynamic_cast<PtVar*>(pattern);
+                names.push_back(pv->name);
+                if (pv->body) _getVarsInPattern(pv->body.get(), names);
+                return;
+            }
+            case PatternType::UNDERSCORE: return;
+            case PatternType::CONS: {
+                auto* pc = dynamic_cast<PtCons*>(pattern);
+                _getVarsInPattern(pc->body.get(), names);
+                return;
+            }
+        }
+    }
+}
+
+std::vector<std::string> incre::syntax::getVarsInPattern(PatternData *pattern) {
+    std::vector<std::string> names;
+    _getVarsInPattern(pattern, names);
+    return names;
 }

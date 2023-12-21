@@ -12,26 +12,14 @@ using namespace incre;
 using namespace incre::example;
 using namespace incre::syntax;
 
-IncreExampleData::IncreExampleData(int _rewrite_id, const std::unordered_map<std::string, Data> &_local,
-                                   const std::unordered_map<std::string, Data> &_global, const Data &_oup):
-                                   rewrite_id(_rewrite_id), local_inputs(_local), global_inputs(_global), oup(_oup) {
-}
-
-namespace {
-    std::string _dataMap2String(const std::unordered_map<std::string, Data>& datas) {
-        std::string res = "{"; bool is_start = true;
-        for (auto& [name, v]: datas) {
-            if (!is_start) res += ",";
-            is_start = false; res += name + ":" + v.toString();
-        }
-        return res + "}";
-    }
+IncreExampleData::IncreExampleData(int _rewrite_id, const DataList &_local, const DataList &_global, const Data &_oup):
+    rewrite_id(_rewrite_id), local_inputs(_local), global_inputs(_global), oup(_oup) {
 }
 
 std::string IncreExampleData::toString() const {
     std::string res = "#" + std::to_string(rewrite_id) + ": ";
-    res += _dataMap2String(local_inputs);
-    res += " " + _dataMap2String(global_inputs);
+    res += data::dataList2String(local_inputs);
+    res += " " + data::dataList2String(global_inputs);
     res += " -> " + oup.toString();
     return res;
 }

@@ -18,6 +18,7 @@ const std::string config::KVerifyBaseName = "OccamVerifier@ExampleNum";
 const std::string config::KMaxTermNumName = "PolyGen@MaxTermNum";
 const std::string config::KMaxClauseNumName = "DNF@MaxClauseName";
 const std::string config::KThreadNumName = "incre@thread-num";
+const std::string config::KSlowCombineName = "incre@slow-combine";
 
 namespace {
     const int KDefaultDataSizeLimit = 10;
@@ -31,6 +32,7 @@ namespace {
     const int KDefaultMaxTermNum = 4;
     const int KDefaultMaxClauseNum = 5;
     const int KDefaultThreadNum = 4;
+    const bool KDefaultSlowCombine = false;
 
 }
 
@@ -48,7 +50,8 @@ IncreConfigMap config::buildDefaultConfigMap() {
             {IncreConfig::VERIFY_BASE, BuildData(Int, KDefaultVerifyBase)},
             {IncreConfig::TERM_NUM, BuildData(Int, KDefaultMaxTermNum)},
             {IncreConfig::CLAUSE_NUM, BuildData(Int, KDefaultMaxClauseNum)},
-            {IncreConfig::THREAD_NUM, BuildData(Int, KDefaultThreadNum)}
+            {IncreConfig::THREAD_NUM, BuildData(Int, KDefaultThreadNum)},
+            {IncreConfig::SLOW_COMBINE, BuildData(Bool, KDefaultSlowCombine)}
     };
 }
 
@@ -66,6 +69,7 @@ namespace {
             case IncreConfig::TERM_NUM: return config::KMaxTermNumName;
             case IncreConfig::CLAUSE_NUM: return config::KMaxClauseNumName;
             case IncreConfig::THREAD_NUM: return config::KThreadNumName;
+            case IncreConfig::SLOW_COMBINE: return config::KSlowCombineName;
         }
     }
 }

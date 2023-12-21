@@ -10,23 +10,23 @@
 namespace incre {
 
     struct IncreSolution {
-        TyList compress_type_list;
-        TermList align_list;
-        TermList repr_list;
-        IncreSolution(const TyList& _compress_type_list, const TermList& align_list, const TermList& repr_list);
+        syntax::TyList type_results;
+        syntax::TermList term_results;
+        syntax::TermList repr_list;
+        IncreSolution(const syntax::TyList& _type_results, const syntax::TermList& _term_results, const syntax::TermList& _repr_list);
         IncreSolution() = default;
         void print() const;
     };
 
     class IncreSolver {
     public:
-        IncreInfo* info;
-        IncreSolver(IncreInfo* _info);
+        analysis::IncreInfo info;
+        IncreSolver(const analysis::IncreInfo& _info);
         virtual IncreSolution solve() = 0;
         virtual ~IncreSolver() = default;
     };
 
-    IncreProgram rewriteWithIncreSolution(ProgramData* program, const IncreSolution& solution, Env* env, bool is_mark = false);
+    IncreProgram rewriteWithIncreSolution(IncreProgramData* program, const IncreSolution& solution);
 }
 
 #endif //ISTOOL_INCRE_SOLVER_H

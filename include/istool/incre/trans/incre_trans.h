@@ -46,7 +46,7 @@ namespace incre::trans {
 
     PType typeFromIncre(syntax::TypeData* type);
     syntax::Ty typeToIncre(Type* type);
-    syntax::Term termToIncre(Program* program, const syntax::TermList& inps);
+    std::string operatorNameToIncre(const std::string& name);
 }
 
 #endif //ISTOOL_TANS_H

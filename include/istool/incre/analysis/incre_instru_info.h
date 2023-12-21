@@ -6,6 +6,7 @@
 #define ISTOOL_INCRE_INFO_H
 
 #include "istool/incre/language/incre_program.h"
+#include "istool/incre/grammar/incre_grammar_builder.h"
 #include "incre_instru_types.h"
 #include "incre_instru_runtime.h"
 
@@ -43,8 +44,10 @@ namespace incre::analysis {
     public:
         IncreProgram program;
         std::vector<RewriteTypeInfo> rewrite_info_list;
-        example::IncreExamplePool* pool;
-        IncreInfoData(const IncreProgram& _program, const std::vector<RewriteTypeInfo>& _rewrite_info_list, example::IncreExamplePool* pool);
+        example::IncreExamplePool* example_pool;
+        grammar::ComponentPool component_pool;
+        IncreInfoData(const IncreProgram& _program, const std::vector<RewriteTypeInfo>& _rewrite_info_list,
+                      example::IncreExamplePool* example_pool, const grammar::ComponentPool& component_pool);
         ~IncreInfoData();
     };
 

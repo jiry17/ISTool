@@ -14,9 +14,9 @@
 namespace incre::example {
     struct IncreExampleData {
         int rewrite_id;
-        std::unordered_map<std::string, Data> local_inputs, global_inputs;
+        DataList local_inputs, global_inputs;
         Data oup;
-        IncreExampleData(int _rewrite_id, const std::unordered_map<std::string, Data>& _local, const std::unordered_map<std::string, Data>& _global, const Data& _oup);
+        IncreExampleData(int _rewrite_id, const DataList& _local, const DataList& _global, const Data& _oup);
         std::string toString() const;
         virtual ~IncreExampleData() = default;
     };
@@ -66,14 +66,16 @@ namespace incre::example {
     public:
         std::vector<IncreExampleList> example_pool;
         std::vector<std::vector<std::string>> cared_vars;
-        std::unordered_map<std::string, Data> current_global;
+        std::vector<std::string> global_name;
+        DataList current_global;
         IncreFullContext ctx;
         IncreExampleCollectionEvaluator* eval;
         std::unordered_map<std::string, EnvAddress*> global_address_map;
 
-        IncreExampleCollector(IncreProgramData* program, const std::vector<std::vector<std::string>>& cared_vars);
-        void add(int rewrite_id, const std::unordered_map<std::string, Data>& local_inp, const Data& oup);
-        virtual void collect(const syntax::Term& start, const std::unordered_map<std::string, Data>& global);
+        IncreExampleCollector(IncreProgramData* program, const std::vector<std::vector<std::string>>& cared_vars,
+                              const std::vector<std::string>& _global_name);
+        void add(int rewrite_id, const DataList& local_inp, const Data& oup);
+        virtual void collect(const syntax::Term& start, const DataList& global);
         void clear();
         virtual ~IncreExampleCollector();
     };
@@ -86,13 +88,14 @@ namespace incre::example {
         std::vector<bool> is_finished;
         int thread_num;
 
-        std::vector<std::pair<std::string, syntax::Ty>> global_input_list;
         std::vector<std::pair<std::string, syntax::TyList>> start_list;
         std::vector<std::unordered_set<std::string>> existing_example_set;
     public:
+        std::vector<std::string> global_name_list;
+        syntax::TyList global_type_list;
         std::vector<IncreExampleList> example_pool;
 
-        std::pair<syntax::Term, std::unordered_map<std::string, Data>> generateStart();
+        std::pair<syntax::Term, DataList> generateStart();
         IncreExamplePool(const IncreProgram& _program, const std::vector<std::vector<std::string>>& _cared_vars, IncreDataGenerator* _g);
         ~IncreExamplePool();
         void merge(int rewrite_id, IncreExampleCollector* collector, TimeGuard* guard);

@@ -4,7 +4,6 @@
 
 #include "istool/incre/trans/incre_trans.h"
 #include "istool/ext/deepcoder/data_type.h"
-#include "istool/ext/deepcoder/deepcoder_semantics.h"
 #include "istool/incre/analysis/incre_instru_types.h"
 #include "glog/logging.h"
 
@@ -181,3 +180,22 @@ Ty incre::trans::typeToIncre(Type *type) {
     }
     LOG(FATAL) << "Unexpected type for translating to incre: " << type->getName();
 }
+
+
+namespace {
+#define RegisterOperator(name) {name, name}
+    const std::unordered_map<std::string, std::string> KOperatorNameMap = {
+            RegisterOperator("+"), RegisterOperator("*"), RegisterOperator("/"),
+            RegisterOperator("=="), RegisterOperator("<"), RegisterOperator("<="),
+            RegisterOperator(">"), RegisterOperator(">="), RegisterOperator("and"),
+            RegisterOperator("or"), RegisterOperator("not"), {"||", "or"},
+            {"&&", "and"}, {"!", "not"}, {"=", "=="}
+    };
+}
+
+std::string incre::trans::operatorNameToIncre(const std::string &name) {
+    auto it = KOperatorNameMap.find(name);
+    if (it == KOperatorNameMap.end()) LOG(FATAL) << "Unknown operator " << name;
+    return it->second;
+}
+

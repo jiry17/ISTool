@@ -131,8 +131,10 @@ Data DefaultEvaluator::_evaluate(syntax::TmProj *term, const IncreContext &ctx) 
     EvalAssign(body, ctx);
     auto* vt = dynamic_cast<VTuple*>(body.get());
     if (!vt) throw IncreSemanticsError("the evaluation result of TmProj body should be a tuple, but got " + body.toString());
-    if (vt->elements.size() < term->index) throw IncreSemanticsError("too small tuple " + body.toString() + ", expected a size of at least " + std::to_string(term->index));
-    return vt->elements[term->index - 1];
+    if (vt->elements.size() != term->size || vt->elements.size() < term->id) {
+        throw IncreSemanticsError("Incorrect tuple size, expected a type of size " + std::to_string(term->size) + ", but got " + body.toString());
+    }
+    return vt->elements[term->id - 1];
 }
 
 Data DefaultEvaluator::_evaluate(syntax::TmLabel *term, const IncreContext &ctx) {
@@ -207,7 +209,7 @@ Data DefaultEvaluator::_evaluate(syntax::TmMatch *term, const IncreContext &ctx)
             return evaluate(tm.get(), new_ctx);
         }
     }
-    throw IncreSemanticsError("no match case");
+    throw IncreSemanticsError("cannot match " + def.toString() + " with " + term->toString());
 }
 
 Data DefaultEvaluator::_evaluate(syntax::TmTuple *term, const IncreContext &ctx) {
