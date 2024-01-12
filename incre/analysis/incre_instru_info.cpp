@@ -68,12 +68,6 @@ IncreInfo* incre::buildIncreInfo(const IncreProgram &program, Env* env) {
             cared_vals[info->getId()].insert(name);
         }
     }
-    for (auto& val: cared_vals) {
-        for (auto& name: val) {
-            std::cout << name;
-        }
-        std::cout << std::endl;
-    }
 
     auto builder = getCollectorBuilder(CollectorType::ENV);
     auto* pool = new NoDuplicatedIncreExamplePool(labeled_program, env, cared_vals, builder);
@@ -182,4 +176,49 @@ std::pair<std::vector<std::string>, Grammar *> incre::buildFinalGrammar(IncreInf
     }
 
     return std::make_pair(param_names, grammar);
+}
+
+namespace {
+    void _extractCompressType(TyData* type, TyList& result) {
+        switch (type->getType()) {
+            case TyType::INT:
+            case TyType::VAR:
+            case TyType::BOOL:
+            case TyType::UNIT: return;
+            case TyType::TUPLE: {
+                auto* tt = dynamic_cast<TyTuple*>(type);
+                for (auto& sub_type: tt->fields) _extractCompressType(sub_type.get(), result);
+                return;
+            }
+            case TyType::ARROW: {
+                auto* ta = dynamic_cast<TyArrow*>(type);
+                _extractCompressType(ta->source.get(), result);
+                _extractCompressType(ta->target.get(), result);
+                return;
+            }
+            case TyType::IND: {
+                auto* ti = dynamic_cast<TyInductive*>(type);
+                for (auto& [name, cty]: ti->constructors) {
+                    _extractCompressType(cty.get(), result);
+                }
+                return;
+            }
+            case TyType::COMPRESS: {
+                auto* tc = dynamic_cast<TyLabeledCompress*>(type);
+                while (result.size() <= tc->id) result.emplace_back();
+                result[tc->id] = tc->content;
+                _extractCompressType(tc->content.get(), result);
+                return;
+            }
+        }
+    }
+}
+
+TyList incre::getCompressTypeList(IncreInfo *info) {
+    TyList result;
+    for (auto& align_info: info->align_infos) {
+        for (auto& [_, type]: align_info->inp_types) _extractCompressType(type.get(), result);
+        _extractCompressType(align_info->oup_type.get(), result);
+    }
+    return result;
 }

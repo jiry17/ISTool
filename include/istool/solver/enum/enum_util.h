@@ -14,6 +14,13 @@ public:
     virtual void clear();
 };
 
+class RuleBasedOptimizer: public Optimizer {
+    static const std::unordered_set<std::string> KComOpSet, KAssocOpSet;
+public:
+    virtual bool isDuplicated(const std::string& name, NonTerminal* nt, const PProgram& p);
+    virtual void clear();
+};
+
 class TrivialVerifier: public Verifier {
 public:
     virtual bool verify(const FunctionContext& info, Example* counter_example);

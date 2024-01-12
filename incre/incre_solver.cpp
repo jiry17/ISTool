@@ -25,7 +25,7 @@ IncreSolver::IncreSolver(IncreInfo *_info): info(_info) {}
 namespace {
 
     Ty _rewriteType(const Ty& type, const IncreSolution& solution);
-    Term _rewriteTerm(const Term& term, const IncreSolution& solution);
+    Term _rewriteTerm(const Term& term, const IncreSolution& solution, bool is_mark);
 
 #define TypeHead(name) Ty _rewriteTypeCase(Ty ## name* type, const Ty& _type, const IncreSolution& solution)
 #define TypeCase(name) return _rewriteTypeCase(dynamic_cast<Ty ## name*>(type.get()), type, solution)
@@ -67,14 +67,14 @@ namespace {
         }
     }
 
-#define TermHead(name) Term _rewriteTermCase(Tm ## name* term, const Term& _term, const IncreSolution& solution)
-#define TermCase(name) return _rewriteTermCase(dynamic_cast<Tm ## name*>(term.get()), term, solution)
-#define Rewrite(name) auto name = _rewriteTerm(term->name, solution)
+#define TermHead(name) Term _rewriteTermCase(Tm ## name* term, const Term& _term, const IncreSolution& solution, bool is_mark)
+#define TermCase(name) return _rewriteTermCase(dynamic_cast<Tm ## name*>(term.get()), term, solution, is_mark)
+#define Rewrite(name) auto name = _rewriteTerm(term->name, solution, is_mark)
 
     TermHead(Tuple) {
         TermList fields;
         for (const auto& sub_term: term->fields) {
-            fields.push_back(_rewriteTerm(sub_term, solution));
+            fields.push_back(_rewriteTerm(sub_term, solution, is_mark));
         }
         return std::make_shared<TmTuple>(fields);
     }
@@ -102,20 +102,23 @@ namespace {
         Rewrite(def);
         std::vector<std::pair<Pattern, Term>> cases;
         for (const auto& [pattern, sub_term]: term->cases) {
-            cases.emplace_back(pattern, _rewriteTerm(sub_term, solution));
+            cases.emplace_back(pattern, _rewriteTerm(sub_term, solution, is_mark));
         }
         return std::make_shared<TmMatch>(def, cases);
     }
     TermHead(LabeledAlign) {
         assert(term);
-        return solution.align_list[term->id];
+        auto res = solution.align_list[term->id];
+        if (is_mark) {
+            return std::make_shared<TmAlign>(res);
+        } else return res;
     }
     TermHead(Fix) {
         Rewrite(content);
         return std::make_shared<TmFix>(content);
     }
 
-    Term _rewriteTerm(const Term& term, const IncreSolution& solution) {
+    Term _rewriteTerm(const Term& term, const IncreSolution& solution, bool is_mark) {
         switch (term->getType()) {
             case TermType::TUPLE: TermCase(Tuple);
             case TermType::VAR:
@@ -136,7 +139,7 @@ namespace {
         }
     }
 
-    Binding _rewriteBinding(BindingData* binding, const IncreSolution& solution) {
+    Binding _rewriteBinding(BindingData* binding, const IncreSolution& solution, bool is_mark) {
         switch (binding->getType()) {
             case BindingType::TYPE: {
                 auto* tb = dynamic_cast<TypeBinding*>(binding);
@@ -144,7 +147,7 @@ namespace {
             }
             case BindingType::TERM: {
                 auto* tb = dynamic_cast<TermBinding*>(binding);
-                return std::make_shared<TermBinding>(_rewriteTerm(tb->term, solution));
+                return std::make_shared<TermBinding>(_rewriteTerm(tb->term, solution, is_mark));
             }
             case BindingType::VAR: {
                 auto* tb = dynamic_cast<VarTypeBinding*>(binding);
@@ -154,7 +157,7 @@ namespace {
         }
     }
 
-    Command _rewriteCommand(CommandData* command, const IncreSolution& solution) {
+    Command _rewriteCommand(CommandData* command, const IncreSolution& solution, bool is_mark) {
         switch (command->getType()) {
             case CommandType::IMPORT:
                 LOG(FATAL) << "Unsupport command IMPORT";
@@ -164,16 +167,16 @@ namespace {
             }
             case CommandType::BIND: {
                 auto* bc = dynamic_cast<CommandBind*>(command);
-                return std::make_shared<CommandBind>(bc->name, _rewriteBinding(bc->binding.get(), solution), command->decorate_set);
+                return std::make_shared<CommandBind>(bc->name, _rewriteBinding(bc->binding.get(), solution, is_mark), command->decorate_set);
             }
         }
     }
 }
 
-IncreProgram incre::rewriteWithIncreSolution(ProgramData *program, const IncreSolution &solution, Env* env) {
+IncreProgram incre::rewriteWithIncreSolution(ProgramData *program, const IncreSolution &solution, Env* env, bool is_mark) {
     CommandList res;
     for (const auto& command: program->commands) {
-        res.push_back(_rewriteCommand(command.get(), solution));
+        res.push_back(_rewriteCommand(command.get(), solution, is_mark));
     }
     LOG(INFO) << env->getConstRef(config_name::KPrintAlignName, BuildData(Bool, false))->toString() << " " << solution.repr_list.size();
     if (env->getConstRef(config_name::KPrintAlignName, BuildData(Bool, false))->isTrue()) {

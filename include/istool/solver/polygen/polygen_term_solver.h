@@ -56,6 +56,26 @@ namespace polygen {
     };
 }
 
+class EnumeratePolyGenTermSolver: public TermSolver {
+public:
+    std::vector<polygen::AssignmentInfo> info_pool;
+    IOExampleSpace* example_space;
+    IOExampleList previous_example_list;
+
+    double KRelaxTimeOut, KRelaxFactor;
+    std::vector<int> term_num_list;
+    void relax(TimeGuard* guard);
+    int KMaxTermNum;
+
+    void updateInfo();
+    void updateExamples(const ExampleList& example_list);
+    std::vector<int> getUsefulTermIndex(const std::vector<int>& current, const Bitset& B);
+    std::vector<int> search(int num, const std::vector<int>& index_list, const Bitset& full, int remain_num, std::unordered_map<std::string, std::vector<int>>& cache, TimeGuard* guard);
+
+    ProgramList synthesisTerms(const ExampleList& example_list, TimeGuard* guard = nullptr);
+    EnumeratePolyGenTermSolver(Specification* spec, const PSynthInfo& info);
+};
+
 class PolyGenTermSolver: public TermSolver {
     // aux functions
     std::vector<polygen::TermSolverCache*> cache;

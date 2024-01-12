@@ -24,22 +24,19 @@ gen = fix (
   end
 );
 
-getbest =
-let sumw = fix (
+getbest = let sumw = fix (
   \f: ItemList -> Int. \xs: ItemList.
   match xs with
     nil _ -> 0
   | cons {h, t} -> + h.1 (f t)
   end
-) in
-let sumv = fix (
+) in let sumv = fix (
   \f: ItemList -> Int. \xs: ItemList.
   match xs with
     nil _ -> 0
   | cons {h, t} -> + h.2 (f t)
   end
-) in
-\lim: Int. fix (
+) in \lim: Int. fix (
   \f: PlanList -> Int. \ps: PlanList.
   match ps with
     consPlan {p, t} ->

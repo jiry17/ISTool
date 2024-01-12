@@ -175,6 +175,18 @@ namespace {
     }
 }
 
+namespace {
+    int _getIncreTermSize(Program* program) {
+        int res = program->sub_list.size() + 1;
+        if (program->semantics->getName() == "prod") res = 1;
+        if (program->semantics->getName().substr(0, 6) == "access") res = 1;
+        for (auto& sub_program: program->sub_list) {
+            res += _getIncreTermSize(sub_program.get());
+        }
+        return res;
+    }
+}
+
 autolifter::PLPRes IncreAutoLifterSolver::solvePLPTask(AlignTypeInfoData *info, const TypedProgram &target, const OutputUnit& unit) {
     auto* space = example_space_list[info->getId()];
 
@@ -212,24 +224,49 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
         unit_storage.push_back(_unfoldOutputType(align_info->oup_type));
     }
 
-    for (auto& align_info: info->align_infos) {
-        for (auto& unit: unit_storage[align_info->getId()]) {
-            auto *oup_ty = unit.unit_type.get();
-            if (!dynamic_cast<TyCompress *>(oup_ty)) {
-                PLPRes res = solvePLPTask(align_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr}, unit);
-                auto related = record_res(align_info->getId(), res, unit.path);
-                align_result_records[align_info->getId()][unit.path].push_back(related);
+    {
+        global::printStageResult("  Iteration #0");
+        int sub_task_num = 0;
+        for (auto &align_info: info->align_infos) {
+            for (auto &unit: unit_storage[align_info->getId()]) {
+                auto *oup_ty = unit.unit_type.get();
+                if (!dynamic_cast<TyCompress *>(oup_ty)) sub_task_num += 1;
+            }
+        }
+        int sub_task_id = 0;
+        for (auto &align_info: info->align_infos) {
+            for (auto &unit: unit_storage[align_info->getId()]) {
+                auto *oup_ty = unit.unit_type.get();
+                if (!dynamic_cast<TyCompress *>(oup_ty)) {
+                    global::printStageResult("    Solving subtask " + std::to_string(++sub_task_id) + "/" +
+                                             std::to_string(sub_task_num));
+                    PLPRes res = solvePLPTask(align_info.get(), {incre::typeFromIncre(unit.unit_type), nullptr},
+                                              unit);
+                    auto related = record_res(align_info->getId(), res, unit.path);
+                    align_result_records[align_info->getId()][unit.path].push_back(related);
+                }
             }
         }
     }
 
     bool is_changed = true;
+    int iteration_id = 0;
     while (is_changed) {
         is_changed = false;
+        global::printStageResult("  Iteration #" + std::to_string(++iteration_id));
+        int sub_task_num = 0; std::vector<int> extend_limit;
+        for (const auto& f_res: f_res_list) {
+            extend_limit.push_back(f_res.component_list.size());
+            for (const auto& component: f_res.component_list) {
+                if (!component.is_extended) sub_task_num++;
+            }
+        }
+        int sub_task_id = 0;
         for (int compress_id = 0; compress_id < f_res_list.size(); ++compress_id) {
-            for (int i = 0; i < f_res_list[compress_id].component_list.size(); ++i) {
+            for (int i = 0; i < extend_limit[compress_id]; ++i) {
                 auto component = f_res_list[compress_id].component_list[i];
                 if (component.is_extended) continue;
+                global::printStageResult("    Solving subtask " + std::to_string(++sub_task_id) + "/" + std::to_string(sub_task_num));
                 is_changed = true;
                 f_res_list[compress_id].component_list[i].is_extended = true;
                 for (auto& align_info: info->align_infos) {
@@ -263,13 +300,21 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
     auto align_total_size = 0;
     for (auto& f_res: f_res_list) {
         if (f_res.component_list.size() > 1) align_total_size++;
-        for (auto& component: f_res.component_list) align_total_size += component.program.second->size();
+        for (auto& component: f_res.component_list) {
+            auto size = _getIncreTermSize(component.program.second.get());
+            //LOG(INFO) << "align size :" << component.program.second->toString() << " " << size;
+            align_total_size += size;
+        }
     }
     global::recorder.record("align-size", align_total_size);
     auto extract_size = 0;
     for (auto& compress_res: compress_res_list) {
         if (compress_res.compress_list.size() > 1) extract_size++;
-        for (auto& component: compress_res.compress_list) extract_size += component.second->size();
+        for (auto& component: compress_res.compress_list) {
+            auto size = _getIncreTermSize(component.second.get());
+            //LOG(INFO) << "comb size :" << component.second->toString() << " " << size;
+            extract_size += size;
+        }
     }
     global::recorder.record("extract-size", extract_size);
 }
@@ -278,9 +323,11 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
 
 IncreSolution IncreAutoLifterSolver::solve() {
     global::recorder.start("syn-align");
+    global::printStageResult("Stage 1/2: synthesizing the representation function.");
     solveAuxiliaryProgram();
     global::recorder.end("syn-align");
     global::recorder.start("syn-comb");
+    global::printStageResult("Stage 2/2: synthesizing the combinator.");
     solveCombinators();
     global::recorder.end("syn-comb");
     if (env->getConstRef(config_name::KPrintAlignName, BuildData(Bool, false))->isTrue()) {

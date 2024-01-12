@@ -18,7 +18,7 @@ repr = fix (
     end
 );
 
-@Input x: Int;
+@Input xinp: Int;
 
 spec = fix (
   \f: List -> Int. \xs: List.
@@ -27,7 +27,7 @@ spec = fix (
   | cons {h, t} -> 
     let key = h.1 in
     let value = h.2 in
-    if (== x key) then + value (f t) else (f t)
+    if (== xinp key) then + value (f t) else (f t)
   end
 );
 

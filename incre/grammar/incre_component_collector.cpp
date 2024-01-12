@@ -540,7 +540,6 @@ namespace {
         auto* grammar = new Grammar(start_symbol, symbol_list, true);
         return grammar;
     }
-
     bool _isPrimaryType(Type* type) {
         return dynamic_cast<TBool*>(type) || dynamic_cast<TInt*>(type);
         /*auto* tp = dynamic_cast<TProduct*>(type);
@@ -551,13 +550,30 @@ namespace {
     bool _isCompressType(Type* type) {
         return dynamic_cast<TCompress*>(type);
     }
+    bool _isNonFunctionalType(Type* type) {
+        if (dynamic_cast<TArrow*>(type)) return false;
+        auto* tt = dynamic_cast<TProduct*>(type);
+        if (tt) {
+            for (auto& sub_type: tt->sub_types) {
+                if (_isNonFunctionalType(sub_type.get())) return false;
+            }
+        }
+        return true;
+    }
+    bool _isGeneralCompressType(Type* type) {
+        return _isNonFunctionalType(type) && !dynamic_cast<TProduct*>(type);
+    }
     bool _isCompressOrPrimaryType(Type* type) {
         return _isPrimaryType(type) || _isCompressType(type);
     }
 }
 
-Grammar *ComponentPool::buildAlignGrammar(const TypeList &inp_list) {
-    return _buildGrammar(inp_list, align_list, _isPrimaryType, nullptr);
+Grammar *ComponentPool::buildAlignGrammar(const TypeList &inp_list, bool _is_only_prime) {
+    if (_is_only_prime) {
+        return _buildGrammar(inp_list, align_list, _isPrimaryType, nullptr);
+    } else {
+        return _buildGrammar(inp_list, align_list, _isNonFunctionalType, nullptr);
+    }
 }
 
 Grammar *ComponentPool::buildCompressGrammar(const TypeList &inp_list, int command_id) {
@@ -681,9 +697,13 @@ ComponentPool incre::grammar::collector::getBasicComponentPool(Env* env) {
     }
 
     // insert const operator
-    auto ic = std::make_shared<ConstComponent>(theory::clia::getTInt(), (DataList){BuildData(Int, 0)},
-                                               [](Value* value)->bool {return dynamic_cast<IntValue*>(value);});
-    RegisterAll(ic);
+    auto ic_align = std::make_shared<ConstComponent>(theory::clia::getTInt(), (DataList){BuildData(Int, 0)},
+                                                        [](Value* value)->bool {return dynamic_cast<IntValue*>(value);});
+    RegisterComponent(align, ic_align);
+    auto ic = std::make_shared<ConstComponent>(theory::clia::getTInt(), (DataList){BuildData(Int, 0), BuildData(Int, 1)},
+                                                        [](Value* value)->bool {return dynamic_cast<IntValue*>(value);});
+    RegisterComponent(compress, ic);
+    RegisterComponent(comb, ic);
     auto ib = std::make_shared<ConstComponent>(type::getTBool(), (DataList){},
                                                [](Value* value) -> bool {return dynamic_cast<BoolValue*>(value);});
     RegisterAll(ib);

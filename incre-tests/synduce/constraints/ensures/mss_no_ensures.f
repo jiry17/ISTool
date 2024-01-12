@@ -1,4 +1,5 @@
 Config ExtraGrammar = "AutoLifter";
+Config SampleSize = 20;
 Inductive List = nil Unit | cons {Int, List};
 Inductive CList = cnil Unit | single Int | concat {CList, CList};
 

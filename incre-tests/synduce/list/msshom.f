@@ -1,4 +1,6 @@
 Config ExtraGrammar = "AutoLifter";
+Config SampleSize = 20;
+
 Inductive List = nil Unit | cons {Int, List};
 Inductive CList = cnil Unit | single Int | concat {CList, CList};
 
@@ -11,9 +13,9 @@ spec = \xs: List. (fix (
   | cons {hd, tl} ->
     let result = f tl in
     let new_sum = + hd result.1 in
-    let new_mts = max result.2 (+ hd result.1) in
+    let new_mts = max result.2 new_sum in
     let new_mps = max 0 (+ hd result.3) in
-    let new_mss = max result.4 (max 0 (+ result.3 hd)) in
+    let new_mss = max result.4 new_mps in
     {new_sum, new_mts, new_mps, new_mss}
   end
 ) xs).4;

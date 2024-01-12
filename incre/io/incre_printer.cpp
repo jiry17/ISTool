@@ -11,6 +11,7 @@
 
 using namespace incre;
 bool debug = false;
+bool align_mark = false;
 int floor_num = 0;
 
 namespace {
@@ -276,16 +277,25 @@ void incre::printTerm(const std::shared_ptr<TermData> &term) {
         if (need_bracket) std::cout << ")";
         std::cout << " ";
     } else if (term->getType() == TermType::ALIGN) {
-        auto* tm_align = dynamic_cast<TmAlign*>(term.get());
-        auto* labeled_align = dynamic_cast<TmLabeledAlign*>(term.get());
-        auto need_bracket = _isNeedBracket(tm_align->content->getType());
-        std::cout << "align";
-        if (labeled_align) std::cout << "@" << labeled_align->id;
-        std::cout << " ";
-        if (need_bracket) std::cout << "(";
-        printTerm(tm_align->content);
-        if (need_bracket) std::cout << ")";
-        std::cout << " ";
+        if (align_mark) {
+            auto *tm_align = dynamic_cast<TmAlign *>(term.get());
+            std::cout << "<mark>";
+            align_mark = false;
+            printTerm(tm_align->content);
+            align_mark = true;
+            std::cout << "</mark>";
+        } else {
+            auto *tm_align = dynamic_cast<TmAlign *>(term.get());
+            auto *labeled_align = dynamic_cast<TmLabeledAlign *>(term.get());
+            auto need_bracket = _isNeedBracket(tm_align->content->getType());
+            std::cout << "align";
+            if (labeled_align) std::cout << "@" << labeled_align->id;
+            std::cout << " ";
+            if (need_bracket) std::cout << "(";
+            printTerm(tm_align->content);
+            if (need_bracket) std::cout << ")";
+            std::cout << " ";
+        }
     } else {
         LOG(FATAL) << "Unknown term";
     }
@@ -296,10 +306,12 @@ void incre::printBinding(const std::shared_ptr<BindingData> &binding) {
     floor_num++;
     if (binding->getType() == BindingType::TYPE) {
         if (debug) std::cout << "[TYPE]" << std::endl;
+        std::cout << " = ";
         auto* type_binding = dynamic_cast<TypeBinding*>(binding.get());
         printTy(type_binding->type);
     } else if (binding->getType() == BindingType::TERM) {
         if (debug) std::cout << "[TERM]" << std::endl;
+        std::cout << " = ";
         auto* term_binding = dynamic_cast<TermBinding*>(binding.get());
         printTerm(term_binding->term);
         if (debug) std::cout << std::endl << "[Binding_TERM_term_END]" << std::endl;
@@ -310,6 +322,7 @@ void incre::printBinding(const std::shared_ptr<BindingData> &binding) {
         }
     } else if (binding->getType() == BindingType::VAR) {
         if (debug) std::cout << "[VAR]" << std::endl;
+        std::cout << " : ";
         auto* var_type_binding = dynamic_cast<VarTypeBinding*>(binding.get());
         printTy(var_type_binding->type);
     } else {
@@ -335,21 +348,27 @@ void incre::printCommand(const std::shared_ptr<CommandData> &command) {
     } else if (command->getType() == CommandType::BIND) {
         if (debug) std::cout << "[BIND]" << std::endl;
         auto* command_bind = dynamic_cast<CommandBind*>(command.get());
-        std::cout << command_bind->name << " = ";
+        std::cout << command_bind->name;
         printBinding(command_bind->binding);
         std::cout << ";" << std::endl;
     } else if (command->getType() == CommandType::DEF_IND) {
         if (debug) std::cout << "[DEF_IND]" << std::endl;
         auto* command_def = dynamic_cast<CommandDefInductive*>(command.get());
-        std::cout << "Inductive ";
-        printTy(command_def->_type);
+        auto* type = command_def->type;
+        std::cout << "Inductive " << type->name << " = ";
+        for (int i = 0; i < type->constructors.size(); ++i) {
+            if (i) std::cout << " | ";
+            std::cout << type->constructors[i].first << " ";
+            printTy(type->constructors[i].second);
+        }
         std::cout << ";" << std::endl;
     } else {
         LOG(FATAL) << "Unknown command";
     }
 }
 
-void incre::printProgram(const std::shared_ptr<ProgramData> &prog, const std::string &path) {
+void incre::printProgram(const std::shared_ptr<ProgramData> &prog, const std::string &path, bool is_align_mark) {
+    align_mark = is_align_mark;
     if (!path.empty()) {
         std::ofstream outFile(path);
         std::streambuf *cout_buf = std::cout.rdbuf();
@@ -368,5 +387,6 @@ void incre::printProgram(const std::shared_ptr<ProgramData> &prog, const std::st
             printCommand(command);
         }
     }
+    align_mark = false;
 }
 

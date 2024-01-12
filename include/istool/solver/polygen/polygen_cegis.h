@@ -9,18 +9,17 @@
 #include "polygen_condition_solver.h"
 
 class CEGISPolyGen: public VerifiedSolver {
-    PolyGenTermSolver* term_solver;
+    TermSolver* term_solver;
     PolyGenConditionSolver* cond_solver;
     IOExampleSpace* io_space;
 public:
-    CEGISPolyGen(Specification* spec, const PSynthInfo& term_info, const PSynthInfo& unify_info,
-            const PBESolverBuilder& domain_builder, const PBESolverBuilder& dnf_builder, Verifier* _v);
+    CEGISPolyGen(Specification* spec, TermSolver* _term_solver, PolyGenConditionSolver* _condition_solver, Verifier* _v);
     ~CEGISPolyGen();
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr);
 };
 
 class StagedCEGISPolyGen: public Solver {
-    PolyGenTermSolver* term_solver;
+    TermSolver* term_solver;
     PolyGenConditionSolver* cond_solver;
     IOExampleList example_list;
     int verify_pos;
@@ -29,8 +28,7 @@ class StagedCEGISPolyGen: public Solver {
     ProgramList synthesisTerms(TimeGuard* guard);
     PProgram unify(const ProgramList& term_list, TimeGuard* guard);
 public:
-    StagedCEGISPolyGen(Specification* spec, const PSynthInfo& term_info, const PSynthInfo& unify_info,
-                       const PBESolverBuilder& domain_builder, const PBESolverBuilder& dnf_builder);
+    StagedCEGISPolyGen(Specification* spec, TermSolver* _term_solver, PolyGenConditionSolver* _cond_solver);
     ~StagedCEGISPolyGen();
     virtual FunctionContext synthesis(TimeGuard* guard = nullptr);
 };

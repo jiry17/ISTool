@@ -20,7 +20,7 @@ al_error = 100;
 @Align al_minimum = al_fold al_min al_inf;
 @Align al_sum = al_fold al_plus 0;
 @Align al_length = al_fold (\a: Int. \b: Int. + b 1) 0;
-@Align @Extract al_head = \xs: List. match xs with nil _ -> al_error | cons {h, _} -> h end;
+@Align @Extract al_head = \xs: List. match xs with nil _ -> al_inf | cons {h, _} -> h end;
 @Align al_inc = \a: Int. + a 1;
 @Align al_dec = \a: Int. - a 1;
 @Align al_neg = \a: Int. - 0 a;
@@ -160,4 +160,4 @@ al_concat = \xs: List. \ys: List. (fix (
 @Align al_isodd = \a: Int. not (al_iseven a);
 @Align one = 1;
 @Align none = -1;
-@Combine al_error = \x: Int. or (== x al_error) (== x (- 0 al_error));
+/*@Combine al_error = \x: Int. or (== x al_error) (== x (- 0 al_error));*/

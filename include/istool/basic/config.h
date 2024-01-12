@@ -18,6 +18,8 @@ namespace config {
 
 namespace global {
     extern TimeRecorder recorder;
+    extern std::string KStageInfoPath;
+    void printStageResult(const std::string& info);
 }
 
 

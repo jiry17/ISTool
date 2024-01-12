@@ -19,6 +19,8 @@ public:
     Bitset(unsigned int n, bool c);
     int count() const;
     int size() const {return int(n);}
+    int getASize() const {return A.size();}
+    unsigned int accessA(int pos) const {return A[pos];}
     void append(unsigned int k);
     void set(unsigned int pos, unsigned int w);
     Bitset operator | (const Bitset& x) const;

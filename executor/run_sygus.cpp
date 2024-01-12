@@ -3,6 +3,7 @@
 //
 
 #include "istool/selector/split/splitor.h"
+#include "istool/solver/polygen/lia_solver.h"
 #include "istool/invoker/invoker.h"
 #include "istool/sygus/sygus.h"
 #include "istool/sygus/parser/parser.h"
@@ -26,10 +27,10 @@ int main(int argc, char** argv) {
         output_name = argv[2];
         solver_name = argv[3];
     } else {
-        solver_name = "obe";
+        solver_name = "maxflash";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/bv/PRE_icfp_gen_14.10.sl";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/mpg_guard2_non_half.sl";
-        benchmark_name = config::KSourcePath + "/tests/PRE_3_1000.sl";
+        benchmark_name = config::KSourcePath + "tests/1.sl";
         output_name = "/tmp/629453237.out";
     }
 
@@ -40,6 +41,7 @@ int main(int argc, char** argv) {
     auto *spec = parser::getSyGuSSpecFromFile(benchmark_name);
     auto* v = sygus::getVerifier(spec);
     spec->env->random_engine.seed(time(0));
+    spec->env->setConst(solver::lia::KIsGurobiName, BuildData(Bool, false));
 
     auto solver_token = invoker::string2TheoryToken(solver_name);
     auto* guard = new TimeGuard(2000);

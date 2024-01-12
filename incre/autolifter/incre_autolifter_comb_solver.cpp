@@ -7,6 +7,7 @@
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
 #include "istool/solver/autolifter/basic/streamed_example_space.h"
 #include "istool/incre/trans/incre_trans.h"
+#include "istool/incre/autolifter/incre_solver_util.h"
 #include "istool/invoker/invoker.h"
 #include "istool/solver/stun/stun.h"
 #include "glog/logging.h"
@@ -433,31 +434,6 @@ namespace {
         return res + "]";
     }
 
-    SolverConfig _getSolverToken(Type* oup_type) {
-        if (dynamic_cast<TBool*>(oup_type)) return {SolverToken::POLYGEN_CONDITION, {}};
-        if (dynamic_cast<TInt*>(oup_type)) {
-            invoker::multi::SolverBuilder obe_builder = [](Specification* spec, Verifier* v) {
-                auto split_info = solver::divideSpecForSTUN(spec->info_list[0]);
-                auto* term_spec = new Specification({split_info.first}, spec->env, spec->example_space);
-                return invoker::single::buildOBE(term_spec, v, {});
-            };
-            invoker::multi::SolverBuilder staged_polygen_solver = [](Specification* spec, Verifier* v) {
-                InvokeConfig config; config.set("is_staged", true);
-                return invoker::single::buildPolyGen(spec, v, config);
-            };
-            invoker::multi::SolverBuilder lia_solver = [](Specification* spec, Verifier* v) {
-                auto split_info = solver::divideSpecForSTUN(spec->info_list[0]);
-                auto* term_spec = new Specification({split_info.first}, spec->env, spec->example_space);
-                return invoker::single::buildLIASolver(term_spec, v, {});
-            };
-
-            InvokeConfig config;
-            config.set("solver_list", (std::vector<invoker::multi::SolverBuilder>){obe_builder, staged_polygen_solver, lia_solver});
-            return {SolverToken::MULTI_THREAD, config};
-        }
-        LOG(FATAL) << "Unsupported type " << oup_type->getName();
-    }
-
     RelatedComponents _getComponentList(const std::map<std::vector<int>, std::vector<RelatedComponents>>& records,
                                         const std::vector<int>& path) {
         {
@@ -503,7 +479,7 @@ namespace {
             auto oup_type = component_info.program.first;
             auto* grammar = solver->buildCombinatorGrammar(example_space->inp_type_list, oup_type, example_space->align_id);
 
-            auto solver_config = _getSolverToken(oup_type.get());
+            auto solver_config = incre::autolifter::util::getSolverToken(oup_type.get());
             PProgram main = _synthesis(grammar, component_example_list, example_space->env, solver_config, example_space->inp_type_list, related_indexes);
             /*LOG(INFO) << "Synthesize " << main->toString() << " from ";
             for (int i = 0; i < 10 && i < component_example_list.size(); ++i) {
@@ -521,7 +497,7 @@ namespace {
             auto res = component->tryBuildTerm(sem, sub_list);
             if (res) return res;
         }
-        if (sem->getName() == "unit") {
+        if (sem->getName() == "unit" || sem->getName() == "Unit") {
             auto* cs = dynamic_cast<ConstSemantics*>(sem.get());
             assert(cs);
             return std::make_shared<TmValue>(cs->w);
@@ -635,6 +611,7 @@ Term IncreAutoLifterSolver::synthesisCombinator(int align_id) {
 
 void IncreAutoLifterSolver::solveCombinators() {
     for (int pass_id = 0; pass_id < info->align_infos.size(); ++pass_id) {
+        global::printStageResult("  Synthesizing sketch hole " + std::to_string(pass_id + 1) + "/" + std::to_string(info->align_infos.size()));
         comb_list.push_back(synthesisCombinator(pass_id));
     }
     auto comb_size = 0;

@@ -3,6 +3,7 @@
 //
 
 #include <istool/ext/composed_semantics/composed_semantics.h>
+#include <iostream>
 #include "istool/ext/composed_semantics/composed_rule.h"
 #include "glog/logging.h"
 

@@ -1,6 +1,6 @@
 Config ExtraGrammar = "AutoLifter";
-Config VerifyBase = 3000;
-Config SampleSize = 15;
+Config ComposeNum = 4;
+Config SampleSize = 20;
 
 Inductive List = nil Unit | cons {Int, List};
 Tag = Int; Result = Compress List; NodeInfo = {Tag, Result};

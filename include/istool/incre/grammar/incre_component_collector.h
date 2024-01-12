@@ -11,6 +11,7 @@
 namespace incre::grammar {
     typedef std::vector<PSemantics> SymbolContext;
 
+
     class SymbolInfo {
     public:
         SymbolContext context;
@@ -136,7 +137,7 @@ namespace incre::grammar {
         ComponentPool();
         void print() const;
 
-        Grammar* buildAlignGrammar(const TypeList& inp_list);
+        Grammar* buildAlignGrammar(const TypeList& inp_list, bool is_only_prime = true);
         Grammar* buildCompressGrammar(const TypeList& inp_list, int command_id);
         Grammar* buildCombinatorGrammar(const TypeList& inp_list, const PType& oup_type, int command_id);
 
@@ -154,6 +155,7 @@ namespace incre::grammar {
         ComponentPool getBasicComponentPool(Env* env);
         ComponentPool collectExtraOperators(EnvContext* env_ctx, TypeContext* ctx, const std::string& extra_name);
         void loadExtraOperator(EnvContext* env_ctx, TypeContext* ctx, Env* env, const std::string& extra_name);
+        CommandList extractExtraComponentInResult(const std::string& extra_name);
         extern const std::string KCollectMethodName;
     }
     namespace builder {

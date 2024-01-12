@@ -254,13 +254,13 @@ int main(int argc, char** argv) {
         verifier_name = argv[4];
         if (argc == 6) model_path = argv[5];
     } else {
-        solver_name = "polygen";
-        benchmark_name = "/home/jiry/2022/tests/clia/LspPage9_2.sl";
+        solver_name = "maxflash";
+        benchmark_name = config::KSourcePath + "tests/1.sl";
         //benchmark_name = "/tmp/tmp.wHOuYKwdWN/tests/string/44789427.sl";
         //benchmark_name = config::KSourcePath + "tests/bv/PRE_icfp_gen_13.20.sl";
         output_name = "/tmp/629453237.out";
-        verifier_name = "diff100";
-        model_path = config::KSourcePath + "runner/model/polygen_clia";
+        verifier_name = "default";
+        // model_path = config::KSourcePath + "runner/model/polygen_clia";
     }
 
     if (verifier_name == "significant") parser::KIsRemoveDuplicated = false;

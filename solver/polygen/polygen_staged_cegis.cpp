@@ -4,13 +4,12 @@
 
 #include "istool/solver/polygen/polygen_cegis.h"
 #include "istool/basic/semantics.h"
+#include "istool/basic/config.h"
 #include "glog/logging.h"
 
-StagedCEGISPolyGen::StagedCEGISPolyGen(Specification *spec, const PSynthInfo &term_info, const PSynthInfo &unify_info,
-                                       const PBESolverBuilder &domain_builder, const PBESolverBuilder &dnf_builder):
-                                       Solver(spec), term_solver(new PolyGenTermSolver(spec, term_info, domain_builder)),
-                                       cond_solver(new PolyGenConditionSolver(spec, unify_info, dnf_builder)),
-                                       verify_pos(0) {
+StagedCEGISPolyGen::StagedCEGISPolyGen(Specification *spec, TermSolver *_term_solver,
+                                       PolyGenConditionSolver *_cond_solver):
+                                       Solver(spec), term_solver(_term_solver), cond_solver(_cond_solver), verify_pos(0) {
     if (spec->info_list.size() > 1) {
         LOG(FATAL) << "PolyGen can only synthesize a single program";
     }
@@ -70,6 +69,7 @@ ProgramList StagedCEGISPolyGen::synthesisTerms(TimeGuard* guard) {
         }
     }
     while (1) {
+        global::recorder.add("#term_cegis", 1);
         auto counter_example = verifyTerms(term_list);
         if (counter_example == -1) return term_list;
         counter_examples.push_back(example_space->example_space[counter_example]);
@@ -85,6 +85,7 @@ PProgram StagedCEGISPolyGen::unify(const ProgramList &term_list, TimeGuard *guar
     std::vector<PProgram> cond_list(int(term_list.size()) - 1, program::buildConst(BuildData(Bool, true)));
     IOExampleList counter_examples;
     while (1) {
+        global::recorder.add("#term_cegis", 1);
         auto current = solver::polygen::constructDecisionList(term_list, cond_list);
         auto counter_example = verifyProgram(current);
         if (counter_example == -1) return current;

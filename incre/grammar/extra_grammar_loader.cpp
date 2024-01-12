@@ -21,12 +21,25 @@ namespace {
         for (auto& command: pool.align_list) command->command_id = -1;
     }
 
-    std::string _getAutoLifterPath() {
+    std::string _getAutoLifterPath(bool is_syc) {
+        if (is_syc) return config::KSourcePath + "incre-tests/autolifter/syc-autolifter-base.f";
         return config::KSourcePath + "incre-tests/autolifter/autolifter-base.f";
     }
 
-    ComponentPool _loadAutoLifterOperator(EnvContext* env_ctx, TypeContext* type_ctx) {
-        auto path = _getAutoLifterPath();
+    CommandList _loadAutoLifterExtraComponentInResult() {
+        auto path = _getAutoLifterPath(false);
+        auto program = incre::parseFromF(path, false);
+        CommandList result;
+        for (auto& command: program->commands) {
+            if (command->isDecoratedWith(CommandDecorate::SYN_COMBINE) || command->isDecoratedWith(CommandDecorate::SYN_COMPRESS)) {
+                result.push_back(command);
+            }
+        }
+        return result;
+    }
+
+    ComponentPool _loadAutoLifterOperator(EnvContext* env_ctx, TypeContext* type_ctx, bool is_syc) {
+        auto path = _getAutoLifterPath(is_syc);
         auto program = incre::parseFromF(path, false);
         auto component_pool = incre::grammar::collector::collectComponentFromLabel(env_ctx, type_ctx, program.get());
         _clearCommandId(component_pool);
@@ -333,7 +346,7 @@ namespace {
         }
         ComponentPool res;
 
-        TyList target_list = {std::make_shared<TyInt>()};
+        TyList target_list = {std::make_shared<TyInt>(), std::make_shared<TyBool>()};
         LOG(INFO) << "Load fold operators";
         for (auto& ind_type: ind_list) {
             LOG(INFO) << "Load for " << ind_type->toString();
@@ -344,9 +357,22 @@ namespace {
     }
 }
 
+CommandList collector::extractExtraComponentInResult(const std::string &extra_name) {
+    if (extra_name == "AutoLifter" || extra_name == "DeepCoder") {
+        return _loadAutoLifterExtraComponentInResult();
+    }
+    if (extra_name == "Fold" || extra_name == "SycAutoLifter") {
+        return {};
+    }
+    LOG(FATAL) << "Unknown extra name";
+}
+
 ComponentPool collector::collectExtraOperators(EnvContext* env_ctx, TypeContext *type_ctx, const std::string &extra_name) {
-    if (extra_name == "AutoLifter") {
-        return _loadAutoLifterOperator(env_ctx, type_ctx);
+    if (extra_name == "AutoLifter" || extra_name == "DeepCoder") {
+        return _loadAutoLifterOperator(env_ctx, type_ctx, false);
+    }
+    if (extra_name == "SycAutoLifter") {
+        return _loadAutoLifterOperator(env_ctx, type_ctx, true);
     }
     if (extra_name == "Fold") {
         return _loadFoldOperator(type_ctx);
@@ -355,8 +381,8 @@ ComponentPool collector::collectExtraOperators(EnvContext* env_ctx, TypeContext 
 }
 
 namespace {
-    void _loadAutoLifterOperators(EnvContext* env_ctx, TypeContext* type_ctx) {
-        auto path = _getAutoLifterPath();
+    void _loadAutoLifterOperators(EnvContext* env_ctx, TypeContext* type_ctx, bool is_syc) {
+        auto path = _getAutoLifterPath(is_syc);
         auto program = parseFromF(path, false);
         auto* extra_ctx = run(program);
         LOG(INFO) << "Loading AutoLifter operators";
@@ -374,8 +400,11 @@ namespace {
 }
 
 void collector::loadExtraOperator(EnvContext* env_ctx, TypeContext *type_ctx, Env* env, const std::string &extra_name) {
-    if (extra_name == "AutoLifter") {
-        _loadAutoLifterOperators(env_ctx, type_ctx); return;
+    if (extra_name == "AutoLifter" || extra_name == "DeepCoder") {
+        _loadAutoLifterOperators(env_ctx, type_ctx, false); return;
+    }
+    if (extra_name == "SycAutoLifter") {
+        _loadAutoLifterOperators(env_ctx, type_ctx, true); return;
     }
     if (extra_name == "Fold") {
         ext::ho::registerTmpExecuteInfo(env); return;

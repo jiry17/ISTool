@@ -9,7 +9,7 @@
 using namespace incre;
 
 std::string VUnit::toString() const {
-    return "Unit";
+    return "unit";
 }
 std::string VUnit::toHaskell(bool in_result = false) const {
     return toString();

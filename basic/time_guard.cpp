@@ -45,6 +45,13 @@ void TimeRecorder::record(const std::string &name, int value) {
     record_map[name] = value;
 }
 
+void TimeRecorder::add(const std::string &name, int value) {
+    if (record_map.find(name) == record_map.end()) {
+        record_map[name] = 0;
+    }
+    record_map[name] += 1;
+}
+
 void TimeRecorder::printAll() {
     for (auto& info: value_map) {
         std::cout << info.first << ": " << info.second << std::endl;

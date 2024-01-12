@@ -12,10 +12,8 @@ CEGISPolyGen::~CEGISPolyGen() {
     delete cond_solver;
 }
 
-CEGISPolyGen::CEGISPolyGen(Specification *spec, const PSynthInfo &term_info, const PSynthInfo &unify_info,
-        const PBESolverBuilder &domain_builder, const PBESolverBuilder &dnf_builder, Verifier *_v):
-        VerifiedSolver(spec, _v), term_solver(new PolyGenTermSolver(spec, term_info, domain_builder)),
-        cond_solver(new PolyGenConditionSolver(spec, unify_info, dnf_builder)) {
+CEGISPolyGen::CEGISPolyGen(Specification *spec, TermSolver *_term_solver, PolyGenConditionSolver *_condition_solver, Verifier *_v):
+        VerifiedSolver(spec, _v), term_solver(_term_solver), cond_solver(_condition_solver) {
     if (spec->info_list.size() > 1) {
         LOG(FATAL) << "PolyGen can only synthesize a single program";
     }
