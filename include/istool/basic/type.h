@@ -22,6 +22,7 @@ public:
     virtual TypeList getParams() = 0;
     virtual PType clone(const TypeList& params) = 0;
     virtual std::string getHaskellName() = 0;
+    virtual int getTupleLen() = 0;
     virtual ~Type() = default;
 };
 
@@ -30,6 +31,7 @@ public:
     virtual bool equal(Type* type);
     virtual std::string getBaseName();
     virtual TypeList getParams();
+    virtual int getTupleLen();
     virtual ~SimpleType() = default;
 };
 

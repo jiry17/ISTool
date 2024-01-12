@@ -15,15 +15,6 @@ ioPair pairs = do
         constraint [] = con True
         constraint ((x, y) : xs) = main' x ==~ (toSym y) &&~ constraint xs
 
--- calculate time
-timeIt :: IO a -> IO (NominalDiffTime, a)
-timeIt action = do
-    startTime <- getCurrentTime
-    result <- action
-    endTime <- getCurrentTime
-    let elapsedTime = diffUTCTime endTime startTime
-    return (elapsedTime, result)
-
 main :: IO ()
 main = do
     let pairs = [

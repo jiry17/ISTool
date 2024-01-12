@@ -29,6 +29,7 @@ public:
     virtual TypeList getParams();
     virtual PType clone(const TypeList& params);
     virtual std::string getHaskellName();
+    virtual int getTupleLen();
     virtual ~RefinedType() = default;
 };
 

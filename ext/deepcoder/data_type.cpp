@@ -37,6 +37,7 @@ PType TSum::clone(const TypeList &type_list) {
 std::string TSum::getHaskellName() {
     return getName();
 }
+int TSum::getTupleLen() {return 1;}
 
 TProduct::TProduct(const TypeList &_sub_types): sub_types(_sub_types) {
 }
@@ -74,6 +75,9 @@ std::string TProduct::getHaskellName() {
     }
     return "(" + res + ")";
 }
+int TProduct::getTupleLen() {
+    return sub_types.size();
+}
 
 TArrow::TArrow(const TypeList &_inp_types, const PType &_oup_type): inp_types(_inp_types), oup_type(_oup_type) {
 }
@@ -107,6 +111,7 @@ PType TArrow::clone(const TypeList &type_list) {
 std::string TArrow::getHaskellName() {
     return getName();
 }
+int TArrow::getTupleLen() {return 1;}
 
 TList::TList(const PType &_content): content(_content) {
 }
@@ -130,6 +135,7 @@ PType TList::clone(const TypeList &type_list) {
 std::string TList::getHaskellName() {
     return getName();
 }
+int TList::getTupleLen() {return 1;}
 
 TBTree::TBTree(const PType &_content, const PType &_leaf): content(_content), leaf(_leaf) {
 }
@@ -153,6 +159,7 @@ PType TBTree::clone(const TypeList &type_list) {
 std::string TBTree::getHaskellName() {
     return getName();
 }
+int TBTree::getTupleLen() {return 1;}
 
 PType ext::ho::getTIntList() {
     static PType res;

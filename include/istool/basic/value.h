@@ -14,6 +14,7 @@ public:
     Value();
     virtual ~Value() = default;
     virtual std::string toString() const = 0;
+    virtual std::string toHaskell(bool in_result = false) const = 0;
     virtual bool equal(Value* value) const = 0;
 };
 
@@ -28,6 +29,7 @@ class NullValue: public Value {
 public:
     NullValue();
     virtual std::string toString() const;
+    virtual std::string toHaskell(bool in_result) const;
     virtual bool equal(Value* value) const;
 };
 
@@ -36,6 +38,7 @@ public:
     bool w;
     BoolValue(bool _w);
     virtual std::string toString() const;
+    virtual std::string toHaskell(bool in_result) const;
     virtual bool equal(Value* value) const;
 };
 

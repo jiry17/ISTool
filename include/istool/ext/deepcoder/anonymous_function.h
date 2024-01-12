@@ -32,6 +32,7 @@ public:
     SemanticsValue(const PSemantics& sem);
     virtual ~SemanticsValue() = default;
     virtual std::string toString() const;
+    virtual std::string toHaskell(bool in_result) const;
     virtual bool equal(Value* value) const;
 };
 

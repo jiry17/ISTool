@@ -24,7 +24,7 @@ PType RefinedType::clone(const TypeList &params) {
 std::string RefinedType::getHaskellName() {
     return getName();
 }
-
+int RefinedType::getTupleLen() {return 1;}
 
 bool RefinedType::equal(Type *type) {
     LOG(FATAL) << "Method equal for RefinedType is undefined";

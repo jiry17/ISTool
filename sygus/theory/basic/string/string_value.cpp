@@ -11,6 +11,9 @@ StringValue::StringValue(const std::string &_s): s(_s), Value() {
 std::string StringValue::toString() const {
     return "\"" + s + "\"";
 }
+std::string StringValue::toHaskell(bool in_result = false) const {
+    return toString();
+}
 bool StringValue::equal(Value *value) const {
     auto* sv = dynamic_cast<StringValue*>(value);
     if (!sv) {

@@ -14,6 +14,9 @@ bool NullValue::equal(Value *value) const {
 std::string NullValue::toString() const {
     return "null";
 }
+std::string NullValue::toHaskell(bool in_result = false) const {
+    return toString();
+}
 
 BoolValue::BoolValue(bool _w): w(_w){}
 bool BoolValue::equal(Value *value) const {
@@ -25,4 +28,7 @@ bool BoolValue::equal(Value *value) const {
 }
 std::string BoolValue::toString() const {
     return w ? "true" : "false";
+}
+std::string BoolValue::toHaskell(bool in_result = false) const {
+    return w ? "(toSym True)" : "(toSym False)";
 }

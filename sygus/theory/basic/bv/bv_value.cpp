@@ -10,6 +10,10 @@ BitVectorValue::BitVectorValue(const Bitset &_w): w(_w) {}
 std::string BitVectorValue::toString() const {
     return w.toXString();
 }
+std::string BitVectorValue::toHaskell(bool in_result = false) const {
+    // return "bitvec" + toString();
+    return toString();
+}
 bool BitVectorValue::equal(Value *value) const {
     auto* bv = dynamic_cast<BitVectorValue*>(value);
     if (!bv) {

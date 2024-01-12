@@ -20,6 +20,7 @@ namespace incre {
     class VUnit: public Value {
     public:
         virtual std::string toString() const;
+        virtual std::string toHaskell(bool in_result) const;
         virtual bool equal(Value* value) const;
         virtual ~VUnit() = default;
     };
@@ -31,6 +32,7 @@ namespace incre {
         VInductive(const std::string& _name, const Data& _content);
         virtual bool equal(Value* value) const;
         virtual std::string toString() const;
+        virtual std::string toHaskell(bool in_result) const;
         virtual ~VInductive() = default;
     };
 
@@ -40,6 +42,7 @@ namespace incre {
         VCompress(const Data& _content);
         virtual bool equal(Value* value) const;
         virtual std::string toString() const;
+        virtual std::string toHaskell(bool in_result) const;
         virtual ~VCompress() = default;
     };
 
@@ -50,6 +53,7 @@ namespace incre {
         virtual Data run(const Term& param, Context* ctx) = 0;
         virtual bool equal(Value* value) const;
         virtual std::string toString() const;
+        virtual std::string toHaskell(bool in_result) const;
         virtual ~VFunction() = default;
     };
 
@@ -126,6 +130,7 @@ namespace incre {
         Term term;
 
         virtual std::string toString() const;
+        virtual std::string toHaskell(bool in_result) const;
         virtual bool equal(Value* value) const;
         VClosure(EnvAddress* _env, const std::string& _name, const Term& _term): env(_env), name(_name), term(_term) {
         }

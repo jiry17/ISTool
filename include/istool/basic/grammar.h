@@ -31,7 +31,8 @@ public:
     virtual std::string toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num, int func_num, std::string &node_name) = 0;
     virtual std::string evalRuleToHaskell(std::string node_name, int func_num,
         std::unordered_map<std::string, int>& name_to_expr_num, std::vector<std::string>& var_list,
-        std::string oup_type, std::vector<std::pair<PType, int> > &env_type_list) = 0;
+        std::string oup_type, std::vector<std::pair<PType, int> > &env_type_list,
+        std::vector<int> &tuple_len) = 0;
     virtual Rule* clone(const NTList& new_param_list) = 0;
     virtual ~Rule() = default;
 };
@@ -47,7 +48,8 @@ public:
     virtual std::string toHaskell(std::unordered_map<std::string, int>& name_to_expr_num, int& next_expr_num, int func_num, std::string &node_name);
     virtual std::string evalRuleToHaskell(std::string node_name, int func_num,
         std::unordered_map<std::string, int>& name_to_expr_num, std::vector<std::string>& var_list,
-        std::string oup_type, std::vector<std::pair<PType, int> > &env_type_list);
+        std::string oup_type, std::vector<std::pair<PType, int> > &env_type_list,
+        std::vector<int> &tuple_len);
     virtual Rule* clone(const NTList& new_param_list);
     ~ConcreteRule() = default;
 };

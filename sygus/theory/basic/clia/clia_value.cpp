@@ -16,6 +16,11 @@ bool IntValue::equal(Value *value) const {
 std::string IntValue::toString() const {
     return std::to_string(w);
 }
+std::string IntValue::toHaskell(bool in_result = false) const {
+    std::string res = "(" + toString() + ")";
+    // return "int" + res;
+    return res;
+}
 bool IntValue::leq(Value *value) const {
     auto* iv = dynamic_cast<IntValue*>(value);
     if (!iv) {

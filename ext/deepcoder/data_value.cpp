@@ -24,6 +24,28 @@ std::string ProductValue::toString() const {
     }
     return res;
 }
+std::string ProductValue::toHaskell(bool in_result = false) const {
+    std::string res = "";
+    if (in_result) {
+        res += "(";
+        for (int i = 0; i < elements.size(); ++i) {
+            if (i) res += ", ";
+            res += "(";
+            res += elements[i].value->toHaskell(true);
+            res += ")";
+        }
+        res += ")";
+    } else {
+        for (int i = 0; i < elements.size(); ++i) {
+            if (i) res += " ";
+            res += "(";
+            res += elements[i].value->toHaskell(false);
+            res += ")";
+        }
+    }
+    // return "product" + res;
+    return res;
+}
 bool ProductValue::equal(Value *v) const {
     auto* pv = dynamic_cast<ProductValue*>(v);
     if (!pv || pv->elements.size() != elements.size()) return false;
@@ -37,6 +59,10 @@ SumValue::SumValue(int _id, const Data &_value, int _n): id(_id), value(_value),
 std::string SumValue::toString() const {
     return std::to_string(id) + "@" + value.toString();
 }
+std::string SumValue::toHaskell(bool in_result = false) const {
+    // return "sum" + toString();
+    return toString();
+}
 bool SumValue::equal(Value *v) const {
     auto* sv = dynamic_cast<SumValue*>(v);
     if (!sv) return false;
@@ -46,6 +72,10 @@ bool SumValue::equal(Value *v) const {
 ListValue::ListValue(const DataList &_value): value(_value), Value() {}
 std::string ListValue::toString() const {
     return data::dataList2String(value);
+}
+std::string ListValue::toHaskell(bool in_result = false) const {
+    // return "list" + toString();
+    return toString();
 }
 bool ListValue::equal(Value *v) const {
     auto* dv = dynamic_cast<ListValue*>(v);
@@ -62,6 +92,9 @@ BTreeInternalValue::BTreeInternalValue(const BTreeNode &_l, const BTreeNode &_r,
 std::string BTreeInternalValue::toString() const {
     return "(" + l->toString() + "," + value.toString() + "," + r->toString() + ")";
 }
+std::string BTreeInternalValue::toHaskell(bool in_result = false) const {
+    return toString();
+}
 bool BTreeInternalValue::equal(Value *v) const {
     auto* iv = dynamic_cast<BTreeInternalValue*>(v);
     if (!iv) return false;
@@ -71,6 +104,9 @@ bool BTreeInternalValue::equal(Value *v) const {
 BTreeLeafValue::BTreeLeafValue(const Data &_v): value(_v) {}
 std::string BTreeLeafValue::toString() const {
     return value.toString();
+}
+std::string BTreeLeafValue::toHaskell(bool in_result = false) const {
+    return toString();
 }
 bool BTreeLeafValue::equal(Value *v) const {
     auto* lv = dynamic_cast<BTreeLeafValue*>(v);

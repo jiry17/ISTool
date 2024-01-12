@@ -11,6 +11,9 @@ using namespace incre;
 std::string VUnit::toString() const {
     return "Unit";
 }
+std::string VUnit::toHaskell(bool in_result = false) const {
+    return toString();
+}
 bool VUnit::equal(Value *value) const {
     return dynamic_cast<VUnit*>(value);
 }
@@ -28,10 +31,18 @@ std::string VInductive::toString() const {
     // return name + " " + content.toString();
     return name_for_haskell + " " + content.toString();
 }
+std::string VInductive::toHaskell(bool in_result = false) const {
+    std::string name_for_haskell = name;
+    name_for_haskell[0] = std::toupper(name_for_haskell[0]);
+    return "(" + name_for_haskell + " " + content.value->toHaskell() + ")";
+}
 
 VCompress::VCompress(const Data &_content): content(_content) {}
 std::string VCompress::toString() const {
     return "compress " + content.toString();
+}
+std::string VCompress::toHaskell(bool in_result = false) const {
+    return toString();
 }
 bool VCompress::equal(Value *value) const {
     auto* cv = dynamic_cast<VCompress*>(value);
@@ -50,6 +61,10 @@ bool VFunction::equal(Value *value) const {
 
 std::string VFunction::toString() const {
     return name;
+}
+std::string VFunction::toHaskell(bool in_result = false) const {
+    // return "func" + toString();
+    return toString();
 }
 
 Data VAbsFunction::run(const Term &param, Context *ctx) {
@@ -153,6 +168,9 @@ Data AddressHolder::lookup(EnvAddress* env, const std::string &_name) {
 
 std::string VClosure::toString() const {
     LOG(FATAL) << "VClosure::toString() should not be invoked";
+}
+std::string VClosure::toHaskell(bool in_result = false) const {
+    return toString();
 }
 
 bool VClosure::equal(Value *value) const {

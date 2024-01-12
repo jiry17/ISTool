@@ -12,7 +12,6 @@
 module Main where
 
 import Grisette
-import Utils.Timing
 import GHC.Generics
 import Data.Time
 import Data.Hashable
@@ -21,13 +20,20 @@ import Data.Proxy
 import Control.DeepSeq
 import Control.Monad.Except
 import System.CPUTime
+import System.Timeout as SysTimeout
 
 type Ident = String
       
 data Unit =
       Unit
-    deriving stock (Generic, Show)
+    deriving stock (Generic, Show, Eq)
     deriving (Mergeable, EvaluateSym, ToCon Unit, ExtractSymbolics)
         via (Default Unit)
+
+instance SimpleMergeable Unit where
+  mrgIte cond l r = go cond l r
+    where
+      go cond Unit Unit = Unit
+      go _ _ _ = error "Should not happen"
 
 ------pre output end-----

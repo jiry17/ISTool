@@ -16,6 +16,7 @@ public:
     Data get(int id) const;
     virtual ~ProductValue() = default;
     virtual std::string toString() const;
+    virtual std::string toHaskell(bool in_result) const;
     virtual bool equal(Value* v) const;
 };
 
@@ -27,6 +28,7 @@ public:
     SumValue(int _id, const Data& _value, int _n=-1);
     virtual ~SumValue() = default;
     virtual std::string toString() const;
+    virtual std::string toHaskell(bool in_result) const;
     virtual bool equal(Value* v) const;
 };
 
@@ -36,6 +38,7 @@ public:
     ListValue(const DataList& _value);
     virtual ~ListValue() = default;
     virtual std::string toString() const;
+    virtual std::string toHaskell(bool in_result) const;
     virtual bool equal(Value* v) const;
 };
 
@@ -53,6 +56,7 @@ public:
     BTreeInternalValue(const BTreeNode& _l, const BTreeNode& _r, const Data& _v);
     virtual ~BTreeInternalValue() = default;
     virtual std::string toString() const;
+    virtual std::string toHaskell(bool in_result) const;
     virtual bool equal(Value* v) const;
 };
 
@@ -62,6 +66,7 @@ public:
     BTreeLeafValue(const Data& _v);
     virtual ~BTreeLeafValue() = default;
     virtual std::string toString() const;
+    virtual std::string toHaskell(bool in_result) const;
     virtual bool equal(Value* v) const;
 };
 

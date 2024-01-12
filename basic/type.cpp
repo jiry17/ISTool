@@ -14,6 +14,7 @@ TypeList SimpleType::getParams() {
 bool SimpleType::equal(Type *type) {
     return getName() == type->getName();
 }
+int SimpleType::getTupleLen() {return 1;}
 
 std::string TBot::getName() {
     return "Bot";
@@ -22,7 +23,7 @@ PType TBot::clone(const TypeList &params) {
     return std::make_shared<TBot>();
 }
 std::string TBot::getHaskellName() {
-    return getName();
+    return "Unit";
 }
 
 TVar::TVar(const std::string &_name): name(_name) {

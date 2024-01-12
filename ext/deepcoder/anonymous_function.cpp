@@ -29,6 +29,10 @@ SemanticsValue::SemanticsValue(const PSemantics &_sem): sem(_sem) {}
 std::string SemanticsValue::toString() const {
     return sem->getName();
 }
+std::string SemanticsValue::toHaskell(bool in_result = false) const {
+    return "semantics" + toString();
+    // return toString();
+}
 bool SemanticsValue::equal(Value *value) const {
     LOG(FATAL) << "Method equal of SemanticsValue should not be invoked";
 }

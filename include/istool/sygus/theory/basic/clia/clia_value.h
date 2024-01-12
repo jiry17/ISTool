@@ -14,6 +14,7 @@ public:
     int w;
     IntValue(int _w);
     virtual std::string toString() const;
+    virtual std::string toHaskell(bool in_result) const;
     virtual bool equal(Value* value) const;
     virtual bool leq(Value* value) const;
 };
