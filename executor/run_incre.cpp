@@ -95,9 +95,7 @@ int main(int argv, char** argc) {
 
     std::cout << std::endl;
 
-    // std::cout << "zyw: component pool begin" << std::endl;
     // incre_info->component_pool.print();
-    // std::cout << "zyw: component pool end" << std::endl;
 
     auto* solver = new IncreAutoLifterSolver(incre_info, env);
     auto res = solver->solve();
