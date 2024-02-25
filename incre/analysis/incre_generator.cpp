@@ -18,8 +18,8 @@ IncreExampleData::IncreExampleData(int _rewrite_id, const DataList &_local, cons
 
 std::string IncreExampleData::toString() const {
     std::string res = "#" + std::to_string(rewrite_id) + ": ";
-    res += data::dataList2String(local_inputs);
-    res += " " + data::dataList2String(global_inputs);
+    res += "local_inputs: " + data::dataList2String(local_inputs);
+    res += ", global_inputs: " + data::dataList2String(global_inputs);
     res += " -> " + oup.toString();
     return res;
 }

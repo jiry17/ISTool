@@ -64,6 +64,26 @@ std::string TmProj::toString() const {
     return body->toString() + "." + std::to_string(id) + "/" + std::to_string(size);
 }
 
+std::string incre::syntax::termType2String(TermType type) {
+    switch (type) {
+        case TermType::VALUE : return "VALUE";
+        case TermType::IF : return "IF";
+        case TermType::VAR : return "VAR";
+        case TermType::PRIMARY : return "IF";
+        case TermType::APP : return "APP";
+        case TermType::TUPLE : return "IF";
+        case TermType::PROJ : return "PROJ";
+        case TermType::FUNC : return "FUNC";
+        case TermType::LET : return "LET";
+        case TermType::MATCH : return "MATCH";
+        case TermType::CONS : return "CONS";
+        case TermType::LABEL : return "LABEL";
+        case TermType::UNLABEL : return "UNLABEL";
+        case TermType::REWRITE : return "REWRITE";
+        default : return "unknown TermType";
+    }
+}
+
 #define SubTermHead(name) TermList _getSubTerms(Tm ## name* term)
 
 namespace {
@@ -91,6 +111,16 @@ namespace {
 TermList incre::syntax::getSubTerms(TermData *term) {
     switch (term->getType()) {
         TERM_CASE_ANALYSIS(RegisterSubTermCase);
+    }
+}
+
+std::string incre::syntax::patternType2String(PatternType t) {
+    switch(t) {
+        case PatternType::CONS : return "CONS";
+        case PatternType::TUPLE : return "TUPLE";
+        case PatternType::UNDERSCORE : return "UNDERSCORE";
+        case PatternType::VAR : return "VAR";
+        default : return "unknown pattern type";
     }
 }
 

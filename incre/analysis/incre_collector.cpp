@@ -8,6 +8,7 @@
 #include "glog/logging.h"
 #include <queue>
 #include <thread>
+#include <mutex>
 
 using namespace incre;
 using namespace incre::syntax;

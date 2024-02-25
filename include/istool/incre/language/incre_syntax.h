@@ -101,6 +101,8 @@ namespace incre::syntax {
         UNDERSCORE, VAR, TUPLE, CONS
     };
 
+    std::string patternType2String(PatternType t);
+
     class PatternData {
     public:
         PatternType type;
@@ -148,6 +150,8 @@ namespace incre::syntax {
     enum class TermType {
         VALUE, IF, VAR, PRIMARY, APP, TUPLE, PROJ, FUNC, LET, MATCH, CONS, LABEL, UNLABEL, REWRITE
     };
+
+    std::string termType2String(TermType type);
 
     class TermData {
     public:
