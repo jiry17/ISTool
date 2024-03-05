@@ -9,3 +9,5 @@ basic/config.cpp
 build*
 executor/run_incre_label.cpp
 executor/run_incre.cpp
+log*
+tmp*

@@ -285,12 +285,17 @@ IncreInfo analysis::buildIncreInfo(IncreProgramData *program, Env* env) {
     IncreExamplePool* example_pool;
     {
         std::vector<std::vector<std::string>> cared_var_storage;
+        int i = 0;
         for (auto &info: rewrite_info_list) {
             std::vector<std::string> cared_var_list;
+            int j = 0;
             for (auto &inp_var_info: info.inp_types) {
+                std::cout << "zyw: i = " << i << ", j = " << j << ", inp_var_info.first = " << inp_var_info.first << std::endl;
                 cared_var_list.push_back(inp_var_info.first);
+                j++;
             }
             cared_var_storage.push_back(cared_var_list);
+            i++;
         }
 
         auto *generator = new SizeSafeValueGenerator(env, extractConsMap((res_program.get())));

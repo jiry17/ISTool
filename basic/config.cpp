@@ -6,8 +6,8 @@
 #include "glog/logging.h"
 
 #ifdef LINUX
-// const std::string config::KSourcePath = "/home/jiry/zyw/dp/ISTool/";
-const std::string config::KSourcePath = "/home/jiry/2023A/ISTool/";
+const std::string config::KSourcePath = "/home/jiry/zyw/dp/ISTool/";
+// const std::string config::KSourcePath = "/home/jiry/2023A/ISTool/";
 #else
 const std::string config::KSourcePath = "/Users/pro/Desktop/work/2023S/ISTool/";
 #endif
@@ -15,8 +15,8 @@ const std::string config::KEuSolverPath = "/home/jiry/my-euphony";
 const std::string config::KCVC5Path = "/home/jiry/2021A/cvc5";
 
 #ifdef LINUX
-const std::string config::KIncreParserPath = "/usr/jiry/IncreLanguage/";
-// const std::string config::KIncreParserPath = "/home/jiry/zyw/dp/IncreLanguage/";
+// const std::string config::KIncreParserPath = "/usr/jiry/IncreLanguage/";
+const std::string config::KIncreParserPath = "/home/jiry/zyw/dp/IncreLanguage/";
 #else
 const std::string config::KIncreParserPath = "/Users/pro/Desktop/work/2023A/IncreLanguage/";
 #endif

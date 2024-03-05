@@ -90,7 +90,9 @@ std::pair<syntax::Term, DataList> IncreExamplePool::generateStart() {
     std::uniform_int_distribution<int> start_dist(0, int(start_list.size()) - 1);
     auto& [start_name, params] = start_list[start_dist(generator->env->random_engine)];
     Term term = std::make_shared<TmVar>(start_name);
+    // std::cout << "zyw: in generateStart()" << std::endl;
     for (auto& param_type: params) {
+        // std::cout << param_type->toString() << std::endl;
         auto input_data = generator->getRandomData(param_type);
         term = std::make_shared<TmApp>(term, std::make_shared<TmValue>(input_data));
     }
@@ -124,11 +126,13 @@ IncreExamplePool::IncreExamplePool(const IncreProgram &_program,
 
     for (auto& command: program->commands) {
         if (command->getType() == CommandType::DECLARE && command->isDecrorateWith(CommandDecorate::INPUT)) {
+            std::cout << "zyw: command declare, " << command->name << std::endl;
             auto* ci = dynamic_cast<CommandDeclare*>(command.get());
             global_type_list.push_back(ci->type);
             global_name_list.push_back(command->name);
         }
         if (command->isDecrorateWith(CommandDecorate::START)) {
+            std::cout << "zyw: command start, " << command->name << std::endl;
             auto param_list = _extractStartParamList(type_ctx->ctx.getFinalType(command->name, rewriter));
             start_list.emplace_back(command->name, param_list);
         }
@@ -137,6 +141,14 @@ IncreExamplePool::IncreExamplePool(const IncreProgram &_program,
         auto* start = program->commands[int(program->commands.size()) - 1].get();
         auto type = type_ctx->ctx.getFinalType(start->name, rewriter);
         start_list.emplace_back(start->name, _extractStartParamList(type));
+    }
+    std::cout << "zyw: start_list.size = " << start_list.size() << std::endl;
+    for (int i = 0; i < start_list.size(); ++i) {
+        std::cout << start_list[i].first;
+        for (int j = 0; j < start_list[i].second.size(); ++j) {
+            std::cout << ", " << start_list[i].second[j]->toString();
+        }
+        std::cout << std::endl;
     }
     delete rewriter;
 }
