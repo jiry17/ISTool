@@ -15,13 +15,6 @@
 using namespace incre;
 
 int main(int argv, char** argc) {
-    // 初始化 Glog
-    google::InitGoogleLogging("/home/jiry/zyw/dp/ISTool/build/executor/run_incre");
-    // 设置日志文件输出目录
-    FLAGS_log_dir = "/home/jiry/zyw/dp/ISTool/log";
-    // 设置日志文件名（可选）
-    FLAGS_logbufsecs = 0;  // 立即刷新到文件
-    
     std::string path, target;
 
     if (argv > 1) {
@@ -102,8 +95,4 @@ int main(int argv, char** argc) {
     std::cout << "zyw: res.print:" << std::endl;
     res.print();
     // auto res_prog = rewriteWithIncreSolution(prog.get(), res);
-    
-
-    // 关闭 Glog
-    google::ShutdownGoogleLogging();
 }
