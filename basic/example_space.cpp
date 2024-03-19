@@ -76,7 +76,8 @@ bool example::satisfyIOExample(Program *program, const IOExample &example, Env* 
 
 #include <unordered_set>
 
-std::shared_ptr<FiniteIOExampleSpace> example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env, const TypeList& given_types) {
+std::shared_ptr<FiniteIOExampleSpace> example::buildFiniteIOExampleSpace(const IOExampleList &examples, const std::string& name, Env *env,
+                                                                         const TypeList& given_types, const PType& given_oup_type) {
     if (examples.empty()) {
         LOG(FATAL) << "Example space should not be empty";
     }
@@ -93,7 +94,8 @@ std::shared_ptr<FiniteIOExampleSpace> example::buildFiniteIOExampleSpace(const I
     for (int i = 0; i < n; ++i) {
         l_subs.push_back(program::buildParam(i, inp_types[i]));
     }
-    auto oup_type = type_ext->getType(examples[0].second.get());
+    auto oup_type = given_oup_type;
+    if (!given_oup_type) oup_type = type_ext->getType(examples[0].second.get());
     auto r = program::buildParam(n, oup_type);
     auto l = std::make_shared<Program>(
             std::make_shared<TypedInvokeSemantics>(name, oup_type, inp_types, env),

@@ -56,6 +56,15 @@ namespace incre::grammar {
         virtual ~ContextFreeSynthesisComponent() = default;
     };
 
+    class IncreOperatorSemantics: public FullExecutedSemantics {
+    public:
+        Data base;
+        AddressHolder* holder;
+        IncreOperatorSemantics(const std::string& name, const Data& _base, bool is_parallel);
+        virtual Data run(DataList&& inp_list, ExecuteInfo* info);
+        virtual ~IncreOperatorSemantics();
+    };
+
     class IncreComponent: public ContextFreeSynthesisComponent {
     public:
         TypeList param_types;

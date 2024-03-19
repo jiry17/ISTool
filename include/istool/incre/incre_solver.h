@@ -26,6 +26,7 @@ namespace incre {
         virtual ~IncreSolver() = default;
     };
 
+    Ty rewriteTypeWithTypes(const Ty& type, const TyList& res_types);
     IncreProgram rewriteWithIncreSolution(ProgramData* program, const IncreSolution& solution, Env* env, bool is_mark = false);
 }
 

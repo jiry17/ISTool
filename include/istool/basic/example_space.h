@@ -55,7 +55,7 @@ public:
 };
 
 namespace example {
-    std::shared_ptr<FiniteIOExampleSpace> buildFiniteIOExampleSpace(const IOExampleList& examples, const std::string& name, Env* env, const TypeList& inp_types = {});
+    std::shared_ptr<FiniteIOExampleSpace> buildFiniteIOExampleSpace(const IOExampleList& examples, const std::string& name, Env* env, const TypeList& inp_types = {}, const PType& oup_type = {});
     bool satisfyIOExample(Program* program, const IOExample& example, Env* env);
     std::string ioExample2String(const IOExample& example);
     Example ioExample2Example(const IOExample& example);

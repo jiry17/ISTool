@@ -12,6 +12,7 @@
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
 #include "istool/incre/autolifter/incre_nonscalar_oc.h"
+#include "istool/incre/autolifter/incre_enumeration_solver.h"
 #include "istool/incre/grammar/incre_component_collector.h"
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/sygus/theory/basic/string/string_value.h"
@@ -21,19 +22,19 @@
 
 using namespace incre;
 
-DEFINE_string(benchmark, "/home/jiry/2023A/ISTool/incre-tests/running-example-in.f", "The absolute path of the benchmark file (.sl)");
+DEFINE_string(benchmark, "/Users/pro/Desktop/work/2024S/ISTool/incre-tests/syc.f", "The absolute path of the benchmark file (.sl)");
 //DEFINE_string(benchmark, "/home/jiry/2023A/ISTool/incre-tests/synduce/constraints/sorted_and_indexed/count_lt0.f", "The absolute path of the benchmark file (.sl)");
 DEFINE_string(output, "", "The absolute path of the output file");
+DEFINE_string(solver, "enumeration", "The synthesizer, selected from ['scalar', 'nonscalar', 'enumeration']");
 DEFINE_bool(autolabel, true, "Whether automatically generate annotations");
-DEFINE_bool(scalar, true, "Whether consider only scalar expressions when filling sketch holes");
 DEFINE_bool(mark_rewrite, false, "Whether to mark the sketch holes.");
 DEFINE_string(stage_output_file, "", "Only used in online demo");
 
 int main(int argc, char** argv) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    std::string path = FLAGS_benchmark, target = FLAGS_output;
-    bool is_autolabel = FLAGS_autolabel, is_scalar = FLAGS_scalar, is_mark = FLAGS_mark_rewrite;
+    std::string path = FLAGS_benchmark, target = FLAGS_output, solver = FLAGS_solver;
+    bool is_autolabel = FLAGS_autolabel, is_mark = FLAGS_mark_rewrite;
     global::KStageInfoPath = FLAGS_stage_output_file;
 
     TimeGuard* global_guard = new TimeGuard(1e9);
@@ -50,7 +51,7 @@ int main(int argc, char** argv) {
     if (is_autolabel) {
         global::printStageResult("Start stage 0/2: generating annotations.");
         global::recorder.start("label");
-        auto *label_solver = new autolabel::AutoLabelZ3Solver(input_program, is_scalar);
+        auto *label_solver = new autolabel::AutoLabelZ3Solver(input_program, solver == "scalar");
         labeled_program = label_solver->label();
         global::recorder.end("label");
         global::printStageResult("Stage 0/2 Finished");
@@ -77,82 +78,24 @@ int main(int argc, char** argv) {
 
     IncreSolution solution;
 
-    if (is_scalar) {
+    if (solver == "scalar") {
         auto* solver = new incre::IncreAutoLifterSolver(info, env);
         solution = solver->solve();
-    } else {
+    } else if (solver == "nonscalar") {
         auto* runner = new autolifter::OCRunner(info, env.get(), 2, 1);
         autolifter::NonScalarAlignSolver* aux_solver = new autolifter::OCNonScalarAlignSolver(info, runner);
         auto *ns_solver = new autolifter::IncreNonScalarSolver(info, env, aux_solver);
-
         solution = ns_solver->solve();
+    } else if (solver == "enumeration") {
+        auto* solver = new incre::IncreEnumerationSolver(info, env);
+        solution = solver->solve();
     }
+
     solution.print();
     // LOG(INFO) << "After execute time " << global::recorder.query("execute");
 
     auto full_res = incre::rewriteWithIncreSolution(info->program.get(), solution, env.get(), is_mark);
     full_res = incre::eliminateUnusedLet(full_res.get());
-
-    /* Final verification */
-    global::recorder.start("final-verify");
-    if (full_res->config_map.find(IncreConfig::EXTRA_GRAMMAR) != full_res->config_map.end()) {
-        auto name_data = full_res->config_map[IncreConfig::EXTRA_GRAMMAR];
-        auto *sv = dynamic_cast<StringValue *>(name_data.get());
-        CommandList extra_component;
-        if (sv) {
-            extra_component = incre::grammar::collector::extractExtraComponentInResult(sv->s);
-        }
-        CommandList pre_commands;
-        for (auto &command: full_res->commands) {
-            if (command->isDecoratedWith(CommandDecorate::INPUT)) {
-                extra_component.push_back(command);
-            } else {
-                pre_commands.push_back(command);
-            }
-        }
-        full_res->commands.clear();
-        bool is_inserted = false;
-        for (auto &command: pre_commands) {
-            if (command->getType() != CommandType::DEF_IND && !is_inserted) {
-                is_inserted = true;
-                for (auto &new_command: extra_component) full_res->commands.push_back(new_command);
-            }
-            full_res->commands.push_back(command);
-        }
-        if (!is_inserted) {
-            for (auto &new_command: extra_component) {
-                full_res->commands.push_back(new_command);
-            }
-        }
-    }
-
-    if (!target.empty()) incre::printProgram(full_res, target, is_mark);
-    incre::printProgram(full_res, {}, is_mark);
-    auto [start_name, params] = info->example_pool->start_list[0];
-    auto possible_inputs = incre::constructAllPossibleInput(info->example_pool->input_list, params, start_name, input_program->config_map);
-
-    LOG(INFO) << "Possible inputs " << possible_inputs.size();
-    for (int i = 0; i < 10 && i < possible_inputs.size(); ++i) {
-        std::cout << "#" << i << ": " << possible_inputs[i].first->toString() << std::endl;
-        for (auto& [name, v]: possible_inputs[i].second) std::cout << " " << name << "@" << v.toString();
-        std::cout << std::endl;
-    }
-    auto ref_result = evaluateAll(possible_inputs, input_program);
-    auto total_result = evaluateAll(possible_inputs, full_res);
-    for (int i = 0; i < 10 && i < possible_inputs.size(); ++i) {
-        std::cout << "#" << i << ": " << ref_result[i].toString() << " " << total_result[i].toString() << std::endl;
-    }
-    for (int i = 0; i < ref_result.size(); ++i) {
-        if (!(ref_result[i] == total_result[i])) {
-            std::cout << "incorrect" << std::endl;
-            std::cout << "#" << i << ": " << possible_inputs[i].first->toString() << std::endl;
-            for (auto& [name, v]: possible_inputs[i].second) std::cout << " " << name << "@" << v.toString();
-            std::cout << ref_result[i].toString() << " " << total_result[i].toString() << std::endl;
-        }
-        assert(ref_result[i] == total_result[i]);
-    }
-    global::recorder.end("final-verify");
-
 
     global::recorder.printAll();
     std::cout << global_guard->getPeriod() << std::endl;

@@ -17,7 +17,7 @@ namespace incre {
     };
 
     enum class CommandDecorate {
-        INPUT, START, SYN_COMPRESS, SYN_COMBINE, SYN_ALIGN, SYN_NO_PARTIAL, TERM_NUM
+        INPUT, START, SYN_COMPRESS, SYN_COMBINE, SYN_ALIGN, SYN_NO_PARTIAL, TERM_NUM, AS_COMPRESS
     };
 
     enum class IncreConfig {

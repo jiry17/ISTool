@@ -70,7 +70,8 @@ namespace {
     const std::unordered_map<CommandDecorate, std::string> KDecorateNameMap = {
             {CommandDecorate::INPUT, "Input"}, {CommandDecorate::START, "Start"},
             {CommandDecorate::SYN_ALIGN, "Align"}, {CommandDecorate::SYN_COMBINE, "Combine"},
-            {CommandDecorate::SYN_COMPRESS, "Extract"}, {CommandDecorate::SYN_NO_PARTIAL, "NoPartial"}
+            {CommandDecorate::SYN_COMPRESS, "Extract"}, {CommandDecorate::SYN_NO_PARTIAL, "NoPartial"},
+            {CommandDecorate::AS_COMPRESS, "AsCompress"}
     };
 }
 

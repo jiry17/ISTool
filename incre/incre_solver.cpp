@@ -173,6 +173,11 @@ namespace {
     }
 }
 
+Ty incre::rewriteTypeWithTypes(const Ty &type, const TyList &res_types) {
+    IncreSolution sol; sol.compress_type_list = res_types;
+    return _rewriteType(type, sol);
+}
+
 IncreProgram incre::rewriteWithIncreSolution(ProgramData *program, const IncreSolution &solution, Env* env, bool is_mark) {
     CommandList res;
     for (const auto& command: program->commands) {

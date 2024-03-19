@@ -117,31 +117,28 @@ void IncreComponent::extendNTMap(GrammarBuilder &builder) {
     }
 }
 
-class IncreOperatorSemantics: public FullExecutedSemantics {
-public:
-    Data base;
-    AddressHolder* holder;
-    IncreOperatorSemantics(const std::string& name, const Data& _base, bool is_parallel):
+IncreOperatorSemantics::IncreOperatorSemantics(const std::string& name, const Data& _base, bool is_parallel):
         FullExecutedSemantics(name), base(_base) {
-        if (!is_parallel) holder = new AddressHolder(); else holder = nullptr;
+    if (!is_parallel) holder = new AddressHolder(); else holder = nullptr;
+}
+
+IncreOperatorSemantics::~IncreOperatorSemantics() noexcept {
+    delete holder;
+}
+
+Data IncreOperatorSemantics::run(DataList &&inp_list, ExecuteInfo *info) {
+    Data current = base;
+    auto* tmp_holder = holder ? holder : new AddressHolder();
+    for (auto& param: inp_list) {
+        current = incre::runApp(current, param, tmp_holder);
     }
-    virtual Data run(DataList&& inp_list, ExecuteInfo* info) {
-        Data current = base;
-        auto* tmp_holder = holder ? holder : new AddressHolder();
-        for (auto& param: inp_list) {
-            current = incre::runApp(current, param, tmp_holder);
-        }
-        if (holder) {
-            if (holder->address_list.size() >= 1e5) holder->recover(0);
-        } else {
-            delete tmp_holder;
-        }
-        return current;
+    if (holder) {
+        if (holder->address_list.size() >= 1e5) holder->recover(0);
+    } else {
+        delete tmp_holder;
     }
-    virtual ~IncreOperatorSemantics() {
-        delete holder;
-    }
-};
+    return current;
+}
 
 void IncreComponent::insertComponent(const GrammarBuilder &builder) {
     auto sem = std::make_shared<IncreOperatorSemantics>(name, data, is_parallel);
