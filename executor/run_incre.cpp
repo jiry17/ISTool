@@ -31,34 +31,8 @@ int main(int argv, char** argc) {
     incre::config::applyConfig(prog.get(), env.get());
 
     auto ctx = buildContext(prog.get(), BuildGen(incre::semantics::DefaultEvaluator), BuildGen(types::DefaultIncreTypeChecker));
-    std::cout << "zyw: ctx->ctx.printTypes begin" << std::endl;
     ctx->ctx.printTypes();
-    std::cout << "zyw: ctx->ctx.printTypes end" << std::endl;
     auto incre_info = incre::analysis::buildIncreInfo(prog.get(), env.get());
-
-    std::cout << "zyw: command bind begin" << std::endl;
-    for (auto& command: incre_info->program->commands) {
-        auto* cb = dynamic_cast<CommandBindTerm*>(command.get());
-        if (cb) {
-            std::cout << command->name << ": " << cb->term->toString() << ", " << incre::syntax::termType2String(cb->term->getType()) << std::endl;
-        }
-    }
-    
-    std::cout << "zyw: command def begin" << std::endl;
-    for (auto& command: incre_info->program->commands) {
-        auto* cb = dynamic_cast<CommandDef*>(command.get());
-        if (cb) {
-            std::cout << command->name << ": " << cb->param << std::endl;
-        }
-    }
-
-    std::cout << "zyw: command declare begin" << std::endl;
-    for (auto& command: incre_info->program->commands) {
-        auto* cb = dynamic_cast<CommandDeclare*>(command.get());
-        if (cb) {
-            std::cout << command->name << ": " << cb->type->toString() << std::endl;
-        }
-    }
 
     std::cout << std::endl << "Rewrite infos" << std::endl;
     for (auto& rewrite_info: incre_info->rewrite_info_list) {
@@ -94,7 +68,6 @@ int main(int argv, char** argc) {
 
     auto* solver = new IncreAutoLifterSolver(incre_info, env);
     auto res = solver->solve();
-    std::cout << "zyw: res.print:" << std::endl;
     res.print();
     // auto res_prog = rewriteWithIncreSolution(prog.get(), res);
 }

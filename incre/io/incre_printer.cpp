@@ -41,7 +41,6 @@ namespace incre::syntax {
             } else {
                 std::pair<int, int> pair_value = std::get<std::pair<int, int>>(ty_var->info);
                 std::cout << (char)(pair_value.first + 'a');
-                // std::cout << "(" << pair_value.first << ", " << pair_value.second << ")" << std::endl;
             }
         } else if (ty->getType() == TypeType::UNIT) {
             if (debug) std::cout << "[UNIT]" << std::endl;
@@ -55,12 +54,6 @@ namespace incre::syntax {
         } else if (ty->getType() == TypeType::POLY) {
             if (debug) std::cout << "[POLY]" << std::endl;
             auto* ty_poly = dynamic_cast<TyPoly*>(ty.get());
-            // int len = ty_poly->var_list.size();
-            // for (int i = 0; i < len; ++i) {
-            //     if (i) std::cout << " ";
-            //     std::cout << (char)(ty_poly->var_list[i] + 'a');
-            // }
-            // std::cout << std::endl;
             printTy(ty_poly->body);
         } else if (ty->getType() == TypeType::ARR) {
             if (debug) std::cout << "[ARR]" << std::endl;
@@ -98,17 +91,6 @@ namespace incre::syntax {
                 std::cout << " ";
                 printTy(ty_ind->param_list[i]);
             }
-            /*std::cout << ty_ind->name << " = ";
-            bool flag = false;
-            for (auto& ind_cons : ty_ind->constructors) {
-                if (flag) {
-                    std::cout << " | ";
-                } else {
-                    flag = true;
-                }
-                std::cout << ind_cons.first << " ";
-                printTy(ind_cons.second);
-            }*/
         } else if (ty->getType() == TypeType::COMPRESS) {
             if (debug) std::cout << "[COMPRESS]" << std::endl;
             auto* ty_compress = dynamic_cast<TyCompress*>(ty.get());
@@ -280,27 +262,6 @@ namespace incre::syntax {
             printTerm(tm_let->body);
             floor_num--;
         }
-        // else if (term->getType() == TermType::ABS) {
-        //     if (debug) std::cout << "[ABS]" << std::endl;
-        //     auto* tm_abs = dynamic_cast<TmAbs*>(term.get());
-        //     std::cout << "\\" << tm_abs->name << ": ";
-        //     printTy(tm_abs->type);
-        //     std::cout << ". ";
-        //     if (tm_abs->content->getType() != TermType::ABS) {
-        //         std::cout << std::endl;
-        //         printSpace(floor_num);
-        //     }
-        //     printTerm(tm_abs->content);
-        // } else if (term->getType() == TermType::FIX) {
-        //     if (debug) std::cout << "[FIX]" << std::endl;
-        //     auto* tm_fix = dynamic_cast<TmFix*>(term.get());
-        //     std::cout << "fix (" << std::endl;
-        //     printSpace(floor_num);
-        //     printTerm(tm_fix->content);
-        //     printSpace(floor_num-1);
-        //     std::cout << ")";
-        //     if (debug) std::cout << std::endl << "[FIX_END]" << std::endl;
-        // }
         else if (term->getType() == TermType::MATCH) {
             if (debug) std::cout << "[MATCH]" << std::endl;
             auto* tm_match = dynamic_cast<TmMatch*>(term.get());
@@ -321,10 +282,6 @@ namespace incre::syntax {
                 std::cout << " -> ";
                 floor_num++;
                 auto term_type = match_case.second->getType();
-                // if (term_type == TermType::LET || term_type == TermType::FIX || term_type == TermType::MATCH || term_type == TermType::ALIGN) {
-                //     std::cout << std::endl;
-                //     printSpace(floor_num);
-                // }
                 if (term_type == TermType::LET || term_type == TermType::MATCH) {
                     std::cout << std::endl;
                     printSpace(floor_num);
@@ -363,27 +320,6 @@ namespace incre::syntax {
             printTerm(tm_rewrite->body);
             std::cout << ")";
         }
-        // else if (term->getType() == TermType::ALIGN) {
-        //     if (align_mark) {
-        //         auto *tm_align = dynamic_cast<TmAlign *>(term.get());
-        //         std::cout << "<mark>";
-        //         align_mark = false;
-        //         printTerm(tm_align->content);
-        //         align_mark = true;
-        //         std::cout << "</mark>";
-        //     } else {
-        //         auto *tm_align = dynamic_cast<TmAlign *>(term.get());
-        //         auto *labeled_align = dynamic_cast<TmLabeledAlign *>(term.get());
-        //         auto need_bracket = _isNeedBracket(tm_align->content->getType());
-        //         std::cout << "align";
-        //         if (labeled_align) std::cout << "@" << labeled_align->id;
-        //         std::cout << " ";
-        //         if (need_bracket) std::cout << "(";
-        //         printTerm(tm_align->content);
-        //         if (need_bracket) std::cout << ")";
-        //         std::cout << " ";
-        //     }
-        // }
         else {
             LOG(FATAL) << "Unknown term";
         }
@@ -399,30 +335,6 @@ namespace incre::syntax {
         } else {
             std::cout << "data: " << binding->data.toString() << std::endl;
         }
-        // if (binding->getType() == BindingType::TYPE) {
-        //     if (debug) std::cout << "[TYPE]" << std::endl;
-        //     std::cout << " = ";
-        //     auto* type_binding = dynamic_cast<TypeBinding*>(binding.get());
-        //     printTy(type_binding->type);
-        // } else if (binding->getType() == BindingType::TERM) {
-        //     if (debug) std::cout << "[TERM]" << std::endl;
-        //     std::cout << " = ";
-        //     auto* term_binding = dynamic_cast<TermBinding*>(binding.get());
-        //     printTerm(term_binding->term);
-        //     if (debug) std::cout << std::endl << "[Binding_TERM_term_END]" << std::endl;
-        //     if (term_binding->type) {
-        //         std::cout << ": ";
-        //         printTy(term_binding->type);
-        //         if (debug) std::cout << std::endl << "[Binding_TERM_type_END]" << std::endl;
-        //     }
-        // } else if (binding->getType() == BindingType::VAR) {
-        //     if (debug) std::cout << "[VAR]" << std::endl;
-        //     std::cout << " : ";
-        //     auto* var_type_binding = dynamic_cast<VarTypeBinding*>(binding.get());
-        //     printTy(var_type_binding->type);
-        // } else {
-        //     LOG(FATAL) << "Unknown binding";
-        // }
         floor_num--;
     }
 }
@@ -432,9 +344,6 @@ namespace incre{
         floor_num = 0;
         in_func = false;
         is_command_bind = false;
-        // for (auto deco: command->decorate_set) {
-        //     std::cout << "@" << decorate2String(deco) << " ";
-        // }
         if (debug) std::cout << std::endl << "[printCommand] ";
         if (command->getType() == CommandType::BIND_TERM) {
             if (debug) std::cout << "[BIND_TERM]" << std::endl;
@@ -483,7 +392,6 @@ namespace incre{
                         }
                     }
                 }
-                // printTy(command_def->cons_list[i].second);
             }
             std::cout << ";" << std::endl;
         } else if (command->getType() == CommandType::DECLARE) {
