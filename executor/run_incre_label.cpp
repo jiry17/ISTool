@@ -96,6 +96,7 @@ int main(int argc, char** argv) {
 
     auto full_res = incre::rewriteWithIncreSolution(info->program.get(), solution, env.get(), is_mark);
     full_res = incre::eliminateUnusedLet(full_res.get());
+    incre::printProgram(full_res, target);
 
     global::recorder.printAll();
     std::cout << global_guard->getPeriod() << std::endl;

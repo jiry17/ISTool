@@ -32,6 +32,7 @@ EnvBasedExampleCollector::EnvBasedExampleCollector(const std::vector<std::unorde
 
 void EnvBasedExampleCollector::collect(const Term &start, const std::unordered_map<std::string, Data> &_global) {
     ctx->initGlobal(_global); current_global = _global;
+    LOG(INFO) << "collect " << start->toString();
     incre::envRun(start, ctx->start, ctx->holder, ext_map);
 }
 

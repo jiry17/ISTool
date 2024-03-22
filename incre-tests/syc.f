@@ -1,3 +1,5 @@
+Config SampleSize = 4;
+
 Inductive Nat = zero Unit | succ Nat;
 
 @Combine plus = fix(
@@ -26,7 +28,11 @@ repr_nat = fix (
   \n: Nat.
   match n with
     zero _ -> zero unit
-  | succ n0 -> succ (f n0)
+  | succ n0 ->
+    let res = f n0 in
+    let n = unit in
+    let n0 = unit in
+    succ res
 end);
 
-lhs = \z: Nat. (mult (mult aa bb) (repr_nat z));
+lhs = \z: Nat. compress (repr_nat z) aa bb;
