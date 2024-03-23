@@ -1,73 +1,72 @@
-Inductive IInt = cint Int;
-Inductive List = nil Unit | cons {IInt, List};
-Inductive Llist = cnil Unit | ccons {List, Llist};
-Inductive Pair = pii {Int, Int};
+Config SampleIntMin = 0;
+Config SampleIntMax = 1;
+Config SampleSize = 6; /*Reduce the time of random testing*/
 
-cint2int = lambda x: IInt.
-match x with
-  cint a -> a
-end;
+Inductive List = cons {Int, List} | single Int;
+Input = {List, List};
 
-cmax = lambda x: Int. lambda y: Int. if (<= x y) then y else x;
+head = \xs: List.
+  match xs with
+    cons {h, t} -> h
+  | single h -> h
+  end;
 
-mapcons = fix (lambda f: Llist -> IInt -> Llist.
-lambda ll: Llist.
-lambda h: IInt.
-match ll with
-  cnil _ -> cnil unit
-| ccons {ch, ct} -> ccons {cons {h, ch}, f ct h}
-end);
-
-
-
-prefixes = fix (lambda f: List -> Llist.
-lambda l: List.
-match l with
-   nil _ -> cnil unit
-| cons {h, t} -> ccons {cons {h, nil unit}, mapcons (f t) h}
-end
+length = fix (
+  \f: List -> Int. \xs: List.
+  match xs with
+    single _ -> 1
+  | cons {h, t} -> + 1 (f t)
+  end
 );
 
-cappend =
-fix (lambda f: Llist -> Llist -> Llist. lambda l: Llist. lambda m: Llist.
-match l with
-  ccons {h, t} -> ccons {h, (f t m)}
-| cnil _ -> m
-end
+tail = \xs: List.
+  match xs with
+    cons {h, t} -> t
+  end;
+
+list_eq = fix (
+  \f: List -> List -> Bool. \xs: List. \ys: List.
+  match {xs, ys} with
+    {cons {xh, xt}, cons {yh, yt}} ->
+      if == xh yh then f xt yt else false
+  | {single x, single y} -> == x y
+  | _ -> false
+  end
 );
 
-sum = fix (lambda f: List -> Int.
-lambda l: List.
-match l with
-  nil _ -> 0
-| cons {h, t} -> + (cint2int h) (f t)
-end);
-
-
-func0 = fix (lambda f: Llist -> Int.
-lambda ll: Llist.
-match ll with
-  cnil _ -> 0
-| ccons {ch, ct} -> cmax (sum ch) (f ct)
-end
+list_lt = fix (
+  \f: List -> List -> Bool. \xs: List. \ys: List.
+  match {xs, ys} with
+    {cons {xh, xt}, cons {yh, yt}} ->
+      if == xh yh then f xt yt
+      else if < xh yh then true
+      else false
+  | {single x, single y} -> < x y
+  | {single x, cons {y, _}} -> <= x y
+  | {cons {x, _}, single y} -> < x y
+  end
 );
 
-func1 = fix (lambda f: List -> Llist.
-lambda l: List.
-match l with
-  nil _ -> let var6 = 0 in cnil unit
-| cons {h, t} -> let l = (nil unit) in ccons {cons {h, nil unit}, cappend (mapcons (prefixes t) h) (f t)}
-end
+search = fix(
+  \f: Input -> Reframe {Int, List, List}. \ps: Input.
+  match ps with
+    {single x, single y} -> {1, cons {x, single y}, single y}
+  | {cons {xh, xt}, cons {yh, yt}} ->
+      let res = f {xt, yt} in 
+      if list_lt (cons {yh, res.3}) res.2 then {1, cons {xh, (cons {yh, res.3})}, (cons {yh, res.3})}
+      else if list_eq (cons {yh, res.3}) res.2 then {+ 1 res.1, cons {xh, res.2}, (cons {yh, res.3})}
+      else {res.1, cons {xh, res.2}, (cons {yh, res.3})}
+  end 
 );
 
-tmp = fix (\f: List -> Compress List. \xs: List.
-match xs with
-  nil _ -> xs
-| cons {h, t} -> cons {h, f t}
-end
+length = fix (
+  \f: List -> Int. \xs: List.
+  match xs with
+    single _ -> 1
+  | cons {h, t} -> + 1 (f t)
+  end
 );
 
-func2 = lambda var4: List.
-let var5 = (tmp var4) in
-let var4 = (nil unit) in
-(func0 (func1 var5));
+main = \inp: Input.
+  if == (length inp.1) (length inp.2) then (search inp).1
+  else 0;

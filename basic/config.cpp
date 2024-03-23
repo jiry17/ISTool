@@ -18,7 +18,7 @@ const std::string config::KCVC5Path = "/home/jiry/2021A/cvc5";
 //const std::string config::KIncreParserPath = "/usr/jiry/IncreLanguage/";
 const std::string config::KIncreParserPath = "/home/jiry/2023S/IncreLanguage/";
 #else
-const std::string config::KIncreParserPath = "/Users/pro/Desktop/work/2023S/IncreLanguage/";
+const std::string config::KIncreParserPath = "/Users/pro/Desktop/work/2023A/IncreLanguage/";
 #endif
 
 const bool config::KIsDefaultSelf = true;
