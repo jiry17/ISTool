@@ -16,6 +16,7 @@
 #include "istool/sygus/theory/basic/clia/clia.h"
 #include "istool/sygus/theory/basic/string/string_value.h"
 #include <iostream>
+#include <cstring>
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 
@@ -35,6 +36,11 @@ int main(int argc, char** argv) {
     std::string path = FLAGS_benchmark, target = FLAGS_output;
     bool is_autolabel = FLAGS_autolabel, is_scalar = FLAGS_scalar, is_mark = FLAGS_mark_rewrite;
     global::KStageInfoPath = FLAGS_stage_output_file;
+    if (argc >= 4) {
+        path = argv[1];
+        is_autolabel = (strcmp(argv[2], "true") == 0) ? true : false;
+        is_scalar = (strcmp(argv[3], "true") == 0) ? true : false;
+    }
 
     TimeGuard* global_guard = new TimeGuard(1e9);
 
