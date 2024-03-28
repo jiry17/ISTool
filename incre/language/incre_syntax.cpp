@@ -177,10 +177,22 @@ std::string TyUnit::toString() const {return "Unit";}
 TyVar::TyVar(const TypeVarInfo &_info): info(_info), TypeData(TypeType::VAR) {}
 std::string TyVar::toString() const {
     if (is_bounded()) return get_bound_type()->toString();
-    return "?" + std::to_string(get_index_and_level().first);
+    auto [index, level, range] = get_var_info();
+    std::string name = "?" + std::to_string(index);
+    switch (range) {
+        case ANY: return name;
+        case SCALAR: return name + "[Scalar]";
+        case BASE: return name + "[Base]";
+    }
 }
 bool TyVar::is_bounded() const {return std::holds_alternative<Ty>(info);}
-std::pair<int, int> TyVar::get_index_and_level() const {return std::get<std::pair<int, int>>(info);}
+std::tuple<int, int, VarRange> TyVar::get_var_info() const {return std::get<std::tuple<int, int, VarRange>>(info);}
+
+void TyVar::intersectWith(const VarRange &range) {
+    assert(!is_bounded());
+    auto [index, level, pre_range] = get_var_info();
+    info = std::make_tuple(index, level, std::min(range, pre_range));
+}
 Ty TyVar::get_bound_type() const {return std::get<Ty>(info);}
 TyPoly::TyPoly(const std::vector<int> &_var_list, const Ty &_body): TypeData(TypeType::POLY), var_list(_var_list), body(_body) {}
 std::string TyPoly::toString() const {

@@ -75,7 +75,7 @@ namespace {
             if (type->is_bounded()) {
                 return rewrite(type->get_bound_type());
             }
-            auto [index, _] = type->get_index_and_level();
+            auto [index, _level, _info] = type->get_var_info();
             auto it = substitute_map.find(index);
             if (it != substitute_map.end()) return it->second;
             return _type;

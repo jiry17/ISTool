@@ -28,12 +28,42 @@ syntax::Ty types::getSyntaxValueType(const Data &data) {
 namespace {
     const std::string KIntBinaryOp = "+-*/";
     const std::string KIntCompareOp = ">=<=";
+
+    std::string _getRangeName(syntax::VarRange x) {
+        switch (x) {
+            case ANY: return "Any";
+            case SCALAR: return "Scalar";
+            case BASE: return "Base";
+        }
+    }
+
+    void rangeMismatchError(syntax::VarRange x, syntax::TypeData* y) {
+        throw IncreTypingError("Type " + y->toString() + " does not belong to range " + _getRangeName(x));
+    }
 }
+
+void types::checkAndUpdate(syntax::VarRange x, syntax::TypeData* type) {
+    if (type->getType() == TypeType::COMPRESS) return;
+    if (type->getType() == TypeType::ARR && x != ANY) {
+        rangeMismatchError(x, type);
+    }
+    if (type->getType() == TypeType::IND && x == SCALAR) {
+        rangeMismatchError(x, type);
+    }
+    if (type->getType() == TypeType::VAR) {
+        auto* tv = dynamic_cast<TyVar*>(type);
+        if (!tv->is_bounded()) tv->intersectWith(x);
+    }
+    for (auto& sub_type: syntax::getSubTypes(type)) {
+        checkAndUpdate(x, sub_type.get());
+    }
+}
+
 
 syntax::Ty types::getPrimaryType(const std::string &name) {
     if (KIntBinaryOp.find(name) != std::string::npos) return TARR(TINT, TARR(TINT, TINT));
     if (name == "==") {
-        std::pair<int, int> var_info(0, 0);
+        std::tuple<int, int, VarRange> var_info(0, 0, BASE);
         auto var = std::make_shared<TyVar>(var_info);
         auto type = TARR(var, TARR(var, TBOOL));
         return std::make_shared<TyPoly>((std::vector<int>){0}, type);
@@ -57,8 +87,8 @@ void types::IncreTypeChecker::popLevel() {
     --_level;
 }
 
-syntax::Ty types::IncreTypeChecker::getTmpVar() {
-    TypeVarInfo info(std::make_pair(tmp_var_id++, _level));
+syntax::Ty types::IncreTypeChecker::getTmpVar(VarRange range) {
+    TypeVarInfo info(std::make_tuple(tmp_var_id++, _level, range));
     return std::make_shared<TyVar>(info);
 }
 
@@ -72,20 +102,36 @@ namespace {
             if (type->is_bounded()) {
                 return rewrite(type->get_bound_type());
             }
-            auto [index, _] = type->get_index_and_level();
+            auto [index, _level, _info] = type->get_var_info();
             auto it = replace_map.find(index);
             if (it == replace_map.end()) return _type;
             return it->second;
         }
     };
+
+    void _collectRangeMap(TypeData* type, std::unordered_map<int, VarRange>& range_map) {
+        if (type->getType() == TypeType::VAR) {
+            auto* tv = dynamic_cast<TyVar*>(type);
+            if (!tv->is_bounded()) {
+                auto [index, _, info] = tv->get_var_info();
+                range_map[index] = info;
+            }
+        }
+        for (auto& sub_type: syntax::getSubTypes(type)) {
+            _collectRangeMap(sub_type.get(), range_map);
+        }
+    }
 }
 
 syntax::Ty DefaultIncreTypeChecker::instantiate(const syntax::Ty &x) {
     if (x->getType() == TypeType::POLY) {
         auto* xp = dynamic_cast<TyPoly*>(x.get());
         std::unordered_map<int, Ty> replace_map;
+        std::unordered_map<int, VarRange> range_map;
+        _collectRangeMap(xp->body.get(), range_map);
         for (auto index: xp->var_list) {
-            replace_map[index] = getTmpVar();
+            auto it = range_map.find(index); assert(it != range_map.end());
+            replace_map[index] = getTmpVar(it->second);
         }
         auto* rewriter = new _TypeVarRewriter(replace_map);
         auto res = rewriter->rewrite(xp->body);
@@ -98,7 +144,7 @@ namespace {
         if (x->getType() == TypeType::VAR) {
             auto* tv = dynamic_cast<TyVar*>(x);
             if (!tv->is_bounded()) {
-                auto [var_index, var_level] = tv->get_index_and_level();
+                auto [var_index, var_level, info] = tv->get_var_info();
                 if (var_level > level) local_vars.insert(var_index);
                 return;
             }
@@ -131,9 +177,9 @@ void DefaultIncreTypeChecker::updateLevelBeforeUnification(syntax::TypeData *x, 
     if (x->getType() == TypeType::VAR) {
         auto* tv = dynamic_cast<TyVar*>(x);
         if (!tv->is_bounded()) {
-            auto [var_index, var_level] = tv->get_index_and_level();
+            auto [var_index, var_level, info] = tv->get_var_info();
             if (var_index == index) throw IncreTypingError("infinite unification");
-            tv->info = std::make_pair(var_index, std::min(var_level, level));
+            tv->info = std::make_tuple(var_index, std::min(var_level, level), info);
             return;
         }
     }
@@ -158,8 +204,7 @@ syntax::Ty IncreTypeChecker::typing(syntax::TermData *term, const IncreContext &
     switch (term->getType()) {
         TERM_CASE_ANALYSIS(TypeCheckCase);
     }
-    postProcess(term, ctx, res);
-    return res;
+    return postProcess(term, ctx, normalize(res));
 }
 
 #define TrivialUnificationCase(name) void DefaultIncreTypeChecker::_unify(syntax::Ty ##name *x, syntax::Ty## name *y, const syntax::Ty &_x, const syntax::Ty &_y) { \
@@ -193,14 +238,15 @@ void DefaultIncreTypeChecker::_unify(syntax::TyInd *x, syntax::TyInd *y, const s
 void DefaultIncreTypeChecker::_unify(syntax::TyVar *x, syntax::TyVar *y, const syntax::Ty &_x, const syntax::Ty &_y) {
     if (x->is_bounded()) return unify(x->get_bound_type(), _y);
     if (y && y->is_bounded()) return unify(_x, y->get_bound_type());
-    auto [index, level] = x->get_index_and_level();
-    if (y && y->get_index_and_level().first == index) return;
-    updateLevelBeforeUnification(_y.get(), index, level);
+    auto [x_index, x_level, x_range] = x->get_var_info();
+    if (y && std::get<0>(y->get_var_info()) == x_index) return;
+    updateLevelBeforeUnification(_y.get(), x_index, x_level);
+    checkAndUpdate(x_range, _y.get());
     x->info = _y;
 }
 
 void DefaultIncreTypeChecker::preProcess(syntax::TermData *term, const IncreContext &ctx) {}
-void DefaultIncreTypeChecker::postProcess(syntax::TermData *term, const IncreContext &ctx, const syntax::Ty &res) {}
+Ty DefaultIncreTypeChecker::postProcess(syntax::TermData *term, const IncreContext &ctx, const syntax::Ty &res) {return res;}
 
 #define GetType(name, ctx) typing(term->name.get(), ctx)
 #define GetTypeAssign(name, ctx) auto name = typing(term->name.get(), ctx)
@@ -212,14 +258,15 @@ syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmIf *term, const IncreConte
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmApp *term, const IncreContext &ctx) {
     GetTypeAssign(func, ctx); GetTypeAssign(param, ctx);
-    auto res = getTmpVar(); unify(func, std::make_shared<TyArr>(param, res));
+    auto res = getTmpVar(ANY);
+    unify(func, std::make_shared<TyArr>(param, res));
     return res;
 }
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmLet *term, const IncreContext &ctx) {
     if (term->is_rec) {
         pushLevel();
-        auto def_var = getTmpVar();
+        auto def_var = getTmpVar(ANY);
         auto new_ctx = ctx.insert(term->name, def_var);
         unify(def_var, GetType(def, new_ctx));
         popLevel();
@@ -242,13 +289,13 @@ syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmVar *term, const IncreCont
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmCons *term, const IncreContext &ctx) {
     auto cons_type = instantiate(ctx.getRawType(term->cons_name));
-    GetTypeAssign(body, ctx); auto res = getTmpVar();
+    GetTypeAssign(body, ctx); auto res = getTmpVar(ANY);
     unify(cons_type, std::make_shared<TyArr>(body, res));
     return res;
 }
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmFunc *term, const IncreContext &ctx) {
-    auto inp_type = getTmpVar();
+    auto inp_type = getTmpVar(ANY);
     auto new_ctx = ctx.insert(term->name, inp_type);
     return std::make_shared<TyArr>(inp_type, GetType(body, new_ctx));
 }
@@ -256,19 +303,41 @@ syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmFunc *term, const IncreCon
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmProj *term, const IncreContext &ctx) {
     GetTypeAssign(body, ctx);
     TyList fields(term->size);
-    for (int i = 0; i < term->size; ++i) fields[i] = getTmpVar();
+    for (int i = 0; i < term->size; ++i) fields[i] = getTmpVar(ANY);
     unify(body, std::make_shared<TyTuple>(fields));
     return fields[term->id - 1];
 }
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmLabel *term, const IncreContext &ctx) {
+    GetTypeAssign(body, ctx);
+    checkAndUpdate(BASE, body.get());
     return std::make_shared<TyCompress>(GetType(body, ctx));
+}
+
+namespace {
+    bool _isDuplicatedCompress(TypeData* type) {
+        if (type->getType() == TypeType::COMPRESS) {
+            auto* tc = dynamic_cast<TyCompress*>(type);
+            if (tc->body->getType() == TypeType::COMPRESS) return true;
+        }
+        for (auto& sub_type: getSubTypes(type)) {
+            if (_isDuplicatedCompress(sub_type.get())) return true;
+        }
+        return false;
+    }
+}
+
+syntax::Ty DefaultIncreTypeChecker::normalize(const syntax::Ty &type) {
+    if (_isDuplicatedCompress(type.get())) {
+        throw IncreTypingError("Duplicated type annotation found on " + type->toString());
+    }
+    return type;
 }
 
 std::pair<syntax::Ty, IncreContext>
 DefaultIncreTypeChecker::processPattern(syntax::PatternData *pattern, const IncreContext& ctx) {
     switch (pattern->getType()) {
-        case PatternType::UNDERSCORE: return {getTmpVar(), ctx};
+        case PatternType::UNDERSCORE: return {getTmpVar(ANY), ctx};
         case PatternType::VAR: {
             auto* pv = dynamic_cast<PtVar*>(pattern);
             if (pv->body) {
@@ -276,7 +345,7 @@ DefaultIncreTypeChecker::processPattern(syntax::PatternData *pattern, const Incr
                 new_ctx = new_ctx.insert(pv->name, sub_ty);
                 return {sub_ty, new_ctx};
             } else {
-                auto new_var = getTmpVar();
+                auto new_var = getTmpVar(ANY);
                 auto new_ctx = ctx.insert(pv->name, new_var);
                 return {new_var, new_ctx};
             }
@@ -294,17 +363,19 @@ DefaultIncreTypeChecker::processPattern(syntax::PatternData *pattern, const Incr
             auto* pc = dynamic_cast<PtCons*>(pattern);
             auto cons_type = instantiate(ctx.getRawType(pc->name));
             auto [body_type, new_ctx] = processPattern(pc->body.get(), ctx);
-            auto res_type = getTmpVar(); unify(std::make_shared<TyArr>(body_type, res_type), cons_type);
+            auto res_type = getTmpVar(ANY);
+            unify(std::make_shared<TyArr>(body_type, res_type), cons_type);
             return {res_type, new_ctx};
         }
     }
 }
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmMatch *term, const IncreContext &ctx) {
-    GetTypeAssign(def, ctx); auto res_type = getTmpVar();
+    GetTypeAssign(def, ctx); auto res_type = getTmpVar(ANY);
     for (auto& [pt, case_body]: term->cases) {
         auto [inp_type, new_ctx] = processPattern(pt.get(), ctx);
-        unify(def, inp_type); unify(res_type, typing(case_body.get(), new_ctx));
+        auto body_type = typing(case_body.get(), new_ctx);
+        unify(def, inp_type); unify(res_type, body_type);
     }
     return res_type;
 }
@@ -321,7 +392,7 @@ syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmValue *term, const IncreCo
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmPrimary *term, const IncreContext &ctx) {
     auto op_type = getPrimaryType(term->op_name);
-    auto oup_ty = getTmpVar(); auto full_ty = oup_ty;
+    auto oup_ty = getTmpVar(ANY); auto full_ty = oup_ty;
     for (int i = int(term->params.size()) - 1; i >= 0; --i) {
         full_ty = std::make_shared<TyArr>(typing(term->params[i].get(), ctx), full_ty);
     }
@@ -329,11 +400,13 @@ syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmPrimary *term, const Incre
 }
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmRewrite *term, const IncreContext &ctx) {
-    return GetType(body, ctx);
+    GetTypeAssign(body, ctx);
+    checkAndUpdate(SCALAR, body.get());
+    return body;
 }
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmUnlabel *term, const IncreContext &ctx) {
-    GetTypeAssign(body, ctx); auto res = getTmpVar();
+    GetTypeAssign(body, ctx); auto res = getTmpVar(BASE);
     unify(body, std::make_shared<TyCompress>(res));
     return res;
 }

@@ -36,7 +36,7 @@ namespace {
 #define JsonTypeHead(name) syntax::Ty _json2ty_ ## name (const Json::Value & node)
 
     JsonTypeHead(Var) {
-        TypeVarInfo info(std::make_pair(node["index"].asInt(), 0));
+        TypeVarInfo info(std::make_tuple(node["index"].asInt(), 0, ANY));
         return std::make_shared<TyVar>(info);
     }
 

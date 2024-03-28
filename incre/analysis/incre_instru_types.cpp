@@ -54,13 +54,15 @@ Data IncreLabeledEvaluator::_evaluate(syntax::TmLabel *term, const IncreContext 
 Ty incre::types::IncreLabeledTypeChecker::_typing(syntax::TmLabel *term, const IncreContext &ctx) {
     auto* labeled_term = dynamic_cast<TmLabeledLabel*>(term);
     if (!labeled_term) LOG(FATAL) << "Expect TmLabeledLabel, but got " << term->toString();
-    return std::make_shared<TyLabeledCompress>(typing(term->body.get(), ctx), labeled_term->id);
+    auto body = typing(term->body.get(), ctx);
+    checkAndUpdate(BASE, body.get());
+    return std::make_shared<TyLabeledCompress>(body, labeled_term->id);
 }
 
 Ty incre::types::IncreLabeledTypeChecker::_typing(syntax::TmUnlabel *term, const IncreContext &ctx) {
     auto* labeled_term = dynamic_cast<TmLabeledUnlabel*>(term);
     if (!labeled_term) LOG(FATAL) << "Expect TmLabeledUnlabel, but got " << term->toString();
-    auto content_var = getTmpVar();
+    auto content_var = getTmpVar(BASE);
     auto full_type = std::make_shared<TyLabeledCompress>(content_var, labeled_term->id);
     unify(full_type, typing(term->body.get(), ctx));
     return content_var;
@@ -86,7 +88,7 @@ namespace {
             if (type->is_bounded()) {
                 return rewrite(type->get_bound_type());
             }
-            auto [index, _] = type->get_index_and_level();
+            auto [index, _level, _info] = type->get_var_info();
             auto it = replace_map.find(index);
             if (it == replace_map.end()) return _type;
             return it->second;
@@ -97,14 +99,30 @@ namespace {
             return std::make_shared<TyLabeledCompress>(rewrite(type->body), labeled_type->id);
         }
     };
+
+    void _collectRangeMap(TypeData* type, std::unordered_map<int, VarRange>& range_map) {
+        if (type->getType() == TypeType::VAR) {
+            auto* tv = dynamic_cast<TyVar*>(type);
+            if (!tv->is_bounded()) {
+                auto [index, _, info] = tv->get_var_info();
+                range_map[index] = info;
+            }
+        }
+        for (auto& sub_type: getSubTypes(type)) {
+            _collectRangeMap(sub_type.get(), range_map);
+        }
+    }
 }
 
 Ty incre::types::IncreLabeledTypeChecker::instantiate(const Ty &x) {
     if (x->getType() == TypeType::POLY) {
         auto* xp = dynamic_cast<TyPoly*>(x.get());
         std::unordered_map<int, Ty> replace_map;
+        std::unordered_map<int, VarRange> range_map;
+        _collectRangeMap(x.get(), range_map);
         for (auto index: xp->var_list) {
-            replace_map[index] = getTmpVar();
+            auto it = range_map.find(index); assert(it != range_map.end());
+            replace_map[index] = getTmpVar(it->second);
         }
         auto* rewriter = new _LabeledTypeVarRewriter(replace_map);
         auto res = rewriter->rewrite(xp->body);

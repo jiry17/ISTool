@@ -45,6 +45,7 @@ int IncreInfoCollector::getFinalCompressLabel(int k) {
 
 void IncreInfoCollector::_unify(syntax::TyCompress *ox, syntax::TyCompress *oy, const syntax::Ty &_x, const syntax::Ty &_y) {
     types::DefaultIncreTypeChecker::_unify(ox, oy, _x, _y);
+    LOG(INFO) << "unify compress " << ox->toString() << " " << oy->toString();
     auto* x = dynamic_cast<TyLabeledCompress*>(ox);
     auto* y = dynamic_cast<TyLabeledCompress*>(oy);
     if (!x || !y) throw types::IncreTypingError("All TyCompress types should be labeled, but get " + ox->toString() + " and " + oy->toString());
@@ -58,14 +59,15 @@ syntax::Ty IncreInfoCollector::_typing(syntax::TmLabel *term, const IncreContext
 
 syntax::Ty IncreInfoCollector::_typing(syntax::TmUnlabel *term, const IncreContext &ctx) {
     auto body = typing(term->body.get(), ctx);
-    auto content_type = getTmpVar();
+    auto content_type = getTmpVar(ANY);
     auto full_type = std::make_shared<TyLabeledCompress>(content_type, getNewCompressLabel());
     unify(full_type, body); return content_type;
 }
 
-void IncreInfoCollector::postProcess(syntax::TermData *term, const IncreContext &ctx, const syntax::Ty &res) {
+syntax::Ty IncreInfoCollector::postProcess(syntax::TermData *term, const IncreContext &ctx, const syntax::Ty &res) {
     term_context_map.insert({term, ctx});
     term_type_map.insert({term, res});
+    return res;
 }
 
 namespace {
@@ -147,7 +149,7 @@ namespace {
             if (ctx.isContain(command->name)) {
                 collector->unify(ctx.getRawType(command->name), collector->typing(command->term.get(), ctx));
             } else if (command->is_func) {
-                collector->pushLevel(); auto var = collector->getTmpVar();
+                collector->pushLevel(); auto var = collector->getTmpVar(ANY);
                 ctx = ctx.insert(command->name, var);
                 auto* address = ctx.start.get();
                 collector->unify(var, collector->typing(command->term.get(), ctx));
@@ -247,6 +249,7 @@ IncreInputInfo input_filter::buildInputInfo(const IncreContext &local_ctx, const
 #include "istool/incre/grammar/incre_grammar_semantics.h"
 #include "istool/sygus/theory/basic/theory_semantics.h"
 #include "istool/ext/deepcoder/deepcoder_semantics.h"
+#include "istool/incre/io/incre_printer.h"
 
 IncreInfo analysis::buildIncreInfo(IncreProgramData *program, Env* env) {
     auto* collector = new IncreInfoCollector();
@@ -268,6 +271,9 @@ IncreInfo analysis::buildIncreInfo(IncreProgramData *program, Env* env) {
         res_program = rewriter->res;
         delete rewriter;
     }
+
+    LOG(INFO) << "print whole program";
+    incre::printProgram(res_program);
 
     std::vector<RewriteTypeInfo> rewrite_info_list;
     {

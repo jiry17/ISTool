@@ -78,7 +78,7 @@ void incre::DefaultContextBuilder::visit(CommandBindTerm *command) {
         ctx = ctx.insert(command->name, Binding(false, {}, {}));
         auto* address = ctx.getAddress(command->name);
         if (checker) {
-            checker->pushLevel(); auto current_type = checker->getTmpVar();
+            checker->pushLevel(); auto current_type = checker->getTmpVar(ANY);
             address->bind.type = current_type;
             checker->unify(current_type, checker->typing(command->term.get(), ctx));
             checker->popLevel();

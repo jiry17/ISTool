@@ -39,8 +39,8 @@ namespace incre::syntax {
                 Ty ty_var_value = std::get<Ty>(ty_var->info);
                 printTy(ty_var_value);
             } else {
-                std::pair<int, int> pair_value = std::get<std::pair<int, int>>(ty_var->info);
-                std::cout << (char)(pair_value.first + 'a');
+                auto [index, _level, _info] = ty_var->get_var_info();
+                std::cout << (char)(index + 'a');
             }
         } else if (ty->getType() == TypeType::UNIT) {
             if (debug) std::cout << "[UNIT]" << std::endl;

@@ -30,7 +30,8 @@ int main(int argv, char** argc) {
     env->setConst(solver::lia::KIsGurobiName, BuildData(Bool, false));
     incre::config::applyConfig(prog.get(), env.get());
 
-    auto ctx = buildContext(prog.get(), BuildGen(incre::semantics::DefaultEvaluator), BuildGen(types::DefaultIncreTypeChecker));
+    auto ctx = buildContext(prog.get(), [](){return new incre::semantics::DefaultEvaluator();},
+                            [](){return new types::DefaultIncreTypeChecker();});
     ctx->ctx.printTypes();
     auto incre_info = incre::analysis::buildIncreInfo(prog.get(), env.get());
 

@@ -26,13 +26,18 @@ namespace incre::syntax {
     typedef std::shared_ptr<TypeData> Ty;
     typedef std::vector<Ty> TyList;
 
-    typedef std::variant<Ty, std::pair<int, int>> TypeVarInfo;
+    enum VarRange {
+        SCALAR = 0, BASE = 1, ANY = 2
+    };
+
+    typedef std::variant<Ty, std::tuple<int, int, VarRange>> TypeVarInfo;
 
     class TyVar: public TypeData {
     public:
         TypeVarInfo info;
         TyVar(const TypeVarInfo& _info);
-        std::pair<int, int> get_index_and_level() const;
+        std::tuple<int, int, VarRange> get_var_info() const;
+        void intersectWith(const VarRange& range);
         Ty get_bound_type() const;
         bool is_bounded() const;
         virtual std::string toString() const;

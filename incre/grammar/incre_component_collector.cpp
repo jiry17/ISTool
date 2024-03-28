@@ -261,7 +261,8 @@ namespace {
             if (type->is_bounded()) {
                 LOG(FATAL) << "Bounded vars should be removed before grounding";
             }
-            auto it = var_map.find(type->get_index_and_level().first);
+            auto [id, _index, _range] = type->get_var_info();
+            auto it = var_map.find(id);
             if (it == var_map.end()) {
                 LOG(FATAL) << "Unknown variable " << type->toString();
             }

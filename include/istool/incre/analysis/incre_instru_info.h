@@ -16,7 +16,7 @@ namespace incre::analysis {
         RegisterUnifyRule(Compress);
         RegisterTypingRule(Label);
         RegisterTypingRule(Unlabel);
-        virtual void postProcess(syntax::TermData* term, const IncreContext& ctx, const syntax::Ty& res);
+        virtual syntax::Ty postProcess(syntax::TermData* term, const IncreContext& ctx, const syntax::Ty& res);
     public:
         std::unordered_map<syntax::TermData*, syntax::Ty> term_type_map;
         std::unordered_map<syntax::TermData*, IncreContext> term_context_map;

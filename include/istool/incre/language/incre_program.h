@@ -126,7 +126,6 @@ namespace incre {
 
     IncreFullContext buildContext(IncreProgramData* program, semantics::IncreEvaluator* evaluator, types::IncreTypeChecker* checker);
 
-#define BuildGen(name) []{return new name();}
     IncreFullContext buildContext(IncreProgramData* program,
                               const semantics::IncreEvaluatorGenerator& = [](){return nullptr;},
                               const types::IncreTypeCheckerGenerator& = [](){return nullptr;});

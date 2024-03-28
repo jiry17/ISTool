@@ -119,7 +119,8 @@ IncreExamplePool::IncreExamplePool(const IncreProgram &_program,
     auto cv = env->getConstRef(config::KThreadNumName);
     thread_num = theory::clia::getIntValue(*cv);
 
-    auto type_ctx = buildContext(_program.get(), [](){return nullptr;}, BuildGen(types::IncreLabeledTypeChecker));
+    auto checker_gen = []() {return new types::IncreLabeledTypeChecker();};
+    auto type_ctx = buildContext(_program.get(), [](){return nullptr;}, checker_gen);
     auto* rewriter = new IncreLabeledTypeRewriter();
 
     for (auto& command: program->commands) {
