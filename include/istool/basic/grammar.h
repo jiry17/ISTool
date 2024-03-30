@@ -25,6 +25,7 @@ class Rule {
 public:
     NTList param_list;
     Rule(const NTList& _param_list);
+    virtual bool equal(const Rule& other) const = 0;
     virtual PProgram buildProgram(const ProgramList& sub_list) = 0;
     virtual std::string toString() const = 0;
     virtual std::string getSemanticsName() const = 0;
@@ -41,6 +42,7 @@ public:
     PSemantics semantics;
     ConcreteRule(const PSemantics& _semantics, const NTList& _param_list);
     virtual int getSize() const {return 1;}
+    virtual bool equal(const Rule& other) const;
     virtual PProgram buildProgram(const ProgramList& sub_list);
     virtual std::string toString() const;
     virtual std::string getSemanticsName() const;
@@ -68,10 +70,15 @@ namespace grammar {
     Grammar* generateHeightLimitedGrammar(Grammar* grammar, int limit);
     std::string getFreeName(Grammar* grammar);
     PProgram getMinimalProgram(Grammar* grammar);
+    std::vector<PProgram> generateHeightLimitedProgram(Grammar* grammar_original, int limit);
     ParamSemantics* getParamSemantics(Rule* rule);
     ConstSemantics* getConstSemantics(Rule* rule);
     bool isFinite(Grammar* grammar);
     int getMaxSize(Grammar* grammar);
+    // delete duplicate rule in rule_list
+    void deleteDuplicateRule(std::vector<Rule*>& rule_list);
+    // delete duplicate rule in all the symbols of this grammar
+    void deleteDuplicateRule(Grammar* grammar);
 }
 
 

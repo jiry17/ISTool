@@ -22,10 +22,23 @@ ComponentPool incre::grammar::collector::getBasicComponentPool(Env* env) {
 
     const std::unordered_set<std::string> all_used_op = {"+", "-"};
 
+    std::cout << "zyw: env in getBasicComponentPool" << std::endl;
+    env->printSemanticsPool();
     for (auto& op_name: op_list) {
         auto sem = env->getSemantics(op_name);
         auto comp = std::make_shared<BasicOperatorComponent>(op_name, sem);
-        if (all_used_op.find(op_name) != all_used_op.end()) RegisterAll(comp); else RegisterComponent(COMBINE, comp);
+        if (all_used_op.find(op_name) != all_used_op.end()) RegisterAll(comp);
+        else RegisterComponent(COMBINE, comp);
+    }
+
+    // add bool operator into bool_list
+    for (auto& op_name: op_list) {
+        auto sem = env->getSemantics(op_name);
+        auto comp = std::make_shared<BasicOperatorComponent>(op_name, sem);
+        // if not + / -, then must be bool operator
+        if (all_used_op.find(op_name) == all_used_op.end()) {
+            RegisterComponent(BOOL, comp);
+        }
     }
 
     {
@@ -269,6 +282,7 @@ namespace {
         }
     };
 
+    // if type is POLY, use basic_types for grounding, return a list of grouding results
     TyList _groundTypes(const Ty& type, const TyList& basic_types) {
         if (type->getType() != TypeType::POLY) return {type};
         auto* pt = dynamic_cast<TyPoly*>(type.get());
@@ -298,12 +312,14 @@ ComponentPool incre::grammar::collector::collectComponent(Env *env, IncreProgram
         delete collector;
     }
 
+    // basic types in all components
     std::vector<Ty> basic_types;
     {
         for (auto& component: component_infos) {
             auto type = std::get<3>(component);
             _collectBasicType(type, basic_types);
         }
+        // deduplicate of basic_types
         std::unordered_set<std::string> type_set;
         int now = 0;
         for (auto& basic_type: basic_types) {
@@ -319,6 +335,13 @@ ComponentPool incre::grammar::collector::collectComponent(Env *env, IncreProgram
     auto* rec_d = env->getConstRef(config::KSlowCombineName);
     auto* detector = new _ValidTermDetectorWalker(rec_d->isTrue());
     detector->walkThrough(program);
+
+    std::cout << "zyw: in collectComponent, component_infos = " << std::endl;
+    for (auto& [command_id, name, value, type, command]: component_infos) {
+        std::cout << command_id << ", " << name << ", " << value.toString() << ", " << type->toString() << ", " << command->name << ", ";
+        incre::printDecorateSet(command->decos);
+        std::cout << std::endl;
+    }
 
     for (auto& [command_id, name, value, type, command]: component_infos) {
         if (command->isDecrorateWith(CommandDecorate::SYN_EXCLUDE)) continue;
@@ -348,6 +371,11 @@ ComponentPool incre::grammar::collector::collectComponent(Env *env, IncreProgram
         for (auto grammar_type: usable_grammars) {
             for (auto& component: components) pool.add(component, grammar_type);
         }
+    }
+
+    // make dp_list = comp_list, with no bool operator
+    for (auto& grammar : pool.comp_list) {
+        pool.dp_list.push_back(grammar);
     }
 
     delete detector;

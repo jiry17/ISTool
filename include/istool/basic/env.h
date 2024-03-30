@@ -42,6 +42,8 @@ public:
 
     int setRandomSeed(int seed);
     ~Env();
+
+    void printSemanticsPool();
 };
 
 typedef std::shared_ptr<Env> PEnv;

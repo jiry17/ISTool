@@ -38,7 +38,9 @@ namespace incre::grammar {
 
     class SynthesisComponent {
     public:
+        // id of the corresponding command in the original program
         int command_id;
+        // name of the component, e.g. the name of function, like 
         std::string name;
         SynthesisComponent(int command_id, const std::string& _name);
         virtual void extendContext(GrammarBuilder& builder) = 0;
@@ -116,12 +118,14 @@ namespace incre::grammar {
     };
 
     enum class GrammarType {
-        EXTRACT, COMPRESS, COMBINE
+        EXTRACT, COMPRESS, COMBINE, DP, BOOL
     };
 
     class ComponentPool {
     public:
         SynthesisComponentList extract_list, comp_list, comb_list;
+        // dp_list = comp_list, bool_list only has bool operator
+        SynthesisComponentList dp_list, bool_list;
         void add(const PSynthesisComponent& component, GrammarType usable_types);
         ComponentPool();
         void print() const;
@@ -129,6 +133,9 @@ namespace incre::grammar {
         Grammar* buildCompGrammar(const TypeList& inp_list, bool is_only_prime = true);
         Grammar* buildExtractGrammar(const TypeList& inp_list, int command_id);
         Grammar* buildCombGrammar(const TypeList& inp_list, const PType& oup_type, int command_id);
+        // use comp_list to build grammar
+        Grammar* buildDpGrammar(const TypeList& inp_list, const PType& oup_type);
+        Grammar* buildBoolGrammar(const TypeList& inp_list, const PType& oup_type);
 
         ~ComponentPool() = default;
     };

@@ -225,6 +225,10 @@ std::string ComposedRule::evalRuleToHaskell(std::string node_name, int func_num,
     return res;
 }
 
+bool ComposedRule::equal(const Rule& other) const {
+    return toString() == other.toString();
+}
+
 PProgram ComposedRule::buildProgram(const ProgramList &sub_list) {
     return program::rewriteParam(composed_sketch, sub_list);
 }

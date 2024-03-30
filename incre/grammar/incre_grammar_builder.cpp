@@ -178,6 +178,7 @@ Grammar *ComponentPool::buildCompGrammar(const TypeList &inp_list, bool is_only_
     }
 }
 
+
 Grammar *ComponentPool::buildExtractGrammar(const TypeList &inp_list, int command_id) {
     SynthesisComponentList component_list;
     for (auto& component: extract_list) {
@@ -196,6 +197,14 @@ Grammar *ComponentPool::buildCombGrammar(const TypeList &inp_list, const PType &
         }
     }
     return _buildGrammar(inp_list, component_list, [&](Type* type){return type::equal(type, oup_type.get());}, oup_type);
+}
+
+Grammar *ComponentPool::buildDpGrammar(const TypeList &inp_list, const PType &oup_type) {
+    return _buildGrammar(inp_list, dp_list, [&](Type* type){return type::equal(type, oup_type.get());}, oup_type);
+}
+
+Grammar *ComponentPool::buildBoolGrammar(const TypeList &inp_list, const PType &oup_type) {
+    return _buildGrammar(inp_list, bool_list, [&](Type* type){return type::equal(type, oup_type.get());}, oup_type);
 }
 
 

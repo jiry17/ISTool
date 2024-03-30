@@ -11,6 +11,7 @@ class ComposedRule: public Rule {
 public:
     PProgram composed_sketch;
     ComposedRule(const PProgram& sketch, const NTList& param_list);
+    virtual bool equal(const Rule& other) const;
     virtual PProgram buildProgram(const ProgramList& sub_list);
     virtual std::string toString() const;
     virtual std::string getSemanticsName() const;

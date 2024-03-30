@@ -31,20 +31,29 @@ namespace incre::analysis {
 
     typedef std::vector<std::pair<std::string, syntax::Ty>> IncreInputInfo;
 
+    // store info of each hole
     class RewriteTypeInfo {
     public:
+        // index of the hole
         int index;
+        // name and type of each input
         IncreInputInfo inp_types;
+        // output type
         syntax::Ty oup_type;
+        // same as index?
         int command_id;
         RewriteTypeInfo(int _index, const IncreInputInfo& _inp_types, const syntax::Ty& _oup_type, int _command_id);
     };
 
     class IncreInfoData {
     public:
+        // program processed in constructor, not the same as original program
         IncreProgram program;
+        // info of each hole
         std::vector<RewriteTypeInfo> rewrite_info_list;
+        // example of each hole
         example::IncreExamplePool* example_pool;
+        // component for constructing program
         grammar::ComponentPool component_pool;
         IncreInfoData(const IncreProgram& _program, const std::vector<RewriteTypeInfo>& _rewrite_info_list,
                       example::IncreExamplePool* example_pool, const grammar::ComponentPool& component_pool);

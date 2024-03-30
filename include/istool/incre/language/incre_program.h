@@ -19,6 +19,7 @@ namespace incre {
     };
 
     typedef std::unordered_set<CommandDecorate> DecorateSet;
+    void printDecorateSet(DecorateSet& ds);
 
     class CommandData {
     public:

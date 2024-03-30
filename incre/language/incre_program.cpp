@@ -9,6 +9,26 @@ using namespace incre;
 using namespace incre::syntax;
 
 
+void incre::printDecorateSet(DecorateSet& ds) {
+    bool is_start = true;
+    std::cout << "[";
+    for (auto& d : ds) {
+        if (is_start) is_start = false;
+        else std::cout << ", ";
+        switch (d) {
+            case CommandDecorate::INPUT : std::cout << "INPUT"; break;
+            case CommandDecorate::START : std::cout << "START"; break;
+            case CommandDecorate::SYN_EXTRACT : std::cout << "SYN_EXTRACT"; break;
+            case CommandDecorate::SYN_COMBINE : std::cout << "SYN_COMBINE"; break;
+            case CommandDecorate::SYN_COMPRESS : std::cout << "SYN_COMPRESS"; break;
+            case CommandDecorate::SYN_EXCLUDE : std::cout << "SYN_EXCLUDE"; break;
+            case CommandDecorate::SYN_NO_PARTIAL : std::cout << "SYN_NO_PARTIAL"; break;
+            case CommandDecorate::TERM_NUM : std::cout << "TERM_NUM"; break;
+        }
+    }
+    std::cout << "]";
+}
+
 CommandData::CommandData(const CommandType &_type, const std::string& _name, const DecorateSet &_decos):
         type(_type), decos(_decos), name(_name) {
 }

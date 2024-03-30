@@ -271,8 +271,10 @@ void ComponentPool::print() const {
     for (auto& [name, comp_list]: all_components) {
         std::cout << "Components for " << name << ":" << std::endl;
         for (auto& comp: comp_list) {
+            // component extracted from program?
             auto* uc = dynamic_cast<IncreComponent*>(comp.get());
             if (uc) std::cout << "  " << uc->name << " " << type::typeList2String(uc->param_types) << " -> " << uc->res_type->getName() << " " << uc->command_id << std::endl;
+            // basic operator, like + / -
             auto* bc = dynamic_cast<BasicOperatorComponent*>(comp.get());
             if (bc) std::cout << "  " << bc->_sem->getName() << " " << type::typeList2String(bc->sem->inp_type_list) << " " << bc->sem->oup_type->getName() << std::endl;
         }
@@ -290,6 +292,12 @@ void ComponentPool::add(const PSynthesisComponent &component, GrammarType type) 
         }
         case GrammarType::EXTRACT: {
             extract_list.push_back(component); break;
+        }
+        case GrammarType::DP: {
+            dp_list.push_back(component); break;
+        }
+        case GrammarType::BOOL: {
+            bool_list.push_back(component); break;
         }
     }
 }

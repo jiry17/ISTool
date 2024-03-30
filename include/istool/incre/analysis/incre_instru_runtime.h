@@ -82,25 +82,45 @@ namespace incre::example {
 
     class IncreExamplePool {
     private:
+        // program processed in constructor of IncreInfo
         IncreProgram program;
+        // vars in env for each hole
         std::vector<std::vector<std::string>> cared_vars;
         IncreDataGenerator* generator;
         std::vector<bool> is_finished;
         int thread_num;
 
+        // first: name of the start symbol (e.g. main in 01knapsack)
+        // second: type of inputs for the start symbol
         std::vector<std::pair<std::string, syntax::TyList>> start_list;
+        // existing examples for each hole, each example stored as string which looks like the result of IncreExampleData.toString()
         std::vector<std::unordered_set<std::string>> existing_example_set;
     public:
+        // name of global_input?
         std::vector<std::string> global_name_list;
+        // type of global_input?
         syntax::TyList global_type_list;
+        // example for each hole where IncreExampleList contains a lot of examples for each hole
         std::vector<IncreExampleList> example_pool;
 
-        std::pair<syntax::Term, DataList> generateStart();
         IncreExamplePool(const IncreProgram& _program, const std::vector<std::vector<std::string>>& _cared_vars, IncreDataGenerator* _g);
         ~IncreExamplePool();
         void merge(int rewrite_id, IncreExampleCollector* collector, TimeGuard* guard);
+        // generate example for the whole program, Term = call for the "start" command(function) , DataList = global_input
+        std::pair<syntax::Term, DataList> generateStart();
+        // generate example for the program and get corresponding I/O examples for each hole
         void generateSingleExample();
         void generateBatchedExample(int rewrite_id, int target_num, TimeGuard* guard);
+        // print cared_vars
+        void printCaredVars();
+        // print start_list
+        void printStartList();
+        // print existing_example_set
+        void printExistingExampleSet();
+        // print global_name_list
+        void printGlobalNameList();
+        // print global_type_list
+        void printGlobalTypeList();
     };
 }
 

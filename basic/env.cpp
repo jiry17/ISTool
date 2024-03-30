@@ -96,6 +96,14 @@ Data Env::run(Program *program, const DataList &param_list, const FunctionContex
     delete info; return res;
 }
 
+void Env::printSemanticsPool() {
+    std::cout << "semantics_pool.size() = " << semantics_pool.size() << std::endl;
+    for (auto& [name, semantics] : semantics_pool) {
+        std::cout << " " << name;
+    }
+    std::cout << std::endl;
+}
+
 void env::setTimeSeed(Env* env) {
     timeval now; gettimeofday(&now, NULL);
     env->setRandomSeed(now.tv_usec);

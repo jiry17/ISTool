@@ -8,7 +8,7 @@ using namespace incre;
 using namespace incre::syntax;
 
 #define TypeRewriteCase(name) case TypeType::TYPE_TOKEN_ ## name: return _rewrite(dynamic_cast<Ty ## name*>(type.get()), type);
-Ty syntax::IncreTypeRewriter::rewrite(const Ty &type) {
+Ty IncreTypeRewriter::rewrite(const Ty &type) {
     switch (type->getType()) {
         TYPE_CASE_ANALYSIS(TypeRewriteCase);
     }

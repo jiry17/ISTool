@@ -5,12 +5,7 @@
 #ifndef ISTOOL_INCRE_AUTOLABEL_H
 #define ISTOOL_INCRE_AUTOLABEL_H
 
-#include "istool/incre/language/incre_context.h"
-#include "istool/incre/language/incre_program.h"
-#include "istool/incre/language/incre_rewriter.h"
-#include "istool/incre/language/incre_semantics.h"
-#include "istool/incre/language/incre_syntax.h"
-#include "istool/incre/language/incre_types.h"
+#include "istool/incre/language/incre.h"
 
 namespace incre::autolabel {
     class AutoLabelSolver {

@@ -10,9 +10,13 @@
 
 using namespace incre;
 bool debug = false;
+// not used?
 bool align_mark = false;
+// level num in program, used to decide space num before print command
 int floor_num = 0;
+// whether in a func
 bool in_func = false;
+// whether in a CommandBind
 bool is_command_bind = false;
 
 namespace {
@@ -211,6 +215,7 @@ namespace incre::syntax {
         } else if (term->getType() == TermType::APP) {
             if (debug) std::cout << "[APP]" << std::endl;
             auto* tm_app = dynamic_cast<TmApp*>(term.get());
+            if (debug) std::cout << "tm_app->func = " << tm_app->func->toString() << ", tm_app->param = " << tm_app->param->toString() << std::endl;
             printTerm(tm_app->func);
             TermType param_type = tm_app->param->getType();
             bool need_bracket = !(param_type == TermType::VALUE ||

@@ -39,6 +39,7 @@ std::pair<SolverToken, InvokeConfig> util::getSolverToken(Type *oup_type) {
 }
 
 namespace {
+    // if only use inputs indicated by is_used, whether all examples can be distinguished (if have the same input, then must have the same output)
     bool _isDistinguishAllExamples(const std::vector<bool>& is_used, const IOExampleList& example_list) {
         std::unordered_map<std::string, Data> example_map;
         for (auto& [inp, oup]: example_list) {

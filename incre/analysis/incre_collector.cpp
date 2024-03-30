@@ -63,6 +63,7 @@ void IncreExampleCollector::clear() {
     for (auto& example_list: example_pool) example_list.clear();
 }
 
+// merge collector->example_pool into IncreExamplePool->example_pool
 void IncreExamplePool::merge(int main_id, IncreExampleCollector *collector, TimeGuard* guard) {
     assert(collector->example_pool.size() == example_pool.size());
     std::vector<int> index_order;
@@ -74,6 +75,7 @@ void IncreExamplePool::merge(int main_id, IncreExampleCollector *collector, Time
         for (int example_id = 0; example_id < collector->example_pool[rewrite_id].size(); ++example_id) {
             auto& new_example = collector->example_pool[rewrite_id][example_id];
             auto feature = new_example->toString();
+            // if this example is unique, then add into example_pool
             if (existing_example_set[rewrite_id].find(feature) == existing_example_set[rewrite_id].end()) {
                 existing_example_set[rewrite_id].insert(feature);
                 example_pool[rewrite_id].push_back(new_example);
@@ -163,6 +165,7 @@ void IncreExamplePool::generateSingleExample() {
 
     global::recorder.start("collect");
     collector->collect(term, global);
+    // add single example into example_pool in merge function
     merge(0, collector, nullptr);
     global::recorder.end("collect");
     delete collector;
@@ -238,4 +241,58 @@ void IncreExamplePool::generateBatchedExample(int rewrite_id, int target_num, Ti
     }
 
     if (example_pool[rewrite_id].size() < target_num) is_finished[rewrite_id] = true;
+}
+
+void IncreExamplePool::printCaredVars() {
+    int len1 = cared_vars.size();
+    for (int i = 0; i < len1; ++i) {
+        std::cout << i << ", cared_vars = ";
+        int len2 = cared_vars[i].size();
+        for (int j = 0; j < len2; ++j) {
+            if (j) std::cout << ", ";
+            std::cout << cared_vars[i][j];
+        }
+        std::cout << std::endl;
+    }
+}
+
+void IncreExamplePool::printStartList() {
+    int len1 = start_list.size();
+    for (int i = 0; i < len1; ++i) {
+        std::cout << i << ", first = " << start_list[i].first << ", second = ";
+        int len2 = start_list[i].second.size();
+        for (int j = 0; j < len2; ++j) {
+            if (j) std::cout << ", ";
+            std::cout << start_list[i].second[j]->toString();
+        }
+        std::cout << std::endl;
+    }
+}
+
+void IncreExamplePool::printExistingExampleSet() {
+    int len = existing_example_set.size();
+    for (int i = 0; i < len; ++i) {
+        std::cout << i;
+        for (auto& j : existing_example_set[i]) {
+            std::cout << ", " << j << std::endl;
+        }
+    }
+}
+
+void IncreExamplePool::printGlobalNameList() {
+    int len = global_name_list.size();
+    for (int i = 0; i < len; ++i) {
+        if (i) std::cout << ", ";
+        std::cout << global_name_list[i];
+    }
+    std::cout << std::endl;
+}
+
+void IncreExamplePool::printGlobalTypeList() {
+    int len = global_type_list.size();
+    for (int i = 0; i < len; ++i) {
+        if (i) std::cout << ", ";
+        std::cout << global_type_list[i]->toString();
+    }
+    std::cout << std::endl;
 }
