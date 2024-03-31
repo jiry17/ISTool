@@ -68,7 +68,7 @@ namespace {
         auto cons_name = node["name"].asString();
         TyList param_list;
         for (auto& param: node["params"]) param_list.push_back(json2ty(param));
-        if (cons_name == "Packed") {
+        if (cons_name == "Packed" || cons_name == "Reframe") {
             if (param_list.size() != 1) throw IncreParseError("Packed should have exactly one parameter");
             return std::make_shared<TyCompress>(param_list[0]);
         }
@@ -274,38 +274,46 @@ namespace {
         }
         return deco_list;
     }
+
+    void _collectCommands(const Json::Value& node, const std::string& source, IncreConfigMap& configs, CommandList& commands) {
+        for (auto& command_node: node) {
+            auto command_type = command_node["type"].asString();
+            auto decos = _extractDecros(command_node["decos"]);
+            if (command_type == "config") {
+                configs[string2IncreConfig(command_node["name"].asString())] = _json2data(command_node["value"]);
+            } else if (command_type == "import") {
+                std::string new_source = source;
+                if (new_source.empty()) new_source = command_node["source"].asString();
+                _collectCommands(node["content"], new_source, configs, commands);
+            } else if (command_type == "bind") {
+                auto var_name = command_node["name"].asString();
+                auto def = json2term(command_node["def"]);
+                commands.push_back(std::make_shared<CommandBindTerm>(var_name, false, def, decos, source));
+            } else if (command_type == "type") {
+                auto type_name = command_node["name"].asString();
+                auto arity = command_node["arity"].asInt();
+                std::vector<std::pair<std::string, Ty>> cons_list;
+                for (auto& cons_node: command_node["cons"]) {
+                    cons_list.emplace_back(cons_node["name"].asString(), json2ty(cons_node["type"]));
+                }
+                commands.push_back(std::make_shared<CommandDef>(type_name, arity, cons_list, decos, source));
+            } else if (command_type == "func") {
+                auto var_name = command_node["name"].asString();
+                auto def = json2term(command_node["def"]);
+                commands.push_back(std::make_shared<CommandBindTerm>(var_name, true, def, decos, source));
+            } else if (command_type == "declare") {
+                auto var_name = command_node["name"].asString();
+                auto type = json2ty(command_node["ty"]);
+                commands.push_back(std::make_shared<CommandDeclare>(var_name, type, decos, source));
+            }
+        }
+    }
 }
 
 IncreProgram io::json2program(const Json::Value &node) {
     IncreConfigMap configs;
     CommandList commands;
-    for (auto& command_node: node) {
-        auto command_type = command_node["type"].asString();
-        auto decos = _extractDecros(command_node["decos"]);
-        if (command_type == "config") {
-            configs[string2IncreConfig(command_node["name"].asString())] = _json2data(command_node["value"]);
-        } else if (command_type == "bind") {
-            auto var_name = command_node["name"].asString();
-            auto def = json2term(command_node["def"]);
-            commands.push_back(std::make_shared<CommandBindTerm>(var_name, false, def, decos));
-        } else if (command_type == "type") {
-            auto type_name = command_node["name"].asString();
-            auto arity = command_node["arity"].asInt();
-            std::vector<std::pair<std::string, Ty>> cons_list;
-            for (auto& cons_node: command_node["cons"]) {
-                cons_list.emplace_back(cons_node["name"].asString(), json2ty(cons_node["type"]));
-            }
-            commands.push_back(std::make_shared<CommandDef>(type_name, arity, cons_list, decos));
-        } else if (command_type == "func") {
-            auto var_name = command_node["name"].asString();
-            auto def = json2term(command_node["def"]);
-            commands.push_back(std::make_shared<CommandBindTerm>(var_name, true, def, decos));
-        } else if (command_type == "declare") {
-            auto var_name = command_node["name"].asString();
-            auto type = json2ty(command_node["ty"]);
-            commands.push_back(std::make_shared<CommandDeclare>(var_name, type, decos));
-        }
-    }
+    _collectCommands(node, "", configs, commands);
     return std::make_shared<IncreProgramData>(commands, configs);
 }
 
@@ -320,9 +328,10 @@ incre::IncreProgram io::json2program(const std::string &path) {
     return json2program(root);
 }
 
-IncreProgram io::parseFromF(const std::string &path) {
+IncreProgram io::parseFromF(const std::string &path, bool is_label) {
     std::string tmp_file = "/tmp/" + std::to_string(rand()) + ".json";
     std::string command = "cd " + ::config::KIncreParserPath + "; ./f " + path + " " + tmp_file;
+    if (is_label) command += " true";
     std::system(command.c_str());
     auto res = json2program(tmp_file);
     std::system(("rm " + tmp_file).c_str());

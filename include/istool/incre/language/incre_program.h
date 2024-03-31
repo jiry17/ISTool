@@ -25,7 +25,8 @@ namespace incre {
         std::string name;
         CommandType type;
         DecorateSet decos;
-        CommandData(const CommandType& _type, const std::string& _name, const DecorateSet& decos);
+        std::string source;
+        CommandData(const CommandType& _type, const std::string& _name, const DecorateSet& decos, const std::string& source);
         bool isDecrorateWith(CommandDecorate deco) const;
         CommandType getType() const;
         virtual ~CommandData() = default;
@@ -37,7 +38,7 @@ namespace incre {
     public:
         syntax::Term term;
         bool is_func;
-        CommandBindTerm(const std::string& _name, bool _is_func, const syntax::Term& _term, const DecorateSet& decos);
+        CommandBindTerm(const std::string& _name, bool _is_func, const syntax::Term& _term, const DecorateSet& decos, const std::string& _source);
     };
 
     typedef std::vector<std::pair<std::string, syntax::Ty>> IndConstructorInfo;
@@ -45,13 +46,13 @@ namespace incre {
     public:
         int param;
         IndConstructorInfo cons_list;
-        CommandDef(const std::string& _name, int _param, const IndConstructorInfo& _cons_list, const DecorateSet& decos);
+        CommandDef(const std::string& _name, int _param, const IndConstructorInfo& _cons_list, const DecorateSet& decos, const std::string& _source);
     };
 
     class CommandDeclare: public CommandData {
     public:
         syntax::Ty type;
-        CommandDeclare(const std::string& _name, const syntax::Ty& _type, const DecorateSet& decos);
+        CommandDeclare(const std::string& _name, const syntax::Ty& _type, const DecorateSet& decos, const std::string& _source);
     };
 
     enum class IncreConfig {

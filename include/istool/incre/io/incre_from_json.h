@@ -31,7 +31,7 @@ namespace incre::io {
 
     IncreProgram json2program(const Json::Value& node);
     IncreProgram json2program(const std::string& path);
-    IncreProgram parseFromF(const std::string& path);
+    IncreProgram parseFromF(const std::string& path, bool is_label);
 }
 
 #endif //ISTOOL_INCRE_FROM_JSON_H

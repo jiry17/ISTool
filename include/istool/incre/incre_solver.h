@@ -26,7 +26,7 @@ namespace incre {
         virtual ~IncreSolver() = default;
     };
 
-    IncreProgram rewriteWithIncreSolution(IncreProgramData* program, const IncreSolution& solution);
+    IncreProgram rewriteWithIncreSolution(IncreProgramData* program, const IncreSolution& solution, bool is_keep_rewrite);
 }
 
 #endif //ISTOOL_INCRE_SOLVER_H

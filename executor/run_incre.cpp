@@ -4,10 +4,12 @@
 
 #include "istool/basic/config.h"
 #include "istool/incre/io/incre_from_json.h"
+#include "istool/incre/io/incre_printer.h"
 #include "istool/incre/language/incre_program.h"
 #include "istool/incre/analysis/incre_instru_info.h"
 #include "istool/incre/autolifter/incre_autolifter_solver.h"
 #include "istool/incre/grammar/incre_grammar_semantics.h"
+#include "istool/incre/autolabel/incre_autolabel.h"
 #include "istool/incre/io/incre_printer.h"
 #include "istool/solver/polygen/lia_solver.h"
 #include <iostream>
@@ -17,13 +19,22 @@ using namespace incre;
 
 int main(int argv, char** argc) {
     std::string path, target;
+    bool is_autolabel = false;
+    bool is_highlight_replace = false;
 
     if (argv > 1) {
         path = argc[1]; target = argc[2];
     } else {
-        path = ::config::KIncreParserPath + "/benchmarks/mts.f";
+        path = ::config::KSourcePath + "/incre-tests/test.f";
+        is_autolabel = true;
+        is_highlight_replace = true;
     }
-    IncreProgram prog = io::parseFromF(path);
+    IncreProgram prog = io::parseFromF(path, is_autolabel);
+
+    if (is_autolabel) {
+        prog = incre::autolabel::labelProgram(prog);
+    }
+    incre::printProgram(prog);
     // printProgram(prog);
 
     auto env = std::make_shared<Env>();
@@ -70,5 +81,6 @@ int main(int argv, char** argc) {
     auto* solver = new IncreAutoLifterSolver(incre_info, env);
     auto res = solver->solve();
     res.print();
-    // auto res_prog = rewriteWithIncreSolution(prog.get(), res);
+    auto res_prog = rewriteWithIncreSolution(prog.get(), res, false);
+
 }

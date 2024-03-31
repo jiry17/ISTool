@@ -58,12 +58,18 @@ Ty IncreTypeRewriter::_rewrite(TyTuple *type, const Ty &_type) {
     return std::make_shared<TyTuple>(fields);
 }
 
-#define TermRewriteCase(name) case TermType::TERM_TOKEN_##name: return _rewrite(dynamic_cast<Tm ## name*>(term.get()), term);
+#define TermRewriteCase(name) case TermType::TERM_TOKEN_##name: {res = _rewrite(dynamic_cast<Tm ## name*>(term.get()), term); break;}
 
 Term IncreTermRewriter::rewrite(const Term &term) {
+    Term res;
     switch (term->getType()) {
         TERM_CASE_ANALYSIS(TermRewriteCase);
     }
+    return postProcess(term, res);
+}
+
+Term IncreTermRewriter::postProcess(const Term &original_term, const Term &res) {
+    return res;
 }
 
 #define TermRewrite(name) rewrite(term->name)

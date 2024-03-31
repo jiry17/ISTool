@@ -23,8 +23,9 @@ namespace incre::syntax {
     class IncreTermRewriter {
     protected:
         TERM_CASE_ANALYSIS(RegisterTermRewriteCase);
+        virtual Term postProcess(const Term& original_term, const Term& res);
     public:
-        Term rewrite(const Term& term);
+        virtual Term rewrite(const Term& term);
         virtual ~IncreTermRewriter() = default;
     };
 

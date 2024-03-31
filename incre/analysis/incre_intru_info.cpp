@@ -142,7 +142,7 @@ namespace {
                 cons_list.emplace_back(cons_name, new_cons_ty);
                 LOG(INFO) << "labeled insert " << cons_name << " " << new_cons_ty->toString();
             }
-            command_list.push_back(std::make_shared<CommandDef>(command->name, command->param, cons_list, command->decos));
+            command_list.push_back(std::make_shared<CommandDef>(command->name, command->param, cons_list, command->decos, command->source));
         }
 
         virtual void visit(CommandBindTerm* command) {
@@ -161,13 +161,13 @@ namespace {
                 collector->popLevel();
                 ctx = ctx.insert(command->name, collector->generalize(res, command->term.get()));
             }
-            command_list.push_back(std::make_shared<CommandBindTerm>(command->name, command->is_func, command->term, command->decos));
+            command_list.push_back(std::make_shared<CommandBindTerm>(command->name, command->is_func, command->term, command->decos, command->source));
         }
 
         virtual void visit(CommandDeclare* command) {
             auto new_type = type_constructor->rewrite(command->type);
             ctx = ctx.insert(command->name, new_type);
-            command_list.push_back(std::make_shared<CommandDeclare>(command->name, new_type, command->decos));
+            command_list.push_back(std::make_shared<CommandDeclare>(command->name, new_type, command->decos, command->source));
         }
     };
 
@@ -240,6 +240,7 @@ IncreInputInfo input_filter::buildInputInfo(const IncreContext &local_ctx, const
     for (auto add = local_ctx.start; add ; add = add->next) {
         if (!_isInclude(global_ctx, add->name)) {
             auto var_type = add->bind.getType();
+            if (var_type->getType() == TypeType::POLY) continue;
             if (isValidInputType(var_type)) info.emplace_back(add->name, add->bind.getType());
         }
     }

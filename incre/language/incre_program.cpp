@@ -9,8 +9,8 @@ using namespace incre;
 using namespace incre::syntax;
 
 
-CommandData::CommandData(const CommandType &_type, const std::string& _name, const DecorateSet &_decos):
-        type(_type), decos(_decos), name(_name) {
+CommandData::CommandData(const CommandType &_type, const std::string& _name, const DecorateSet &_decos, const std::string& _source):
+        type(_type), decos(_decos), name(_name), source(_source) {
 }
 
 bool CommandData::isDecrorateWith(CommandDecorate deco) const {
@@ -20,16 +20,18 @@ bool CommandData::isDecrorateWith(CommandDecorate deco) const {
 CommandType CommandData::getType() const {return type;}
 
 CommandBindTerm::CommandBindTerm(const std::string &_name, bool _is_func, const syntax::Term &_term,
-                                 const DecorateSet &decos): CommandData(CommandType::BIND_TERM, _name, decos),
+                                 const DecorateSet &decos, const std::string& _source):
+                                 CommandData(CommandType::BIND_TERM, _name, decos, _source),
                                  is_func(_is_func), term(_term) {
 }
 
 CommandDef::CommandDef(const std::string &_name, int _param, const std::vector<std::pair<std::string, Ty>> &_cons_list,
-                       const DecorateSet &decos): param(_param), cons_list(_cons_list), CommandData(CommandType::DEF_IND, _name, decos) {
+                       const DecorateSet &decos, const std::string& _source):
+                       param(_param), cons_list(_cons_list), CommandData(CommandType::DEF_IND, _name, decos, _source) {
 }
 
-CommandDeclare::CommandDeclare(const std::string &_name, const syntax::Ty &_type, const DecorateSet &decos):
-                               CommandData(CommandType::DECLARE, _name, decos), type(_type) {
+CommandDeclare::CommandDeclare(const std::string &_name, const syntax::Ty &_type, const DecorateSet &decos, const std::string& _source):
+                               CommandData(CommandType::DECLARE, _name, decos, _source), type(_type) {
 }
 
 IncreProgramData::IncreProgramData(const CommandList &_commands, const IncreConfigMap &_config_map):
@@ -133,17 +135,17 @@ void IncreProgramRewriter::visit(CommandDef *command) {
     for (auto& [cons_name, cons_ty]: command->cons_list) {
         cons_list.emplace_back(cons_name, type_rewriter->rewrite(cons_ty));
     }
-    res->commands.push_back(std::make_shared<CommandDef>(command->name, command->param, cons_list, command->decos));
+    res->commands.push_back(std::make_shared<CommandDef>(command->name, command->param, cons_list, command->decos, command->source));
 }
 
 void IncreProgramRewriter::visit(CommandBindTerm *command) {
     auto new_term = term_rewriter->rewrite(command->term);
-    res->commands.push_back(std::make_shared<CommandBindTerm>(command->name, command->is_func, new_term, command->decos));
+    res->commands.push_back(std::make_shared<CommandBindTerm>(command->name, command->is_func, new_term, command->decos, command->source));
 }
 
 void IncreProgramRewriter::visit(CommandDeclare *command) {
     auto new_type = type_rewriter->rewrite(command->type);
-    res->commands.push_back(std::make_shared<CommandDeclare>(command->name, new_type, command->decos));
+    res->commands.push_back(std::make_shared<CommandDeclare>(command->name, new_type, command->decos, command->source));
 }
 
 void IncreProgramRewriter::initialize(IncreProgramData *program) {
@@ -162,3 +164,4 @@ IncreProgram syntax::rewriteProgram(IncreProgramData *program, const IncreTypeRe
     delete type_rewriter; delete term_rewriter; delete rewriter;
     return res;
 }
+

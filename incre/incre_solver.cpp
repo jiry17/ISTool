@@ -39,13 +39,17 @@ namespace {
 
     class _TermRewriterWithSolution: public IncreTermRewriter {
         TermList term_results;
+        bool is_keep_rewrite;
     public:
-        _TermRewriterWithSolution(const TermList& _term_results): term_results(_term_results) {}
+        _TermRewriterWithSolution(const TermList& _term_results, bool _is_keep_rewrite):
+            term_results(_term_results), is_keep_rewrite(_is_keep_rewrite) {
+        }
     protected:
         virtual Term _rewrite(TmRewrite* term, const Term& _term) {
             auto* labeled_term = dynamic_cast<TmLabeledRewrite*>(term);
             if (!labeled_term) LOG(FATAL) << "Expected TmLabeledRewrite, but got " << term->toString();
-            return term_results[labeled_term->id];
+            auto res = term_results[labeled_term->id];
+            if (is_keep_rewrite) return std::make_shared<TmRewrite>(res); else return res;
         }
         virtual Term _rewrite(TmLabel* term, const Term& _term) {
             LOG(FATAL) << "Unexpected TmLabel " << term->toString();
@@ -56,9 +60,9 @@ namespace {
     };
 }
 
-IncreProgram incre::rewriteWithIncreSolution(IncreProgramData *program, const IncreSolution &solution) {
+IncreProgram incre::rewriteWithIncreSolution(IncreProgramData *program, const IncreSolution &solution, bool is_keep_rewrite) {
     auto* type_rewriter = new _TypeRewriterWithSolution(solution.type_results);
-    auto* term_rewriter = new _TermRewriterWithSolution(solution.term_results);
+    auto* term_rewriter = new _TermRewriterWithSolution(solution.term_results, is_keep_rewrite);
     auto* rewriter = new IncreProgramRewriter(type_rewriter, term_rewriter);
     rewriter->walkThrough(program); auto res = rewriter->res;
     delete type_rewriter; delete term_rewriter; delete rewriter;
