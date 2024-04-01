@@ -25,13 +25,13 @@ namespace incre::autolabel {
         Z3LabeledVarInfo(int _index, int _level, const z3::expr& _scalar_cond, const z3::expr& _base_cond);
     };
 
-    typedef std::variant<WrappedTy, Z3LabeledVarInfo> FullZ3LabeledContent;
+    typedef std::variant<syntax::Ty, Z3LabeledVarInfo> FullZ3LabeledContent;
 
     class Z3TyVar: public syntax::TypeData {
     public:
         FullZ3LabeledContent content;
         bool isBounded() const;
-        WrappedTy& getBindType();
+        syntax::Ty& getBindType();
         Z3LabeledVarInfo& getVarInfo();
         virtual std::string toString() const;
         Z3TyVar(const FullZ3LabeledContent & _content);
@@ -65,7 +65,7 @@ namespace incre::autolabel {
         std::pair<WrappedTy, IncreContext> processPattern(syntax::PatternData* pattern, const IncreContext& ctx);
     public:
         Z3Context* z3_ctx;
-        virtual WrappedTy normalize(const WrappedTy& type);
+        // virtual WrappedTy normalize(const WrappedTy& type);
         void unify(const WrappedTy& x, const WrappedTy& y);
         WrappedTy getTmpWrappedVar(syntax::VarRange range);
         void pushLevel(); void popLevel();

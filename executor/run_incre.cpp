@@ -4,6 +4,7 @@
 
 #include "istool/basic/config.h"
 #include "istool/incre/io/incre_from_json.h"
+#include "istool/incre/language/incre_util.h"
 #include "istool/incre/io/incre_printer.h"
 #include "istool/incre/language/incre_program.h"
 #include "istool/incre/analysis/incre_instru_info.h"
@@ -84,8 +85,11 @@ int main(int argc, char** argv) {
 
     auto* solver = new IncreAutoLifterSolver(incre_info, env);
     auto res = solver->solve();
+
     res.print();
     auto res_prog = rewriteWithIncreSolution(incre_info->program.get(), res, is_highlight_replace);
+
+    res_prog = incre::util::removeTrivialLetForProgram(res_prog.get());
 
     incre::io::printProgram(res_prog.get(), target,is_highlight_replace);
 }

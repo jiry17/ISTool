@@ -1,12 +1,23 @@
 import "compress";
+import "standard";
 
-data List a = Cons a * (List a) | Nil;
-fun fold f e = function
-  Cons {h, t} -> f h (fold f e t)
-| Nil -> e;
+/* A language with only + and neg and its interpreter */
+data LangA = One | Add LangA * LangA | Neg LangA;
 
-sum :: List Int -> Int;
-sum = fold (fun h res -> h + res) 0;
+fun evalA = function
+| One -> 1
+| Add {l, r} -> evalA l + evalA r
+| Neg e -> -(evalA e);
 
-getw :: Reframe (List Int) -> Int;
-fun getw items = sum items;
+/* Another language built on LangA and the translator*/
+data LangB = One' | Add' LangB * LangB | Sub LangB * LangB;
+
+transBtoA :: LangB -> Reframe (LangA);
+fun transBtoA = function
+| One' -> One
+| Add' {l, r} -> Add {transBtoA l, transBtoA r}
+| Sub {l, r} -> Add {transBtoA l, Neg (transBtoA r)};
+
+/* Synthesize a direct interpreter for LangB */
+
+fun evalB e = evalA (transBtoA e);

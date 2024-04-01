@@ -189,7 +189,8 @@ namespace {
             RegisterOperator("=="), RegisterOperator("<"), RegisterOperator("<="),
             RegisterOperator(">"), RegisterOperator(">="), RegisterOperator("and"),
             RegisterOperator("or"), RegisterOperator("not"), {"||", "or"},
-            {"&&", "and"}, {"!", "not"}, {"=", "=="}
+            {"&&", "and"}, {"!", "not"}, {"=", "=="},
+            RegisterOperator("-")
     };
 }
 

@@ -72,6 +72,11 @@ namespace {
         switch (term->getType()) {
             case TermType::PROJ: {
                 auto* tp = dynamic_cast<TmProj*>(term);
+                if (tp->size == 2) {
+                    auto tmp_name = tp->id == 1 ? "fst" : "snd";
+                    auto tmp_term = std::make_shared<TmApp>(std::make_shared<TmVar>(tmp_name), tp->body);
+                    return _pathTerm2String(tmp_term.get());
+                }
                 auto res = _pathTerm2String(tp->body.get());
                 res.appendLast("[" + std::to_string(tp->id) + "/" + std::to_string(tp->size) + "]");
                 return res;

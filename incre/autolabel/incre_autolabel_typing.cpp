@@ -25,7 +25,7 @@ Z3TyVar::Z3TyVar(const FullZ3LabeledContent &_type): syntax::TypeData(TypeType::
 }
 
 std::string Z3TyVar::toString() const {
-    if (isBounded()) return "wrap(" + std::get<WrappedTy>(content)->toString() + ")";
+    if (isBounded()) return "bind(" + std::get<Ty>(content)->toString() + ")";
     auto info = std::get<Z3LabeledVarInfo>(content);
     return "?x" + std::to_string(info.index) + "[" + info.scalar_cond.to_string() + "," + info.base_cond.to_string() + "]";
 }
@@ -34,8 +34,8 @@ Z3LabeledVarInfo &Z3TyVar::getVarInfo() {
     return std::get<Z3LabeledVarInfo>(content);
 }
 
-WrappedTy &Z3TyVar::getBindType() {
-    return std::get<WrappedTy>(content);
+Ty &Z3TyVar::getBindType() {
+    return std::get<Ty>(content);
 }
 
 bool Z3TyVar::isBounded() const {
@@ -45,7 +45,7 @@ bool Z3TyVar::isBounded() const {
 Z3Context::Z3Context(): cons_list(ctx), KTrue(ctx.bool_val(true)), KFalse(ctx.bool_val(false)) {}
 
 void Z3Context::addCons(const z3::expr &expr) {
-    LOG(INFO) << "add cons " << expr.to_string();
+    // LOG(INFO) << "add cons " << expr.to_string();
     cons_list.push_back(expr.simplify());
 }
 
@@ -80,27 +80,49 @@ std::shared_ptr<Z3TyVar> SymbolicIncreTypeChecker::getTmpVar(syntax::VarRange ra
 }
 
 WrappedTy SymbolicIncreTypeChecker::getTmpWrappedVar(syntax::VarRange range) {
-    return std::make_shared<WrappedType>(z3_ctx->KFalse, getTmpVar(range));
+    auto compress_var = z3_ctx->newVar();
+    auto content = getTmpVar(range);
+    auto& var_info = content->getVarInfo();
+    var_info.base_cond = var_info.base_cond | compress_var;
+    return std::make_shared<WrappedType>(compress_var, getTmpVar(range));
 }
 
 namespace {
     class _Z3LabeledTypeVarRewriter: public IncreTypeRewriter {
     public:
-        std::unordered_map<int, std::shared_ptr<Z3TyVar>> replace_map;
-        _Z3LabeledTypeVarRewriter(const std::unordered_map<int, std::shared_ptr<Z3TyVar>>& _replace_map): replace_map(_replace_map) {}
+        std::unordered_map<int, WrappedTy> replace_map;
+        Z3Context* ctx;
+        _Z3LabeledTypeVarRewriter(const std::unordered_map<int, WrappedTy>& _replace_map, Z3Context* _ctx):
+            replace_map(_replace_map), ctx(_ctx) {}
     protected:
         Ty _rewrite(TyVar* _, const Ty& _type) override {
             auto* type = dynamic_cast<Z3TyVar*>(_type.get()); assert(type);
-            if (type->isBounded()) return rewrite(type->getBindType());
-            auto& info = type->getVarInfo();
-            auto it = replace_map.find(info.index); assert(it != replace_map.end());
-            auto& new_info = it->second->getVarInfo();
-            new_info.base_cond = info.base_cond; new_info.scalar_cond = info.scalar_cond;
-            return it->second;
+            if (type->isBounded()) return rewrite(type->getBindType()); else return _type;
         }
 
         Ty _rewrite(TyCompress* _, const Ty& _type) override {
             auto* type = dynamic_cast<WrappedType*>(_type.get()); assert(type);
+            if (type->content->getType() == TypeType::VAR) {
+                auto* tv = dynamic_cast<Z3TyVar*>(type->content.get()); assert(tv);
+                if (!tv->isBounded()) {
+                    auto pre_info = tv->getVarInfo();
+                    auto it = replace_map.find(pre_info.index);
+                    if (it != replace_map.end()) {
+                        auto replace_type = it->second;
+                        ctx->addCons(!replace_type->compress_label | !type->compress_label);
+
+                        auto* rv = dynamic_cast<Z3TyVar*>(replace_type->content.get());
+                        assert(rv && !rv->isBounded());
+                        auto& new_info = rv->getVarInfo();
+                        new_info.scalar_cond = new_info.scalar_cond | pre_info.scalar_cond;
+                        new_info.base_cond = new_info.base_cond | pre_info.base_cond;
+
+                        return std::make_shared<WrappedType>(replace_type->compress_label | type->compress_label, replace_type->content);
+                    }
+                } else {
+                    return rewrite(std::make_shared<WrappedType>(type->compress_label, tv->getBindType()));
+                }
+            }
             return std::make_shared<WrappedType>(type->compress_label, rewrite(type->content));
         }
     };
@@ -109,11 +131,11 @@ namespace {
 WrappedTy SymbolicIncreTypeChecker::instantiate(const WrappedTy &x) {
     if (x->content->getType() == TypeType::POLY) {
         auto* xp = dynamic_cast<TyPoly*>(x->content.get());
-        std::unordered_map<int, std::shared_ptr<Z3TyVar>> replace_map;
+        std::unordered_map<int, WrappedTy> replace_map;
         for (auto index: xp->var_list) {
-            replace_map[index] = getTmpVar(ANY);
+            replace_map[index] = getTmpWrappedVar(ANY);
         }
-        auto* rewriter = new _Z3LabeledTypeVarRewriter(replace_map);
+        auto* rewriter = new _Z3LabeledTypeVarRewriter(replace_map, z3_ctx);
         // LOG(INFO) << xp->body->toString();
         auto res = std::static_pointer_cast<WrappedType>(rewriter->rewrite(xp->body));
         delete rewriter; return res;
@@ -166,73 +188,17 @@ WrappedTy SymbolicIncreTypeChecker::generalize(const WrappedTy &x) {
 
 #define ToWrap(pointer) std::static_pointer_cast<WrappedType>(pointer)
 #define MakeWrap(label, content) std::make_shared<WrappedType>(label, content)
-#define RegisterNormalizeCase(name) case TypeType::TYPE_TOKEN_##name: return _normalize(dynamic_cast<Ty ## name*>(body.get()), type, ctx);
-#define NormalizeHead(name) WrappedTy _normalize(Ty ## name* type, const WrappedTy& _type, Z3Context* ctx)
-#define DefaultNormalizeHead(name) NormalizeHead(name) {return _type;}
-
-namespace {
-    WrappedTy normalize(const WrappedTy& type, Z3Context* ctx);
-
-    NormalizeHead(Var) {
-        auto* xvar = dynamic_cast<Z3TyVar*>(_type->content.get()); assert(xvar);
-        if (!xvar->isBounded()) return _type;
-        auto res = normalize(ToWrap(xvar->getBindType()), ctx);
-        ctx->addCons(!res->compress_label | !_type->compress_label);
-        return std::make_shared<WrappedType>(res->compress_label | _type->compress_label, res->content);
-    }
-
-    NormalizeHead(Tuple) {
-        TyList fields;
-        for (auto& sub_type: type->fields) fields.push_back(normalize(ToWrap(sub_type), ctx));
-        return MakeWrap(_type->compress_label, std::make_shared<TyTuple>(fields));
-    }
-
-    NormalizeHead(Compress) {
-        LOG(FATAL) << "Unexpected compress type";
-    }
-
-    NormalizeHead(Arr) {
-        auto inp = normalize(ToWrap(type->inp), ctx);
-        auto oup = normalize(ToWrap(type->oup), ctx);
-        return MakeWrap(_type->compress_label, std::make_shared<TyArr>(inp, oup));
-    }
-
-    DefaultNormalizeHead(Int)
-    DefaultNormalizeHead(Unit)
-    DefaultNormalizeHead(Bool)
-
-    NormalizeHead(Ind) {
-        TyList params;
-        for (auto& sub_type: type->param_list) params.push_back(normalize(ToWrap(sub_type), ctx));
-        return MakeWrap(_type->compress_label, std::make_shared<TyInd>(type->name, params));
-    }
-
-    NormalizeHead(Poly) {
-        auto new_body = normalize(ToWrap(type->body), ctx);
-        return MakeWrap(_type->compress_label, std::make_shared<TyPoly>(type->var_list, new_body));
-    }
-
-    WrappedTy normalize(const WrappedTy& type, Z3Context* ctx) {
-        auto body = type->content;
-        switch (body->getType()) {
-            TYPE_CASE_ANALYSIS(RegisterNormalizeCase)
-        }
-    }
-}
-
-WrappedTy SymbolicIncreTypeChecker::normalize(const WrappedTy &type) {
-    return ::normalize(type, z3_ctx);
-}
 
 void SymbolicIncreTypeChecker::updateTypeBeforeUnification(syntax::TypeData *x, const Z3LabeledVarInfo& info) {
+    // LOG(INFO) << "update " << x->toString() << " " << info.scalar_cond;
     if (x->getType() == TypeType::VAR) {
         auto* var = dynamic_cast<Z3TyVar*>(x); assert(var);
-        if (var->isBounded()) LOG(FATAL) << "Type not normalized: " << x->toString();
+        if (var->isBounded()) return updateTypeBeforeUnification(var->getBindType().get(), info);
         auto& var_info = var->getVarInfo();
         if (var_info.index == info.index) throw types::IncreTypingError("Infinite unification");
         var_info.level = std::min(var_info.level, info.level);
-        var_info.scalar_cond = (var_info.scalar_cond & info.scalar_cond).simplify();
-        var_info.base_cond = (var_info.scalar_cond & info.scalar_cond).simplify();
+        var_info.scalar_cond = (var_info.scalar_cond | info.scalar_cond).simplify();
+        var_info.base_cond = (var_info.base_cond | info.base_cond).simplify();
         return;
     }
     auto new_info = info;
@@ -297,25 +263,18 @@ void SymbolicIncreTypeChecker::_unify(syntax::TyCompress *x, syntax::TyCompress 
 void SymbolicIncreTypeChecker::_unify(syntax::TyVar *__x, syntax::TyVar *__y, const WrappedTy &_x, const WrappedTy &_y) {
     auto* x = dynamic_cast<Z3TyVar*>(_x->content.get()), *y = dynamic_cast<Z3TyVar*>(_y->content.get());
     assert(x);
-    if (x->isBounded()) LOG(FATAL) << "Type not normalized: " << _x->toString();
-    if (!y) {
-        auto new_content = std::make_shared<WrappedType>(_y->compress_label & !_x->compress_label, _y->content);
-        updateTypeBeforeUnification(new_content.get(), x->getVarInfo());
-        z3_ctx->addCons(z3::implies(_x->compress_label, _y->compress_label));
-        x->content = new_content;
-        return;
-    }
-    auto x_info = x->getVarInfo(), y_info = y->getVarInfo();
-    Z3LabeledVarInfo new_info(tmp_var_id++, std::min(x_info.level, y_info.level), x_info.scalar_cond & y_info.scalar_cond, x_info.base_cond & y_info.base_cond);
-    auto new_var = std::make_shared<Z3TyVar>(new_info);
-    x->content = std::make_shared<WrappedType>(_y->compress_label & !_x->compress_label, new_var);
-    y->content = std::make_shared<WrappedType>(_x->compress_label & !_y->compress_label, new_var);
+    if (x->isBounded()) return unify(std::make_shared<WrappedType>(_x->compress_label, x->getBindType()), _y);
+    if (y && y->isBounded()) return unify(_x, std::make_shared<WrappedType>(_y->compress_label, y->getBindType()));
+    z3_ctx->addCons(_x->compress_label == _y->compress_label);
+
+    if (y && !y->isBounded() && y->getVarInfo().index == x->getVarInfo().index) return;
+    updateTypeBeforeUnification(_y->content.get(), x->getVarInfo());
+    x->content = _y->content;
 }
 
-void SymbolicIncreTypeChecker::unify(const WrappedTy &raw_x, const WrappedTy &raw_y) {
-    auto x = normalize(raw_x), y = normalize(raw_y);
-    LOG(INFO) << "unify " << x->toString() << " " << y->toString();
+void SymbolicIncreTypeChecker::unify(const WrappedTy &x, const WrappedTy &y) {
     auto x_type = x->content->getType(), y_type = y->content->getType();
+    // LOG(INFO) << "unify " << x->toString() << " " << y->toString();
     if (x_type != TypeType::VAR && y_type == TypeType::VAR) return unify(y, x);
     if (x_type != TypeType::VAR && x_type != y_type) {
         throw types::IncreTypingError(x->toString() + " cannot unify with " + y->toString());
@@ -439,7 +398,7 @@ SymbolicIncreTypeChecker::processPattern(syntax::PatternData *pattern, const Inc
             auto [body_type, new_ctx] = processPattern(pc->body.get(), ctx);
             auto res_type = getTmpWrappedVar(ANY);
             unify(defaultWrap(std::make_shared<TyArr>(body_type, res_type)), cons_type);
-            return {normalize(res_type), new_ctx};
+            return {res_type, new_ctx};
         }
     }
 }
@@ -449,8 +408,7 @@ WrappedTy SymbolicIncreTypeChecker::_typing(syntax::TmMatch *term, const IncreCo
     for (auto& [pt, case_body]: term->cases) {
         auto [inp_type, new_ctx] = processPattern(pt.get(), ctx);
         auto body_type = typing(case_body.get(), new_ctx);
-        unify(def, inp_type); def = normalize(def);
-        unify(res_type, body_type); res_type = normalize(res_type);
+        unify(def, inp_type); unify(res_type, body_type);
     }
     return res_type;
 }
@@ -475,9 +433,8 @@ namespace {
     }
     bool _isIncludeInd(TypeData* type) {
         if (type->getType() == TypeType::VAR) {
-            auto* tx = dynamic_cast<Z3TyVar*>(type);
-            assert(tx && !tx->isBounded());
-            return true;
+            auto* tx = dynamic_cast<Z3TyVar*>(type); assert(tx);
+            if (tx->isBounded()) return _isIncludeInd(tx->getBindType().get()); else return true;
         }
         if (type->getType() == TypeType::IND) return true;
         for (auto& sub_type: _getSubTypes(type)) {
@@ -493,8 +450,7 @@ WrappedTy SymbolicIncreTypeChecker::typing(syntax::TermData *term, const IncreCo
     switch (term->getType()) {
         TERM_CASE_ANALYSIS(TypingCase)
     }
-    res = normalize(res);
-    LOG(INFO) << "raw type " << term->toString() << " " << res->toString();
+    // LOG(INFO) << "raw type " << term->toString() << " " << res->toString();
     // LOG(INFO) << "normalized " << res->toString();
     if (_isPossibleBase(res.get())) {
         if (_isIncludeInd(res.get())) {
@@ -509,7 +465,7 @@ WrappedTy SymbolicIncreTypeChecker::typing(syntax::TermData *term, const IncreCo
         Z3LabeledVarInfo rewrite_info(-1, 1e9, rewrite_var, z3_ctx->KFalse);
         updateTypeBeforeUnification(res.get(), rewrite_info);
     }
-    LOG(INFO) << term->toString() << " " << res->toString();
+    // LOG(INFO) << term->toString() << " " << res->toString();
     return z3_ctx->type_map[term] = res;
 }
 

@@ -45,7 +45,7 @@ int IncreInfoCollector::getFinalCompressLabel(int k) {
 
 void IncreInfoCollector::_unify(syntax::TyCompress *ox, syntax::TyCompress *oy, const syntax::Ty &_x, const syntax::Ty &_y) {
     types::DefaultIncreTypeChecker::_unify(ox, oy, _x, _y);
-    LOG(INFO) << "unify compress " << ox->toString() << " " << oy->toString();
+    // LOG(INFO) << "unify compress " << ox->toString() << " " << oy->toString();
     auto* x = dynamic_cast<TyLabeledCompress*>(ox);
     auto* y = dynamic_cast<TyLabeledCompress*>(oy);
     if (!x || !y) throw types::IncreTypingError("All TyCompress types should be labeled, but get " + ox->toString() + " and " + oy->toString());

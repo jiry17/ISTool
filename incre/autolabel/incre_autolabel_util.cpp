@@ -63,6 +63,27 @@ WrappedTy util::liftNormalType(const syntax::Ty &raw_type, Z3Context *ctx) {
 }
 
 namespace {
+    class _LabelClearer: public IncreTypeRewriter {
+    public:
+        Z3Context* ctx;
+        _LabelClearer(Z3Context* _ctx): ctx(_ctx) {}
+        Ty _rewrite(TyVar* _, const Ty& _type) override {
+            auto* type = dynamic_cast<Z3TyVar*>(_type.get()); assert(type);
+            if (type->isBounded()) return rewrite(type->getBindType()); else return _type;
+        }
+        Ty _rewrite(TyCompress* _, const Ty& _type) override {
+            auto* type = dynamic_cast<WrappedType*>(_type.get()); assert(type);
+            ctx->addCons(!type->compress_label);
+            return std::make_shared<WrappedType>(ctx->KFalse, rewrite(type->content));
+        }
+    };
+
+    Ty clearLabel(const Ty& type, Z3Context* ctx) {
+        auto* rewriter = new _LabelClearer(ctx);
+        auto res = rewriter->rewrite(type);
+        delete rewriter; return res;
+    }
+
 #define ToWrap(pointer) (std::static_pointer_cast<WrappedType>(pointer))
 
     void _collectCoverCond(TermData* term, const z3::expr& raw_rewrite_cond, Z3Context* ctx) {
@@ -86,24 +107,23 @@ namespace {
             if (!address->bind.data.isNull()) LOG(FATAL) << "Duplicated declaration on name " << command->name;
             assert(address->bind.type);
             checker->unify(ToWrap(address->bind.type), checker->typing(command->term.get(), ctx));
-            address->bind.type = checker->normalize(ToWrap(address->bind.type));
+            address->bind.type = ToWrap(address->bind.type);
         } else if (command->is_func) {
             ctx = ctx.insert(command->name, Binding(false, {}, {}));
             auto* address = ctx.getAddress(command->name);
             checker->pushLevel(); auto current_type = checker->getTmpWrappedVar(ANY);
             address->bind.type = current_type;
             checker->unify(current_type, checker->typing(command->term.get(), ctx));
-            current_type = checker->normalize(current_type);
             checker->popLevel();
             auto final_type = checker->generalize(current_type);
-            address->bind.type = final_type;
+            address->bind.type = clearLabel(final_type, checker->z3_ctx);
         } else {
             checker->pushLevel(); auto type = checker->typing(command->term.get(), ctx);
             checker->popLevel(); type = checker->generalize(type);
-            ctx = ctx.insert(command->name, Binding(type));
+            ctx = ctx.insert(command->name, Binding(clearLabel(type, checker->z3_ctx)));
         }
         //LOG(INFO) << "collect cover cond";
-         _collectCoverCond(command->term.get(), checker->z3_ctx->KFalse, checker->z3_ctx);
+        _collectCoverCond(command->term.get(), checker->z3_ctx->KFalse, checker->z3_ctx);
     }
 
     void _collectFromCommand(CommandDef* command, IncreContext& ctx, SymbolicIncreTypeChecker* checker) {

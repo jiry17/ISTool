@@ -241,7 +241,8 @@ namespace {
         _FreeVariableRewriter(const std::string& _name, const Term& _term): name(_name), replace_term(_term) {}
 
         virtual Term rewrite(const Term& term) {
-            auto it = local_vars_map.find(term.get()); assert(it != local_vars_map.end());
+            auto it = local_vars_map.find(term.get());
+            assert(it != local_vars_map.end());
             for (auto& local: it->second) {
                 if (local == name) return term;
             }
@@ -269,6 +270,7 @@ namespace {
         virtual Term _rewrite(TmLet* term, const Term& _raw_term) override {
             if (_isTrivialLet(term)) {
                 auto* rewriter = new _FreeVariableRewriter(term->name, term->def);
+                rewriter->local_vars_map.insert({term->body.get(), {}});
                 auto new_term = rewriter->rewrite(term->body);
                 delete rewriter;
                 return rewrite(new_term);
