@@ -24,6 +24,11 @@ std::string IncreExampleData::toString() const {
     return res;
 }
 
+std::string DpExampleData::toString() const {
+    std::string res = inp.toString() + " -> " + oup.toString();
+    return res;
+}
+
 IncreDataGenerator::IncreDataGenerator(Env *_env, const std::unordered_map<std::string, CommandDef *> &_cons_map):
     env(_env), cons_map(_cons_map) {
     auto* data = env->getConstRef(incre::config::KDataSizeLimitName);

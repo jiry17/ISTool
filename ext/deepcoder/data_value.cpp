@@ -15,13 +15,15 @@ Data ProductValue::get(int id) const {
     return elements[id];
 }
 std::string ProductValue::toString() const {
+    // std::string res = "product: [";
     std::string res = "";
     for (int i = 0; i < elements.size(); ++i) {
-        if (i) res += " ";
+        if (i) res += ", ";
         res += "(";
         res += elements[i].toString();
         res += ")";
     }
+    // res += " ]";
     return res;
 }
 bool ProductValue::equal(Value *v) const {

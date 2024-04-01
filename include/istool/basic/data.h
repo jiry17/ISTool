@@ -36,6 +36,7 @@ namespace data {
     std::string dataList2String(const DataList& data_list);
     DataList concatDataList(const DataList& x, const DataList& y);
     DataStorage cartesianProduct(const DataStorage& separate_data);
+    DataList data2DataList(const Data& data);
 }
 
 

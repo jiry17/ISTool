@@ -31,11 +31,189 @@ Data IncreExampleCollectionEvaluator::_evaluate(syntax::TmRewrite *term, const I
     return oup;
 }
 
+incre::example::DpExampleCollectionEvaluator::DpExampleCollectionEvaluator(IncreExampleCollector *_collector):
+    collector(_collector) {
+}
+
+#define Eval(name, ctx_name) evaluate(term->name.get(), ctx_name)
+#define EvalAssign(name, ctx_name) auto name = Eval(name, ctx_name)
+
+#define Print(x) std::cout << #x " = " << x << std::endl;
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmValue *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmApp *term, const IncreContext &ctx) {
+    // std::cout << "zyw: DpExampleCollectionEvaluator::_evaluate" << std::endl;
+    // std::cout << "term = " << term->toString() << std::endl;
+
+    // evaluate result
+    EvalAssign(func, ctx); EvalAssign(param, ctx);
+    auto* vc = dynamic_cast<VClosure*>(func.get());
+    if (!vc) throw IncreSemanticsError("the evaluation result of TmApp func should be a closure, but got " + func.toString());
+    auto new_ctx = vc->context.insert(vc->name, param);
+    auto result = evaluate(vc->body.get(), new_ctx);
+
+    if (term->func->getType() == TermType::APP) {
+        auto sub_term = std::static_pointer_cast<syntax::TmApp>(term->func);
+        if (!sub_term) {
+            LOG(FATAL) << "sub_term is not TmApp";
+        }
+
+        // collect from sinsert
+        // e.g. APP (APP sinsert (Nil unit)) sempty
+        // input is param (evaluation result of term->param), output is def_3 (evaluation of def used in TmMatch)
+        if (sub_term->func->toString() == "sinsert") {
+            std::cout << "in sinsert: " << std::endl;
+            Data input_null = Data();
+            input_null.value = std::make_shared<NullValue>();
+            std::cout << "input = " << input_null.toString() << std::endl;
+            auto sub_param = evaluate(sub_term->param.get(), ctx);
+            std::cout << "output = " << sub_param.toString() << std::endl;
+            collector->add_dp_example(input_null, sub_param);
+        }
+
+        // collect from sstep1
+        // e.g. APP (APP sstep (func)) (Nil unit)
+        // sstep1 f sol = concat (map f sol)
+        // input is param (evaluation result of term->param), output is result (evaluation of term)
+        if (sub_term->func->toString() == "sstep1") {
+            std::cout << "in sstep1: " << std::endl;
+
+            // Print(func.toString());
+            // Print(param.toString());
+            // Print(vc->name);
+            // Print(vc->body->toString());
+            // Print(termType2String(vc->body->getType()));
+
+            auto term_2 = std::static_pointer_cast<syntax::TmApp>(vc->body);
+            auto func_2 = evaluate(term_2->func.get(), new_ctx);
+            auto param_2 = evaluate(term_2->param.get(), new_ctx);
+            auto* vc_2 = dynamic_cast<VClosure*>(func_2.get());
+            if (!vc_2) throw IncreSemanticsError("the evaluation result of TmApp func should be a closure, but got " + func_2.toString());
+            auto new_ctx_2 = vc_2->context.insert(vc_2->name, param_2);
+            auto result_2 = evaluate(vc_2->body.get(), new_ctx_2);
+
+            // Print(term_2->func->toString());
+            // Print(term_2->param->toString());
+            // Print(termType2String(vc_2->body->getType()));
+            // Print(result_2.toString());
+
+            auto term_3 = std::static_pointer_cast<syntax::TmMatch>(vc_2->body);
+            auto def_3 = evaluate(term_3->def.get(), new_ctx_2);
+            Data result_3;
+            bool has_result_3 = false;
+            for (auto& [pt, tm]: term_3->cases) {
+                if (isValueMatchPattern(pt.get(), def_3)) {
+                    auto new_ctx_3 = bindValueWithPattern(pt.get(), def_3, new_ctx_2);
+                    result_3 = evaluate(tm.get(), new_ctx_3);
+                    has_result_3 = true;
+                    break;
+                }
+            }
+            if (!has_result_3) {
+                throw IncreSemanticsError("cannot match " + def_3.toString() + " with " + term_3->toString());
+            }
+
+            // Print(term_3->toString());
+            // Print(def_3.toString());
+            // Print(result_3.toString());
+        
+            // std::cout << "input = " << param.toString() << std::endl;
+            // std::cout << "output = " << def_3.toString() << std::endl;
+
+            // get input and output from Data
+            DataList inp = ::data::data2DataList(param);
+            DataList oup_tmp = ::data::data2DataList(def_3);
+            std::vector<DataList> oup;
+            for (auto& tmp: oup_tmp) {
+                oup.push_back(::data::data2DataList(tmp));
+            }
+            if (inp.size() != oup.size()) {
+                LOG(FATAL) << "size of input and output not match";
+            }
+            // add example into collector
+            int inp_len = inp.size();
+            for (int i = 0; i < inp_len; ++i) {
+                auto& inp_data = inp[i];
+                for (auto& oup_data: oup[i]) {
+                    collector->add_dp_example(inp_data, oup_data);
+                }
+            }
+            
+            // print input and output
+            // std::cout << "inp = " << std::endl;
+            // for (auto& data: inp) {
+            //     std::cout << "[" << data.toString() << "]" << std::endl;
+            // }
+            // std::cout << "oup = " << std::endl;
+            // for (auto& data_list: oup) {
+            //     for (auto& data: data_list) {
+            //         std::cout << "[" << data.toString() << "], ";
+            //     }
+            //     std::cout << std::endl;
+            // }
+        }
+    }
+
+    return result;
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmCons *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmFunc *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmIf *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmLabel *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmUnlabel *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmRewrite *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmLet *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmPrimary *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmMatch *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmVar *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmTuple *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
+Data DpExampleCollectionEvaluator::_evaluate(syntax::TmProj *term, const IncreContext &ctx) {
+    return DefaultEvaluator::_evaluate(term, ctx);
+}
+
 IncreExampleCollector::IncreExampleCollector(IncreProgramData *program,
                                              const std::vector<std::vector<std::string>> &_cared_vars,
                                              const std::vector<std::string> &_global_name):
                                              cared_vars(_cared_vars), global_name(_global_name), example_pool(_cared_vars.size()) {
     eval = new IncreExampleCollectionEvaluator(this);
+    dp_eval = new DpExampleCollectionEvaluator(this);
     ctx = buildContext(program, eval, nullptr);
 }
 
@@ -43,6 +221,11 @@ void
 IncreExampleCollector::add(int rewrite_id, const DataList &local_inp, const Data &oup) {
     auto example = std::make_shared<IncreExampleData>(rewrite_id, local_inp, current_global, oup);
     example_pool[rewrite_id].push_back(example);
+}
+
+void IncreExampleCollector::add_dp_example(const Data& inp, const Data& oup) {
+    auto example = std::make_shared<DpExampleData>(inp, oup);
+    dp_example_pool.push_back(example);
 }
 
 void IncreExampleCollector::collect(const syntax::Term &start, const DataList &global) {
@@ -54,6 +237,15 @@ void IncreExampleCollector::collect(const syntax::Term &start, const DataList &g
     eval->evaluate(start.get(), ctx->ctx);
 }
 
+void IncreExampleCollector::collectDp(const syntax::Term &start, const DataList &global) {
+    std::unordered_map<std::string, Data> global_inp_map;
+    for (int i = 0; i < global.size(); ++i) {
+        global_inp_map[global_name[i]] = global[i];
+    }
+    ctx->setGlobalInput(global_inp_map); current_global = global;
+    dp_eval->evaluate(start.get(), ctx->ctx);
+}
+
 IncreExampleCollector::~IncreExampleCollector() {
     delete eval;
 }
@@ -61,6 +253,7 @@ IncreExampleCollector::~IncreExampleCollector() {
 void IncreExampleCollector::clear() {
     current_global.clear();
     for (auto& example_list: example_pool) example_list.clear();
+    dp_example_pool.clear();
 }
 
 // merge collector->example_pool into IncreExamplePool->example_pool
@@ -81,6 +274,23 @@ void IncreExamplePool::merge(int main_id, IncreExampleCollector *collector, Time
                 example_pool[rewrite_id].push_back(new_example);
             }
             if ((example_id & 255) == 255 && guard && guard->getRemainTime() < 0) break;
+        }
+    }
+    collector->clear();
+}
+
+// merge dp_example from IncreExampleCollector to IncreExamplePool
+void IncreExamplePool::mergeDp(int main_id, IncreExampleCollector *collector, TimeGuard* guard) {
+    for (int example_id = 0; example_id < collector->dp_example_pool.size(); ++example_id) {
+        auto& new_example = collector->dp_example_pool[example_id];
+        auto feature = new_example->toString();
+        // if this example is duplicate, don't add it
+        if (existing_dp_example_set.find(feature) == existing_dp_example_set.end()) {
+            existing_dp_example_set.insert(feature);
+            dp_example_pool.push_back(new_example);
+        }
+        if ((example_id & 255) == 255 && guard && guard->getRemainTime() < 0) {
+            break;
         }
     }
     collector->clear();
@@ -128,13 +338,13 @@ IncreExamplePool::IncreExamplePool(const IncreProgram &_program,
 
     for (auto& command: program->commands) {
         if (command->getType() == CommandType::DECLARE && command->isDecrorateWith(CommandDecorate::INPUT)) {
-            std::cout << "zyw: command declare, " << command->name << std::endl;
+            // std::cout << "zyw: command declare, " << command->name << std::endl;
             auto* ci = dynamic_cast<CommandDeclare*>(command.get());
             global_type_list.push_back(ci->type);
             global_name_list.push_back(command->name);
         }
         if (command->isDecrorateWith(CommandDecorate::START)) {
-            std::cout << "zyw: command start, " << command->name << std::endl;
+            // std::cout << "zyw: command start, " << command->name << std::endl;
             auto param_list = _extractStartParamList(type_ctx->ctx.getFinalType(command->name, rewriter));
             start_list.emplace_back(command->name, param_list);
         }
@@ -144,14 +354,16 @@ IncreExamplePool::IncreExamplePool(const IncreProgram &_program,
         auto type = type_ctx->ctx.getFinalType(start->name, rewriter);
         start_list.emplace_back(start->name, _extractStartParamList(type));
     }
-    std::cout << "zyw: start_list.size = " << start_list.size() << std::endl;
-    for (int i = 0; i < start_list.size(); ++i) {
-        std::cout << start_list[i].first;
-        for (int j = 0; j < start_list[i].second.size(); ++j) {
-            std::cout << ", " << start_list[i].second[j]->toString();
-        }
-        std::cout << std::endl;
-    }
+
+    // print start_list
+    // std::cout << "zyw: start_list.size = " << start_list.size() << std::endl;
+    // for (int i = 0; i < start_list.size(); ++i) {
+    //     std::cout << start_list[i].first;
+    //     for (int j = 0; j < start_list[i].second.size(); ++j) {
+    //         std::cout << ", " << start_list[i].second[j]->toString();
+    //     }
+    //     std::cout << std::endl;
+    // }
     delete rewriter;
 }
 
@@ -167,6 +379,18 @@ void IncreExamplePool::generateSingleExample() {
     collector->collect(term, global);
     // add single example into example_pool in merge function
     merge(0, collector, nullptr);
+    global::recorder.end("collect");
+    delete collector;
+}
+
+void IncreExamplePool::generateDpSingleExample() {
+    auto [term, global] = generateStart();
+    auto* collector = new IncreExampleCollector(program.get(), cared_vars, global_name_list);
+
+    global::recorder.start("collect");
+    collector->collectDp(term, global);
+    // add single example into example_pool in merge function
+    mergeDp(0, collector, nullptr);
     global::recorder.end("collect");
     delete collector;
 }

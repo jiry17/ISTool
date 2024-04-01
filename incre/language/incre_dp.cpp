@@ -20,7 +20,7 @@ void IncreCommandWalker::walkThrough(Command command) {
 }
 
 // update result, if already has result then check whether they are the same
-void DpCommandWalker::updateRes(Ty new_res) {
+void DpTypeCommandWalker::updateRes(Ty new_res) {
     if (!has_res) {
         has_res = true;
         res = new_res;
@@ -31,7 +31,7 @@ void DpCommandWalker::updateRes(Ty new_res) {
     }
 }
 
-void DpCommandWalker::walkThroughTerm(Term term) {
+void DpTypeCommandWalker::walkThroughTerm(Term term) {
     preProcess(term);
     switch (term->getType()) {
         case TermType::VALUE: {
@@ -56,9 +56,163 @@ void DpCommandWalker::walkThroughTerm(Term term) {
         }
         case TermType::APP: {
             auto term_app = std::static_pointer_cast<TmApp>(term);
-            // std::cout << "zyw: DpCommandWalker::walkThroughTerm, APP, term_app->func = " << term_app->func->toString() << ", term_app->param = " << term_app->param->toString() << std::endl;
+            // std::cout << "zyw: DpTypeCommandWalker::walkThroughTerm, APP, term_app->func = " << term_app->func->toString() << ", term_app->param = " << term_app->param->toString() << std::endl;
             if (term_app->func->toString() == "sinsert") {
                 updateRes(checker->typing(term_app->param.get(), ctx->ctx));
+            }
+            // if (term_app->param->toString() == "sempty") {
+            //     auto sempty_type = checker->typing(term_app->param.get(), ctx->ctx);
+            //     std::cout << "zyw: sempty, type = " << sempty_type->toString() << std::endl;
+            // }
+            
+            // if (term_app->func->getType() == TermType::APP) {
+            //     auto sub_term_app = std::static_pointer_cast<TmApp>(term_app->func);
+            //     if (sub_term_app) {
+            //         if (sub_term_app->func->toString() == "sstep1") {
+            //             std::cout << "zyw: sstep1, " << std::endl;
+            //             std::cout << "term_app->func = " << term_app->func->toString() << std::endl;
+            //             std::cout << "term_app->param = " << term_app->param->toString() << std::endl;
+            //             std::cout << "sub_term_app->func = "<< sub_term_app->func->toString() << std::endl;
+            //             std::cout << "sub_term_app->param = " << sub_term_app->param->toString() << std::endl;
+            //             auto tmp_type = checker->typing(term_app->param.get(), ctx->ctx);
+            //             std::cout << tmp_type->toString() << std::endl;
+            //         }
+            //     }
+            // }
+            
+            // if (term_app->func->toString() == "sargmax") {
+            //     auto obj_func_type = checker->typing(term_app->param.get(), ctx->ctx);
+            //     auto tmp = std::static_pointer_cast<TyArr>(obj_func_type);
+            //     if (tmp) {
+            //         std::cout << "zyw: sargmax, tmp is TyArr" << std::endl;
+            //         std::cout << "solution type = " << tmp->inp->toString() << std::endl;
+            //     } else {
+            //         std::cout << "zyw: sargmax, not TyArr" << std::endl;
+            //     }
+            // } 
+            walkThroughTerm(term_app->func);
+            walkThroughTerm(term_app->param);
+            break;
+        }
+        case TermType::FUNC: {
+            auto tmp = std::static_pointer_cast<TmFunc>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::LET: {
+            auto tmp = std::static_pointer_cast<TmLet>(term);
+            walkThroughTerm(tmp->def);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::TUPLE: {
+            auto tmp = std::static_pointer_cast<TmTuple>(term);
+            for (auto& field : tmp->fields) {
+                walkThroughTerm(field);
+            }
+            break;
+        }
+        case TermType::PROJ: {
+            auto tmp = std::static_pointer_cast<TmProj>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::MATCH: {
+            auto tmp = std::static_pointer_cast<TmMatch>(term);
+            walkThroughTerm(tmp->def);
+            for (auto& match_case : tmp->cases) {
+                walkThroughTerm(match_case.second);
+            }
+            break;
+        }
+        case TermType::CONS: {
+            auto tmp = std::static_pointer_cast<TmCons>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::LABEL: {
+            auto tmp = std::static_pointer_cast<TmLabel>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::UNLABEL: {
+            auto tmp = std::static_pointer_cast<TmUnlabel>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::REWRITE: {
+            auto tmp = std::static_pointer_cast<TmRewrite>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+    }
+    postProcess(term);
+}
+
+void DpTypeProgramWalker::visit(CommandDef* command) {
+    return;
+}
+
+void DpTypeProgramWalker::visit(CommandBindTerm* command) {
+    std::shared_ptr<CommandData> tmp = std::static_pointer_cast<CommandData>(std::make_shared<CommandBindTerm>(*command));
+    cmdWalker->walkThrough(tmp);
+    return;
+}
+
+void DpTypeProgramWalker::visit(CommandDeclare* command) {
+    return;
+}
+
+void DpTypeProgramWalker::initialize(IncreProgramData* program) {
+    return;
+}
+
+Ty incre::syntax::getSolutionType(IncreProgramData* program, IncreFullContext ctx) {
+    auto checker = new incre::types::DefaultIncreTypeChecker();
+    auto walker = new DpTypeProgramWalker(ctx, checker);
+    walker->walkThrough(program);
+    return walker->cmdWalker->res;
+}
+
+// update result, if already has result then check whether they are the same
+void DpObjCommandWalker::updateRes(Term new_res) {
+    if (!has_res) {
+        has_res = true;
+        res = new_res;
+    } else {
+        if (!(res->toString() == new_res->toString())) {
+            LOG(FATAL) << "updateRes: has more than one object function, res = " << res->toString() << ", new_res = " << new_res->toString();
+        }
+    }
+}
+
+void DpObjCommandWalker::walkThroughTerm(Term term) {
+    preProcess(term);
+    switch (term->getType()) {
+        case TermType::VALUE: {
+            break;
+        }
+        case TermType::IF: {
+            auto tmp = std::static_pointer_cast<TmIf>(term);
+            walkThroughTerm(tmp->c);
+            walkThroughTerm(tmp->t);
+            walkThroughTerm(tmp->f);
+            break;
+        }
+        case TermType::VAR: {
+            break;
+        }
+        case TermType::PRIMARY: {
+            auto tmp = std::static_pointer_cast<TmPrimary>(term);
+            for (auto& param : tmp->params) {
+                walkThroughTerm(param);
+            }
+            break;
+        }
+        case TermType::APP: {
+            auto term_app = std::static_pointer_cast<TmApp>(term);
+            if (term_app->func->toString() == "sargmax") {
+                updateRes(term_app->param);
             }
             walkThroughTerm(term_app->func);
             walkThroughTerm(term_app->param);
@@ -119,27 +273,27 @@ void DpCommandWalker::walkThroughTerm(Term term) {
     postProcess(term);
 }
 
-void DpProgramWalker::visit(CommandDef* command) {
+void DpObjProgramWalker::visit(CommandDef* command) {
     return;
 }
 
-void DpProgramWalker::visit(CommandBindTerm* command) {
+void DpObjProgramWalker::visit(CommandBindTerm* command) {
     std::shared_ptr<CommandData> tmp = std::static_pointer_cast<CommandData>(std::make_shared<CommandBindTerm>(*command));
     cmdWalker->walkThrough(tmp);
     return;
 }
 
-void DpProgramWalker::visit(CommandDeclare* command) {
+void DpObjProgramWalker::visit(CommandDeclare* command) {
     return;
 }
 
-void DpProgramWalker::initialize(IncreProgramData* program) {
+void DpObjProgramWalker::initialize(IncreProgramData* program) {
     return;
 }
 
-Ty incre::syntax::getSolutionType(IncreProgramData* program, IncreFullContext ctx) {
+Term incre::syntax::getObjFunc(IncreProgramData* program, IncreFullContext ctx) {
     auto checker = new incre::types::DefaultIncreTypeChecker();
-    auto walker = new DpProgramWalker(ctx, checker);
+    auto walker = new DpObjProgramWalker(ctx, checker);
     walker->walkThrough(program);
     return walker->cmdWalker->res;
 }

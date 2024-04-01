@@ -4,6 +4,7 @@
 
 #include "istool/basic/data.h"
 #include "istool/basic/semantics.h"
+#include "istool/incre/language/incre_semantics.h"
 #include <cassert>
 #include "glog/logging.h"
 
@@ -77,4 +78,27 @@ DataStorage data::cartesianProduct(const DataStorage &separate_data) {
     DataList cur; DataStorage res;
     _cartesianProduct(0, separate_data, cur, res);
     return res;
+}
+
+using namespace ::incre::semantics;
+
+DataList data::data2DataList(const Data& data) {
+    DataList result = std::vector<Data>();
+    std::shared_ptr<VInd> value_ind = std::static_pointer_cast<VInd>(data.value);
+    while (value_ind->name == "Cons") {
+        std::shared_ptr<ProductValue> value_product = std::static_pointer_cast<ProductValue>(value_ind->body.value);
+        if (value_product->elements.size() != 2) {
+            LOG(FATAL) << "elements.size() != 2";
+        }
+        std::shared_ptr<ProductValue> value_data = std::static_pointer_cast<ProductValue>(value_product->elements[0].value);
+        if (!value_data) {
+            LOG(FATAL) << "elements[0] is not product value!";
+        }
+        result.push_back(Data(value_data));
+        value_ind = std::static_pointer_cast<VInd>(value_product->elements[1].value);
+        if (!value_ind) {
+            LOG(FATAL) << "elements[1] is not ind value!";
+        }
+    }
+    return result;
 }

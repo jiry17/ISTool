@@ -27,23 +27,23 @@ namespace incre::syntax {
         virtual ~IncreCommandWalker() = default;
     };
 
-    class DpCommandWalker : public IncreCommandWalker {
+    class DpTypeCommandWalker : public IncreCommandWalker {
     protected:
         virtual void walkThroughTerm(Term term);
         virtual void initialize(Command command) {}
         virtual void preProcess(Term term) {}
         virtual void postProcess(Term term) {}
     public:
-        // store the type of partial solution, which is the result of DpProgramWalker
+        // store the type of partial solution, which is the result of DpTypeProgramWalker
         Ty res = nullptr;
         // already has result
         bool has_res = false;
         void updateRes(Ty new_res);
-        DpCommandWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker) : IncreCommandWalker(_ctx, _checker) {}
-        virtual ~DpCommandWalker() = default;
+        DpTypeCommandWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker) : IncreCommandWalker(_ctx, _checker) {}
+        virtual ~DpTypeCommandWalker() = default;
     };
     
-    class DpProgramWalker: public IncreProgramWalker {
+    class DpTypeProgramWalker: public IncreProgramWalker {
     protected:
         virtual void visit(CommandDef* command);
         virtual void visit(CommandBindTerm* command);
@@ -51,13 +51,58 @@ namespace incre::syntax {
         virtual void initialize(IncreProgramData* program);
     public:
         // command walker
-        DpCommandWalker* cmdWalker;
-        DpProgramWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker) : cmdWalker(new DpCommandWalker(_ctx, _checker)) {}
-        ~DpProgramWalker() = default;
+        DpTypeCommandWalker* cmdWalker;
+        DpTypeProgramWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker) : cmdWalker(new DpTypeCommandWalker(_ctx, _checker)) {}
+        ~DpTypeProgramWalker() = default;
     };
 
-    // get the type of partial solution using DpProgramWalker
+    // get the type of partial solution using DpTypeProgramWalker
     Ty getSolutionType(IncreProgramData* program, IncreFullContext ctx);
+
+    class DpObjCommandWalker : public IncreCommandWalker {
+    protected:
+        virtual void walkThroughTerm(Term term);
+        virtual void initialize(Command command) {}
+        virtual void preProcess(Term term) {}
+        virtual void postProcess(Term term) {}
+    public:
+        // store the type of partial solution, which is the result of DpObjProgramWalker
+        Term res = nullptr;
+        // already has result
+        bool has_res = false;
+        void updateRes(Term new_res);
+        DpObjCommandWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker) : IncreCommandWalker(_ctx, _checker) {}
+        virtual ~DpObjCommandWalker() = default;
+    };
+    
+    class DpObjProgramWalker: public IncreProgramWalker {
+    protected:
+        virtual void visit(CommandDef* command);
+        virtual void visit(CommandBindTerm* command);
+        virtual void visit(CommandDeclare* command);
+        virtual void initialize(IncreProgramData* program);
+    public:
+        // command walker
+        DpObjCommandWalker* cmdWalker;
+        DpObjProgramWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker) : cmdWalker(new DpObjCommandWalker(_ctx, _checker)) {}
+        ~DpObjProgramWalker() = default;
+    };
+
+    // get the type of partial solution using DpObjProgramWalker
+    Term getObjFunc(IncreProgramData* program, IncreFullContext ctx);
+
+    // store partial solutions and their parent-child relation
+    class DpSolutionData {
+    private:
+        Data partial_solution;
+        std::vector<std::shared_ptr<DpSolutionData>> children;
+    public:
+        DpSolutionData(Data& _par) : partial_solution(_par) {}
+        ~DpSolutionData() = default;
+    };
+
+    typedef std::shared_ptr<DpSolutionData> DpSolution;
+    typedef std::vector<DpSolution> DpSolutionList;
 }
 
 namespace grammar {

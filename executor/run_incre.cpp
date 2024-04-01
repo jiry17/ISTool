@@ -86,43 +86,49 @@ int main(int argv, char** argc) {
     }
     std::cout << std::endl;
 
-    for (int i = 0; i < 10; ++i) {
-        std::pair<syntax::Term, DataList> tmp = incre_info->example_pool->generateStart();
-        std::cout << "Start # " << i << ": term = " << tmp.first->toString() << ", global_inp = ";
-        bool is_start = true;
-        for (auto& i : tmp.second) {
-            if (is_start) is_start = false;
-            else std::cout << ", ";
-            std::cout << i.toString();
-        }
-        std::cout << std::endl;
-    }
+    // // test example_pool->generateStart
+    // for (int i = 0; i < 10; ++i) {
+    //     std::pair<syntax::Term, DataList> tmp = incre_info->example_pool->generateStart();
+    //     std::cout << "Start # " << i << ": term = " << tmp.first->toString() << ", global_inp = ";
+    //     bool is_start = true;
+    //     for (auto& i : tmp.second) {
+    //         if (is_start) is_start = false;
+    //         else std::cout << ", ";
+    //         std::cout << i.toString();
+    //     }
+    //     std::cout << std::endl;
+    // }
+    // generate single example for each hole
     for (int i = 0; i < 10; ++i) {
         incre_info->example_pool->generateSingleExample();
     }
-    for (int index = 0; index < incre_info->rewrite_info_list.size(); ++index) {
-        std::cout << "examples collected for #" << index << std::endl;
-        for (int i = 0; i < 5 && i < incre_info->example_pool->example_pool[index].size(); ++i) {
-            auto& example = incre_info->example_pool->example_pool[index][i];
-            std::cout << "  " << example->toString() << std::endl;
-        }
-    }
+    // for (int i = 0; i < 1; ++i) {
+    //     incre_info->example_pool->generateDpSingleExample();
+    // }
+    // // print single example
+    // for (int index = 0; index < incre_info->rewrite_info_list.size(); ++index) {
+    //     std::cout << "examples collected for #" << index << std::endl;
+    //     for (int i = 0; i < 5 && i < incre_info->example_pool->example_pool[index].size(); ++i) {
+    //         auto& example = incre_info->example_pool->example_pool[index][i];
+    //         std::cout << "  " << example->toString() << std::endl;
+    //     }
+    // }
 
-    std::cout << "zyw: incre_info->example_pool->cared_vars: " << std::endl;
-    incre_info->example_pool->printCaredVars();
-    std::cout << "zyw: incre_info->example_pool->start_list: " << std::endl;
-    incre_info->example_pool->printStartList();
-    std::cout << "zyw: incre_info->example_pool->existing_example_set: " << std::endl;
-    incre_info->example_pool->printExistingExampleSet();
-    std::cout << "zyw: incre_info->example_pool->global_name_list: " << std::endl;
-    incre_info->example_pool->printGlobalNameList();
-    std::cout << "zyw: incre_info->example_pool->global_type_list: " << std::endl;
-    incre_info->example_pool->printGlobalTypeList();
-    std::cout << std::endl;
+    // std::cout << "zyw: incre_info->example_pool->cared_vars: " << std::endl;
+    // incre_info->example_pool->printCaredVars();
+    // std::cout << "zyw: incre_info->example_pool->start_list: " << std::endl;
+    // incre_info->example_pool->printStartList();
+    // std::cout << "zyw: incre_info->example_pool->existing_example_set: " << std::endl;
+    // incre_info->example_pool->printExistingExampleSet();
+    // std::cout << "zyw: incre_info->example_pool->global_name_list: " << std::endl;
+    // incre_info->example_pool->printGlobalNameList();
+    // std::cout << "zyw: incre_info->example_pool->global_type_list: " << std::endl;
+    // incre_info->example_pool->printGlobalTypeList();
+    // std::cout << std::endl;
 
-    // print component_pool
-    std::cout << "zyw: incre_info->component_pool: " << std::endl;
-    incre_info->component_pool.print();
+    // // print component_pool
+    // std::cout << "zyw: incre_info->component_pool: " << std::endl;
+    // incre_info->component_pool.print();
 
 
     // use SuFu to compress solution into scalar values
@@ -134,7 +140,6 @@ int main(int argv, char** argc) {
     // get the compressed program
     auto result_program = rewriteWithIncreSolution(incre_info->program.get(), solution);
     incre::printProgram(result_program);
-
 
     // get the type of partial solution
     incre::syntax::Ty solution_ty = incre::syntax::getSolutionType(result_program.get(), ctx);
@@ -186,12 +191,12 @@ int main(int argv, char** argc) {
     std::cout << "zyw: BOOL - buildBoolGrammar end" << std::endl << std::endl;
     
     std::cout << "zyw: BOOL - generateHeightLimitedGrammar" << std::endl;
-    Grammar* bool_grammar_limit = ::grammar::generateHeightLimitedGrammar(bool_grammar, 2);
+    Grammar* bool_grammar_limit = ::grammar::generateHeightLimitedGrammar(bool_grammar, 1);
     bool_grammar_limit->print();
     std::cout << "zyw: BOOL - generateHeightLimitedGrammar end" << std::endl << std::endl;
 
     std::cout << "zyw: BOOL - generateHeightLimitedProgram" << std::endl;
-    std::vector<PProgram> bool_program_result = ::grammar::generateHeightLimitedProgram(bool_grammar, 2);
+    std::vector<PProgram> bool_program_result = ::grammar::generateHeightLimitedProgram(bool_grammar, 1);
     for (auto& program: bool_program_result) {
         std::cout << program->toString() << std::endl;
     }

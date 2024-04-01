@@ -22,8 +22,6 @@ ComponentPool incre::grammar::collector::getBasicComponentPool(Env* env) {
 
     const std::unordered_set<std::string> all_used_op = {"+", "-"};
 
-    std::cout << "zyw: env in getBasicComponentPool" << std::endl;
-    env->printSemanticsPool();
     for (auto& op_name: op_list) {
         auto sem = env->getSemantics(op_name);
         auto comp = std::make_shared<BasicOperatorComponent>(op_name, sem);
@@ -336,12 +334,13 @@ ComponentPool incre::grammar::collector::collectComponent(Env *env, IncreProgram
     auto* detector = new _ValidTermDetectorWalker(rec_d->isTrue());
     detector->walkThrough(program);
 
-    std::cout << "zyw: in collectComponent, component_infos = " << std::endl;
-    for (auto& [command_id, name, value, type, command]: component_infos) {
-        std::cout << command_id << ", " << name << ", " << value.toString() << ", " << type->toString() << ", " << command->name << ", ";
-        incre::printDecorateSet(command->decos);
-        std::cout << std::endl;
-    }
+    // print component_infos
+    // std::cout << "zyw: in collectComponent, component_infos = " << std::endl;
+    // for (auto& [command_id, name, value, type, command]: component_infos) {
+    //     std::cout << command_id << ", " << name << ", " << value.toString() << ", " << type->toString() << ", " << command->name << ", ";
+    //     incre::printDecorateSet(command->decos);
+    //     std::cout << std::endl;
+    // }
 
     for (auto& [command_id, name, value, type, command]: component_infos) {
         if (command->isDecrorateWith(CommandDecorate::SYN_EXCLUDE)) continue;

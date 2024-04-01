@@ -49,6 +49,7 @@ VInd::VInd(const std::pair<std::string, Data> &_content): name(_content.first), 
 }
 
 std::string VInd::toString() const {
+    // return "Ind: [" + name + " " + body.toString() + " ]";
     return name + " " + body.toString();
 }
 
