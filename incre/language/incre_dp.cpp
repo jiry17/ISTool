@@ -298,6 +298,49 @@ Term incre::syntax::getObjFunc(IncreProgramData* program, IncreFullContext ctx) 
     return walker->cmdWalker->res;
 }
 
+using namespace incre::example;
+
+std::string DpSolutionData::toString() {
+    return partial_solution.toString();
+}
+
+void DpSolutionSet::add(DpExample& example) {
+    Data inp = example->inp;
+    Data oup = example->oup;
+
+    // if input is "null", don't add into solution_list
+    if (inp.toString() == "null") {
+        if (existing_sol.find(oup.toString()) == existing_sol.end()) {
+            existing_sol.insert(oup.toString());
+            sol_list.push_back(std::make_shared<DpSolutionData>(oup));
+        }
+        return;
+    }
+
+    if (existing_sol.find(inp.toString()) == existing_sol.end()) {
+        existing_sol.insert(inp.toString());
+        sol_list.push_back(std::make_shared<DpSolutionData>(inp));
+    }
+    if (existing_sol.find(oup.toString()) == existing_sol.end()) {
+        existing_sol.insert(oup.toString());
+        sol_list.push_back(std::make_shared<DpSolutionData>(oup));
+    }
+    // add transfer relation
+    DpSolution input = find(inp);
+    DpSolution output = find(oup);
+    input->children.push_back(output);
+}
+
+DpSolution DpSolutionSet::find(Data data) {
+    std::string data_str = data.toString();
+    for (auto& sol: sol_list) {
+        if (sol->toString() == data_str) {
+            return sol;
+        }
+    }
+    LOG(FATAL) << "solution not exist";
+}
+
 namespace {
     // calculate times of this program using specific name
     int _calNumOfSpecificName(PProgram program, std::string name) {

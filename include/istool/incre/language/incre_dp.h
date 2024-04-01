@@ -8,6 +8,8 @@
 #include "incre_program.h"
 #include "incre_syntax.h"
 #include "incre_types.h"
+#include "istool/incre/analysis/incre_instru_runtime.h"
+#include <set>
 
 namespace incre::syntax {
     class IncreCommandWalker {
@@ -90,20 +92,34 @@ namespace incre::syntax {
 
     // get the type of partial solution using DpObjProgramWalker
     Term getObjFunc(IncreProgramData* program, IncreFullContext ctx);
+}
 
+namespace incre::example {
     // store partial solutions and their parent-child relation
+    class DpSolutionData;
+    typedef std::shared_ptr<DpSolutionData> DpSolution;
+    typedef std::vector<DpSolution> DpSolutionList;
+
     class DpSolutionData {
-    private:
-        Data partial_solution;
-        std::vector<std::shared_ptr<DpSolutionData>> children;
     public:
+        Data partial_solution;
+        std::vector<DpSolution> children;
+        std::string toString();
         DpSolutionData(Data& _par) : partial_solution(_par) {}
         ~DpSolutionData() = default;
     };
+    
+    class DpSolutionSet {
+    public:
+        std::set<std::string> existing_sol;
+        DpSolutionList sol_list;
+        void add(DpExample& example);
+        DpSolution find(Data data);
+        DpSolutionSet() = default;
+        ~DpSolutionSet() = default;
+    };
+} // namespace incre::example
 
-    typedef std::shared_ptr<DpSolutionData> DpSolution;
-    typedef std::vector<DpSolution> DpSolutionList;
-}
 
 namespace grammar {
     // post process of DP program list

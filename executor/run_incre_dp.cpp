@@ -79,7 +79,7 @@ int main(int argv, char** argc) {
     auto dp_info = incre::analysis::buildIncreInfo(result_program.get(), env.get());
 
     // generate single example for DP synthesis
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 1; ++i) {
         dp_info->example_pool->generateDpSingleExample();
     }
     std::cout << std::endl << std::endl;
@@ -91,13 +91,28 @@ int main(int argv, char** argc) {
         std::cout << example->toString() << std::endl;
     }
 
-    
-    Data inp = dp_info->example_pool->dp_example_pool[0]->inp;
-    Data oup = dp_info->example_pool->dp_example_pool[0]->oup;
-    incre::syntax::Term input = std::make_shared<incre::syntax::TmValue>(inp);
-    incre::syntax::Term output = std::make_shared<incre::syntax::TmValue>(oup);
+    // single example -> DP solution data
+    incre::example::DpSolutionSet dp_sol_set;
+    for (auto& example: dp_info->example_pool->dp_example_pool) {
+        dp_sol_set.add(example);
+    }
+    std::cout << dp_sol_set.sol_list.size() << std::endl;
+    for (auto& sol: dp_sol_set.sol_list) {
+        std::cout << sol->partial_solution.toString() << ", child size = " << sol->children.size() << std::endl;
+        for (auto& child: sol->children) {
+            std::cout << "  " << child->toString() << std::endl;
+        }
+    }
+
+    if (dp_sol_set.sol_list.size() < 1) {
+        LOG(FATAL) << "dp_sol_set.sol_list.size() < 1";
+    }
+    Data test = dp_sol_set.sol_list[0]->partial_solution;
+    incre::syntax::Term test_term = std::make_shared<incre::syntax::TmValue>(test);
     Print(object_func->toString());
-    Print(input->toString());
-    Print(output->toString());
+    Print(test_term->toString());
+    incre::syntax::Term new_term = std::make_shared<incre::syntax::TmApp>(object_func, test_term);
+    Print(new_term->toString());
+
 
 }
