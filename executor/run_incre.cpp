@@ -17,25 +17,29 @@
 
 using namespace incre;
 
-int main(int argv, char** argc) {
-    std::string path, target;
-    bool is_autolabel = false;
-    bool is_highlight_replace = false;
+DEFINE_string(benchmark, "/root/work/ISTool/incre-tests/test.f", "The absolute path of the benchmark file (.sl)");
+DEFINE_string(output, "", "The absolute path of the output file");
+DEFINE_bool(autolabel, true, "Whether automatically generate annotations");
+DEFINE_bool(mark_rewrite, false, "Whether to mark the sketch holes.");
+DEFINE_bool(scalar, true, "Whether consider only scalar expressions when filling sketch holes");
+DEFINE_string(stage_output_file, "", "Only used in online demo");
 
-    if (argv > 1) {
-        path = argc[1]; target = argc[2];
-    } else {
-        path = ::config::KSourcePath + "/incre-tests/test.f";
-        is_autolabel = true;
-        is_highlight_replace = true;
-    }
+int main(int argc, char** argv) {
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+    std::string path = FLAGS_benchmark, target = FLAGS_output;
+    bool is_autolabel = FLAGS_autolabel;
+    bool is_highlight_replace = FLAGS_mark_rewrite;
+    global::KStageInfoPath = FLAGS_stage_output_file;
+
     IncreProgram prog = io::parseFromF(path, is_autolabel);
 
     if (is_autolabel) {
+        global::printStageResult("Start stage 0/2: generating annotations.");
         prog = incre::autolabel::labelProgram(prog);
+        global::printStageResult("Stage 0/2 Finished.");
     }
-    incre::printProgram(prog);
-    // printProgram(prog);
+    incre::io::printProgram(prog.get());
 
     auto env = std::make_shared<Env>();
     env->setConst(solver::lia::KIsGurobiName, BuildData(Bool, false));
@@ -81,6 +85,7 @@ int main(int argv, char** argc) {
     auto* solver = new IncreAutoLifterSolver(incre_info, env);
     auto res = solver->solve();
     res.print();
-    auto res_prog = rewriteWithIncreSolution(prog.get(), res, false);
+    auto res_prog = rewriteWithIncreSolution(incre_info->program.get(), res, is_highlight_replace);
 
+    incre::io::printProgram(res_prog.get(), target,is_highlight_replace);
 }

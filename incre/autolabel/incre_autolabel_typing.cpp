@@ -299,9 +299,11 @@ void SymbolicIncreTypeChecker::_unify(syntax::TyVar *__x, syntax::TyVar *__y, co
     assert(x);
     if (x->isBounded()) LOG(FATAL) << "Type not normalized: " << _x->toString();
     if (!y) {
-        // TODO: fix this bug
-        updateTypeBeforeUnification(_y.get(), x->getVarInfo());
-        x->content = _y; return;
+        auto new_content = std::make_shared<WrappedType>(_y->compress_label & !_x->compress_label, _y->content);
+        updateTypeBeforeUnification(new_content.get(), x->getVarInfo());
+        z3_ctx->addCons(z3::implies(_x->compress_label, _y->compress_label));
+        x->content = new_content;
+        return;
     }
     auto x_info = x->getVarInfo(), y_info = y->getVarInfo();
     Z3LabeledVarInfo new_info(tmp_var_id++, std::min(x_info.level, y_info.level), x_info.scalar_cond & y_info.scalar_cond, x_info.base_cond & y_info.base_cond);
@@ -312,6 +314,7 @@ void SymbolicIncreTypeChecker::_unify(syntax::TyVar *__x, syntax::TyVar *__y, co
 
 void SymbolicIncreTypeChecker::unify(const WrappedTy &raw_x, const WrappedTy &raw_y) {
     auto x = normalize(raw_x), y = normalize(raw_y);
+    LOG(INFO) << "unify " << x->toString() << " " << y->toString();
     auto x_type = x->content->getType(), y_type = y->content->getType();
     if (x_type != TypeType::VAR && y_type == TypeType::VAR) return unify(y, x);
     if (x_type != TypeType::VAR && x_type != y_type) {

@@ -27,8 +27,8 @@ namespace {
         auto new_inner_cond = inner_cond;
         auto it = ctx->rewrite_map.find(term);
         if (it != ctx->rewrite_map.end()) new_inner_cond = new_inner_cond | it->second;
-        LOG(INFO) << "Collect for " << term->toString();
-        LOG(INFO) << "  " << outer_cond.to_string() << " " << inner_cond.to_string() << " " << movable_cond.to_string();
+        // LOG(INFO) << "Collect for " << term->toString();
+        // LOG(INFO) << "  " << outer_cond.to_string() << " " << inner_cond.to_string() << " " << movable_cond.to_string();
         res.push_back(outer_cond | (new_inner_cond & !movable_cond));
 
         for (auto& [local_vars, sub_term]: ::incre::util::getSubTermWithLocalVars(term)) {

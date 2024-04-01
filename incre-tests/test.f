@@ -1,10 +1,12 @@
 import "compress";
-import "standard";
-import "list";
 
-tails' :: (List Int) -> Reframe (List (List Int));
-fun tails' = function
-  | (Cons {h, t})@xs -> Cons {xs, tails' t}
-  | Nil -> Cons {Nil, Nil};
+data List a = Cons a * (List a) | Nil;
+fun fold f e = function
+  Cons {h, t} -> f h (fold f e t)
+| Nil -> e;
 
-fun mts xs = maximum (map sum (tails' xs));
+sum :: List Int -> Int;
+sum = fold (fun h res -> h + res) 0;
+
+getw :: Reframe (List Int) -> Int;
+fun getw items = sum items;

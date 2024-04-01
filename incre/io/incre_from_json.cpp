@@ -284,7 +284,7 @@ namespace {
             } else if (command_type == "import") {
                 std::string new_source = source;
                 if (new_source.empty()) new_source = command_node["source"].asString();
-                _collectCommands(node["content"], new_source, configs, commands);
+                _collectCommands(command_node["content"], new_source, configs, commands);
             } else if (command_type == "bind") {
                 auto var_name = command_node["name"].asString();
                 auto def = json2term(command_node["def"]);

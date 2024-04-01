@@ -273,8 +273,8 @@ IncreInfo analysis::buildIncreInfo(IncreProgramData *program, Env* env) {
         delete rewriter;
     }
 
-    LOG(INFO) << "print whole program";
-    incre::printProgram(res_program);
+    //LOG(INFO) << "print whole program";
+    //incre::printProgram(res_program);
 
     std::vector<RewriteTypeInfo> rewrite_info_list;
     {
