@@ -283,6 +283,7 @@ std::vector<UnitInfo> IncrePLPSolver::mergeUnits(int extract_size, int aux_size)
     if (!extract_list) return {};
     std::vector<TypedProgramList> known_aux_list(task->aux_grammar_list.size());
     std::vector<TypedProgramList*> aux_pointer_list(task->aux_grammar_list.size());
+
     if (aux_size == 0) {
         for (int i = 0; i < known_aux_list.size(); ++i) {
             for (auto& f_res: task->pre_res_list[i]) {
@@ -338,7 +339,7 @@ void IncrePLPSolver::getMoreComponent() {
             LOG(INFO) << "new bool component " << aux2String(unit.program) << " " << unit.info.toString();
             int kk; std::cin >> kk;
         }*/
-        // LOG(INFO) << "new component " << aux2String(unit.program);
+        //LOG(INFO) << "new component " << aux2String(unit.program);
         component_info_list.push_back(unit);
     }
 }

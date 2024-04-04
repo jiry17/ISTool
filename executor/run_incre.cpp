@@ -18,7 +18,7 @@
 
 using namespace incre;
 
-DEFINE_string(benchmark, "/root/work/ISTool/incre-tests/test.f", "The absolute path of the benchmark file (.sl)");
+DEFINE_string(benchmark, "/Users/pro/Desktop/work/2024S/ISTool/incre-tests/test.f", "The absolute path of the benchmark file (.sl)");
 DEFINE_string(output, "", "The absolute path of the output file");
 DEFINE_bool(autolabel, true, "Whether automatically generate annotations");
 DEFINE_bool(mark_rewrite, false, "Whether to mark the sketch holes.");

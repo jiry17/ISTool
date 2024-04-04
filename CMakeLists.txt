@@ -60,13 +60,17 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     include_directories(/usr/local/opt/glog/include/)
     set(GLOG_FILE /usr/local/opt/glog/lib/libglog.dylib)
 
+    #gflags
+    include_directories(/usr/local/opt/gflags/include/)
+    set(GFLAGS_FILE /usr/local/opt/gflags/lib/libgflags.dylib)
+
     #gurobi
     include_directories(/Library/gurobi911/mac64/include)
     link_directories(/Library/gurobi911/mac64/lib)
     set(GUROBI_FILE libgurobi_c++.a libgurobi91.dylib)
 
     # libs
-    set(THIRDPARTY_LIBS ${Jsoncpp_LIBRARY} ${Z3_FILE} ${GUROBI_FILE} ${PROFILER_FILE} ${GLOG_FILE} ${CMAKE_THREAD_LIBS_INIT})
+    set(THIRDPARTY_LIBS ${Jsoncpp_LIBRARY} ${Z3_FILE} ${GUROBI_FILE} ${GFLAGS_FILE} ${PROFILER_FILE} ${GLOG_FILE} ${CMAKE_THREAD_LIBS_INIT})
 else()
     message(FATAL_ERROR "Unexceptional system ${CMAKE_SYSTEM_NAME}")
 endif()

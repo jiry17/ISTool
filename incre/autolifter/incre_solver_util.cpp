@@ -56,8 +56,16 @@ namespace {
         return true;
     }
 
+    int KSimplifyLowerBound = 5;
+
     std::pair<std::vector<int>, IOExampleList> _simplifyExampleSpace(const IOExampleList& example_list) {
         assert(example_list.size());
+        int n = example_list[0].first.size();
+        if (n <= KSimplifyLowerBound) {
+            std::vector<int> remained_indices;
+            for (int i = 0; i < n; ++i) remained_indices.push_back(i);
+            return {remained_indices, example_list};
+        }
         std::vector<bool> is_used(example_list[0].first.size(), true);
         for (int i = 0; i < is_used.size(); ++i) {
             is_used[i] = false;
