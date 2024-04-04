@@ -78,6 +78,10 @@ namespace {
             incre::DefaultContextBuilder::visit(command);
             for (auto& [name, _]: command->cons_list) {
                 name_last_id_map[name] = command_id;
+                auto* address = ctx.getAddress(name);
+                auto cons_term = std::make_shared<TmFunc>("x", std::make_shared<TmCons>(name, std::make_shared<TmVar>("x")));
+                auto data = evaluator->evaluate(cons_term.get(), ctx);
+                component_info_list.emplace_back(command_id, name, data, address->bind.getType(), command);
             }
         }
         virtual void visit(incre::CommandDeclare* command) {
@@ -337,8 +341,8 @@ ComponentPool incre::grammar::collector::collectComponent(Env *env, IncreProgram
         }
 
         TyList possible_types = _groundTypes(type, basic_types);
-        // LOG(INFO) << "possible types for " << name;
-        // for (auto& possible_type: possible_types) LOG(INFO) << "  " << possible_type->toString();
+        LOG(INFO) << "possible types for " << name;
+        for (auto& possible_type: possible_types) LOG(INFO) << "  " << possible_type->toString();
         SynthesisComponentList components;
         auto is_partial = command->isDecrorateWith(CommandDecorate::SYN_NO_PARTIAL);
         for (auto& incre_type: possible_types) {
