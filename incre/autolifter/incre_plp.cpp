@@ -127,17 +127,17 @@ namespace {
 #include "istool/basic/config.h"
 
 Data FExampleSpace::runExtract(int example_id, Program *prog) {
-    global::recorder.start("execute");
+    // global::recorder.start("execute");
     auto& example = example_list[example_id];
     auto res = env->run(prog, data::concatDataList(example->local_inputs, example->global_inputs));
-    global::recorder.end("execute");
+    // global::recorder.end("execute");
     return res;
 }
 Data FExampleSpace::runAux(int example_id, const Data& content, Program *prog) {
-    global::recorder.start("execute");
+    // global::recorder.start("execute");
     auto& example = example_list[example_id];
     auto res = env->run(prog, data::concatDataList({content}, example->global_inputs));
-    global::recorder.end("execute");
+    // global::recorder.end("execute");
     return res;
 }
 

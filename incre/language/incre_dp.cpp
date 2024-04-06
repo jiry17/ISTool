@@ -313,49 +313,6 @@ namespace incre::syntax {
     }
 }
 
-using namespace incre::example;
-
-std::string DpSolutionData::toString() {
-    return partial_solution.toString();
-}
-
-void DpSolutionSet::add(DpExample& example) {
-    Data inp = example->inp;
-    Data oup = example->oup;
-
-    // if input is "null", don't add into solution_list
-    if (inp.toString() == "null") {
-        if (existing_sol.find(oup.toString()) == existing_sol.end()) {
-            existing_sol.insert(oup.toString());
-            sol_list.push_back(std::make_shared<DpSolutionData>(oup));
-        }
-        return;
-    }
-
-    if (existing_sol.find(inp.toString()) == existing_sol.end()) {
-        existing_sol.insert(inp.toString());
-        sol_list.push_back(std::make_shared<DpSolutionData>(inp));
-    }
-    if (existing_sol.find(oup.toString()) == existing_sol.end()) {
-        existing_sol.insert(oup.toString());
-        sol_list.push_back(std::make_shared<DpSolutionData>(oup));
-    }
-    // add transfer relation
-    DpSolution input = find(inp);
-    DpSolution output = find(oup);
-    input->children.push_back(output);
-}
-
-DpSolution DpSolutionSet::find(Data data) {
-    std::string data_str = data.toString();
-    for (auto& sol: sol_list) {
-        if (sol->toString() == data_str) {
-            return sol;
-        }
-    }
-    LOG(FATAL) << "solution not exist";
-}
-
 namespace {
     // calculate times of this program using specific name
     int _calNumOfSpecificName(PProgram program, std::string name) {
@@ -531,7 +488,7 @@ namespace grammar {
                         sub_nodes_id.push_back(sub->id);
                     }
                     sub_lists = _getNewSymbolProgram(res, sub_nodes_id, 0, sub_lists);
-                    std::cout << sub_lists.size() << std::endl;
+                    // std::cout << sub_lists.size() << std::endl;
                     for (auto& sub_list: sub_lists) {
                         PProgram new_program = edge->buildProgram(sub_list);
                         std::string tmp = new_program->toString();

@@ -69,7 +69,11 @@ Data DpExampleCollectionEvaluator::_evaluate(syntax::TmApp *term, const IncreCon
             Data input_null = Data();
             input_null.value = std::make_shared<NullValue>();
             auto sub_param = evaluate(sub_term->param.get(), ctx);
-            collector->add_dp_example(input_null, sub_param);
+            DpSolution new_sol = std::make_shared<DpSolutionData>(sub_param);
+            collector->dp_example_pool.push_back(new_sol);
+            
+            std::cout << "inp = null" << std::endl;
+            std::cout << "oup = " << new_sol->toString() << std::endl;
 
             // Print(input_null.toString());
             // Print(sub_param.toString());
@@ -136,25 +140,38 @@ Data DpExampleCollectionEvaluator::_evaluate(syntax::TmApp *term, const IncreCon
             }
             // add example into collector
             int inp_len = inp.size();
+            std::vector<DpSolution> inp_sol_list;
             for (int i = 0; i < inp_len; ++i) {
                 auto& inp_data = inp[i];
+                DpSolution inp_sol = std::make_shared<DpSolutionData>(inp_data);
+                inp_sol_list.push_back(inp_sol);
+                collector->dp_example_pool.push_back(inp_sol);
                 for (auto& oup_data: oup[i]) {
-                    collector->add_dp_example(inp_data, oup_data);
+                    DpSolution oup_sol = std::make_shared<DpSolutionData>(oup_data);
+                    inp_sol->children.push_back(oup_sol);
+                    collector->dp_example_pool.push_back(oup_sol);
+                }
+            }
+
+            for (int i = 0; i < inp_len; ++i) {
+                for (int j = 0; j < inp_len; ++j) {
+                    collector->dp_same_time_solution.push_back(std::make_pair(inp_sol_list[i], inp_sol_list[j]));
+                    collector->dp_same_time_solution.push_back(std::make_pair(inp_sol_list[j], inp_sol_list[i]));
                 }
             }
             
             // print input and output
-            // std::cout << "inp = " << std::endl;
-            // for (auto& data: inp) {
-            //     std::cout << "[" << data.toString() << "]" << std::endl;
-            // }
-            // std::cout << "oup = " << std::endl;
-            // for (auto& data_list: oup) {
-            //     for (auto& data: data_list) {
-            //         std::cout << "[" << data.toString() << "], ";
-            //     }
-            //     std::cout << std::endl;
-            // }
+            std::cout << "inp = " << std::endl;
+            for (auto& data: inp) {
+                std::cout << data.toString() << std::endl;
+            }
+            std::cout << "oup = " << std::endl;
+            for (auto& data_list: oup) {
+                for (auto& data: data_list) {
+                    std::cout << data.toString() << std::endl;
+                }
+                std::cout << std::endl;
+            }
         }
     }
 
@@ -209,6 +226,47 @@ Data DpExampleCollectionEvaluator::_evaluate(syntax::TmProj *term, const IncreCo
     return DefaultEvaluator::_evaluate(term, ctx);
 }
 
+std::string DpSolutionData::toString() {
+    return partial_solution.toString();
+}
+
+void DpSolutionSet::add(DpExample& example) {
+    Data inp = example->inp;
+    Data oup = example->oup;
+
+    // if input is "null", don't add into solution_list
+    if (inp.toString() == "null") {
+        if (existing_sol.find(oup.toString()) == existing_sol.end()) {
+            existing_sol.insert(oup.toString());
+            sol_list.push_back(std::make_shared<DpSolutionData>(oup));
+        }
+        return;
+    }
+
+    if (existing_sol.find(inp.toString()) == existing_sol.end()) {
+        existing_sol.insert(inp.toString());
+        sol_list.push_back(std::make_shared<DpSolutionData>(inp));
+    }
+    if (existing_sol.find(oup.toString()) == existing_sol.end()) {
+        existing_sol.insert(oup.toString());
+        sol_list.push_back(std::make_shared<DpSolutionData>(oup));
+    }
+    // add transfer relation
+    DpSolution input = find(inp);
+    DpSolution output = find(oup);
+    input->children.push_back(output);
+}
+
+DpSolution DpSolutionSet::find(Data data) {
+    std::string data_str = data.toString();
+    for (auto& sol: sol_list) {
+        if (sol->toString() == data_str) {
+            return sol;
+        }
+    }
+    LOG(FATAL) << "solution not exist";
+}
+
 IncreExampleCollector::IncreExampleCollector(IncreProgramData *program,
                                              const std::vector<std::vector<std::string>> &_cared_vars,
                                              const std::vector<std::string> &_global_name):
@@ -222,11 +280,6 @@ void
 IncreExampleCollector::add(int rewrite_id, const DataList &local_inp, const Data &oup) {
     auto example = std::make_shared<IncreExampleData>(rewrite_id, local_inp, current_global, oup);
     example_pool[rewrite_id].push_back(example);
-}
-
-void IncreExampleCollector::add_dp_example(const Data& inp, const Data& oup) {
-    auto example = std::make_shared<DpExampleData>(inp, oup);
-    dp_example_pool.push_back(example);
 }
 
 void IncreExampleCollector::collect(const syntax::Term &start, const DataList &global) {
@@ -255,6 +308,7 @@ void IncreExampleCollector::clear() {
     current_global.clear();
     for (auto& example_list: example_pool) example_list.clear();
     dp_example_pool.clear();
+    dp_same_time_solution.clear();
 }
 
 // merge collector->example_pool into IncreExamplePool->example_pool
@@ -282,18 +336,20 @@ void IncreExamplePool::merge(int main_id, IncreExampleCollector *collector, Time
 
 // merge dp_example from IncreExampleCollector to IncreExamplePool
 void IncreExamplePool::mergeDp(int main_id, IncreExampleCollector *collector, TimeGuard* guard) {
-    for (int example_id = 0; example_id < collector->dp_example_pool.size(); ++example_id) {
-        auto& new_example = collector->dp_example_pool[example_id];
-        auto feature = new_example->toString();
-        // if this example is duplicate, don't add it
-        if (existing_dp_example_set.find(feature) == existing_dp_example_set.end()) {
-            existing_dp_example_set.insert(feature);
-            dp_example_pool.push_back(new_example);
-        }
-        if ((example_id & 255) == 255 && guard && guard->getRemainTime() < 0) {
-            break;
-        }
-    }
+    // for (int example_id = 0; example_id < collector->dp_example_pool.size(); ++example_id) {
+    //     auto& new_example = collector->dp_example_pool[example_id];
+    //     auto feature = new_example->toString();
+    //     // if this example is duplicate, don't add it
+    //     if (existing_dp_example_set.find(feature) == existing_dp_example_set.end()) {
+    //         existing_dp_example_set.insert(feature);
+    //         dp_example_pool.push_back(new_example);
+    //     }
+    //     if ((example_id & 255) == 255 && guard && guard->getRemainTime() < 0) {
+    //         break;
+    //     }
+    // }
+    dp_example_pool = collector->dp_example_pool;
+    dp_same_time_solution = collector->dp_same_time_solution;
     collector->clear();
 }
 
@@ -376,11 +432,11 @@ void IncreExamplePool::generateSingleExample() {
     auto [term, global] = generateStart();
     auto* collector = new IncreExampleCollector(program.get(), cared_vars, global_name_list);
 
-    global::recorder.start("collect");
+    // global::recorder.start("collect");
     collector->collect(term, global);
     // add single example into example_pool in merge function
     merge(0, collector, nullptr);
-    global::recorder.end("collect");
+    // global::recorder.end("collect");
     delete collector;
 }
 
@@ -388,11 +444,9 @@ void IncreExamplePool::generateDpSingleExample() {
     auto [term, global] = generateStart();
     auto* collector = new IncreExampleCollector(program.get(), cared_vars, global_name_list);
 
-    global::recorder.start("collect-dp");
     collector->collectDp(term, global);
     // add single example into example_pool in merge function
     mergeDp(0, collector, nullptr);
-    global::recorder.end("collect-dp");
     delete collector;
 }
 
@@ -520,4 +574,9 @@ void IncreExamplePool::printGlobalTypeList() {
         std::cout << global_type_list[i]->toString();
     }
     std::cout << std::endl;
+}
+
+void IncreExamplePool::clear() {
+    dp_example_pool.clear();
+    dp_same_time_solution.clear();
 }

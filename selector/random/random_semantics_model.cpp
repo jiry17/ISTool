@@ -478,9 +478,9 @@ FixedSampleRandomSemanticsLearner::FixedSampleRandomSemanticsLearner(SampleStruc
 }
 
 RandomSemanticsModel * FixedSampleRandomSemanticsLearner::learn(const DataList &inp) {
-    global::recorder.start("execute");
+    // global::recorder.start("execute");
     holder->setOutput(inp);
-    global::recorder.end("execute");
+    // global::recorder.end("execute");
     std::vector<EqualWeightMatrix> weight_matrix_list(graph->node_list.size());
 
     for (int node_id = 0; node_id < graph->node_list.size(); ++node_id) {

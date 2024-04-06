@@ -206,7 +206,7 @@ std::vector<AuxProgram> IncrePLPSolver::unfoldComponents(const std::vector<AuxPr
 }
 #include "istool/basic/config.h"
 void IncrePLPSolver::addErrorExample(int example_id) {
-    global::recorder.start("extend-component");
+    // global::recorder.start("extend-component");
     for (auto& unit: component_info_list) {
         if (unit.is_error) continue;
         try {
@@ -221,7 +221,7 @@ void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
     if (example.first == example.second) {
         addErrorExample(example.first); return;
     }
-    global::recorder.start("extend-component");
+    // global::recorder.start("extend-component");
     for (auto& unit: component_info_list) {
         if (unit.is_error) continue;
         try {
@@ -232,7 +232,7 @@ void IncrePLPSolver::addExample(const std::pair<int, int> &example) {
             unit.is_error = true;
         }
     }
-    global::recorder.end("extend-component");
+    // global::recorder.end("extend-component");
     LOG(INFO) << "#Example: " << example_list.size() << " " << "#Component: " << component_info_list.size();
 
     /*for (auto& unit: component_info_list) {

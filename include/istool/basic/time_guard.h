@@ -8,6 +8,7 @@
 #include <ctime>
 #include <exception>
 #include <unordered_map>
+#include <map>
 #include <string>
 
 struct TimeOutError: public std::exception {
@@ -26,9 +27,12 @@ public:
 
 class TimeRecorder {
 public:
-    std::unordered_map<std::string, double> value_map;
-    std::unordered_map<std::string, timeval> start_time_map;
-    std::unordered_map<std::string, int> record_map;
+    // std::unordered_map<std::string, double> value_map;
+    // std::unordered_map<std::string, timeval> start_time_map;
+    // std::unordered_map<std::string, int> record_map;
+    std::map<std::string, double> value_map;
+    std::map<std::string, timeval> start_time_map;
+    std::map<std::string, int> record_map;
     TimeRecorder() = default;
     void start(const std::string& type);
     void end(const std::string& type);

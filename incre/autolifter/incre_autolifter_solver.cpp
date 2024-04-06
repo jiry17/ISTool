@@ -305,14 +305,14 @@ void IncreAutoLifterSolver::solveAuxiliaryProgram() {
 #include "istool/basic/config.h"
 
 IncreSolution IncreAutoLifterSolver::solve() {
-    global::recorder.start("syn-align");
+    // global::recorder.start("syn-align");
     global::printStageResult("Stage 1/2: synthesizing the representation function.");
     solveAuxiliaryProgram();
-    global::recorder.end("syn-align");
-    global::recorder.start("syn-comb");
+    // global::recorder.end("syn-align");
+    // global::recorder.start("syn-comb");
     global::printStageResult("Stage 2/2: synthesizing the combinator.");
     solveCombinators();
-    global::recorder.end("syn-comb");
+    // global::recorder.end("syn-comb");
     if (env->getConstRef(config::KPrintAlignName, BuildData(Bool, false))->isTrue()) {
         auto repr_list = buildFRes();
         return {f_type_list, comb_list, repr_list};

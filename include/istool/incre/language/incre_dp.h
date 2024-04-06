@@ -102,36 +102,6 @@ namespace incre::syntax {
     Data calRelation(PProgram r, Data& sol_1, Data& sol_2, FunctionContext& func_ctx);
 } // namespace incre::syntax
 
-namespace incre::example {
-    // store partial solutions and their parent-child relation
-    class DpSolutionData;
-    typedef std::shared_ptr<DpSolutionData> DpSolution;
-    typedef std::vector<DpSolution> DpSolutionList;
-
-    class DpSolutionData {
-    public:
-        // data of the solution
-        Data partial_solution;
-        // pointers to children
-        DpSolutionList children;
-        std::string toString();
-        DpSolutionData(Data& _par) : partial_solution(_par) {}
-        ~DpSolutionData() = default;
-    };
-    
-    class DpSolutionSet {
-    public:
-        // set of existing solutions, used for deduplicate
-        std::set<std::string> existing_sol;
-        // all partial solutions
-        DpSolutionList sol_list;
-        void add(DpExample& example);
-        DpSolution find(Data data);
-        DpSolutionSet() = default;
-        ~DpSolutionSet() = default;
-    };
-} // namespace incre::example
-
 
 namespace grammar {
     // post process of DP program list

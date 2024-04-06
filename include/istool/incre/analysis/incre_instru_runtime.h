@@ -10,6 +10,7 @@
 #include "incre_instru_types.h"
 #include <random>
 #include <unordered_set>
+#include <set>
 
 namespace incre::example {
     struct IncreExampleData {
@@ -25,19 +26,6 @@ namespace incre::example {
 
     typedef std::shared_ptr<IncreExampleData> IncreExample;
     typedef std::vector<IncreExample> IncreExampleList;
-
-    // store IO example of each hole for DP synthesis
-    class DpExampleData {
-    public:
-        Data inp;
-        Data oup;
-        DpExampleData(const Data& _inp, const Data& _oup) : inp(_inp), oup(_oup) {}
-        std::string toString() const;
-        ~DpExampleData() = default;
-    };
-
-    typedef std::shared_ptr<DpExampleData> DpExample;
-    typedef std::vector<DpExample> DpExampleList;
 
     class IncreDataGenerator {
     public:
@@ -85,10 +73,54 @@ namespace incre::example {
         DpExampleCollectionEvaluator(IncreExampleCollector* _collector);
     };
 
+    // store IO example of each hole for DP synthesis
+    class DpExampleData {
+    public:
+        Data inp;
+        Data oup;
+        DpExampleData(const Data& _inp, const Data& _oup) : inp(_inp), oup(_oup) {}
+        std::string toString() const;
+        ~DpExampleData() = default;
+    };
+
+    typedef std::shared_ptr<DpExampleData> DpExample;
+    typedef std::vector<DpExample> DpExampleList;
+
+    // store partial solutions and their parent-child relation
+    class DpSolutionData;
+    typedef std::shared_ptr<DpSolutionData> DpSolution;
+    typedef std::vector<DpSolution> DpSolutionList;
+
+    class DpSolutionData {
+    public:
+        // data of the solution
+        Data partial_solution;
+        // pointers to children
+        DpSolutionList children;
+        std::string toString();
+        DpSolutionData(Data& _par) : partial_solution(_par) {}
+        ~DpSolutionData() = default;
+    };
+    
+    class DpSolutionSet {
+    public:
+        // set of existing solutions, used for deduplicate
+        std::unordered_set<std::string> existing_sol;
+        // all partial solutions
+        DpSolutionList sol_list;
+        void add(DpExample& example);
+        DpSolution find(Data data);
+        DpSolutionSet() = default;
+        ~DpSolutionSet() = default;
+    };
+
     class IncreExampleCollector {
     public:
         std::vector<IncreExampleList> example_pool;
-        DpExampleList dp_example_pool;
+        // example pool for DP synthesis
+        DpSolutionList dp_example_pool;
+        // solutions appear at the same time, used in filtering R
+        std::vector<std::pair<DpSolution, DpSolution>> dp_same_time_solution;
         std::vector<std::vector<std::string>> cared_vars;
         std::vector<std::string> global_name;
         DataList current_global;
@@ -100,7 +132,6 @@ namespace incre::example {
         IncreExampleCollector(IncreProgramData* program, const std::vector<std::vector<std::string>>& cared_vars,
                               const std::vector<std::string>& _global_name);
         void add(int rewrite_id, const DataList& local_inp, const Data& oup);
-        void add_dp_example(const Data& inp, const Data& oup);
         virtual void collect(const syntax::Term& start, const DataList& global);
         virtual void collectDp(const syntax::Term& start, const DataList& global);
         void clear();
@@ -122,7 +153,7 @@ namespace incre::example {
         std::vector<std::pair<std::string, syntax::TyList>> start_list;
         // existing examples for each hole, each example stored as string which looks like the result of IncreExampleData.toString()
         std::vector<std::unordered_set<std::string>> existing_example_set;
-        std::unordered_set<std::string> existing_dp_example_set;
+        // std::unordered_set<std::string> existing_dp_example_set;
     public:
         // name of global_input?
         std::vector<std::string> global_name_list;
@@ -131,7 +162,9 @@ namespace incre::example {
         // example for each hole where IncreExampleList contains a lot of examples for each hole
         std::vector<IncreExampleList> example_pool;
         // example pool for DP synthesis
-        DpExampleList dp_example_pool;
+        DpSolutionList dp_example_pool;
+        // solutions appear at the same time, used in filtering R
+        std::vector<std::pair<DpSolution, DpSolution>> dp_same_time_solution;
 
         IncreExamplePool(const IncreProgram& _program, const std::vector<std::vector<std::string>>& _cared_vars, IncreDataGenerator* _g);
         ~IncreExamplePool();
@@ -157,6 +190,7 @@ namespace incre::example {
         void printGlobalNameList();
         // print global_type_list
         void printGlobalTypeList();
+        void clear();
     };
 }
 
