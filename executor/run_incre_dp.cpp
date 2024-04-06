@@ -1,5 +1,5 @@
 //
-// Created by pro on 2022/9/18.
+// Created by zyw on 2024/3/29.
 //
 
 #include "istool/basic/data.h"
@@ -377,6 +377,7 @@ int main(int argv, char** argc) {
 
     // print all satisfied programs, calculate r_true_num for each program
     global::recorder.start("7-print all satisfied programs and the max program");
+    std::cout << "zyw: print all satisfied programs, calculate r_true_num for each program" << std::endl;
     int result_program_num = 0;
     int r_true_num_max = 0;
     PProgram num_max_program;
