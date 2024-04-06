@@ -37,6 +37,8 @@ namespace data {
     DataList concatDataList(const DataList& x, const DataList& y);
     DataStorage cartesianProduct(const DataStorage& separate_data);
     DataList data2DataList(const Data& data);
+    int getIntFromData(Data& data);
+    bool getBoolFromData(Data& data);
 }
 
 

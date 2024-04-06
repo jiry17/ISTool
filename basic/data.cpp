@@ -102,3 +102,19 @@ DataList data::data2DataList(const Data& data) {
     }
     return result;
 }
+
+int data::getIntFromData(Data& data) {
+    std::shared_ptr<IntValue> int_value = std::static_pointer_cast<IntValue>(data.value);
+    if (!int_value) {
+        LOG(FATAL) << "data.value is not IntValue";
+    }
+    return int_value->w;
+}
+
+bool data::getBoolFromData(Data& data) {
+    std::shared_ptr<BoolValue> bool_value = std::static_pointer_cast<BoolValue>(data.value);
+    if (!bool_value) {
+        LOG(FATAL) << "data.value is not IntValue";
+    }
+    return bool_value->w;
+}

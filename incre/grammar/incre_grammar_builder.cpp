@@ -207,6 +207,9 @@ Grammar *ComponentPool::buildBoolGrammar(const TypeList &inp_list, const PType &
     return _buildGrammar(inp_list, bool_list, [&](Type* type){return type::equal(type, oup_type.get());}, oup_type);
 }
 
+Grammar *ComponentPool::buildDpBoolGrammar(const TypeList &inp_list, const PType &oup_type) {
+    return _buildGrammar(inp_list, dp_bool_list, [&](Type* type){return type::equal(type, oup_type.get());}, oup_type);
+}
 
 Grammar *incre::grammar::builder::buildGrammar(const TypeList &inp_list, const SynthesisComponentList &component_list,
                                                const PType &oup) {

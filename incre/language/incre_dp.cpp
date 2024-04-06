@@ -291,11 +291,26 @@ void DpObjProgramWalker::initialize(IncreProgramData* program) {
     return;
 }
 
-Term incre::syntax::getObjFunc(IncreProgramData* program, IncreFullContext ctx) {
-    auto checker = new incre::types::DefaultIncreTypeChecker();
-    auto walker = new DpObjProgramWalker(ctx, checker);
-    walker->walkThrough(program);
-    return walker->cmdWalker->res;
+namespace incre::syntax {
+    Term getObjFunc(IncreProgramData* program, IncreFullContext& ctx) {
+        auto checker = new incre::types::DefaultIncreTypeChecker();
+        auto walker = new DpObjProgramWalker(ctx, checker);
+        walker->walkThrough(program);
+        return walker->cmdWalker->res;
+    }
+
+    Data applyObjFunc(Term& object_func, Data& sol, incre::semantics::DefaultEvaluator& default_eval, IncreFullContext& ctx) {
+        incre::syntax::Term sol_term = std::make_shared<incre::syntax::TmValue>(sol);
+        incre::syntax::Term new_term = std::make_shared<incre::syntax::TmApp>(object_func, sol_term);
+        auto new_term_result = default_eval.evaluate(new_term.get(), ctx->ctx);
+        return new_term_result;
+    }
+
+    Data calRelation(PProgram r, Data& sol_1, Data& sol_2, FunctionContext& func_ctx) {
+        DataList sol_list = std::vector<Data>{sol_1, sol_2};
+        ExecuteInfo* r_info = new ExecuteInfo(sol_list, func_ctx);
+        return r->run(r_info);
+    }
 }
 
 using namespace incre::example;
@@ -351,88 +366,229 @@ namespace {
         }
         return result;
     }
-
-    // PSemantics _getSpecificSemantics(PProgram program, std::string semantics_name) {
-    //     if (program->semantics->name == semantics_name) {
-    //         return program->semantics;
-    //     }
-    //     for (auto& sub: program->sub_list) {
-    //         auto tmp = _getSpecificSemantics(sub, semantics_name);
-    //         if (tmp) return tmp;
-    //     }
-    //     return nullptr;
-    // }
-
-    // // recursively change program->semantics from old to new
-    // void _changeSemantics(PProgram program, PSemantics old_semantics, PSemantics new_semantics) {
-    //     if (program->semantics->name == old_semantics->name) {
-    //         program->semantics = new_semantics;
-    //     }
-    //     for (auto& sub: program->sub_list) {
-    //         _changeSemantics(sub, old_semantics, new_semantics);
-    //     }
-    // }
 }
 
-// must use Param0
-void grammar::postProcessDpProgramList(ProgramList& program_list) {
-    ProgramList result;
-    for (auto& program: program_list) {
-        int param0_num = _calNumOfSpecificName(program, "Param0");
-        if (param0_num > 0) {
-            result.push_back(program);
-        }
-    }
-    program_list = result;
-}
-
-// check whether this program is relative symmetry
-bool grammar::postProcessBoolProgram(PProgram program) {
-    bool result = true;
-    int param0_num = _calNumOfSpecificName(program, "Param0");
-    int param1_num = _calNumOfSpecificName(program, "Param1");
-    if (param0_num > 0 && param1_num > 0 && param0_num == param1_num) {
-        // if sub_program used more than one param0 / param1, then their number should be the same for symmetry
-        for (auto& sub: program->sub_list) {
-            param0_num = _calNumOfSpecificName(sub, "Param0");
-            param1_num = _calNumOfSpecificName(sub, "Param1");
-            if (param0_num + param1_num >= 2) {
-                result = result && postProcessBoolProgram(sub);
+namespace grammar {
+    // must use Param0
+    void postProcessDpProgramList(ProgramList& program_list) {
+        ProgramList result;
+        for (auto& program: program_list) {
+            int param0_num = _calNumOfSpecificName(program, "Param0");
+            if (param0_num > 0) {
+                result.push_back(program);
             }
         }
-    } else {
-        result = false;
+        program_list = result;
     }
-    return result;
+
+    // check whether this program is relative symmetry
+    bool postProcessBoolProgram(PProgram program) {
+        bool result = true;
+        int param0_num = _calNumOfSpecificName(program, "Param0");
+        int param1_num = _calNumOfSpecificName(program, "Param1");
+        if (param0_num > 0 && param1_num > 0 && param0_num == param1_num) {
+            // if sub_program used more than one param0 / param1, then their number should be the same for symmetry
+            for (auto& sub: program->sub_list) {
+                param0_num = _calNumOfSpecificName(sub, "Param0");
+                param1_num = _calNumOfSpecificName(sub, "Param1");
+                if (param0_num + param1_num >= 2) {
+                    result = result && postProcessBoolProgram(sub);
+                }
+            }
+        } else {
+            result = false;
+        }
+        return result;
+    }
+
+    // must use Param0 and Param1, using time must be the same (recursively check)
+    void postProcessBoolProgramList(ProgramList& program_list) {
+        ProgramList result;
+        for (auto& program: program_list) {
+            if (postProcessBoolProgram(program)) {
+                result.push_back(program);
+            }
+        }
+        program_list = result;
+    }
+
+    bool postProcessDpBoolProgram(PProgram program) {
+        int param0_num = _calNumOfSpecificName(program, "Param0");
+        int param1_num = _calNumOfSpecificName(program, "Param1");
+        if (param0_num > 0 && param1_num > 0 && param0_num == param1_num) {
+            return true;
+        }
+        return false;
+    }
+
+    // must use Param0 and Param1, using time must be the same
+    void postProcessDpBoolProgramList(ProgramList& program_list) {
+        ProgramList result;
+        for (auto& program: program_list) {
+            if (postProcessDpBoolProgram(program)) {
+                result.push_back(program);
+            }
+        }
+        program_list = result;
+    }
+
+    ProgramList mergeProgramList(ProgramList& dp_program_list, ProgramList& bool_program_list) {
+        if (dp_program_list.size() == 0 || bool_program_list.size() == 0) return std::vector<PProgram>();
+        ProgramList result;
+        PProgram param0_program = ::program::buildParam(0);
+        PProgram param1_program = ::program::buildParam(1);
+        for (auto& dp_program: dp_program_list) {
+            PProgram dp_program_1 = ::program::rewriteParam(dp_program, std::vector<PProgram>{param0_program});
+            PProgram dp_program_2 = ::program::rewriteParam(dp_program, std::vector<PProgram>{param1_program});
+            // std::cout << "dp_program = " << dp_program->toString() << std::endl;
+            // std::cout << "dp_program_1 = " << dp_program_1->toString() << std::endl;
+            // std::cout << "dp_program_2 = " << dp_program_2->toString() << std::endl;
+
+            for (auto& bool_program: bool_program_list) {
+                PProgram tmp = ::program::rewriteParam(bool_program, ProgramList{dp_program_1, dp_program_2});
+                result.push_back(tmp);
+            }
+        }
+        return result;
+    }
 }
 
-// must use Param0 and Param1, using time must be the same
-void grammar::postProcessBoolProgramList(ProgramList& program_list) {
-    ProgramList result;
-    for (auto& program: program_list) {
-        if (postProcessBoolProgram(program)) {
-            result.push_back(program);
+namespace {
+    const int KINF = 1e9;
+
+    // store result in partial_results
+    std::vector<std::vector<PProgram>> _getNewSymbolProgram(std::vector<std::vector<PProgram>>& original_results, std::vector<int>& sub_nodes_id, int pos, std::vector<std::vector<PProgram>>& partial_results) {
+        if (pos >= sub_nodes_id.size()) return partial_results;
+        int id_now = sub_nodes_id[pos];
+        std::vector<std::vector<PProgram>> results;
+        if (partial_results.size() == 0) {
+            for (auto& symbol: original_results[id_now]) {
+                results.push_back(std::vector<PProgram>{symbol});
+            }
+        } else {
+            for (auto& partial_result: partial_results) {
+                for (auto& symbol: original_results[id_now]) {
+                    std::vector<PProgram> new_result = partial_result;
+                    new_result.push_back(symbol);
+                    results.push_back(new_result);
+                }
+            }
+        }
+        return _getNewSymbolProgram(original_results, sub_nodes_id, pos+1, results);
+    }
+}
+
+namespace grammar {
+    std::vector<PProgram> generateHeightLimitedProgram(Grammar* grammar_original, int limit) {
+        // get height limited grammar, so all the program generated from this grammar can satisfy the height limit
+        Grammar* grammar = generateHeightLimitedGrammar(grammar_original, limit);
+        grammar->print();
+        grammar->indexSymbol();
+        int n = grammar->symbol_list.size();
+        // height of each symbol
+        std::vector<int> d(n, KINF);
+        // res[symbol->id] stores all programs for this symbol
+        std::vector<std::vector<PProgram>> res(n);
+        // depth of symbol, symbol_id
+        // std::priority_queue<std::pair<int, int>> Q;
+        // symbol id of the same depth
+        std::vector<std::vector<int>> Q(n);
+        // id to vector of Rule
+        std::vector<NonTerminal*> symbolId2Symbol(grammar->symbol_list.size());
+
+        for (auto* symbol: grammar->symbol_list) {
+            symbolId2Symbol[symbol->id] = symbol;
+            // get depth of this symbol
+            size_t last_at_index = symbol->name.rfind('@');
+            if (last_at_index != std::string::npos) {
+                std::string depth_str = symbol->name.substr(last_at_index + 1);
+                int depth = std::stoi(depth_str);
+                d[symbol->id] = depth;
+                // Q.push({depth, symbol->id});
+                Q[depth].push_back(symbol->id);
+            } else {
+                LOG(FATAL) << "depth not found in symbol->name";
+            }
+        }
+        
+        for (int i = 0; i < n; ++i) {
+            int symbol_id_num = Q[i].size();
+            for (int j = 0; j < symbol_id_num; ++j) {
+                auto k = Q[i][j];
+                auto depth = i;
+                NonTerminal* symbol = symbolId2Symbol[k];
+                for (auto& edge: symbol->rule_list) {
+                    if (edge->param_list.empty()) {
+                        ProgramList empty_list;
+                        PProgram new_program = edge->buildProgram(empty_list);
+                        std::string tmp = new_program->toString();
+                        res[k].push_back(new_program);
+                        continue;
+                    }
+                    std::vector<std::vector<PProgram>> sub_lists;
+                    std::vector<int> sub_nodes_id;
+                    for (auto* sub: edge->param_list) {
+                        sub_nodes_id.push_back(sub->id);
+                    }
+                    sub_lists = _getNewSymbolProgram(res, sub_nodes_id, 0, sub_lists);
+                    std::cout << sub_lists.size() << std::endl;
+                    for (auto& sub_list: sub_lists) {
+                        PProgram new_program = edge->buildProgram(sub_list);
+                        std::string tmp = new_program->toString();
+                        if (tmp.find("inf") == std::string::npos && tmp.find("min") == std::string::npos && tmp.find("max") == std::string::npos && tmp.find("+") == std::string::npos && tmp.find("-") == std::string::npos && tmp.find("ite") == std::string::npos && tmp.find("(0,0)") == std::string::npos) {
+                            res[k].push_back(new_program);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // print program for each symbol
+        // for (int i = 0; i < n; ++i) {
+        //     NonTerminal* symbol = symbolId2Symbol[i];
+        //     std::cout << symbol->name << ", " << res[i].size() << std::endl;
+        //     for (auto& program: res[i]) {
+        //         std::cout << program->toString() << std::endl;
+        //     }
+        // }
+        return res[0];
+    }
+
+    void deleteDuplicateRule(std::vector<Rule*>& rule_list) {
+        std::vector<Rule*> result;
+        for (auto& rule: rule_list) {
+            bool has_same = false;
+            for (auto& pre_rule: result) {
+                if (rule->equal(*pre_rule)) {
+                    has_same = true;
+                    break;
+                }
+            }
+            if (!has_same) {
+                result.push_back(rule);       
+            }
+        }
+        rule_list = result;
+    }
+
+    void deleteDuplicateRule(Grammar* grammar) {
+        for (auto& symbol: grammar->symbol_list) {
+            // delete duplicate rules in this symbol
+            std::vector<Rule*> simplify_rule_list;
+            for (auto& rule: symbol->rule_list) {
+                bool has_same = false;
+                for (auto& pre_rule: simplify_rule_list) {
+                    if (rule->equal(*pre_rule)) {
+                        has_same = true;
+                        break;
+                    }
+                }
+                if (!has_same) {
+                    simplify_rule_list.push_back(rule);
+                }
+            }
+            symbol->rule_list = simplify_rule_list;
         }
     }
-    program_list = result;
-}
+} // namespace grammar
 
-ProgramList grammar::mergeProgramList(ProgramList& dp_program_list, ProgramList& bool_program_list) {
-    if (dp_program_list.size() == 0 || bool_program_list.size() == 0) return std::vector<PProgram>();
-    ProgramList result;
-    PProgram param0_program = ::program::buildParam(0);
-    PProgram param1_program = ::program::buildParam(1);
-    for (auto& dp_program: dp_program_list) {
-        PProgram dp_program_1 = ::program::rewriteParam(dp_program, std::vector<PProgram>{param0_program});
-        PProgram dp_program_2 = ::program::rewriteParam(dp_program, std::vector<PProgram>{param1_program});
-        // std::cout << "dp_program = " << dp_program->toString() << std::endl;
-        // std::cout << "dp_program_1 = " << dp_program_1->toString() << std::endl;
-        // std::cout << "dp_program_2 = " << dp_program_2->toString() << std::endl;
-
-        for (auto& bool_program: bool_program_list) {
-            PProgram tmp = ::program::rewriteParam(bool_program, ProgramList{dp_program_1, dp_program_2});
-            result.push_back(tmp);
-        }
-    }
-    return result;
-}

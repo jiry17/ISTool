@@ -118,14 +118,14 @@ namespace incre::grammar {
     };
 
     enum class GrammarType {
-        EXTRACT, COMPRESS, COMBINE, DP, BOOL
+        EXTRACT, COMPRESS, COMBINE, DP, BOOL, DP_BOOL
     };
 
     class ComponentPool {
     public:
         SynthesisComponentList extract_list, comp_list, comb_list;
         // dp_list = comp_list, bool_list only has bool operator
-        SynthesisComponentList dp_list, bool_list;
+        SynthesisComponentList dp_list, bool_list, dp_bool_list;
         void add(const PSynthesisComponent& component, GrammarType usable_types);
         ComponentPool();
         void print() const;
@@ -136,6 +136,7 @@ namespace incre::grammar {
         // use comp_list to build grammar
         Grammar* buildDpGrammar(const TypeList& inp_list, const PType& oup_type);
         Grammar* buildBoolGrammar(const TypeList& inp_list, const PType& oup_type);
+        Grammar* buildDpBoolGrammar(const TypeList& inp_list, const PType& oup_type);
 
         ~ComponentPool() = default;
     };

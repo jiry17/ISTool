@@ -135,6 +135,7 @@ namespace incre::example {
 
         IncreExamplePool(const IncreProgram& _program, const std::vector<std::vector<std::string>>& _cared_vars, IncreDataGenerator* _g);
         ~IncreExamplePool();
+
         // merge example in collector into example_pool
         void merge(int rewrite_id, IncreExampleCollector* collector, TimeGuard* guard);
         // merge example for DP synthesis

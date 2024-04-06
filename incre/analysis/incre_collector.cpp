@@ -65,13 +65,14 @@ Data DpExampleCollectionEvaluator::_evaluate(syntax::TmApp *term, const IncreCon
         // e.g. APP (APP sinsert (Nil unit)) sempty
         // input is param (evaluation result of term->param), output is def_3 (evaluation of def used in TmMatch)
         if (sub_term->func->toString() == "sinsert") {
-            std::cout << "in sinsert: " << std::endl;
+            // std::cout << "in sinsert: " << std::endl;
             Data input_null = Data();
             input_null.value = std::make_shared<NullValue>();
-            std::cout << "input = " << input_null.toString() << std::endl;
             auto sub_param = evaluate(sub_term->param.get(), ctx);
-            std::cout << "output = " << sub_param.toString() << std::endl;
             collector->add_dp_example(input_null, sub_param);
+
+            // Print(input_null.toString());
+            // Print(sub_param.toString());
         }
 
         // collect from sstep1
@@ -79,7 +80,7 @@ Data DpExampleCollectionEvaluator::_evaluate(syntax::TmApp *term, const IncreCon
         // sstep1 f sol = concat (map f sol)
         // input is param (evaluation result of term->param), output is result (evaluation of term)
         if (sub_term->func->toString() == "sstep1") {
-            std::cout << "in sstep1: " << std::endl;
+            // std::cout << "in sstep1: " << std::endl;
 
             // Print(func.toString());
             // Print(param.toString());
@@ -387,11 +388,11 @@ void IncreExamplePool::generateDpSingleExample() {
     auto [term, global] = generateStart();
     auto* collector = new IncreExampleCollector(program.get(), cared_vars, global_name_list);
 
-    global::recorder.start("collect");
+    global::recorder.start("collect-dp");
     collector->collectDp(term, global);
     // add single example into example_pool in merge function
     mergeDp(0, collector, nullptr);
-    global::recorder.end("collect");
+    global::recorder.end("collect-dp");
     delete collector;
 }
 

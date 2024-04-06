@@ -8,8 +8,12 @@
 #include "incre_program.h"
 #include "incre_syntax.h"
 #include "incre_types.h"
+#include "incre_semantics.h"
+#include "istool/basic/grammar.h"
+#include "istool/basic/execute_info.h"
 #include "istool/incre/analysis/incre_instru_runtime.h"
 #include <set>
+#include <queue>
 
 namespace incre::syntax {
     class IncreCommandWalker {
@@ -90,9 +94,13 @@ namespace incre::syntax {
         ~DpObjProgramWalker() = default;
     };
 
-    // get the type of partial solution using DpObjProgramWalker
-    Term getObjFunc(IncreProgramData* program, IncreFullContext ctx);
-}
+    // get the term of object function using DpObjProgramWalker
+    Term getObjFunc(IncreProgramData* program, IncreFullContext& ctx);
+    // apply object function on partial solution
+    Data applyObjFunc(Term& object_func, Data& sol, incre::semantics::DefaultEvaluator& default_eval, IncreFullContext& ctx);
+    // calculate relation of sol_1 and sol_2 on program R
+    Data calRelation(PProgram r, Data& sol_1, Data& sol_2, FunctionContext& func_ctx);
+} // namespace incre::syntax
 
 namespace incre::example {
     // store partial solutions and their parent-child relation
@@ -102,8 +110,10 @@ namespace incre::example {
 
     class DpSolutionData {
     public:
+        // data of the solution
         Data partial_solution;
-        std::vector<DpSolution> children;
+        // pointers to children
+        DpSolutionList children;
         std::string toString();
         DpSolutionData(Data& _par) : partial_solution(_par) {}
         ~DpSolutionData() = default;
@@ -111,7 +121,9 @@ namespace incre::example {
     
     class DpSolutionSet {
     public:
+        // set of existing solutions, used for deduplicate
         std::set<std::string> existing_sol;
+        // all partial solutions
         DpSolutionList sol_list;
         void add(DpExample& example);
         DpSolution find(Data data);
@@ -124,12 +136,22 @@ namespace incre::example {
 namespace grammar {
     // post process of DP program list
     void postProcessDpProgramList(ProgramList& program_list);
-    // check whether this program is relative symmetry
+    // post process of BOOL program, check whether this program is relative symmetry
     bool postProcessBoolProgram(PProgram program);
     // post process of BOOL program list
     void postProcessBoolProgramList(ProgramList& program_list);
+    // post process of DP_BOOL program
+    bool postProcessDpBoolProgram(PProgram program);
+    // post process of DP_BOOL program list
+    void postProcessDpBoolProgramList(ProgramList& program_list);
     // merge DP program and BOOL program to get the full program
     ProgramList mergeProgramList(ProgramList& dp_program_list, ProgramList& bool_program_list);
-}
+    // generate height limited program from grammar_original
+    std::vector<PProgram> generateHeightLimitedProgram(Grammar* grammar_original, int limit);
+    // delete duplicate rule in rule_list
+    void deleteDuplicateRule(std::vector<Rule*>& rule_list);
+    // delete duplicate rule in all the symbols of this grammar
+    void deleteDuplicateRule(Grammar* grammar);
+} // namespace grammar
 
 #endif //ISTOOL_INCRE_DP_H

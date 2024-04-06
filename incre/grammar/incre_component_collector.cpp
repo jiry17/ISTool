@@ -29,13 +29,14 @@ ComponentPool incre::grammar::collector::getBasicComponentPool(Env* env) {
         else RegisterComponent(COMBINE, comp);
     }
 
-    // add bool operator into bool_list
+    // add bool operator into bool_list and dp_bool_list
     for (auto& op_name: op_list) {
         auto sem = env->getSemantics(op_name);
         auto comp = std::make_shared<BasicOperatorComponent>(op_name, sem);
         // if not + / -, then must be bool operator
         if (all_used_op.find(op_name) == all_used_op.end()) {
             RegisterComponent(BOOL, comp);
+            RegisterComponent(DP_BOOL, comp);
         }
     }
 
@@ -375,6 +376,7 @@ ComponentPool incre::grammar::collector::collectComponent(Env *env, IncreProgram
     // make dp_list = comp_list, with no bool operator
     for (auto& grammar : pool.comp_list) {
         pool.dp_list.push_back(grammar);
+        pool.dp_bool_list.push_back(grammar);
     }
 
     delete detector;

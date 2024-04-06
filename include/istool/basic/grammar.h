@@ -70,15 +70,10 @@ namespace grammar {
     Grammar* generateHeightLimitedGrammar(Grammar* grammar, int limit);
     std::string getFreeName(Grammar* grammar);
     PProgram getMinimalProgram(Grammar* grammar);
-    std::vector<PProgram> generateHeightLimitedProgram(Grammar* grammar_original, int limit);
     ParamSemantics* getParamSemantics(Rule* rule);
     ConstSemantics* getConstSemantics(Rule* rule);
     bool isFinite(Grammar* grammar);
     int getMaxSize(Grammar* grammar);
-    // delete duplicate rule in rule_list
-    void deleteDuplicateRule(std::vector<Rule*>& rule_list);
-    // delete duplicate rule in all the symbols of this grammar
-    void deleteDuplicateRule(Grammar* grammar);
 }
 
 

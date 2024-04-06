@@ -299,5 +299,8 @@ void ComponentPool::add(const PSynthesisComponent &component, GrammarType type) 
         case GrammarType::BOOL: {
             bool_list.push_back(component); break;
         }
+        case GrammarType::DP_BOOL: {
+            dp_bool_list.push_back(component); break;
+        }
     }
 }
