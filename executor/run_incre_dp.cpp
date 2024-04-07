@@ -15,10 +15,12 @@
 #include "istool/incre/io/incre_printer.h"
 #include "istool/incre/trans/incre_trans.h"
 #include <iostream>
+#include <tuple>
 #include "glog/logging.h"
 
 using namespace incre;
 #define Print(x) std::cout << #x " = " << x << std::endl;
+#define Print_n(n) for (int i = 0; i < n; ++i) std::cout << std::endl;
 
 int main(int argv, char** argc) {
     std::string path, target;
@@ -28,7 +30,7 @@ int main(int argv, char** argc) {
     if (argv > 1) {
         path = argc[1]; target = argc[2];
     } else {
-        path = ::config::KIncreParserPath + "/benchmarks/01knapsack.f";
+        path = ::config::KIncreParserPath + "/benchmark/01knapsack.f";
     }
     IncreProgram prog = io::parseFromF(path);
     printProgram(prog);
@@ -51,16 +53,26 @@ int main(int argv, char** argc) {
     std::cout << "zyw: solution.print:" << std::endl;
     solution.print();
 
+    // config for building grammar
+    int sample_size = 7;
+    int dp_bool_height_limit = 3;
+    int single_example_num = 8;
+    ProgramList program_list;
+
     // get the SuFU-result program
     auto result_program = rewriteWithIncreSolution(incre_info->program.get(), solution);
     incre::printProgram(result_program);
-    std::cout << std::endl << std::endl;
+    std::shared_ptr<Value> size_value = result_program->config_map[IncreConfig::SAMPLE_SIZE].value;
+    std::shared_ptr<IntValue> int_size_value = std::static_pointer_cast<IntValue>(size_value);
+    if (int_size_value) {
+        Print(int_size_value->w);
+        int_size_value->w = sample_size;
+        Print(int_size_value->w);
+    } else {
+        LOG(FATAL) << "config_map[sample_size] is not IntValue";
+    }
+    Print_n(2);
     global::recorder.end("1-SuFu");
-
-    // config for building grammar
-    int dp_bool_height_limit = 3;
-    int single_example_num = 50;
-    ProgramList program_list;
 
     global::recorder.start("2-get type of partial solution");
     // get the type of partial solution
@@ -106,17 +118,21 @@ int main(int argv, char** argc) {
     } else {
         LOG(FATAL) << "object function not found!";
     }
-    std::cout << std::endl << std::endl;
+    Print_n(2);
     global::recorder.end("4-get object function");
 
     // get DP info
-    auto dp_info = incre::analysis::buildIncreInfo(result_program.get(), env.get());
+    auto dp_incre_info = incre::analysis::buildIncreInfo(result_program.get(), env.get());
     // number of programs
     int program_len = program_list.size();
+    // number of remaining programs
+    int program_remain_num = program_list.size();
     // whether is the program consistent with the thinning theorem
     std::vector<bool> program_flag = std::vector<bool>(program_len, true);
-    // whether this program has true on one partial solution
-    std::vector<bool> program_has_true = std::vector<bool>(program_len, false);
+    // number of result = true applying on dp_deduplicate_sol_set
+    std::vector<int> program_true_num = std::vector<int>(program_len, 0);
+    // number of result = true applying on dp_same_time_solution_list
+    std::vector<int> program_same_time_true_num = std::vector<int>(program_len, 0);
     // number of programs deleted by each thinning theorem
     int delete_num_all_1 = 0, delete_num_all_2 = 0;
 
@@ -148,16 +164,19 @@ int main(int argv, char** argc) {
         int delete_num_1 = 0, delete_num_2 = 0;
         
         global::recorder.start("5.1-generate single example");
+        partial_recorder.start("5.1-generate single example");
         // clear example_pool
-        dp_info->example_pool->clear();
+        dp_incre_info->example_pool->clear();
         // generate single example for DP synthesis
-        dp_info->example_pool->generateDpSingleExample();
+        dp_incre_info->example_pool->generateDpSingleExample();
+        partial_recorder.end("5.1-generate single example");
         global::recorder.end("5.1-generate single example");
 
         global::recorder.start("5.2-get partial solutions");
+        partial_recorder.start("5.2-get partial solutions");
         // get partial solutions
-        dp_example_pool = dp_info->example_pool->dp_example_pool;
-        dp_same_time_solution = dp_info->example_pool->dp_same_time_solution;
+        dp_example_pool = dp_incre_info->example_pool->dp_example_pool;
+        dp_same_time_solution = dp_incre_info->example_pool->dp_same_time_solution;
         dp_same_time_solution_list.push_back(dp_same_time_solution);
         
         // get all solutions -> dp_deduplicate_sol_set, object_result_list
@@ -190,16 +209,21 @@ int main(int argv, char** argc) {
                 std::cout << "  " << child->toString() << std::endl;
             }
         }
-        std::cout << std::endl << std::endl;
+        Print_n(2);
+        partial_recorder.end("5.2-get partial solutions");
         global::recorder.end("5.2-get partial solutions");
 
         // calculate sol relation using R
         for (int k = 0; k < program_len; ++k) {
             if (!program_flag[k]) continue;
             PProgram r_program = program_list[k];
-            bool this_program_has_true = program_has_true[k];
+            // delta num of program_true_num for program_list[k]
+            int program_true_num_delta = 0;
+            // delta num of program_same_time_true_num for program_list[k]
+            int program_same_time_true_num_delta = 0;
 
             global::recorder.start("5.3-thinning theorem-1");
+            partial_recorder.start("5.3-thinning theorem-1");
             // apply thinning theorem-1
             for (int i = 0; i < dp_deduplicate_sol_len_now; ++i) {
                 if (!program_flag[k]) break;
@@ -210,43 +234,31 @@ int main(int argv, char** argc) {
                     incre::example::DpSolution sol_2 = dp_deduplicate_sol_set[j];
                     int obj_result_1 = object_result_list[i];
                     int obj_result_2 = object_result_list[j];
-                    // if obj_1 > obj_2, then must have (sol_1 R sol_2) = false
-                    if (this_program_has_true) {
-                        if (obj_result_1 >= obj_result_2) {
-                            Data r_result = incre::syntax::calRelation(r_program, sol_1->partial_solution, sol_2->partial_solution, func_ctx);
-                            bool bool_r_result = ::data::getBoolFromData(r_result);
-                            if (bool_r_result) {
-                                // not consistent with the tinning theorem - Optimality
-                                program_flag[k] = false;
-                                delete_num_1 += 1;
-                                Print(r_program->toString());
-                                Print(sol_1->toString());
-                                Print(sol_2->toString());
-                                Print(obj_result_1);
-                                Print(obj_result_2);
-                                Print(bool_r_result);
-                                std::cout << std::endl;
-                            }
-                        }
-                    } else {
-                        Data r_result = incre::syntax::calRelation(r_program, sol_1->partial_solution, sol_2->partial_solution, func_ctx);
-                        bool bool_r_result = ::data::getBoolFromData(r_result);
+                    // if obj_1 >= obj_2, then must have (sol_1 R sol_2) = false
+                    if (!(obj_result_1 >= obj_result_2)) {
+                        global::recorder.start("5.3.1-calculate program_true_num for none use");
+                    }
+                    Data r_result = incre::syntax::calRelation(r_program, sol_1->partial_solution, sol_2->partial_solution, func_ctx);
+                    bool bool_r_result = ::data::getBoolFromData(r_result);
+                    if (bool_r_result) {
+                        program_true_num_delta++;
+                    }
+                    if (!(obj_result_1 >= obj_result_2)) {
+                        global::recorder.end("5.3.1-calculate program_true_num for none use");
+                    }
+                    if (obj_result_1 >= obj_result_2) {
                         if (bool_r_result) {
-                            this_program_has_true = true;
-                        }
-                        if (obj_result_1 >= obj_result_2) {
-                            if (bool_r_result) {
-                                // not consistent with the tinning theorem - Optimality
-                                program_flag[k] = false;
-                                delete_num_1 += 1;
-                                Print(r_program->toString());
-                                Print(sol_1->toString());
-                                Print(sol_2->toString());
-                                Print(obj_result_1);
-                                Print(obj_result_2);
-                                Print(bool_r_result);
-                                std::cout << std::endl;
-                            }
+                            // not consistent with the tinning theorem - Optimality
+                            program_flag[k] = false;
+                            program_remain_num--;
+                            delete_num_1 += 1;
+                            Print(r_program->toString());
+                            Print(sol_1->toString());
+                            Print(sol_2->toString());
+                            Print(obj_result_1);
+                            Print(obj_result_2);
+                            Print(bool_r_result);
+                            Print_n(1);
                         }
                     }
                 }
@@ -260,51 +272,41 @@ int main(int argv, char** argc) {
                     incre::example::DpSolution sol_2 = dp_deduplicate_sol_set[j];
                     int obj_result_1 = object_result_list[i];
                     int obj_result_2 = object_result_list[j];
-                    // if obj_1 > obj_2, then must have (sol_1 R sol_2) = false
-                    if (this_program_has_true) {
-                        if (obj_result_1 >= obj_result_2) {
-                            Data r_result = incre::syntax::calRelation(r_program, sol_1->partial_solution, sol_2->partial_solution, func_ctx);
-                            bool bool_r_result = ::data::getBoolFromData(r_result);
-                            if (bool_r_result) {
-                                // not consistent with the tinning theorem - Optimality
-                                program_flag[k] = false;
-                                delete_num_1 += 1;
-                                Print(r_program->toString());
-                                Print(sol_1->toString());
-                                Print(sol_2->toString());
-                                Print(obj_result_1);
-                                Print(obj_result_2);
-                                Print(bool_r_result);
-                                std::cout << std::endl;
-                            }
-                        }
-                    } else {
-                        Data r_result = incre::syntax::calRelation(r_program, sol_1->partial_solution, sol_2->partial_solution, func_ctx);
-                        bool bool_r_result = ::data::getBoolFromData(r_result);
+                    // if obj_1 >= obj_2, then must have (sol_1 R sol_2) = false
+                    if (!(obj_result_1 >= obj_result_2)) {
+                        global::recorder.start("5.3.1-calculate program_true_num for none use");
+                    }
+                    Data r_result = incre::syntax::calRelation(r_program, sol_1->partial_solution, sol_2->partial_solution, func_ctx);
+                    bool bool_r_result = ::data::getBoolFromData(r_result);
+                    if (bool_r_result) {
+                        program_true_num_delta++;
+                    }
+                    if (!(obj_result_1 >= obj_result_2)) {
+                        global::recorder.end("5.3.1-calculate program_true_num for none use");
+                    }
+                    if (obj_result_1 >= obj_result_2) {
                         if (bool_r_result) {
-                            this_program_has_true = true;
-                        }
-                        if (obj_result_1 >= obj_result_2) {
-                            if (bool_r_result) {
-                                // not consistent with the tinning theorem - Optimality
-                                program_flag[k] = false;
-                                delete_num_1 += 1;
-                                Print(r_program->toString());
-                                Print(sol_1->toString());
-                                Print(sol_2->toString());
-                                Print(obj_result_1);
-                                Print(obj_result_2);
-                                Print(bool_r_result);
-                                std::cout << std::endl;
-                            }
+                            // not consistent with the tinning theorem - Optimality
+                            program_flag[k] = false;
+                            program_remain_num--;
+                            delete_num_1 += 1;
+                            Print(r_program->toString());
+                            Print(sol_1->toString());
+                            Print(sol_2->toString());
+                            Print(obj_result_1);
+                            Print(obj_result_2);
+                            Print(bool_r_result);
+                            Print_n(1);
                         }
                     }
                 }
             }
-            program_has_true[k] = this_program_has_true;
+            program_true_num[k] += program_true_num_delta;
+            partial_recorder.end("5.3-thinning theorem-1");
             global::recorder.end("5.3-thinning theorem-1");
 
             global::recorder.start("5.4-thinning theorem-2");
+            partial_recorder.start("5.4-thinning theorem-2");
             // apply thinning theorem-2 
             for (auto& sol_pair: dp_same_time_solution) {
                 if (!program_flag[k]) break;
@@ -320,6 +322,8 @@ int main(int argv, char** argc) {
                 
                 // if sol_1 R sol_2 = true
                 if (bool_r_result) {
+                    program_same_time_true_num_delta++;
+
                     bool child_result = true;
                     for (auto& child_1: sol_1->children) {
                         bool has_y = false;
@@ -330,94 +334,116 @@ int main(int argv, char** argc) {
                                 break;
                             }
                         }
+                        // if doesn't have sol_y', then not consistent with the tinning theorem-2
                         if (!has_y) {
                             child_result = false;
                             program_flag[k] = false;
+                            program_remain_num--;
                             delete_num_2 += 1;
                             Print(r_program->toString());
                             Print(sol_1->toString());
                             Print(sol_2->toString());
                             Print(child_1->partial_solution.toString());
-                            std::cout << std::endl;
+                            Print_n(1);
                             break;
                         }
                     }
                 }
             }
+            program_same_time_true_num[k] += program_same_time_true_num_delta;
+            partial_recorder.end("5.4-thinning theorem-2");
             global::recorder.end("5.4-thinning theorem-2");
         }
         // update solution len
+        Print(dp_deduplicate_sol_len_pre);
+        Print(dp_deduplicate_sol_len_now);
         dp_deduplicate_sol_len_pre = dp_deduplicate_sol_len_now;
+
+        // print dp_same_time_size
+        Print(dp_same_time_solution.size());
+
         // update delete_num
-        delete_num_all_1 += delete_num_1;
-        delete_num_all_2 += delete_num_2;
         Print(delete_num_1);
         Print(delete_num_2);
+        Print(program_remain_num);
+        delete_num_all_1 += delete_num_1;
+        delete_num_all_2 += delete_num_2;
 
         partial_recorder.end("cycle time");
         partial_recorder.printAll();
-        std::cout << std::endl << std::endl;
+        Print_n(2);
     }
     global::recorder.end("5-filter R");
 
-    // delete program == false in all solutions
-    global::recorder.start("6-delete program == false");
-    std::cout << "zyw: delete program == false in all solutions" << std::endl;
-    int delete_num_all_3 = 0;
-    for (int k = 0; k < program_len; ++k) {
-        if (!program_flag[k]) continue;
-        if (!program_has_true[k]) {
-            program_flag[k] = false;
-            delete_num_all_3 += 1;
-            Print(program_list[k]->toString());
-        }
-    }
-    std::cout << std::endl << std::endl;
-    global::recorder.end("6-delete program == false");
-
     // print all satisfied programs, calculate r_true_num for each program
-    global::recorder.start("7-print all satisfied programs and the max program");
-    std::cout << "zyw: print all satisfied programs, calculate r_true_num for each program" << std::endl;
-    int result_program_num = 0;
+    global::recorder.start("6-get the max_num program");
+    std::cout << "zyw: get the max_num program" << std::endl;
+    std::vector<std::tuple<PProgram, int, int>> result_program_list;
     int r_true_num_max = 0;
     PProgram num_max_program;
+    int delete_num_true_num = 0;
+    int r_true_num_max_2 = 0;
+    PProgram num_max_program_2;
+    int delete_num_same_time_true_num = 0;
     for (int k = 0; k < program_len; ++k) {
         if (program_flag[k]) {
-            result_program_num++;
-            int r_true_num = 0;
             PProgram r_program = program_list[k];
-            Print(r_program->toString());
-            for (auto& sol_list: dp_same_time_solution_list) {
-                for (auto& sol_pair: sol_list) {
-                    incre::example::DpSolution sol_1 = sol_pair.first;
-                    incre::example::DpSolution sol_2 = sol_pair.second;
-                    Data tmp_1 = incre::syntax::applyObjFunc(object_func, sol_1->partial_solution, default_eval, new_ctx);
-                    Data tmp_2 = incre::syntax::applyObjFunc(object_func, sol_2->partial_solution, default_eval, new_ctx);
-                    int obj_result_1 = ::data::getIntFromData(tmp_1);
-                    int obj_result_2 = ::data::getIntFromData(tmp_2);
-                    Data r_result = incre::syntax::calRelation(r_program, sol_1->partial_solution, sol_2->partial_solution, func_ctx);
-                    bool bool_r_result = ::data::getBoolFromData(r_result);
-                    if (bool_r_result) r_true_num++;
-                }
+            if (!num_max_program) num_max_program = r_program;
+            if (!num_max_program_2) num_max_program_2 = r_program;
+            int r_true_num = program_true_num[k];
+            int r_same_time_true_num = program_same_time_true_num[k];
+
+            if (r_true_num == 0) {
+                delete_num_true_num++;
             }
-            Print(r_true_num);
-            if (r_true_num > r_true_num_max) {
-                num_max_program = program_list[k];
+            if (r_same_time_true_num == 0) {
+                delete_num_same_time_true_num++;
+            }
+            if (r_true_num > 0 && r_same_time_true_num > 0) {
+                result_program_list.push_back(std::make_tuple(r_program, r_true_num, r_same_time_true_num));
+            }
+
+            if (r_true_num > r_true_num_max || r_true_num == r_true_num_max && r_program->toString().length() > num_max_program->toString().length()) {
+                num_max_program = r_program;
                 r_true_num_max = r_true_num;
             }
+            if (r_same_time_true_num > r_true_num_max_2 || r_true_num_max_2 == r_same_time_true_num && r_program->toString().length() > num_max_program_2->toString().length()) {
+                num_max_program_2 = r_program;
+                r_true_num_max_2 = r_same_time_true_num;
+            }
+            
+            Print(r_program->toString());
+            Print(r_true_num);
+            Print(r_same_time_true_num);
         }
     }
+    Print_n(2);
+
+    // print result_program_list
+    std::cout << "zyw: print result_program_list" << std::endl;
+    for (auto& [program, a, b]: result_program_list) {
+        Print(program->toString());
+        Print(a);
+        Print(b);
+    }
+    Print_n(2);
+    Print(dp_deduplicate_sol_set.size());
     Print(program_len);
-    Print(result_program_num);
     Print(delete_num_all_1);
     Print(delete_num_all_2);
-    Print(delete_num_all_3);
+    Print(delete_num_true_num);
+    Print(delete_num_same_time_true_num);
+    Print(result_program_list.size());
     if (num_max_program) {
         Print(num_max_program->toString());
         Print(r_true_num_max);
     }
-    std::cout << std::endl << std::endl;
-    global::recorder.end("7-print all satisfied programs and the max program");
+    if (num_max_program_2) {
+        Print(num_max_program_2->toString());
+        Print(r_true_num_max_2);
+    }
+    Print_n(2);
+    global::recorder.end("6-get the max_num program");
 
     // result for 01knapsack
     // &&(<=(Param1.0,Param0.0),<=(Param0.1,Param1.1))
