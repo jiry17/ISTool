@@ -3,6 +3,7 @@
 //
 
 #include "istool/incre/language/incre_util.h"
+#include "glog/logging.h"
 
 using namespace incre;
 using namespace incre::util;
@@ -247,7 +248,6 @@ namespace {
                 if (local == name) return term;
             }
             for (auto& [local_vars, sub_term]: getSubTermWithLocalVars(term.get())) {
-                assert(local_vars_map.find(sub_term.get()) == local_vars_map.end());
                 local_vars_map[sub_term.get()] = local_vars;
             }
             return IncreTermRewriter::rewrite(term);

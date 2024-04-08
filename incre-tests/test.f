@@ -1,13 +1,25 @@
-data N = S N | Z;
+import "compress";
+import "list";
 
-fun fib = function
-| Z -> 1
-| S Z -> 1
-| S (S x) -> fib x + fib (S x);
+hd :: (List Int) -> Int;
+fun hd = function
+| (Cons {h, t}) -> h
+| Nil -> 0;
 
-run :: N -> Reframe (N);
-fun run = function
-| Z -> Z
-| S x -> S (run x);
+tl :: (List Int) -> (List Int);
+fun tl = function
+| (Cons {h, t}) -> t
+| Nil -> Nil;
 
-fun main x = fib (run x);
+ifib :: Int -> Reframe (List Int);
+fun ifib n = 
+  if n <= 2 then Cons {1, Cons {1, Nil}} else 
+    let xs = ifib (n - 1) in
+    let x = hd xs + hd (tl xs) in Cons {x, xs};
+
+rev:: (List Int) -> (List Int);
+fun rev = function
+| Nil -> Nil
+| Cons {h, t} -> cat (rev t) (Cons {h, Nil});
+
+fun main n = sum (rev (ifib n));
