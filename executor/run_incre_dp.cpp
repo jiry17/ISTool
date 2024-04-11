@@ -30,7 +30,7 @@ int main(int argv, char** argc) {
     if (argv > 1) {
         path = argc[1]; target = argc[2];
     } else {
-        path = ::config::KIncreParserPath + "/benchmark/01knapsack.f";
+        path = ::config::KIncreParserPath + "/dp-benchmark/01knapsack.f";
     }
     IncreProgram prog = io::parseFromF(path);
     printProgram(prog);

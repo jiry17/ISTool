@@ -446,9 +446,7 @@ namespace grammar {
         std::vector<int> d(n, KINF);
         // res[symbol->id] stores all programs for this symbol
         std::vector<std::vector<PProgram>> res(n);
-        // depth of symbol, symbol_id
-        // std::priority_queue<std::pair<int, int>> Q;
-        // symbol id of the same depth
+        // j in Q[i] means symbol_id=j has depth i
         std::vector<std::vector<int>> Q(n);
         // id to vector of Rule
         std::vector<NonTerminal*> symbolId2Symbol(grammar->symbol_list.size());
