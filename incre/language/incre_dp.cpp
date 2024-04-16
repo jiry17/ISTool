@@ -490,7 +490,7 @@ namespace grammar {
                     for (auto& sub_list: sub_lists) {
                         PProgram new_program = edge->buildProgram(sub_list);
                         std::string tmp = new_program->toString();
-                        if (tmp.find("inf") == std::string::npos && tmp.find("min") == std::string::npos && tmp.find("max") == std::string::npos && tmp.find("+") == std::string::npos && tmp.find("-") == std::string::npos && tmp.find("ite") == std::string::npos && tmp.find("(0,0)") == std::string::npos) {
+                        if (tmp.find("+") == std::string::npos && tmp.find("-") == std::string::npos && tmp.find("ite") == std::string::npos && tmp.find("(0,0)") == std::string::npos) {
                             res[k].push_back(new_program);
                         }
                     }
