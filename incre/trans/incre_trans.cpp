@@ -64,7 +64,7 @@ std::string incre::trans::TCompress::getName() {
 }
 
 std::string incre::trans::TCompress::getBaseName() {
-    return "Packed";
+    return "Reframe";
 }
 
 incre::trans::TLabeledCompress::TLabeledCompress(const PType &_body, int _id):
@@ -81,7 +81,7 @@ bool incre::trans::TLabeledCompress::equal(Type *type) {
 }
 
 std::string incre::trans::TLabeledCompress::getBaseName() {
-    return "Packed[" + std::to_string(id) + "]";
+    return "Reframe[" + std::to_string(id) + "]";
 }
 
 #define FromIncreCase(name) case TypeType::TYPE_TOKEN_ ## name: return _typeFromIncre(dynamic_cast<Ty ## name*>(type));
@@ -185,7 +185,8 @@ Ty incre::trans::typeToIncre(Type *type) {
 namespace {
 #define RegisterOperator(name) {name, name}
     const std::unordered_map<std::string, std::string> KOperatorNameMap = {
-            RegisterOperator("+"), RegisterOperator("*"), RegisterOperator("/"),
+            RegisterOperator("+"), RegisterOperator("-"), 
+            RegisterOperator("*"), RegisterOperator("/"),
             RegisterOperator("=="), RegisterOperator("<"), RegisterOperator("<="),
             RegisterOperator(">"), RegisterOperator(">="), RegisterOperator("and"),
             RegisterOperator("or"), RegisterOperator("not"), {"||", "or"},

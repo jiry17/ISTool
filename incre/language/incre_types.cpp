@@ -177,6 +177,7 @@ TrivialUnificationCase(Tuple);
 TrivialUnificationCase(Compress);
 
 void DefaultIncreTypeChecker::_unify(syntax::TyPoly *x, syntax::TyPoly *y, const syntax::Ty &_x, const syntax::Ty &_y) {
+    LOG(INFO) << _x->toString() << ", " << _y->toString();
     throw IncreTypingError("PolyType should not occur when unification");
 }
 

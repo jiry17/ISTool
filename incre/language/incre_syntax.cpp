@@ -212,7 +212,7 @@ std::string TyInd::toString() const {
 }
 TyCompress::TyCompress(const Ty &_body): TypeData(TypeType::COMPRESS), body(_body) {}
 std::string TyCompress::toString() const {
-    return "Packed " + body->toString();
+    return "Reframe " + body->toString();
 }
 
 namespace {

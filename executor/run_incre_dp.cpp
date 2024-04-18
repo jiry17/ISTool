@@ -30,8 +30,9 @@ int main(int argv, char** argc) {
     if (argv > 1) {
         path = argc[1]; target = argc[2];
     } else {
-        path = ::config::KIncreParserPath + "minizinc/ML/122.f";
-        // path = ::config::KIncreParserPath + "dp-benchmark/01knapsack-test.f";
+        path = "/home/jiry/zyw/dp/IncreLanguage-DSL/minizinc/ML/122-3.f";
+        // path = "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/01knapsack.f";
+        // path = ::config::KIncreParserPath + "dp-benchmark/01knapsack_ML_labeled.f";
         // path = ::config::KIncreParserPath + "benchmarks/binary_tree.f";
     }
     IncreProgram prog = io::parseFromF(path);

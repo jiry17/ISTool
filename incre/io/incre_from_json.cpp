@@ -68,8 +68,8 @@ namespace {
         auto cons_name = node["name"].asString();
         TyList param_list;
         for (auto& param: node["params"]) param_list.push_back(json2ty(param));
-        if (cons_name == "Packed") {
-            if (param_list.size() != 1) throw IncreParseError("Packed should have exactly one parameter");
+        if (cons_name == "Reframe") {
+            if (param_list.size() != 1) throw IncreParseError("Reframe should have exactly one parameter");
             return std::make_shared<TyCompress>(param_list[0]);
         }
         return std::make_shared<TyInd>(cons_name, param_list);

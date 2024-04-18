@@ -18,7 +18,7 @@ std::string VLabeledCompress::toString() const {
 TyLabeledCompress::TyLabeledCompress(const syntax::Ty &_ty, int _id): TyCompress(_ty), id(_id) {
 }
 std::string TyLabeledCompress::toString() const {
-    return "Packed[" + std::to_string(id) + "] " + body->toString();
+    return "Reframe[" + std::to_string(id) + "] " + body->toString();
 }
 
 TmLabeledLabel::TmLabeledLabel(const syntax::Term &_content, int _id): TmLabel(_content), id(_id) {
