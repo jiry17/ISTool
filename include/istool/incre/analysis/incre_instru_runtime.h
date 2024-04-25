@@ -178,7 +178,7 @@ namespace incre::example {
         // generate example for the program and get corresponding I/O examples for each hole
         void generateSingleExample();
         // generate example for the program and get corresponding I/O examples for each hole, used in DP synthesis
-        void generateDpSingleExample();
+        syntax::Term generateDpSingleExample();
         void generateBatchedExample(int rewrite_id, int target_num, TimeGuard* guard);
         // print cared_vars
         void printCaredVars();

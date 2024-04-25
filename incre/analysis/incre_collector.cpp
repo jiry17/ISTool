@@ -72,8 +72,8 @@ Data DpExampleCollectionEvaluator::_evaluate(syntax::TmApp *term, const IncreCon
             DpSolution new_sol = std::make_shared<DpSolutionData>(sub_param);
             collector->dp_example_pool.push_back(new_sol);
             
-            std::cout << "inp = null" << std::endl;
-            std::cout << "oup = " << new_sol->toString() << std::endl;
+            // std::cout << "inp = null" << std::endl;
+            // std::cout << "oup = " << new_sol->toString() << std::endl;
 
             // Print(input_null.toString());
             // Print(sub_param.toString());
@@ -160,18 +160,18 @@ Data DpExampleCollectionEvaluator::_evaluate(syntax::TmApp *term, const IncreCon
                 }
             }
             
-            // print input and output
-            std::cout << "inp = " << std::endl;
-            for (auto& data: inp) {
-                std::cout << data.toString() << std::endl;
-            }
-            std::cout << "oup = " << std::endl;
-            for (auto& data_list: oup) {
-                for (auto& data: data_list) {
-                    std::cout << data.toString() << std::endl;
-                }
-                std::cout << std::endl;
-            }
+            // // print input and output
+            // std::cout << "inp = " << std::endl;
+            // for (auto& data: inp) {
+            //     std::cout << data.toString() << std::endl;
+            // }
+            // std::cout << "oup = " << std::endl;
+            // for (auto& data_list: oup) {
+            //     for (auto& data: data_list) {
+            //         std::cout << data.toString() << std::endl;
+            //     }
+            //     std::cout << std::endl;
+            // }
         }
     }
 
@@ -359,9 +359,7 @@ std::pair<syntax::Term, DataList> IncreExamplePool::generateStart() {
     std::uniform_int_distribution<int> start_dist(0, int(start_list.size()) - 1);
     auto& [start_name, params] = start_list[start_dist(generator->env->random_engine)];
     Term term = std::make_shared<TmVar>(start_name);
-    // std::cout << "zyw: in generateStart()" << std::endl;
     for (auto& param_type: params) {
-        // std::cout << param_type->toString() << std::endl;
         auto input_data = generator->getRandomData(param_type);
         term = std::make_shared<TmApp>(term, std::make_shared<TmValue>(input_data));
     }
@@ -440,7 +438,7 @@ void IncreExamplePool::generateSingleExample() {
     delete collector;
 }
 
-void IncreExamplePool::generateDpSingleExample() {
+syntax::Term IncreExamplePool::generateDpSingleExample() {
     auto [term, global] = generateStart();
     auto* collector = new IncreExampleCollector(program.get(), cared_vars, global_name_list);
 
@@ -448,6 +446,8 @@ void IncreExamplePool::generateDpSingleExample() {
     // add single example into example_pool in merge function
     mergeDp(0, collector, nullptr);
     delete collector;
+
+    return term;
 }
 
 namespace {

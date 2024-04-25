@@ -502,6 +502,24 @@ namespace incre{
         }
     }
 
+    std::string increConfig2String(IncreConfig config) {
+        switch (config) {
+            case IncreConfig::COMPOSE_NUM : return "ComposeNum";
+            case IncreConfig::VERIFY_BASE : return "VerifyBase";
+            case IncreConfig::SAMPLE_SIZE : return "SampleSize";
+            case IncreConfig::SAMPLE_INT_MAX : return "SampleIntMax";
+            case IncreConfig::SAMPLE_INT_MIN : return "SampleIntMin";
+            case IncreConfig::NON_LINEAR : return "NonLinear";
+            case IncreConfig::ENABLE_FOLD : return "EnableFold";
+            case IncreConfig::TERM_NUM : return "TermNum";
+            case IncreConfig::CLAUSE_NUM : return "ClauseNum";
+            case IncreConfig::PRINT_ALIGN : return "PrintAlign";
+            case IncreConfig::THREAD_NUM : return "ThreadNum";
+            case IncreConfig::SLOW_COMBINE : return "SlowCombine";
+            default : return "unknown IncreConfig";
+        }
+    }
+
     void printProgram(const IncreProgram &prog, const std::string &path, bool is_align_mark) {
         align_mark = is_align_mark;
         if (!path.empty()) {
@@ -509,6 +527,9 @@ namespace incre{
             std::streambuf *cout_buf = std::cout.rdbuf();
             std::cout.rdbuf(outFile.rdbuf());
 
+            for (auto it = prog->config_map.begin(); it != prog->config_map.end(); ++it) {
+                std::cout << "Config " << increConfig2String(it->first) << " = " << it->second.toString() << ";" << std::endl;
+            }
             for (auto &command : prog->commands) {
                 std::cout << std::endl;
                 printCommand(command);
@@ -517,7 +538,10 @@ namespace incre{
             std::cout.rdbuf(cout_buf);
             outFile.close();
         } else {
-            for (auto& command: prog->commands) {
+            for (auto it = prog->config_map.begin(); it != prog->config_map.end(); ++it) {
+                std::cout << "Config " << increConfig2String(it->first) << " = " << it->second.toString() << ";" << std::endl;
+            }
+            for (auto &command : prog->commands) {
                 std::cout << std::endl;
                 printCommand(command);
             }

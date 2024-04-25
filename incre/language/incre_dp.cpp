@@ -160,6 +160,23 @@ void DpTypeProgramWalker::visit(CommandBindTerm* command) {
 }
 
 void DpTypeProgramWalker::visit(CommandDeclare* command) {
+    std::cout << command->name << " :: " << command->type->toString() << std::endl;
+    if (command->name == "step") {
+        incre::syntax::Ty type = command->type;
+        std::cout << type->toString();
+        while (type->getType() == incre::syntax::TypeType::ARR) {
+            std::shared_ptr<TyArr> tmp = std::static_pointer_cast<TyArr>(type);
+            if (tmp->oup->getType() == incre::syntax::TypeType::ARR) {
+                type = tmp->oup;
+                // std::cout << type->toString() << std::endl;
+                // std::cout << typeType2String(type->getType()) << std::endl;
+            } else {
+                // std::cout << "result: " << tmp->inp->toString() << std::endl;
+                updateRes(tmp->inp);
+                break;
+            }
+        }
+    }
     return;
 }
 
@@ -167,11 +184,32 @@ void DpTypeProgramWalker::initialize(IncreProgramData* program) {
     return;
 }
 
+// update result, if already has result then check whether they are the same
+void DpTypeProgramWalker::updateRes(Ty new_res) {
+    if (!has_res) {
+        has_res = true;
+        res = new_res;
+    } else {
+        if (!(res->toString() == new_res->toString())) {
+            LOG(FATAL) << "updateRes: type not match! res = " << res->toString() << ", new_res = " << new_res->toString();
+        }
+    }
+}
+
 Ty incre::syntax::getSolutionType(IncreProgramData* program, IncreFullContext ctx) {
     auto checker = new incre::types::DefaultIncreTypeChecker();
     auto walker = new DpTypeProgramWalker(ctx, checker);
     walker->walkThrough(program);
-    return walker->cmdWalker->res;
+    if (walker->has_res) {
+        if (walker->cmdWalker->has_res) {
+            if (walker->res->toString() != walker->cmdWalker->res->toString()) {
+                LOG(FATAL) << "different solution type: walker->res = " << walker->res->toString() << ", but walker->cmdWalker->res = " << walker->cmdWalker->res->toString() << std::endl;
+            }
+        }
+        return walker->res;
+    } else {
+        return walker->cmdWalker->res;
+    }
 }
 
 // update result, if already has result then check whether they are the same
@@ -212,8 +250,13 @@ void DpObjCommandWalker::walkThroughTerm(Term term) {
         case TermType::APP: {
             auto term_app = std::static_pointer_cast<TmApp>(term);
             if (term_app->func->toString() == "sargmax") {
+                // std::cout << termType2String(term_app->param->getType()) << std::endl;
+                // auto new_term_result = default_eval.evaluate(new_term.get(), ctx->ctx);
                 updateRes(term_app->param);
             }
+            // if (term_app->func->toString() == "main") {
+            //     updateMainRes(term_app);
+            // }
             walkThroughTerm(term_app->func);
             walkThroughTerm(term_app->param);
             break;
@@ -280,6 +323,10 @@ void DpObjProgramWalker::visit(CommandDef* command) {
 void DpObjProgramWalker::visit(CommandBindTerm* command) {
     std::shared_ptr<CommandData> tmp = std::static_pointer_cast<CommandData>(std::make_shared<CommandBindTerm>(*command));
     cmdWalker->walkThrough(tmp);
+    if (command->name == "main") {
+        // std::cout << command->name << ", " << termType2String(command->term->getType()) << command->term->toString() << std::endl;
+        updateMainRes(command->term);
+    }
     return;
 }
 
@@ -291,12 +338,24 @@ void DpObjProgramWalker::initialize(IncreProgramData* program) {
     return;
 }
 
+// update result, if already has result then check whether they are the same
+void DpObjProgramWalker::updateMainRes(Term new_main_res) {
+    if (!has_main_res) {
+        has_main_res = true;
+        main_res = new_main_res;
+    } else {
+        if (!(main_res->toString() == new_main_res->toString())) {
+            LOG(FATAL) << "updateRes: has more than one object function, res = " << main_res->toString() << ", new_res = " << new_main_res->toString();
+        }
+    }
+}
+
 namespace incre::syntax {
-    Term getObjFunc(IncreProgramData* program, IncreFullContext& ctx) {
+    std::pair<Term, Term> getObjFunc(IncreProgramData* program, IncreFullContext& ctx) {
         auto checker = new incre::types::DefaultIncreTypeChecker();
         auto walker = new DpObjProgramWalker(ctx, checker);
         walker->walkThrough(program);
-        return walker->cmdWalker->res;
+        return {walker->cmdWalker->res, walker->main_res};
     }
 
     Data applyObjFunc(Term& object_func, Data& sol, incre::semantics::DefaultEvaluator& default_eval, IncreFullContext& ctx) {
@@ -439,6 +498,17 @@ namespace grammar {
     std::vector<PProgram> generateHeightLimitedProgram(Grammar* grammar_original, int limit) {
         // get height limited grammar, so all the program generated from this grammar can satisfy the height limit
         Grammar* grammar = generateHeightLimitedGrammar(grammar_original, limit);
+        for (auto& symbol: grammar->symbol_list) {
+            int rule_len = symbol->rule_list.size();
+            for (int i = 0; i < rule_len; ++i) {
+                std::string tmp = symbol->rule_list[i]->toString();
+                if (tmp.find("prod") != std::string::npos || tmp.find("+") != std::string::npos || tmp.find("-") != std::string::npos || tmp.find("ite") != std::string::npos || tmp.find("<(") != std::string::npos || tmp.find("||") != std::string::npos || tmp.find("!") != std::string::npos || tmp == "0") {
+                    symbol->rule_list.erase(symbol->rule_list.begin() + i);
+                    i--;
+                    rule_len--;
+                }
+            }
+        }
         grammar->print();
         grammar->indexSymbol();
         int n = grammar->symbol_list.size();
@@ -486,14 +556,53 @@ namespace grammar {
                         sub_nodes_id.push_back(sub->id);
                     }
                     sub_lists = _getNewSymbolProgram(res, sub_nodes_id, 0, sub_lists);
+                    // std::cout << "print res" << std::endl;
+                    // for (int k = 0; k < res.size(); ++k) {
+                    //     std::cout << k << std::endl;
+                    //     for (auto& result: res[k]) {
+                    //         std::cout << result->toString() << std::endl;
+                    //     }
+                    // }
                     // std::cout << sub_lists.size() << std::endl;
+                    bool is_eq_rule = (edge->toString().find("=(") != std::string::npos);
+                    bool is_bool_operator = (edge->toString().find("&&") != std::string::npos || edge->toString().find("||") != std::string::npos);
                     for (auto& sub_list: sub_lists) {
-                        PProgram new_program = edge->buildProgram(sub_list);
-                        std::string tmp = new_program->toString();
-                        if (tmp.find("+") == std::string::npos && tmp.find("-") == std::string::npos && tmp.find("ite") == std::string::npos && tmp.find("(0,0)") == std::string::npos) {
-                            res[k].push_back(new_program);
+                        if (is_eq_rule || is_bool_operator) {
+                            if (sub_list.size() != 2) {
+                                LOG(FATAL) << "sub_list.size() != 2";
+                            }
+                            std::string tmp_1 = sub_list[0]->toString();
+                            std::string tmp_2 = sub_list[1]->toString();
+                            if (tmp_1 != tmp_2) {
+                                PProgram new_program = edge->buildProgram(sub_list);
+                                std::string tmp = new_program->toString();
+                                if (tmp.find("0,0") == std::string::npos) {
+                                    res[k].push_back(new_program);
+                                }
+                            }
+                        } else {
+                            PProgram new_program = edge->buildProgram(sub_list);
+                            std::string tmp = new_program->toString();
+                            // if (tmp.find("+") == std::string::npos && tmp.find("-") == std::string::npos && tmp.find("ite") == std::string::npos && tmp.find("(0,0)") == std::string::npos && tmp.find("<") == std::string::npos && tmp.find("||") == std::string::npos && tmp.find("!") == std::string::npos && tmp.find(",0") == std::string::npos && tmp.find(").0") == std::string::npos && tmp.find(").1") == std::string::npos && tmp.find(").2") == std::string::npos) {
+                            //     res[k].push_back(new_program);
+                            // }
+                            // if (tmp.find("+") == std::string::npos && tmp.find("-") == std::string::npos && tmp.find("ite") == std::string::npos && tmp.find("(0,0)") == std::string::npos) {
+                            //     res[k].push_back(new_program);
+                            // }
+                            if (tmp.find("0,0") == std::string::npos) {
+                                res[k].push_back(new_program);
+                            }
+                            // if (tmp == "=(Param0.0,Param0.0)") {
+                            //     std::cout << edge->toString() << std::endl;
+                            //     std::cout << is_eq_rule << std::endl;
+                            //     std::cout << is_bool_operator << std::endl;
+                            //     for (auto& sub: sub_list) {
+                            //         std::cout << sub->toString() << std::endl;
+                            //     }
+                            // }
                         }
                     }
+                    
                 }
             }
         }

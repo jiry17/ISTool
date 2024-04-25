@@ -56,6 +56,11 @@ namespace incre::syntax {
         virtual void visit(CommandDeclare* command);
         virtual void initialize(IncreProgramData* program);
     public:
+        // store the type of partial solution, which is the result of DpTypeProgramWalker
+        Ty res = nullptr;
+        // already has result
+        bool has_res = false;
+        void updateRes(Ty new_res);
         // command walker
         DpTypeCommandWalker* cmdWalker;
         DpTypeProgramWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker) : cmdWalker(new DpTypeCommandWalker(_ctx, _checker)) {}
@@ -77,6 +82,7 @@ namespace incre::syntax {
         // already has result
         bool has_res = false;
         void updateRes(Term new_res);
+
         DpObjCommandWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker) : IncreCommandWalker(_ctx, _checker) {}
         virtual ~DpObjCommandWalker() = default;
     };
@@ -88,6 +94,10 @@ namespace incre::syntax {
         virtual void visit(CommandDeclare* command);
         virtual void initialize(IncreProgramData* program);
     public:
+        // store the term of main function
+        Term main_res = nullptr;
+        bool has_main_res = false;
+        void updateMainRes(Term new_main_res);
         // command walker
         DpObjCommandWalker* cmdWalker;
         DpObjProgramWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker) : cmdWalker(new DpObjCommandWalker(_ctx, _checker)) {}
@@ -95,7 +105,7 @@ namespace incre::syntax {
     };
 
     // get the term of object function using DpObjProgramWalker
-    Term getObjFunc(IncreProgramData* program, IncreFullContext& ctx);
+    std::pair<Term, Term> getObjFunc(IncreProgramData* program, IncreFullContext& ctx);
     // apply object function on partial solution
     Data applyObjFunc(Term& object_func, Data& sol, incre::semantics::DefaultEvaluator& default_eval, IncreFullContext& ctx);
     // calculate relation of sol_1 and sol_2 on program R

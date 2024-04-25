@@ -153,6 +153,21 @@ TypeData::TypeData(const TypeType &_type): type(_type) {}
 
 TypeType TypeData::getType() const {return type;}
 
+std::string incre::syntax::typeType2String(TypeType type) {
+    switch (type) {
+        case TypeType::VAR : return "VAR";
+        case TypeType::UNIT : return "UNIT";
+        case TypeType::BOOL : return "BOOL";
+        case TypeType::INT : return "INT";
+        case TypeType::POLY : return "POLY";
+        case TypeType::ARR : return "ARR";
+        case TypeType::TUPLE : return "TUPLE";
+        case TypeType::IND : return "IND";
+        case TypeType::COMPRESS : return "COMPRESS";
+        default : return "unknown TypeType";
+    }
+}
+
 namespace {
     std::string _wrap(const std::string& s) {
         bool has_space = false;

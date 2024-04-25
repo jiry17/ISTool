@@ -15,6 +15,7 @@
 #include "istool/incre/io/incre_printer.h"
 #include "istool/incre/trans/incre_trans.h"
 #include <iostream>
+#include <fstream>
 #include <tuple>
 #include "glog/logging.h"
 
@@ -22,49 +23,49 @@ using namespace incre;
 #define Print(x) std::cout << #x " = " << x << std::endl;
 #define Print_n(n) for (int i = 0; i < n; ++i) std::cout << std::endl;
 
+DEFINE_string(sufu_input, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/maximal_problem-input/", "The absolute path of the sufu input folder");
+DEFINE_string(sufu_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/maximal_problem-json/", "The absolute path of the sufu output folder");
+DEFINE_string(dp_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/maximal_problem-dp/", "The absolute path of the dp synthesis output folder");
+// DEFINE_string(sufu_input, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/satisfy_problem-input/", "The absolute path of the sufu input folder");
+// DEFINE_string(sufu_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/satisfy_problem-json/", "The absolute path of the sufu output folder");
+// DEFINE_string(dp_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/satisfy_problem-dp/", "The absolute path of the dp synthesis output folder");
+DEFINE_string(file_name, "213.f", "The file name of the dp synthesis benchmark");
+DEFINE_bool(autolabel, false, "Whether automatically generate annotations");
+DEFINE_bool(mark_rewrite, false, "Whether to mark the sketch holes.");
+
+// config for building grammar
+int sample_size = 5;
+int dp_bool_height_limit = 3;
+int single_example_num = 5;
+
 int main(int argv, char** argc) {
-    std::string path, target;
+    gflags::ParseCommandLineFlags(&argv, &argc, true);
+
+    std::string sufu_input_path = FLAGS_sufu_input + FLAGS_file_name;
+    std::string sufu_output_path = FLAGS_sufu_output + FLAGS_file_name;
+    std::string dp_output_path = FLAGS_dp_output + FLAGS_file_name;
+    bool is_autolabel = FLAGS_autolabel;
+    bool is_highlight_replace = FLAGS_mark_rewrite;
 
     global::recorder.start("all");
     global::recorder.start("1-SuFu");
-    if (argv > 1) {
-        path = argc[1]; target = argc[2];
-    } else {
-        path = "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/other/01knapsack.f";
-    }
-    IncreProgram prog = io::parseFromF(path);
-    printProgram(prog);
+    IncreProgram sufu_input_prog = io::parseFromF(sufu_input_path);
+    printProgram(sufu_input_prog);
 
     auto env = std::make_shared<Env>();
-    incre::config::applyConfig(prog.get(), env.get());
+    incre::config::applyConfig(sufu_input_prog.get(), env.get());
 
-    auto ctx = buildContext(prog.get(), BuildGen(incre::semantics::DefaultEvaluator), BuildGen(types::DefaultIncreTypeChecker));
+    auto ctx = buildContext(sufu_input_prog.get(), BuildGen(incre::semantics::DefaultEvaluator), BuildGen(types::DefaultIncreTypeChecker));
 
-    auto incre_info = incre::analysis::buildIncreInfo(prog.get(), env.get());
+    auto incre_info = incre::analysis::buildIncreInfo(sufu_input_prog.get(), env.get());
 
-    // generate single example for each hole
-    for (int i = 0; i < 10; ++i) {
-        incre_info->example_pool->generateSingleExample();
-    }
+    IncreProgram sufu_output_prog = io::parseFromF(sufu_output_path);
+    printProgram(sufu_output_prog);
 
-    // use SuFu to compress solution into scalar values
-    auto* solver = new IncreAutoLifterSolver(incre_info, env);
-    auto solution = solver->solve();
-    std::cout << "zyw: solution.print:" << std::endl;
-    solution.print();
-
-    // get the SuFU-result program
-    auto result_program = rewriteWithIncreSolution(incre_info->program.get(), solution);
-    incre::printProgram(result_program);
-
-    // config for building grammar
-    int sample_size = 7;
-    int dp_bool_height_limit = 3;
-    int single_example_num = 8;
     ProgramList program_list;
 
-    
-    std::shared_ptr<Value> size_value = result_program->config_map[IncreConfig::SAMPLE_SIZE].value;
+    // change SampleSize
+    std::shared_ptr<Value> size_value = sufu_output_prog->config_map[IncreConfig::SAMPLE_SIZE].value;
     std::shared_ptr<IntValue> int_size_value = std::static_pointer_cast<IntValue>(size_value);
     if (int_size_value) {
         Print(int_size_value->w);
@@ -78,7 +79,7 @@ int main(int argv, char** argc) {
 
     global::recorder.start("2-get type of partial solution");
     // get the type of partial solution
-    incre::syntax::Ty solution_ty = incre::syntax::getSolutionType(result_program.get(), ctx);
+    incre::syntax::Ty solution_ty = incre::syntax::getSolutionType(sufu_output_prog.get(), ctx);
     std::cout << "zyw: solution_ty = ";
     if (solution_ty) {
         std::cout << solution_ty->toString() << std::endl;
@@ -113,20 +114,19 @@ int main(int argv, char** argc) {
     Print(program_list.size());
     global::recorder.end("3-get DP_BOOL grammar");
 
-    // get object function
-    global::recorder.start("4-get object function");
-    auto get_obj_func_result = incre::syntax::getObjFunc(result_program.get(), ctx);
-    incre::syntax::Term object_func = get_obj_func_result.first;
-    if (object_func) {
-        std::cout << "zyw: object_func = " << object_func->toString() << std::endl;
-    } else {
-        LOG(FATAL) << "object function not found!";
-    }
-    Print_n(2);
-    global::recorder.end("4-get object function");
+    // // get object function
+    // global::recorder.start("4-get object function");
+    // incre::syntax::Term object_func = incre::syntax::getObjFunc(sufu_output_prog.get(), ctx);
+    // if (object_func) {
+    //     std::cout << "zyw: object_func = " << object_func->toString() << std::endl;
+    // } else {
+    //     LOG(FATAL) << "object function not found!";
+    // }
+    // Print_n(2);
+    // global::recorder.end("4-get object function");
 
     // get DP info
-    auto dp_incre_info = incre::analysis::buildIncreInfo(result_program.get(), env.get());
+    auto dp_incre_info = incre::analysis::buildIncreInfo(sufu_output_prog.get(), env.get());
     // number of programs
     int program_len = program_list.size();
     // number of remaining programs
@@ -154,11 +154,6 @@ int main(int argv, char** argc) {
     // result of applying object function on dp_deduplicate_sol_set
     std::vector<int> object_result_list; 
     
-    // used in apply object function
-    FunctionContext func_ctx;
-    incre::semantics::DefaultEvaluator default_eval = incre::semantics::DefaultEvaluator();
-    auto new_ctx = buildContext(result_program.get(), BuildGen(incre::semantics::DefaultEvaluator), BuildGen(types::DefaultIncreTypeChecker));
-    
     global::recorder.start("5-filter R");
     for (int i = 0; i < single_example_num; ++i) {
         std::cout << "zyw: start of cycle " << i << std::endl;
@@ -172,9 +167,64 @@ int main(int argv, char** argc) {
         // clear example_pool
         dp_incre_info->example_pool->clear();
         // generate single example for DP synthesis
-        dp_incre_info->example_pool->generateDpSingleExample();
+        syntax::Term start_term = dp_incre_info->example_pool->generateDpSingleExample();
         partial_recorder.end("5.1-generate single example");
         global::recorder.end("5.1-generate single example");
+
+        // get object function
+        global::recorder.start("4-get object function");
+        // used in apply object function
+        FunctionContext func_ctx;
+        incre::semantics::DefaultEvaluator default_eval = incre::semantics::DefaultEvaluator();
+        auto new_ctx = buildContext(sufu_output_prog.get(), BuildGen(incre::semantics::DefaultEvaluator), BuildGen(types::DefaultIncreTypeChecker));
+
+        std::pair<std::shared_ptr<incre::syntax::TermData>, std::shared_ptr<incre::syntax::TermData>> get_obj_func_result = incre::syntax::getObjFunc(sufu_output_prog.get(), ctx);
+        incre::syntax::Term object_func = get_obj_func_result.first;
+        incre::syntax::Term main_func = get_obj_func_result.second;
+        if (!start_term) {
+            LOG(FATAL) << "have no start term";
+        }
+        if (!main_func) {
+            LOG(FATAL) << "have no main function";
+        }
+        std::vector<std::string> main_params_name;
+        std::vector<Data> main_params_value;
+        int main_params_num;
+        
+        syntax::Term start_term_tmp = start_term;
+        while(start_term_tmp->getType() == syntax::TermType::APP) {
+            std::shared_ptr<syntax::TmApp> tmp = std::static_pointer_cast<syntax::TmApp>(start_term_tmp);
+            std::shared_ptr<syntax::TmValue> param_tmp = std::static_pointer_cast<syntax::TmValue>(tmp->param);
+            // std::cout << param_tmp->toString() << std::endl;
+            main_params_value.insert(main_params_value.begin(), param_tmp->v);
+            start_term_tmp = tmp->func;
+        }
+
+        syntax::Term main_func_tmp = main_func;
+        while(main_func_tmp->getType() == syntax::TermType::FUNC) {
+            std::shared_ptr<syntax::TmFunc> tmp = std::static_pointer_cast<syntax::TmFunc>(main_func_tmp);
+            main_params_name.push_back(tmp->name);
+            main_func_tmp = tmp->body;
+        }
+
+        if (main_params_name.size() != main_params_value.size()) {
+            LOG(FATAL) << "main_params_name.size() != main_params_value.size()";
+        }
+        main_params_num = main_params_name.size();
+        for (int i = 0; i < main_params_num; ++i) {
+            std::cout << main_params_name[i] << " = " << main_params_value[i].toString() << std::endl;
+            new_ctx->ctx = new_ctx->ctx.insert(main_params_name[i], syntax::Binding(main_params_value[i]));
+        }
+        // for (auto now = new_ctx->ctx.start; now; now = now->next) {
+        //     std::cout << now->name << " = " << now->bind.data.toString() << std::endl;
+        // }
+        if (object_func) {
+            std::cout << "zyw: object_func = " << object_func->toString() << std::endl;
+        } else {
+            LOG(FATAL) << "object function not found!";
+        }
+        Print_n(2);
+        global::recorder.end("4-get object function");
 
         global::recorder.start("5.2-get partial solutions");
         partial_recorder.start("5.2-get partial solutions");
@@ -331,8 +381,12 @@ int main(int argv, char** argc) {
                     bool child_result = true;
                     for (auto& child_1: sol_1->children) {
                         bool has_y = false;
+                        Data tmp_result = incre::syntax::calRelation(r_program, child_1->partial_solution, sol_2->partial_solution, func_ctx);
+                        if (::data::getBoolFromData(tmp_result)) {
+                            has_y = true;
+                        }
                         for (auto& child_2: sol_2->children) {
-                            Data tmp_result = incre::syntax::calRelation(r_program, child_1->partial_solution, child_2->partial_solution, func_ctx);
+                            tmp_result = incre::syntax::calRelation(r_program, child_1->partial_solution, child_2->partial_solution, func_ctx);
                             if (::data::getBoolFromData(tmp_result)) {
                                 has_y = true;
                                 break;
@@ -379,10 +433,10 @@ int main(int argv, char** argc) {
     }
     global::recorder.end("5-filter R");
 
-    // print all satisfied programs, calculate r_true_num for each program
+    // calculate r_true_num for each program, print all satisfied programs(true_num > 0)
     global::recorder.start("6-get the max_num program");
     std::cout << "zyw: get the max_num program" << std::endl;
-    std::vector<std::tuple<PProgram, int, int>> result_program_list;
+    std::vector<std::tuple<PProgram, int, int>> dp_result_program_list;
     int r_true_num_max = 0;
     PProgram num_max_program;
     int delete_num_true_num = 0;
@@ -404,7 +458,7 @@ int main(int argv, char** argc) {
                 delete_num_same_time_true_num++;
             }
             if (r_true_num > 0 && r_same_time_true_num > 0) {
-                result_program_list.push_back(std::make_tuple(r_program, r_true_num, r_same_time_true_num));
+                dp_result_program_list.push_back(std::make_tuple(r_program, r_true_num, r_same_time_true_num));
             }
 
             if (r_true_num > r_true_num_max || r_true_num == r_true_num_max && r_program->toString().length() > num_max_program->toString().length()) {
@@ -423,9 +477,9 @@ int main(int argv, char** argc) {
     }
     Print_n(2);
 
-    // print result_program_list
-    std::cout << "zyw: print result_program_list" << std::endl;
-    for (auto& [program, a, b]: result_program_list) {
+    // print dp_result_program_list
+    std::cout << "zyw: print dp_result_program_list" << std::endl;
+    for (auto& [program, a, b]: dp_result_program_list) {
         Print(program->toString());
         Print(a);
         Print(b);
@@ -437,7 +491,7 @@ int main(int argv, char** argc) {
     Print(delete_num_all_2);
     Print(delete_num_true_num);
     Print(delete_num_same_time_true_num);
-    Print(result_program_list.size());
+    Print(dp_result_program_list.size());
     if (num_max_program) {
         Print(num_max_program->toString());
         Print(r_true_num_max);
@@ -449,11 +503,42 @@ int main(int argv, char** argc) {
     Print_n(2);
     global::recorder.end("6-get the max_num program");
 
-    // result for 01knapsack
-    // &&(<=(Param1.0,Param0.0),<=(Param0.1,Param1.1))
-    // &&(<(Param1.0,Param0.0),<(Param0.1,Param1.1))
-
     global::recorder.end("all");
-    // print time record
     global::recorder.printAll();
+
+
+    // print to dp_output_path
+    std::ofstream dpOutFile(dp_output_path);
+    std::streambuf *dp_cout_buf = std::cout.rdbuf();
+    std::cout.rdbuf(dpOutFile.rdbuf());
+    std::cout << "zyw: print dp_result_program_list" << std::endl;
+    Print(dp_result_program_list.size());
+    for (auto& [program, a, b]: dp_result_program_list) {
+        Print(program->toString());
+        Print(a);
+        Print(b);
+    }
+    Print_n(2);
+    Print(dp_deduplicate_sol_set.size());
+    Print(program_len);
+    Print(delete_num_all_1);
+    Print(delete_num_all_2);
+    Print(delete_num_true_num);
+    Print(delete_num_same_time_true_num);
+    Print(dp_result_program_list.size());
+    if (num_max_program) {
+        Print(num_max_program->toString());
+        Print(r_true_num_max);
+    }
+    if (num_max_program_2) {
+        Print(num_max_program_2->toString());
+        Print(r_true_num_max_2);
+    }
+    Print_n(2);
+
+    global::recorder.printAll();
+
+    std::cout.rdbuf(dp_cout_buf);
+    dpOutFile.close();
+
 }
