@@ -415,11 +415,11 @@ WrappedTy SymbolicIncreTypeChecker::_typing(syntax::TmMatch *term, const IncreCo
 
 WrappedTy SymbolicIncreTypeChecker::_typing(syntax::TmPrimary *term, const IncreContext &ctx) {
     auto op_type = util::liftNormalType(types::getPrimaryType(term->op_name), z3_ctx);
+    op_type = instantiate(op_type);
     auto oup_ty = getTmpWrappedVar(ANY); auto full_ty = oup_ty;
     for (int i = int(term->params.size()) - 1; i >= 0; --i) {
         full_ty = defaultWrap(std::make_shared<TyArr>(typing(term->params[i].get(), ctx), full_ty));
     }
-//    LOG(INFO) << op_type->toString() << " " << full_ty->toString();
     unify(op_type, full_ty); return oup_ty;
 }
 

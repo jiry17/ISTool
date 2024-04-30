@@ -392,6 +392,7 @@ syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmValue *term, const IncreCo
 
 syntax::Ty DefaultIncreTypeChecker::_typing(syntax::TmPrimary *term, const IncreContext &ctx) {
     auto op_type = getPrimaryType(term->op_name);
+    op_type = instantiate(op_type);
     auto oup_ty = getTmpVar(ANY); auto full_ty = oup_ty;
     for (int i = int(term->params.size()) - 1; i >= 0; --i) {
         full_ty = std::make_shared<TyArr>(typing(term->params[i].get(), ctx), full_ty);
