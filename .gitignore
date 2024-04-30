@@ -3,6 +3,7 @@
 *__pycache__
 *.vscode
 tests*
+incre-tests/test.f
 cmake-build-*
 runner/cache/* 
 basic/config.cpp
