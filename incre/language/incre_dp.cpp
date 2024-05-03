@@ -19,6 +19,126 @@ void IncreCommandWalker::walkThrough(Command command) {
     }
 }
 
+void DpFilterCommandWalker::walkThroughTerm(Term term) {
+    preProcess(term);
+    switch (term->getType()) {
+        case TermType::VALUE: {
+            break;
+        }
+        case TermType::IF: {
+            auto tmp = std::static_pointer_cast<TmIf>(term);
+            walkThroughTerm(tmp->c);
+            walkThroughTerm(tmp->t);
+            walkThroughTerm(tmp->f);
+            break;
+        }
+        case TermType::VAR: {
+            break;
+        }
+        case TermType::PRIMARY: {
+            auto tmp = std::static_pointer_cast<TmPrimary>(term);
+            for (auto& param : tmp->params) {
+                walkThroughTerm(param);
+            }
+            break;
+        }
+        case TermType::APP: {
+            auto term_app = std::static_pointer_cast<TmApp>(term);
+            if (term_app->func->toString() == r_filter_name) {
+                // std::cout << "term_app->func = " << term_app->func->toString() << std::endl;
+                // std::cout << "term_app->param = " << term_app->param->toString() << std::endl;
+                // std::cout << incre::syntax::termType2String(term_app->param->getType()) << std::endl;
+                Term new_param = std::make_shared<TmVar>(r_name);
+                term_app->param = new_param;
+                // std::cout << "term_app = " << term_app->toString() << std::endl;
+            }
+
+            walkThroughTerm(term_app->func);
+            walkThroughTerm(term_app->param);
+            break;
+        }
+        case TermType::FUNC: {
+            auto tmp = std::static_pointer_cast<TmFunc>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::LET: {
+            auto tmp = std::static_pointer_cast<TmLet>(term);
+            walkThroughTerm(tmp->def);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::TUPLE: {
+            auto tmp = std::static_pointer_cast<TmTuple>(term);
+            for (auto& field : tmp->fields) {
+                walkThroughTerm(field);
+            }
+            break;
+        }
+        case TermType::PROJ: {
+            auto tmp = std::static_pointer_cast<TmProj>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::MATCH: {
+            auto tmp = std::static_pointer_cast<TmMatch>(term);
+            walkThroughTerm(tmp->def);
+            for (auto& match_case : tmp->cases) {
+                walkThroughTerm(match_case.second);
+            }
+            break;
+        }
+        case TermType::CONS: {
+            auto tmp = std::static_pointer_cast<TmCons>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::LABEL: {
+            auto tmp = std::static_pointer_cast<TmLabel>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::UNLABEL: {
+            auto tmp = std::static_pointer_cast<TmUnlabel>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+        case TermType::REWRITE: {
+            auto tmp = std::static_pointer_cast<TmRewrite>(term);
+            walkThroughTerm(tmp->body);
+            break;
+        }
+    }
+    postProcess(term);
+}
+
+void DpFilterProgramWalker::visit(CommandDef* command) {
+    return;
+}
+
+void DpFilterProgramWalker::visit(CommandBindTerm* command) {
+    std::shared_ptr<CommandData> tmp = std::static_pointer_cast<CommandData>(std::make_shared<CommandBindTerm>(*command));
+    cmdWalker->walkThrough(tmp);
+    return;
+}
+
+void DpFilterProgramWalker::visit(CommandDeclare* command) {
+    return;
+}
+
+void DpFilterProgramWalker::initialize(IncreProgramData* program) {
+    return;
+}
+
+incre::IncreProgram incre::syntax::addRFilter(IncreProgramData* program, IncreFullContext ctx, std::string r_filter_name, std::string r_name) {
+    auto checker = new incre::types::DefaultIncreTypeChecker();
+    auto walker = new DpFilterProgramWalker(ctx, checker, r_filter_name, r_name);
+    IncreProgramData* tmp_prog = new IncreProgramData(*program);
+    walker->walkThrough(tmp_prog);
+    std::shared_ptr<IncreProgramData> return_prog(tmp_prog);
+    return return_prog;
+}
+
 // update result, if already has result then check whether they are the same
 void DpTypeCommandWalker::updateRes(Ty new_res) {
     if (!has_res) {
@@ -160,10 +280,9 @@ void DpTypeProgramWalker::visit(CommandBindTerm* command) {
 }
 
 void DpTypeProgramWalker::visit(CommandDeclare* command) {
-    std::cout << command->name << " :: " << command->type->toString() << std::endl;
     if (command->name == "step") {
         incre::syntax::Ty type = command->type;
-        std::cout << type->toString();
+        // std::cout << type->toString();
         while (type->getType() == incre::syntax::TypeType::ARR) {
             std::shared_ptr<TyArr> tmp = std::static_pointer_cast<TyArr>(type);
             if (tmp->oup->getType() == incre::syntax::TypeType::ARR) {

@@ -33,6 +33,35 @@ namespace incre::syntax {
         virtual ~IncreCommandWalker() = default;
     };
 
+    class DpFilterCommandWalker : public IncreCommandWalker {
+    protected:
+        virtual void walkThroughTerm(Term term);
+        virtual void initialize(Command command) {}
+        virtual void preProcess(Term term) {}
+        virtual void postProcess(Term term) {}
+    public:
+        std::string r_filter_name;
+        std::string r_name;
+        DpFilterCommandWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker, std::string _r_filter_name, std::string _r_name) : IncreCommandWalker(_ctx, _checker), r_filter_name(_r_filter_name), r_name(_r_name) {}
+        virtual ~DpFilterCommandWalker() = default;
+    };
+    
+    class DpFilterProgramWalker: public IncreProgramWalker {
+    protected:
+        virtual void visit(CommandDef* command);
+        virtual void visit(CommandBindTerm* command);
+        virtual void visit(CommandDeclare* command);
+        virtual void initialize(IncreProgramData* program);
+    public:
+        // command walker
+        DpFilterCommandWalker* cmdWalker;
+        DpFilterProgramWalker(IncreFullContext _ctx, incre::types::IncreTypeChecker* _checker, std::string r_filter_name, std::string r_name) : cmdWalker(new DpFilterCommandWalker(_ctx, _checker, r_filter_name, r_name)) {}
+        ~DpFilterProgramWalker() = default;
+    };
+
+    // add r filter using DpTypeProgramWalker
+    incre::IncreProgram addRFilter(IncreProgramData* program, IncreFullContext ctx, std::string r_filter_name, std::string r_name);
+
     class DpTypeCommandWalker : public IncreCommandWalker {
     protected:
         virtual void walkThroughTerm(Term term);

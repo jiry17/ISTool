@@ -450,6 +450,11 @@ syntax::Term IncreExamplePool::generateDpSingleExample() {
     return term;
 }
 
+syntax::Term IncreExamplePool::generateSingleExample_2() {
+    auto [term, global] = generateStart();
+    return term;
+}
+
 namespace {
     const int KMaxFailedAttempt = 500;
 }
@@ -520,6 +525,10 @@ void IncreExamplePool::generateBatchedExample(int rewrite_id, int target_num, Ti
     }
 
     if (example_pool[rewrite_id].size() < target_num) is_finished[rewrite_id] = true;
+}
+
+void IncreExamplePool::changeKSizeLimit(int new_size_limit) {
+    generator->KSizeLimit = new_size_limit;
 }
 
 void IncreExamplePool::printCaredVars() {

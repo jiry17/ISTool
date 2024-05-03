@@ -179,7 +179,10 @@ namespace incre::example {
         void generateSingleExample();
         // generate example for the program and get corresponding I/O examples for each hole, used in DP synthesis
         syntax::Term generateDpSingleExample();
+        // generate example for run_incre_dp_4.cpp
+        syntax::Term generateSingleExample_2();
         void generateBatchedExample(int rewrite_id, int target_num, TimeGuard* guard);
+        void changeKSizeLimit(int new_size_limit);
         // print cared_vars
         void printCaredVars();
         // print start_list

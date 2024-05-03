@@ -23,20 +23,19 @@ using namespace incre;
 #define Print(x) std::cout << #x " = " << x << std::endl;
 #define Print_n(n) for (int i = 0; i < n; ++i) std::cout << std::endl;
 
-DEFINE_string(sufu_input, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/maximal_problem-input/", "The absolute path of the sufu input folder");
-DEFINE_string(sufu_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/maximal_problem-sufu_result/", "The absolute path of the sufu output folder");
-DEFINE_string(dp_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/maximal_problem-dp/", "The absolute path of the dp synthesis output folder");
-// DEFINE_string(sufu_input, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/satisfy_problem-input/", "The absolute path of the sufu input folder");
-// DEFINE_string(sufu_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/satisfy_problem-sufu_result/", "The absolute path of the sufu output folder");
-// DEFINE_string(dp_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/satisfy_problem-dp/", "The absolute path of the dp synthesis output folder");
-DEFINE_string(file_name, "213.f", "The file name of the dp synthesis benchmark");
+// DEFINE_string(sufu_input, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/maximal_problem-input/", "The absolute path of the sufu input folder");
+// DEFINE_string(sufu_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/maximal_problem-dp_input/", "The absolute path of the sufu output folder");
+// DEFINE_string(dp_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/maximal_problem-dp_output/", "The absolute path of the dp synthesis output folder");
+DEFINE_string(sufu_input, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/satisfy_problem-input/", "The absolute path of the sufu input folder");
+DEFINE_string(sufu_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/satisfy_problem-dp_input/", "The absolute path of the sufu output folder");
+DEFINE_string(dp_output, "/home/jiry/zyw/dp/IncreLanguage-DSL/dp-benchmark/satisfy_problem-dp_output/", "The absolute path of the dp synthesis output folder");
+DEFINE_string(file_name, "1143.f", "The file name of the dp synthesis benchmark");
 DEFINE_bool(autolabel, false, "Whether automatically generate annotations");
 DEFINE_bool(mark_rewrite, false, "Whether to mark the sketch holes.");
 
 // config for building grammar
 int sample_size = 5;
-int dp_bool_height_limit = 3;
-int single_example_num = 5;
+int single_example_num = 50;
 
 int main(int argv, char** argc) {
     gflags::ParseCommandLineFlags(&argv, &argc, true);
@@ -62,19 +61,22 @@ int main(int argv, char** argc) {
     IncreProgram sufu_output_prog = io::parseFromF(sufu_output_path);
     printProgram(sufu_output_prog);
 
-    ProgramList program_list;
+    // get sufu output info
+    auto sufu_output_info = incre::analysis::buildIncreInfo(sufu_output_prog.get(), env.get());
 
     // change SampleSize
-    std::shared_ptr<Value> size_value = sufu_output_prog->config_map[IncreConfig::SAMPLE_SIZE].value;
-    std::shared_ptr<IntValue> int_size_value = std::static_pointer_cast<IntValue>(size_value);
-    if (int_size_value) {
-        Print(int_size_value->w);
-        int_size_value->w = sample_size;
-        Print(int_size_value->w);
-    } else {
-        LOG(FATAL) << "config_map[sample_size] is not IntValue";
-    }
-    Print_n(2);
+    sufu_output_info->example_pool->changeKSizeLimit(sample_size);
+    // std::shared_ptr<Value> size_value = sufu_output_prog->config_map[IncreConfig::SAMPLE_SIZE].value;
+    // std::shared_ptr<IntValue> int_size_value = std::static_pointer_cast<IntValue>(size_value);
+    // if (int_size_value) {
+    //     Print(int_size_value->w);
+    //     int_size_value->w = sample_size;
+    //     Print(int_size_value->w);
+    // } else {
+    //     LOG(FATAL) << "config_map[sample_size] is not IntValue";
+    // }
+    // Print_n(2);
+
     global::recorder.end("1-SuFu");
 
     global::recorder.start("2-get type of partial solution");
@@ -94,28 +96,143 @@ int main(int argv, char** argc) {
     // get DP_BOOL grammar
     global::recorder.start("3-get DP_BOOL grammar");
     std::cout << "zyw: DP_BOOL - buildDpBoolGrammar" << std::endl;
+    // TypeList dp_bool_inp_types = std::vector<PType>{theory::clia::getTInt(), type::getTBool()};
     TypeList dp_bool_inp_types = std::vector<PType>{solution_type, solution_type};
-    // TypeList dp_bool_inp_types = std::vector<PType>{theory::clia::getTInt(), theory::clia::getTInt()};
     PType dp_bool_oup_type = type::getTBool();
+    int solution_len;
+    if (solution_ty->getType() == incre::syntax::TypeType::INT) {
+        solution_len = 1;
+    } else if (solution_ty->getType() == incre::syntax::TypeType::TUPLE) {
+        std::shared_ptr<incre::syntax::TyTuple> sol_tuple = std::static_pointer_cast<incre::syntax::TyTuple>(solution_ty);
+        solution_len = sol_tuple->fields.size();
+        if (solution_len <= 1) {
+            LOG(FATAL) << "incorrect solution length";
+        }
+    } else {
+        LOG(FATAL) << "unknown solution type";
+    }
+    
     Grammar* dp_bool_grammar = incre_info->component_pool.buildDpBoolGrammar(dp_bool_inp_types, dp_bool_oup_type);
     ::grammar::deleteDuplicateRule(dp_bool_grammar);
     dp_bool_grammar->print();
-    std::cout << "zyw: DP_BOOL - buildDpBoolGrammar end" << std::endl << std::endl;
-
-    std::cout << "zyw: DP_BOOL - generateHeightLimitedProgram" << std::endl;
-    std::vector<PProgram> dp_bool_program_result = ::grammar::generateHeightLimitedProgram(dp_bool_grammar, dp_bool_height_limit);
-    ::grammar::postProcessDpBoolProgramList(dp_bool_program_result);
-    std::cout << "program.size = " << dp_bool_program_result.size() << std::endl;
-    for (auto& program: dp_bool_program_result) {
-        std::cout << program->toString() << std::endl;
+    Rule *and_rule, *eq_rule, *le_rule;
+    Rule *param0_rule, *param1_rule;
+    std::vector<Rule*> access_rule(5, nullptr);
+    for (auto* node: dp_bool_grammar->symbol_list) {
+        for (auto *rule: node->rule_list) {
+            if (rule->getSemanticsName() == "&&") {
+                and_rule = rule;
+            } else if (rule->getSemanticsName() == "=") {
+                eq_rule = rule;
+            } else if (rule->getSemanticsName() == "<") {
+                le_rule = rule;
+            } else if (rule->getSemanticsName() == "Param0") {
+                param0_rule = rule;
+            } else if (rule->getSemanticsName() == "Param1") {
+                param1_rule = rule;
+            } else if (rule->getSemanticsName() == "access0") {
+                access_rule[0] = rule;
+            } else if (rule->getSemanticsName() == "access1") {
+                access_rule[1] = rule;
+            } else if (rule->getSemanticsName() == "access2") {
+                access_rule[2] = rule;
+            } else if (rule->getSemanticsName() == "access3") {
+                access_rule[3] = rule;
+            } else if (rule->getSemanticsName() == "access4") {
+                access_rule[4] = rule;
+            } else if (rule->getSemanticsName() == "access5") {
+                access_rule[5] = rule;
+            }
+        }
     }
-    program_list = dp_bool_program_result;
-    std::cout << "zyw: DP_BOOL - generateHeightLimitedProgram end" << std::endl << std::endl;
-    Print(program_list.size());
+    if (!and_rule || !eq_rule || !le_rule || !param0_rule || !param1_rule) {
+        LOG(FATAL) << "rule not complete!";
+    }
+    if (solution_len > 1) {
+        for (int i = 0; i < solution_len; ++i) {
+            if (!access_rule[i]) {
+                LOG(FATAL) << "rule not complete!";
+            }
+        }
+    }
+
+    // build program_list
+    ProgramList program_list;
+
+    ProgramList empty_list;
+    PProgram param0 = param0_rule->buildProgram(empty_list);
+    PProgram param1 = param1_rule->buildProgram(empty_list);
+    if (solution_len == 1) {
+        PProgram prog = le_rule->buildProgram(std::vector<PProgram>{param0, param1});
+        Print(prog->toString());
+        program_list.push_back(prog);
+        prog = le_rule->buildProgram(std::vector<PProgram>{param1, param0});
+        Print(prog->toString());
+        program_list.push_back(prog);
+        prog = eq_rule->buildProgram(std::vector<PProgram>{param0, param1});
+        Print(prog->toString());
+        program_list.push_back(prog);
+    } else {
+        std::vector<PProgram> param0_node, param1_node;
+        for (int i = 0; i < solution_len; ++i) {
+            param0_node.push_back(access_rule[i]->buildProgram(std::vector<PProgram>{param0}));
+            param1_node.push_back(access_rule[i]->buildProgram(std::vector<PProgram>{param1}));
+        }
+        for (int i = 0; i < solution_len; ++i) {
+            PProgram prog;
+            for (int j = 0; j < solution_len; ++j) {
+                if (i == j) {
+                    if (j == 0) {
+                        prog = le_rule->buildProgram(std::vector<PProgram>{param0_node[j], param1_node[j]});
+                    } else {
+                        prog = and_rule->buildProgram(std::vector<PProgram>{prog, le_rule->buildProgram(std::vector<PProgram>{param0_node[j], param1_node[j]})});
+                    }
+                } else {
+                    if (j == 0) {
+                        prog = eq_rule->buildProgram(std::vector<PProgram>{param0_node[j], param1_node[j]});
+                    } else {
+                        prog = and_rule->buildProgram(std::vector<PProgram>{prog, eq_rule->buildProgram(std::vector<PProgram>{param0_node[j], param1_node[j]})});
+                    }
+                }
+            }
+            Print(prog->toString());
+            program_list.push_back(prog);
+        }
+        for (int i = 0; i < solution_len; ++i) {
+            PProgram prog;
+            for (int j = 0; j < solution_len; ++j) {
+                if (i == j) {
+                    if (j == 0) {
+                        prog = le_rule->buildProgram(std::vector<PProgram>{param1_node[j], param0_node[j]});
+                    } else {
+                        prog = and_rule->buildProgram(std::vector<PProgram>{prog, le_rule->buildProgram(std::vector<PProgram>{param1_node[j], param0_node[j]})});
+                    }
+                } else {
+                    if (j == 0) {
+                        prog = eq_rule->buildProgram(std::vector<PProgram>{param1_node[j], param0_node[j]});
+                    } else {
+                        prog = and_rule->buildProgram(std::vector<PProgram>{prog, eq_rule->buildProgram(std::vector<PProgram>{param1_node[j], param0_node[j]})});
+                    }
+                }
+            }
+            Print(prog->toString());
+            program_list.push_back(prog);
+        }
+        PProgram prog;
+        for (int j = 0; j < solution_len; ++j) {
+            if (j == 0) {
+                prog = eq_rule->buildProgram(std::vector<PProgram>{param1_node[j], param0_node[j]});
+            } else {
+                prog = and_rule->buildProgram(std::vector<PProgram>{prog, eq_rule->buildProgram(std::vector<PProgram>{param1_node[j], param0_node[j]})});
+            }
+        }
+        Print(prog->toString());
+        program_list.push_back(prog);
+    }
+    
+    std::cout << "zyw: DP_BOOL - buildDpBoolGrammar end" << std::endl << std::endl;
     global::recorder.end("3-get DP_BOOL grammar");
 
-    // get DP info
-    auto dp_incre_info = incre::analysis::buildIncreInfo(sufu_output_prog.get(), env.get());
     // number of programs
     int program_len = program_list.size();
     // number of remaining programs
@@ -154,9 +271,9 @@ int main(int argv, char** argc) {
         global::recorder.start("5.1-generate single example");
         partial_recorder.start("5.1-generate single example");
         // clear example_pool
-        dp_incre_info->example_pool->clear();
+        sufu_output_info->example_pool->clear();
         // generate single example for DP synthesis
-        syntax::Term start_term = dp_incre_info->example_pool->generateDpSingleExample();
+        syntax::Term start_term = sufu_output_info->example_pool->generateDpSingleExample();
         partial_recorder.end("5.1-generate single example");
         global::recorder.end("5.1-generate single example");
 
@@ -201,7 +318,7 @@ int main(int argv, char** argc) {
         }
         main_params_num = main_params_name.size();
         for (int i = 0; i < main_params_num; ++i) {
-            std::cout << main_params_name[i] << " = " << main_params_value[i].toString() << std::endl;
+            std::cout << "zyw: " << main_params_name[i] << " = " << main_params_value[i].toString() << std::endl;
             new_ctx->ctx = new_ctx->ctx.insert(main_params_name[i], syntax::Binding(main_params_value[i]));
         }
         // for (auto now = new_ctx->ctx.start; now; now = now->next) {
@@ -218,8 +335,8 @@ int main(int argv, char** argc) {
         global::recorder.start("5.2-get partial solutions");
         partial_recorder.start("5.2-get partial solutions");
         // get partial solutions
-        dp_example_pool = dp_incre_info->example_pool->dp_example_pool;
-        dp_same_time_solution = dp_incre_info->example_pool->dp_same_time_solution;
+        dp_example_pool = sufu_output_info->example_pool->dp_example_pool;
+        dp_same_time_solution = sufu_output_info->example_pool->dp_same_time_solution;
         dp_same_time_solution_list.push_back(dp_same_time_solution);
         
         // get all solutions -> dp_deduplicate_sol_set, object_result_list
@@ -238,21 +355,21 @@ int main(int argv, char** argc) {
         }
         dp_deduplicate_sol_len_now = dp_deduplicate_sol_set.size();
 
-        // print deduplicated dp solution set
-        Print(dp_deduplicate_sol_set.size());
-        for (auto& sol: dp_deduplicate_sol_set) {
-            std::cout << sol->partial_solution.toString() << std::endl;
-        }
+        // // print deduplicated dp solution set
+        // Print(dp_deduplicate_sol_set.size());
+        // for (auto& sol: dp_deduplicate_sol_set) {
+        //     std::cout << sol->partial_solution.toString() << std::endl;
+        // }
 
-        // print all solutions and their children
-        Print(dp_example_pool.size());
-        for (auto& sol: dp_example_pool) {
-            std::cout << sol->partial_solution.toString() << ", child size = " << sol->children.size() << std::endl;
-            for (auto& child: sol->children) {
-                std::cout << "  " << child->toString() << std::endl;
-            }
-        }
-        Print_n(2);
+        // // print all solutions and their children
+        // Print(dp_example_pool.size());
+        // for (auto& sol: dp_example_pool) {
+        //     std::cout << sol->partial_solution.toString() << ", child size = " << sol->children.size() << std::endl;
+        //     for (auto& child: sol->children) {
+        //         std::cout << "  " << child->toString() << std::endl;
+        //     }
+        // }
+        // Print_n(2);
         partial_recorder.end("5.2-get partial solutions");
         global::recorder.end("5.2-get partial solutions");
 
@@ -289,7 +406,7 @@ int main(int argv, char** argc) {
                     if (!(obj_result_1 >= obj_result_2)) {
                         global::recorder.end("5.3.1-calculate program_true_num for none use");
                     }
-                    if (obj_result_1 > obj_result_2) {
+                    if (obj_result_1 >= obj_result_2) {
                         if (bool_r_result) {
                             // not consistent with the tinning theorem - Optimality
                             program_flag[k] = false;
@@ -327,7 +444,7 @@ int main(int argv, char** argc) {
                     if (!(obj_result_1 >= obj_result_2)) {
                         global::recorder.end("5.3.1-calculate program_true_num for none use");
                     }
-                    if (obj_result_1 > obj_result_2) {
+                    if (obj_result_1 >= obj_result_2) {
                         if (bool_r_result) {
                             // not consistent with the tinning theorem - Optimality
                             program_flag[k] = false;

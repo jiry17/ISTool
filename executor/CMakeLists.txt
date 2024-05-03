@@ -32,6 +32,18 @@ target_link_libraries(run_incre_dp ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
 add_executable(run_incre_dp_2 run_incre_dp_2.cpp)
 target_link_libraries(run_incre_dp_2 ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
 
+add_executable(run_incre_dp_3 run_incre_dp_3.cpp)
+target_link_libraries(run_incre_dp_3 ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
+
+add_executable(run_incre_dp_3_2 run_incre_dp_3_2.cpp)
+target_link_libraries(run_incre_dp_3_2 ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
+
+add_executable(run_incre_dp_4 run_incre_dp_4.cpp)
+target_link_libraries(run_incre_dp_4 ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
+
+add_executable(run_incre_dp_test run_incre_dp_test.cpp)
+target_link_libraries(run_incre_dp_test ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
+
 # add_executable(run_incre_label run_incre_label.cpp)
 # target_link_libraries(run_incre_label ${ALL_LIBS} ${ALL_LIBS} ${THIRDPARTY_LIBS})
 
